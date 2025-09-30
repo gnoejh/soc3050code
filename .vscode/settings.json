@@ -12,5 +12,22 @@
         "mplab-core-da"
     ],
     "mplab.project.workspace.removeDeletedSourceFiles": "Always",
-    "mplab.project.workspace.addNewSourceFiles": "Always"
+    "mplab.project.workspace.addNewSourceFiles": "Always",
+    "terminal.integrated.env.windows": {
+        "PATH": "${env:PATH};C:\\Program Files\\nodejs\\"
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "nodejs.repl.useCodeRepl": true,
+    "npm.packageManager": "npm",
+    "files.associations": {
+        "*.c": "c",
+        "*.h": "c",
+        "*.hex": "intel-hex",
+        "*.elf": "binary"
+    },
+    "extensions.recommendations": [
+        "ms-vscode.vscode-serial-monitor",
+        "ms-vscode.cpptools",
+        "ms-vscode.powershell"
+    ]
 }
