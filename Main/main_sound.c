@@ -9,6 +9,19 @@
 
 #include "config.h"
 
+// Only compile this file if any SOUND demo is enabled
+#ifdef SOUND
+    #define SOUND_DEMO_ENABLED
+#endif
+#ifdef SOUND_ATARI
+    #define SOUND_DEMO_ENABLED
+#endif
+#ifdef SOUND_TWINKLE
+    #define SOUND_DEMO_ENABLED
+#endif
+
+#ifdef SOUND_DEMO_ENABLED
+
 #ifdef SOUND
 
 void main_sound(void)
@@ -27,3 +40,5 @@ void main_sound(void)
 	_delay_ms(1000);  // Delay for 1 second
 }
 #endif
+
+#endif // SOUND_DEMO_ENABLED

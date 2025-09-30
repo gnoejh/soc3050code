@@ -28,14 +28,14 @@ void Interrupt_init(void) 	// Port initialization
 	EIMSK = (1<<INT1) | (1<<INT0) ; // EIMSK = 0x03;
 }
 /*
-SIGNAL(INT0_vect)	
+ISR(INT0_vect)	
 {
 	putch_USART1(0x41);	// putch_USART1('a');
 	INT0_DataView++;
 }
 */
 /*
-SIGNAL(INT1_vect)	
+ISR(INT1_vect)	
 {
 	putch_USART1(0x42);	// putch_USART1('b');
 	INT1_DataView++;

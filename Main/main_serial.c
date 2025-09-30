@@ -11,6 +11,43 @@
 
 #include "config.h" // Include configuration file for example selection
 
+// Only compile this file if any SERIAL demo is enabled
+#ifdef SERIAL_POLLING_SINGLE_CHAR
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_STRING
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_ECHO
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_SENTENCE
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_RX
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_TX
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_ECHO
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_SENTENCE
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_CIRCULAR_BUFFER
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_WORD
+    #define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_WORD
+    #define SERIAL_DEMO_ENABLED
+#endif
+
+#ifdef SERIAL_DEMO_ENABLED
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <string.h>
@@ -411,3 +448,5 @@ void main_serial_interrupt_word(void) {
 	}
 }
 #endif
+
+#endif // SERIAL_DEMO_ENABLED

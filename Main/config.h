@@ -35,7 +35,7 @@
 // Uncomment the app you want to compile
 
 // UART Examples
-//#define SERIAL_POLLING_SINGLE_CHAR
+//#define SERIAL_POLLING_SINGLE_CHAR  // ??TESTING: Disabled
 //#define SERIAL_POLLING_STRING
 //#define SERIAL_POLLING_ECHO
 //#define SERIAL_POLLING_SENTENCE
@@ -64,7 +64,9 @@
 //#define GRAPHICS_SINE_WAVE
 
 // Stepper Motor Examples
+// Stepper Motor Examples
 //#define MOTORS_FULLSTEP                  // Full-step control for stepper motors
+//#define MOTORS_FULLSTEP_INTERRUPT
 //#define MOTORS_FULLSTEP_INTERRUPT        // Full-step with interrupt control
 //#define MOTORS_HALFSTEP                  // Half-step control for stepper motors
 //#define MOTORS_HALFSTEP_INTERRUPT        // Half-step with interrupt control
@@ -107,7 +109,7 @@
 //#define INTERRUPT_EXT_TIMER
 
 // Port/Pin Control Examples
-//#define BLINK_PORT
+#define BLINK_PORT
 //#define BLINK_PIN
 //#define BLINK_ASM
 //#define BLINK_ASM_MACRO

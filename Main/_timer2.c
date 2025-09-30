@@ -33,7 +33,7 @@ void Timer2_init(void)		// T/C 2 initialization
 	TIMSK = 0x40;           // enable TOV2
 }
 
-SIGNAL(TIMER2_OVF_vect)
+ISR(TIMER2_OVF_vect)
 {
 	TCNT2 = 0x1A;                           // From 26 to 256, 	230 X 4 times
 	// setup (4.3402uS)

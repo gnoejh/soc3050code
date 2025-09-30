@@ -2,8 +2,6 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-basic-start.c
-
 Main.c
 
 main_accelerometer.c

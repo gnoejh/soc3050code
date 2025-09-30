@@ -170,7 +170,7 @@ void USART1_puthex(unsigned char dt)			// 핵사 파일을 출력으로 나타 �
 	putch_USART1((unsigned char)(tmp));
 }
 /*
-SIGNAL(USART1_RX_vect)							// Serial ISR
+ISR(USART1_RX_vect)							// Serial ISR
 {
 	cli(); //disable all interrupts
 	

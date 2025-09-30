@@ -76,12 +76,12 @@ int main_serial (void)
 
 		
 
-SIGNAL(USART1_RX_vect)					// Serial ISR
+ISR(USART1_RX_vect)					// Serial ISR
 {
 	UDR1 = UDR1 + 1;
 				
 }
-SIGNAL(USART1_TX_vect)
+ISR(USART1_TX_vect)
 {
 	PORTB = ~PORTB;
 }

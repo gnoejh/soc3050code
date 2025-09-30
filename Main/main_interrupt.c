@@ -1,5 +1,24 @@
 #include "config.h"
 
+// Only compile this file if any INTERRUPT demo is enabled
+#ifdef INTERRUPT_EXTERNAL
+    #define INTERRUPT_DEMO_ENABLED
+#endif
+#ifdef INTERRUPT_LAB
+    #define INTERRUPT_DEMO_ENABLED
+#endif
+#ifdef INTERRUPT_TIMER
+    #define INTERRUPT_DEMO_ENABLED
+#endif
+#ifdef INTERRUPT_TIMER_CTC
+    #define INTERRUPT_DEMO_ENABLED
+#endif
+#ifdef INTERRUPT_EXT_TIMER
+    #define INTERRUPT_DEMO_ENABLED
+#endif
+
+#ifdef INTERRUPT_DEMO_ENABLED
+
 // Interrupt Vectors for ATmega128 with Descriptions
 /*
 ISR(INT0_vect)           // External Interrupt Request 0 - triggered by an event on PD2
@@ -282,5 +301,6 @@ void main_interrupt_ext_timer(void) {
 	}
 }
 
+#endif // INTERRUPT demos
 
-#endif
+#endif // INTERRUPT_DEMO_ENABLED

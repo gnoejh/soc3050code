@@ -1,5 +1,20 @@
 #include "config.h"
 
+// Only compile this file if any TIMER demo is enabled
+#ifdef TIMER_COUNTER
+    #define TIMER_DEMO_ENABLED
+#endif
+#ifdef TIMER_CTC
+    #define TIMER_DEMO_ENABLED
+#endif
+#ifdef TIMER_FASTPWM
+    #define TIMER_DEMO_ENABLED
+#endif
+#ifdef TIMER_NORMAL
+    #define TIMER_DEMO_ENABLED
+#endif
+
+#ifdef TIMER_DEMO_ENABLED
 
 /*
 // Timer/Counter 0 (8-bit)
@@ -164,4 +179,6 @@ void main_timer_fastpwm (void)
 	}
 }
 #endif
+
+#endif // TIMER_DEMO_ENABLED
 

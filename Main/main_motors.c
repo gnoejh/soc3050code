@@ -1,4 +1,39 @@
 #include "config.h"
+
+// Only compile this file if any MOTORS demo is enabled
+#ifdef MOTORS_FULLSTEP
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_FULLSTEP_INTERRUPT
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_HALFSTEP
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_HALFSTEP_INTERRUPT
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_STEPPER_DEMO
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_SERVO
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_SERVO_ADC
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_SERVO_UART
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_PWM_FAST
+    #define MOTORS_DEMO_ENABLED
+#endif
+#ifdef MOTORS_PWM_PHASECORRECT
+    #define MOTORS_DEMO_ENABLED
+#endif
+
+#ifdef MOTORS_DEMO_ENABLED
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -368,3 +403,5 @@ void main_motors_servo(void)
 	}
 }
 #endif
+
+#endif // MOTORS demos wrapper

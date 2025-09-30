@@ -1,6 +1,43 @@
-//
-//#include "config.h"
-//
+#include "config.h"
+
+// Only compile this file if any ADC demo is enabled
+#ifdef ADC_INTERRUPT
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_INTERRUPT_UART_INTERRUPT
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_INTERRUPT_UART_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_POLLING_UART_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_INTERRUPT
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_INTERRUPT_UART_INTERRUPT
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_INTERRUPT_UART_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_POLLING_UART_POLLING
+    #define ADC_DEMO_ENABLED
+#endif
+#ifdef ADC_POLLING_UART_INTERRUPT
+    #define ADC_DEMO_ENABLED
+#endif
+
+#ifdef ADC_DEMO_ENABLED
+
+#include "config.h"
 //
 ///* Atmega ADC Registers
 //=====================================================
@@ -944,6 +981,8 @@ ISR(USART1_UDRE_vect)
     {
         UCSR1B &= ~(1 << UDRIE1); // Disable Data Register Empty Interrupt
     }
-}
+}  
 #endif
+
+#endif // ADC_DEMO_ENABLED
 

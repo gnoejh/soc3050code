@@ -1,6 +1,28 @@
 
 #include "config.h"
 
+// Only compile this file if any GRAPHICS demo is enabled
+#ifdef GRAPHICS_BASICS
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+#ifdef GRAPHICS_MOVEMENT
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+#ifdef GRAPHICS_RANDOM
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+#ifdef GRAPHICS_BOUNCING_BALL
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+#ifdef GRAPHICS_MOVING_SQUARE
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+#ifdef GRAPHICS_SINE_WAVE
+    #define GRAPHICS_DEMO_ENABLED
+#endif
+
+#ifdef GRAPHICS_DEMO_ENABLED
+
 /* Graphics: basics */
 #ifdef GRAPHICS_BASICS
 
@@ -151,5 +173,7 @@ void main_graphics_sine_wave (void)
 	}
 }
 #endif
+
+#endif // GRAPHICS_DEMO_ENABLED
 
 
