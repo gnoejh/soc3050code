@@ -10,5 +10,7 @@
         "embedded-debug",
         "gdb",
         "mplab-core-da"
-    ]
+    ],
+    "mplab.project.workspace.removeDeletedSourceFiles": "Always",
+    "mplab.project.workspace.addNewSourceFiles": "Always"
 }

@@ -260,7 +260,8 @@
                 "Main/_interrupt.c",
                 "Main/_port.c",
                 "Main/_timer2.c",
-                "Main/_uart.c"
+                "Main/_uart.c",
+                "Main/variables.c"
             ],
             "encoding": "utf-8"
         }

@@ -87,7 +87,7 @@
 //#define SOUND_TWINKLE
 
 // Game Examples
-//#define GAME_HANGMAN
+#define GAME_HANGMAN
 //#define GAME_OBSTACLE
 //#define GAME_OBSTACLE_LEVEL
 //#define GAME_PUZZLE
@@ -109,7 +109,7 @@
 //#define INTERRUPT_EXT_TIMER
 
 // Port/Pin Control Examples
-#define BLINK_PORT
+//#define BLINK_PORT
 //#define BLINK_PIN
 //#define BLINK_ASM
 //#define BLINK_ASM_MACRO

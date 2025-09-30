@@ -48,7 +48,8 @@ set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_sound.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_sound_atari.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_sound_twingkle.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_timer.c")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_timer.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/variables.c")
 set_source_files_properties(${Main_Debug_Debug_avr_gcc_FILE_TYPE_compile} PROPERTIES LANGUAGE C)
 set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile_cpp)
 set_source_files_properties(${Main_Debug_Debug_avr_gcc_FILE_TYPE_compile_cpp} PROPERTIES LANGUAGE CXX)

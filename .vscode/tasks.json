@@ -84,6 +84,45 @@
                     "executable": "pwsh.exe"
                 }
             }
+        },
+        {
+            "label": "Program ATmega128 (AVRDUDE)",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "program.ps1"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Main"
+            },
+            "dependsOn": "Build and Generate HEX",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Open Serial Monitor",
+            "type": "shell", 
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'Available COM ports:'; [System.IO.Ports.SerialPort]::getportnames(); Write-Host 'Enter COM port (e.g., COM3):'; $port = Read-Host; Write-Host 'Starting serial monitor on' $port 'at 9600 baud...'; Write-Host 'Press Ctrl+C to exit'; $serialPort = New-Object System.IO.Ports.SerialPort($port, 9600); $serialPort.Open(); try { while($true) { if($serialPort.BytesToRead -gt 0) { Write-Host $serialPort.ReadExisting() -NoNewline } Start-Sleep -Milliseconds 10 } } finally { $serialPort.Close() }"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "isBackground": true
         }
     ]
 }

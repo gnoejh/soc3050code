@@ -14,5 +14,14 @@
         "key": "f5",
         "command": "workbench.action.tasks.runTask",
         "args": "Build and Generate HEX"
+    },
+    {
+        "key": "f8",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Program ATmega128 (AVRDUDE)"
+    },
+    {
+        "key": "ctrl+shift+m",
+        "command": "serial-monitor.start"
     }
 ]

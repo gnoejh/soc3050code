@@ -196,5 +196,11 @@
   "command": "C:\\Users\\hjeon\\.mplab\\app-finder\\apps\\avr-gcc\\v7.3.0\\avr8-gnu-toolchain-win32_x86_64\\bin\\avr-gcc.exe -DDEBUG -DDebug=Debug -D__ATmega128__ -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall -o CMakeFiles\\Main_Debug_Debug_avr_gcc_compile.dir\\W_\\soc3050code\\Main\\main_timer.c.o -c W:\\soc3050code\\Main\\main_timer.c",
   "file": "W:/soc3050code/Main/main_timer.c",
   "output": "W:/soc3050code/_build/Main/Debug/CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_timer.c.o"
+},
+{
+  "directory": "W:/soc3050code/_build/Main/Debug",
+  "command": "C:\\Users\\hjeon\\.mplab\\app-finder\\apps\\avr-gcc\\v7.3.0\\avr8-gnu-toolchain-win32_x86_64\\bin\\avr-gcc.exe -DDEBUG -DDebug=Debug -D__ATmega128__ -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall -o CMakeFiles\\Main_Debug_Debug_avr_gcc_compile.dir\\W_\\soc3050code\\Main\\variables.c.o -c W:\\soc3050code\\Main\\variables.c",
+  "file": "W:/soc3050code/Main/variables.c",
+  "output": "W:/soc3050code/_build/Main/Debug/CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variables.c.o"
 }
 ]

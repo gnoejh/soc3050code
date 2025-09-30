@@ -44,7 +44,7 @@ if ($activeDefines -contains "BLINK_PORT" -or $activeDefines -contains "BLINK_PI
 }
 
 if ($activeDefines | Where-Object { $_ -like "SERIAL_*" }) {
-    $sourceFiles += "_uart.c", "_init.c"
+    $sourceFiles += "main_serial.c", "_uart.c", "_init.c", "_interrupt.c", "_timer2.c", "_adc.c", "_glcd.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "ADC_*" }) {
