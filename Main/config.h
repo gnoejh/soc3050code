@@ -37,7 +37,7 @@
 // UART Examples
 //#define SERIAL_POLLING_SINGLE_CHAR  // ??TESTING: Disabled
 //#define SERIAL_POLLING_STRING
-//#define SERIAL_POLLING_ECHO
+#define SERIAL_POLLING_ECHO
 //#define SERIAL_POLLING_SENTENCE
 //#define SERIAL_INTERRUPT_RX
 //#define SERIAL_INTERRUPT_TX
@@ -87,7 +87,7 @@
 //#define SOUND_TWINKLE
 
 // Game Examples
-#define GAME_HANGMAN
+//#define GAME_HANGMAN
 //#define GAME_OBSTACLE
 //#define GAME_OBSTACLE_LEVEL
 //#define GAME_PUZZLE
