@@ -67,23 +67,23 @@ add_library(Main_Debug_Debug_avr_gcc_objcopy_sig OBJECT ${Main_Debug_Debug_avr_g
     list(APPEND Main_Debug_library_list "$<TARGET_OBJECTS:Main_Debug_Debug_avr_gcc_objcopy_sig>")
 endif()
 
-add_executable(Main_Debug_image_2NjCOKi3 ${Main_Debug_library_list})
+add_executable(Main_Debug_image__kRIX3bN ${Main_Debug_library_list})
 
-set_target_properties(Main_Debug_image_2NjCOKi3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${Main_Debug_output_dir})
-set_target_properties(Main_Debug_image_2NjCOKi3 PROPERTIES OUTPUT_NAME "Debug")
-set_target_properties(Main_Debug_image_2NjCOKi3 PROPERTIES SUFFIX ".elf")
+set_target_properties(Main_Debug_image__kRIX3bN PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${Main_Debug_output_dir})
+set_target_properties(Main_Debug_image__kRIX3bN PROPERTIES OUTPUT_NAME "Debug")
+set_target_properties(Main_Debug_image__kRIX3bN PROPERTIES SUFFIX ".elf")
 
-target_link_libraries(Main_Debug_image_2NjCOKi3 PRIVATE ${Main_Debug_Debug_avr_gcc_FILE_TYPE_link})
+target_link_libraries(Main_Debug_image__kRIX3bN PRIVATE ${Main_Debug_Debug_avr_gcc_FILE_TYPE_link})
 
 #Add objcopy steps
-Main_Debug_objcopy_ihex_rule(Main_Debug_image_2NjCOKi3)
-Main_Debug_objcopy_eep_rule(Main_Debug_image_2NjCOKi3)
-Main_Debug_objcopy_lss_rule(Main_Debug_image_2NjCOKi3)
-Main_Debug_objcopy_srec_rule(Main_Debug_image_2NjCOKi3)
-Main_Debug_objcopy_sig_rule(Main_Debug_image_2NjCOKi3)
+Main_Debug_objcopy_ihex_rule(Main_Debug_image__kRIX3bN)
+Main_Debug_objcopy_eep_rule(Main_Debug_image__kRIX3bN)
+Main_Debug_objcopy_lss_rule(Main_Debug_image__kRIX3bN)
+Main_Debug_objcopy_srec_rule(Main_Debug_image__kRIX3bN)
+Main_Debug_objcopy_sig_rule(Main_Debug_image__kRIX3bN)
 
 # Add the link options from the rule file.
-Main_Debug_link_rule(Main_Debug_image_2NjCOKi3)
+Main_Debug_link_rule(Main_Debug_image__kRIX3bN)
 
 
 

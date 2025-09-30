@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"W:/soc3050vscodemplabxc8/_build/Main/Release/cmake_install.cmake"
+		"W:/soc3050code/_build/Main/Release/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

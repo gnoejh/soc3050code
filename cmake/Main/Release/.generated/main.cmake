@@ -67,23 +67,23 @@ add_library(Main_Release_Release_avr_gcc_objcopy_sig OBJECT ${Main_Release_Relea
     list(APPEND Main_Release_library_list "$<TARGET_OBJECTS:Main_Release_Release_avr_gcc_objcopy_sig>")
 endif()
 
-add_executable(Main_Release_image_fNVE_1zd ${Main_Release_library_list})
+add_executable(Main_Release_image_XHH8Bf3F ${Main_Release_library_list})
 
-set_target_properties(Main_Release_image_fNVE_1zd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${Main_Release_output_dir})
-set_target_properties(Main_Release_image_fNVE_1zd PROPERTIES OUTPUT_NAME "Release")
-set_target_properties(Main_Release_image_fNVE_1zd PROPERTIES SUFFIX ".elf")
+set_target_properties(Main_Release_image_XHH8Bf3F PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${Main_Release_output_dir})
+set_target_properties(Main_Release_image_XHH8Bf3F PROPERTIES OUTPUT_NAME "Release")
+set_target_properties(Main_Release_image_XHH8Bf3F PROPERTIES SUFFIX ".elf")
 
-target_link_libraries(Main_Release_image_fNVE_1zd PRIVATE ${Main_Release_Release_avr_gcc_FILE_TYPE_link})
+target_link_libraries(Main_Release_image_XHH8Bf3F PRIVATE ${Main_Release_Release_avr_gcc_FILE_TYPE_link})
 
 #Add objcopy steps
-Main_Release_objcopy_ihex_rule(Main_Release_image_fNVE_1zd)
-Main_Release_objcopy_eep_rule(Main_Release_image_fNVE_1zd)
-Main_Release_objcopy_lss_rule(Main_Release_image_fNVE_1zd)
-Main_Release_objcopy_srec_rule(Main_Release_image_fNVE_1zd)
-Main_Release_objcopy_sig_rule(Main_Release_image_fNVE_1zd)
+Main_Release_objcopy_ihex_rule(Main_Release_image_XHH8Bf3F)
+Main_Release_objcopy_eep_rule(Main_Release_image_XHH8Bf3F)
+Main_Release_objcopy_lss_rule(Main_Release_image_XHH8Bf3F)
+Main_Release_objcopy_srec_rule(Main_Release_image_XHH8Bf3F)
+Main_Release_objcopy_sig_rule(Main_Release_image_XHH8Bf3F)
 
 # Add the link options from the rule file.
-Main_Release_link_rule(Main_Release_image_fNVE_1zd)
+Main_Release_link_rule(Main_Release_image_XHH8Bf3F)
 
 
 

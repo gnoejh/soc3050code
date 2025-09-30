@@ -1,4 +1,4 @@
-W:/soc3050vscodemplabxc8/_build/Main/Debug/CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir
-W:/soc3050vscodemplabxc8/_build/Main/Debug/CMakeFiles/Main_Debug_image_2NjCOKi3.dir
-W:/soc3050vscodemplabxc8/_build/Main/Debug/CMakeFiles/edit_cache.dir
-W:/soc3050vscodemplabxc8/_build/Main/Debug/CMakeFiles/rebuild_cache.dir
+W:/soc3050code/_build/Main/Debug/CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir
+W:/soc3050code/_build/Main/Debug/CMakeFiles/Main_Debug_image__kRIX3bN.dir
+W:/soc3050code/_build/Main/Debug/CMakeFiles/edit_cache.dir
+W:/soc3050code/_build/Main/Debug/CMakeFiles/rebuild_cache.dir

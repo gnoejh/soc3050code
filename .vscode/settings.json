@@ -4,7 +4,7 @@
     ],
     "mplab.clangd.path": "",
     "C_Cpp.intelliSenseEngine": "disabled",
-    "cmake.sourceDirectory": "W:/soc3050vscodemplabxc8/cmake/Main/Debug",
+    "cmake.sourceDirectory": "W:/soc3050code/cmake/Main/Debug",
     "memory-inspector.debugTypes": [
         "arm-debugger",
         "embedded-debug",

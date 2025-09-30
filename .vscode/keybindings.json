@@ -1,0 +1,18 @@
+[
+    {
+        "key": "f7",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Build ATmega128 Project",
+        "when": "!inDebugMode"
+    },
+    {
+        "key": "ctrl+shift+b",
+        "command": "workbench.action.tasks.runTask", 
+        "args": "Build ATmega128 Project"
+    },
+    {
+        "key": "f5",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Build and Generate HEX"
+    }
+]
