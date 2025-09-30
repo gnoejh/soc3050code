@@ -1,0 +1,16 @@
+# ATmega128 Python Interface - Requirements
+# Core dependencies for serial communication and data processing
+
+pyserial>=3.5
+flask>=2.3.0
+flask-socketio>=5.3.0
+matplotlib>=3.7.0
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Optional: Advanced features
+# plotly>=5.15.0        # Interactive plotting
+# dash>=2.12.0          # Web dashboards  
+# paho-mqtt>=1.6.0      # MQTT IoT communication
+# boto3>=1.28.0         # AWS integration
