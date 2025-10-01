@@ -1,0 +1,725 @@
+﻿/*
+ * =============================================================================
+ * EDUCATIONAL ATmega128 SERIAL COMMUNICATION DEMONSTRATIONS
+ * =============================================================================
+ *
+ * COURSE: SOC 3050 - Embedded Systems and IoT
+ * AUTHOR: Professor Kim (Modernized from hjeong original)
+ *
+ * PURPOSE:
+ * Demonstrate serial communication using modernized UART library functions.
+ * Shows progression from direct register access to structured programming.
+ *
+ * EDUCATIONAL OBJECTIVES:
+ * 1. Master UART communication protocols and timing
+ * 2. Understand polling vs interrupt-driven communication
+ * 3. Implement robust data transmission and reception
+ * 4. Explore buffering and flow control mechanisms
+ * 5. Practice string processing and data formatting
+ *
+ * LEARNING PROGRESSION:
+ * Assembly → C → Python → IoT
+ * Direct registers → Library functions → Serial protocols → Network communication
+ *
+ * =============================================================================
+ */
+
+#include "config.h"
+
+// Only compile this file if any SERIAL demo is enabled
+#ifdef SERIAL_POLLING_SINGLE_CHAR
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_STRING
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_ECHO
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_SENTENCE
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_RX
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_TX
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_ECHO
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_SENTENCE
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_CIRCULAR_BUFFER
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_POLLING_WORD
+#define SERIAL_DEMO_ENABLED
+#endif
+#ifdef SERIAL_INTERRUPT_WORD
+#define SERIAL_DEMO_ENABLED
+#endif
+
+#ifdef SERIAL_DEMO_ENABLED
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DOCUMENTATION: UART Communication Concepts
+ * =============================================================================
+ *
+ * UART (Universal Asynchronous Receiver-Transmitter) provides serial communication
+ * for embedded systems. The ATmega128 includes two UART modules (UART0 and UART1).
+ *
+ * KEY CONCEPTS:
+ * 1. BAUD RATE: Data transmission speed (bits per second)
+ * 2. FRAME FORMAT: Start bit + Data bits + Optional parity + Stop bit(s)
+ * 3. POLLING: Software checks status flags repeatedly
+ * 4. INTERRUPTS: Hardware automatically calls interrupt service routines
+ *
+ * MODERNIZED APPROACH:
+ * Instead of direct register manipulation, we use library functions:
+ * - Old: UCSR1A, UCSR1B, UCSR1C, UDR1, UBRR1H/L
+ * - New: UART_init(), UART_transmit_char(), UART_receive_char(), etc.
+ *
+ * =============================================================================
+ */
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Single Character Communication (Polling Mode)
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate basic character-level UART communication
+ * CONFIGURATION: Requires SERIAL_POLLING_SINGLE_CHAR defined in config.h
+ *
+ * HARDWARE SETUP:
+ * - UART1 pins: PE0 (RXD1), PE1 (TXD1)
+ * - Connect to USB-to-Serial adapter or terminal
+ * - Baud rate: 9600 (configured in config.h)
+ *
+ * EDUCATIONAL VALUE:
+ * - Basic UART initialization using modernized library
+ * - Character transmission and reception
+ * - Echo functionality demonstration
+ */
+#ifdef SERIAL_POLLING_SINGLE_CHAR
+
+void main_serial_polling_single_char(void)
+{
+    /*
+     * EDUCATIONAL STEP 1: Initialize UART using modernized library
+     *
+     * Modern approach: Use library function instead of direct register access
+     * Old way: Multiple register configurations (UBRR1H/L, UCSR1B, UCSR1C)
+     * New way: Single function call with educational parameters
+     */
+    Uart1_init(); // Initialize UART1 with default settings
+
+    /*
+     * EDUCATIONAL STEP 2: Send welcome message
+     *
+     * Demonstrates character transmission using library function
+     */
+    putch_USART1('A'); // Send initial character
+    puts_USART1("\r\nUART Echo Test - Type characters:\r\n");
+
+    /*
+     * EDUCATIONAL STEP 3: Echo loop demonstration
+     *
+     * This creates a simple echo server:
+     * - Receives character from terminal
+     * - Echoes it back
+     * - Demonstrates basic UART communication
+     */
+    while (1)
+    {
+        /*
+         * POLLING METHOD: Wait for received character
+         * This is the simplest UART receiving method
+         */
+        unsigned char received_char = getch_USART1(); // Blocking receive
+
+        /*
+         * EDUCATIONAL STEP 4: Echo character back
+         * Demonstrates transmission of received data
+         */
+        putch_USART1(received_char); // Echo back to terminal
+
+        /*
+         * EDUCATIONAL STEP 5: Add line break on Enter
+         * Improve readability in terminal
+         */
+        if (received_char == '\r') // If Enter key pressed
+        {
+            putch_USART1('\n'); // Add line feed
+        }
+    }
+}
+#endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: String Communication (Polling Mode)
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate string-level UART communication
+ * CONFIGURATION: Requires SERIAL_POLLING_STRING defined in config.h
+ *
+ * EDUCATIONAL VALUE:
+ * - String transmission using modernized library
+ * - Formatted output capabilities
+ * - Educational message sequences
+ */
+#ifdef SERIAL_POLLING_STRING
+
+void main_serial_polling_string(void)
+{
+    /*
+     * EDUCATIONAL STEP 1: Initialize UART system
+     */
+    UART_init(UART_CHANNEL_1, UART_BAUD_9600, UART_DATA_8BIT, UART_PARITY_NONE, UART_STOP_1BIT);
+
+    /*
+     * EDUCATIONAL STEP 2: Send educational welcome messages
+     *
+     * Modern approach: Use library function for string transmission
+     * Old way: Character-by-character loop
+     * New way: Single function call for entire string
+     */
+    UART_transmit_string(UART_CHANNEL_1, "\\r\\n=== ATmega128 UART Demo ===\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Course: SOC 3050 - Embedded Systems\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Modernized UART Library Demonstration\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Baud Rate: 9600, 8N1 Format\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "=== System Ready ===\\r\\n\\r\\n");
+
+    /*
+     * EDUCATIONAL STEP 3: Periodic status messages
+     *
+     * Demonstrates continuous communication for monitoring
+     */
+    unsigned int message_counter = 0;
+    char status_buffer[64];
+
+    while (1)
+    {
+        /* Format educational status message */
+        sprintf(status_buffer, "Status Update #%u - System Operating\\r\\n", message_counter++);
+
+        /* Send formatted message using library function */
+        UART_transmit_string(UART_CHANNEL_1, status_buffer);
+
+        /* Educational timing - visible but not overwhelming */
+        _delay_ms(2000);
+
+        /*
+         * EDUCATIONAL EXERCISE:
+         * Try these modifications:
+         * 1. Add timestamp to messages
+         * 2. Include system resource information
+         * 3. Send sensor data (if connected)
+         * 4. Implement command parsing
+         */
+    }
+}
+#endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Advanced Echo with Processing
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate character processing and analysis
+ * CONFIGURATION: Requires SERIAL_POLLING_ECHO defined in config.h
+ *
+ * EDUCATIONAL VALUE:
+ * - Character analysis and processing
+ * - Case conversion and formatting
+ * - Educational feedback generation
+ */
+#ifdef SERIAL_POLLING_ECHO
+
+void main_serial_polling_echo(void)
+{
+    /*
+     * EDUCATIONAL STEP 1: Initialize communication system
+     */
+    UART_init(UART_CHANNEL_1, UART_BAUD_9600, UART_DATA_8BIT, UART_PARITY_NONE, UART_STOP_1BIT);
+
+    /* Send educational welcome message */
+    UART_transmit_string(UART_CHANNEL_1, "\\r\\nAdvanced Echo Demo\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Type characters for analysis...\\r\\n\\r\\n");
+
+    /*
+     * EDUCATIONAL STEP 2: Advanced echo processing loop
+     */
+    while (1)
+    {
+        /* Receive character using modernized library */
+        unsigned char input_char = UART_receive_char(UART_CHANNEL_1);
+
+        /*
+         * EDUCATIONAL STEP 3: Character analysis and processing
+         */
+        UART_transmit_string(UART_CHANNEL_1, "Received: '");
+        UART_transmit_char(UART_CHANNEL_1, input_char);
+        UART_transmit_string(UART_CHANNEL_1, "' (ASCII: ");
+
+        /* Convert ASCII value to string for educational display */
+        char ascii_str[8];
+        sprintf(ascii_str, "%d", input_char);
+        UART_transmit_string(UART_CHANNEL_1, ascii_str);
+        UART_transmit_string(UART_CHANNEL_1, ") - ");
+
+        /*
+         * EDUCATIONAL STEP 4: Character classification
+         */
+        if (input_char >= 'A' && input_char <= 'Z')
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Uppercase Letter\\r\\n");
+        }
+        else if (input_char >= 'a' && input_char <= 'z')
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Lowercase Letter\\r\\n");
+        }
+        else if (input_char >= '0' && input_char <= '9')
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Numeric Digit\\r\\n");
+        }
+        else if (input_char == '\\r' || input_char == '\\n')
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Line Terminator\\r\\n");
+        }
+        else
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Special Character\\r\\n");
+        }
+
+        /*
+         * EDUCATIONAL EXERCISES:
+         * 1. Add hexadecimal display of ASCII values
+         * 2. Implement character counting statistics
+         * 3. Add case conversion (upper ↔ lower)
+         * 4. Create a simple calculator for numeric inputs
+         */
+    }
+}
+#endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Sentence-Level Communication
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate line-based text processing
+ * CONFIGURATION: Requires SERIAL_POLLING_SENTENCE defined in config.h
+ *
+ * EDUCATIONAL VALUE:
+ * - Line buffering and string processing
+ * - Command parsing foundations
+ * - Educational text analysis
+ */
+#ifdef SERIAL_POLLING_SENTENCE
+
+#define MAX_SENTENCE_LENGTH 128
+
+void main_serial_polling_sentence(void)
+{
+    /*
+     * EDUCATIONAL STEP 1: Initialize communication
+     */
+    UART_init(UART_CHANNEL_1, UART_BAUD_9600, UART_DATA_8BIT, UART_PARITY_NONE, UART_STOP_1BIT);
+
+    /* Educational welcome message */
+    UART_transmit_string(UART_CHANNEL_1, "\\r\\nSentence Processing Demo\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Type sentences ending with Enter...\\r\\n\\r\\n");
+
+    /*
+     * EDUCATIONAL STEP 2: Line buffering variables
+     */
+    char sentence_buffer[MAX_SENTENCE_LENGTH];
+    unsigned char buffer_index = 0;
+
+    /*
+     * EDUCATIONAL STEP 3: Sentence processing loop
+     */
+    while (1)
+    {
+        /* Receive character using modernized library */
+        unsigned char input_char = UART_receive_char(UART_CHANNEL_1);
+
+        /*
+         * EDUCATIONAL STEP 4: Line termination detection
+         */
+        if (input_char == '\\r' || input_char == '\\n')
+        {
+            /* Null-terminate the sentence */
+            sentence_buffer[buffer_index] = '\\0';
+
+            /* Process the complete sentence */
+            if (buffer_index > 0)
+            {
+                /* Educational sentence analysis */
+                UART_transmit_string(UART_CHANNEL_1, "\\r\\nSentence received: \\"");
+                UART_transmit_string(UART_CHANNEL_1, sentence_buffer);
+                UART_transmit_string(UART_CHANNEL_1, "\\"\\r\\n");
+                
+                /* Educational statistics */
+                char stats_buffer[64];
+                sprintf(stats_buffer, "Length: %d characters\\r\\n", buffer_index);
+                UART_transmit_string(UART_CHANNEL_1, stats_buffer);
+                
+                /* Word counting demonstration */
+                unsigned char word_count = 1;
+                for (unsigned char i = 0; i < buffer_index; i++)
+                {
+                    if (sentence_buffer[i] == ' ')
+                        word_count++;
+                }
+                sprintf(stats_buffer, "Words: %d\\r\\n\\r\\n", word_count);
+                UART_transmit_string(UART_CHANNEL_1, stats_buffer);
+            }
+
+            /* Reset buffer for next sentence */
+            buffer_index = 0;
+        }
+        else if (buffer_index < MAX_SENTENCE_LENGTH - 1)
+        {
+            /* Add character to buffer */
+            sentence_buffer[buffer_index++] = input_char;
+
+            /* Echo character for user feedback */
+            UART_transmit_char(UART_CHANNEL_1, input_char);
+        }
+
+        /*
+         * EDUCATIONAL EXERCISES:
+         * 1. Add palindrome detection
+         * 2. Implement simple word reversal
+         * 3. Create a basic calculator parser
+         * 4. Add command recognition ("LED ON", "LED OFF", etc.)
+         */
+    }
+}
+#endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Interrupt-Driven Reception
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate interrupt-based UART reception
+ * CONFIGURATION: Requires SERIAL_INTERRUPT_RX defined in config.h
+ *
+ * EDUCATIONAL VALUE:
+ * - Interrupt service routine implementation
+ * - Non-blocking communication patterns
+ * - Real-time response mechanisms
+ */
+#ifdef SERIAL_INTERRUPT_RX
+
+/* Educational global variables for interrupt communication */
+volatile unsigned char received_data = 0;
+volatile unsigned char data_ready_flag = 0;
+
+void main_serial_interrupt_rx(void)
+{
+    /*
+     * EDUCATIONAL STEP 1: Initialize UART with interrupt support
+     */
+    UART_init_interrupt(UART_CHANNEL_1, UART_BAUD_9600, UART_INT_RX_ENABLE);
+
+    /* Enable global interrupts */
+    sei();
+
+    /* Educational welcome message */
+    UART_transmit_string(UART_CHANNEL_1, "\\r\\nInterrupt RX Demo\\r\\n");
+    UART_transmit_string(UART_CHANNEL_1, "Characters processed by interrupts\\r\\n\\r\\n");
+
+    /*
+     * EDUCATIONAL STEP 2: Main loop for non-communication tasks
+     *
+     * This demonstrates the advantage of interrupt-driven communication:
+     * The main loop can perform other tasks while UART reception
+     * happens automatically in the background.
+     */
+    unsigned int loop_counter = 0;
+
+    while (1)
+    {
+        /*
+         * EDUCATIONAL STEP 3: Process received data when available
+         */
+        if (data_ready_flag)
+        {
+            /* Clear flag atomically */
+            data_ready_flag = 0;
+
+            /* Process received character */
+            char response_buffer[32];
+            sprintf(response_buffer, "ISR received: 0x%02X\\r\\n", received_data);
+            UART_transmit_string(UART_CHANNEL_1, response_buffer);
+        }
+
+        /*
+         * EDUCATIONAL STEP 4: Demonstrate background processing
+         */
+        loop_counter++;
+        if (loop_counter >= 50000) // Adjust for visible timing
+        {
+            UART_transmit_string(UART_CHANNEL_1, "Main loop running...\\r\\n");
+            loop_counter = 0;
+        }
+
+        /*
+         * EDUCATIONAL NOTE:
+         * The ISR handles UART reception automatically,
+         * allowing this main loop to continue uninterrupted
+         */
+    }
+}
+
+/*
+ * EDUCATIONAL ISR: UART Receive Complete Interrupt
+ *
+ * This interrupt service routine is called automatically
+ * when a character is received on UART1
+ */
+ISR(USART1_RX_vect)
+{
+    /* Read received data from UART register */
+    received_data = UDR1;
+
+    /* Set flag to notify main loop */
+    data_ready_flag = 1;
+
+    /*
+     * EDUCATIONAL NOTE: ISR Best Practices
+     * - Keep ISRs short and fast
+     * - Avoid complex processing in ISRs
+     * - Use volatile variables for shared data
+     * - Set flags for main loop processing
+     */
+}
+#endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL SUMMARY AND LEARNING OBJECTIVES
+ * =============================================================================
+ *
+ * This module demonstrates:
+ *
+ * 1. MODERN UART LIBRARY USAGE:
+ *    - UART_init() for clean initialization
+ *    - UART_transmit_char() and UART_transmit_string() for output
+ *    - UART_receive_char() for reliable input
+ *
+ * 2. COMMUNICATION PATTERNS:
+ *    - Polling mode for simple applications
+ *    - Interrupt mode for real-time responsiveness
+ *    - String processing and buffering
+ *
+ * 3. EDUCATIONAL PROGRESSION:
+ *    - Assembly: Direct register manipulation (UDR1, UCSR1A/B/C)
+ *    - C: Structured library functions with error handling
+ *    - Python: Serial objects and protocol libraries
+ *    - IoT: Network protocols and message queues
+ *
+ * 4. PRACTICAL APPLICATIONS:
+ *    - Terminal interfaces and debugging
+ *    - Sensor data transmission
+ *    - Command and control systems
+ *    - Inter-device communication
+ *
+ * =============================================================================
+ */
+
+#endif                                   /* SERIAL_DEMO_ENABLED */
+UCSR1B |= (1 << RXCIE1) | (1 << UDRIE1); // Enable RX and TX interrupts
+}
+
+ISR(USART1_RX_vect)
+{
+    char received_data = UDR1;
+    unsigned char next_index = (rx_write_index + 1) % BUFFER_SIZE;
+    if (next_index != rx_read_index)
+    {
+        rx_buffer[rx_write_index] = received_data;
+        rx_write_index = next_index;
+    }
+}
+
+ISR(USART1_UDRE_vect)
+{
+    if (tx_read_index != tx_write_index)
+    {
+        UDR1 = tx_buffer[tx_read_index];
+        tx_read_index = (tx_read_index + 1) % BUFFER_SIZE;
+    }
+    else
+    {
+        UCSR1B &= ~(1 << UDRIE1); // Disable TX interrupt
+    }
+}
+
+void UART1_transmit_buffer(unsigned char data)
+{
+    unsigned char next_index = (tx_write_index + 1) % BUFFER_SIZE;
+    while (next_index == tx_read_index)
+        ; // Wait if buffer is full
+    tx_buffer[tx_write_index] = data;
+    tx_write_index = next_index;
+    UCSR1B |= (1 << UDRIE1); // Enable TX interrupt
+}
+
+unsigned char UART1_receive_buffer(void)
+{
+    while (rx_read_index == rx_write_index)
+        ; // Wait if buffer is empty
+    char data = rx_buffer[rx_read_index];
+    rx_read_index = (rx_read_index + 1) % BUFFER_SIZE;
+    return data;
+}
+
+void main_serial_interrupt_circular_buffer(void)
+{
+    UART1_init_interrupt_buffer();
+    sei();
+    while (1)
+    {
+        char data = UART1_receive_buffer();
+        UART1_transmit_buffer(data);
+    }
+}
+#endif
+
+// ---------------------------------------------------------------
+// Word-Level Communication (Polling)
+// ---------------------------------------------------------------
+#ifdef SERIAL_POLLING_WORD
+#define MAX_WORD_SIZE 64
+char word_buffer[MAX_WORD_SIZE];
+unsigned char word_index = 0;
+
+void UART1_transmit(unsigned char data)
+{
+    while (!(UCSR1A & (1 << UDRE1)))
+        ;        // Wait until buffer is empty
+    UDR1 = data; // Transmit data
+}
+
+unsigned char UART1_receive(void)
+{
+    while (!(UCSR1A & (1 << RXC1)))
+        ;        // Wait until data is received
+    return UDR1; // Return received data
+}
+
+void UART1_send_string(const char *str)
+{
+    while (*str)
+    {
+        while (!(UCSR1A & (1 << UDRE1)))
+            ;          // Wait until buffer is empty
+        UDR1 = *str++; // Transmit each character
+    }
+}
+
+void process_word(const char *word)
+{
+    UART1_send_string("Word received: ");
+    UART1_send_string(word);
+    UART1_send_string("\n");
+}
+
+void main_serial_polling_word(void)
+{
+    UART1_init();
+    UART1_send_string("Enter words separated by spaces:\n");
+    while (1)
+    {
+        char c = UART1_receive();
+        if (c == ' ' || c == '\n' || c == '\r')
+        {
+            word_buffer[word_index] = '\0';
+            process_word(word_buffer);
+            word_index = 0;
+        }
+        else if (word_index < MAX_WORD_SIZE - 1)
+        {
+            word_buffer[word_index++] = c;
+        }
+    }
+}
+#endif
+
+// ---------------------------------------------------------------
+// Word-Level Communication (Interrupt)
+// ---------------------------------------------------------------
+#ifdef SERIAL_INTERRUPT_WORD
+#define MAX_WORD_SIZE 64
+volatile char word_buffer_interrupt[MAX_WORD_SIZE];
+volatile unsigned char word_index_interrupt = 0;
+volatile unsigned char word_ready = 0;
+
+// Send a string via UART
+void UART1_send_string(const char *str)
+{
+    while (*str)
+    {
+        while (!(UCSR1A & (1 << UDRE1)))
+            ;          // Wait until buffer is empty
+        UDR1 = *str++; // Transmit each character
+    }
+}
+
+// Process a received word
+void process_word(const char *word)
+{
+    UART1_send_string("Word received: ");
+    UART1_send_string(word);
+    UART1_send_string("\n");
+}
+
+// Initialize UART for word-level interrupt
+void UART1_init_word_interrupt(void)
+{
+    UART1_init();            // Initialize UART baud rate and frame format
+    UCSR1B |= (1 << RXCIE1); // Enable RX interrupt
+}
+
+// ISR for receiving characters
+ISR(USART1_RX_vect)
+{
+    char c = UDR1; // Read received character
+    if (c == ' ' || c == '\n' || c == '\r')
+    {
+        word_buffer_interrupt[word_index_interrupt] = '\0'; // Null-terminate the word
+        word_ready = 1;                                     // Set word ready flag
+        word_index_interrupt = 0;                           // Reset word index
+    }
+    else if (word_index_interrupt < MAX_WORD_SIZE - 1)
+    {
+        word_buffer_interrupt[word_index_interrupt++] = c; // Store character
+    }
+}
+
+// Main function for interrupt-based word processing
+void main_serial_interrupt_word(void)
+{
+    UART1_init_word_interrupt(); // Initialize UART with interrupt
+    sei();                       // Enable global interrupts
+    UART1_send_string("Word-based interrupt started. Enter words:\n");
+    while (1)
+    {
+        if (word_ready)
+        {
+            word_ready = 0;                                    // Clear word ready flag
+            process_word((const char *)word_buffer_interrupt); // Process the word
+        }
+    }
+}
+#endif
+
+#endif // SERIAL_DEMO_ENABLED

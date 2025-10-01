@@ -59,9 +59,9 @@ void main_port_blinking(void)
 	Timer2_init();
 	Timer2_start();
 
-	// Configure PORTB as output using modernized port library
-	Port_init_output(0xFF, 1); // All PORTB pins as outputs
-	Port_write(0xAA, 1);	   // Initial alternating pattern
+	// Port is already initialized in init_devices()
+	// Start with alternating pattern using modernized functions
+	led_pattern(0xAA); // Initial alternating pattern
 
 	// Display educational information
 	lcd_clear();
@@ -87,7 +87,7 @@ void main_port_blinking(void)
 
 			// Toggle LED pattern using modernized port functions
 			pattern = ~pattern;
-			Port_write(pattern, 1);
+			led_pattern(pattern);
 
 			// Clear and update graphics with synchronized timing
 			lcd_clear();
@@ -112,9 +112,9 @@ void main_port_blinking(void)
 			// Toggle graphics pattern for next cycle
 			graphics_flag = !graphics_flag;
 
-			// Display pattern information
-			lcd_string(0, 5, "Pattern: 0x");
-			GLCD_2DigitHex(pattern);
+			// Display pattern information (show decimal value instead of hex)
+			lcd_string(0, 5, "Pattern: ");
+			GLCD_3DigitDecimal(pattern);
 
 			// Show timing information
 			lcd_string(0, 6, "Time: ");
@@ -164,13 +164,11 @@ void main_port_rotation(void)
 	Timer2_start();
 
 	// Configure ports using modernized library
-	Port_init_output(0xFF, 1);	 // PORTB as output for LEDs
-	Port_init_input(0x01, 4);	 // PORTD.0 as input for button
-	Port_set_pullup(0x01, 4, 1); // Enable pull-up for button
+	Port_init(); // Initialize all ports (LEDs, buttons with pull-ups)
 
 	// Initial LED pattern (single bit set)
-	unsigned char led_pattern = 0x7F; // Binary: 01111111
-	Port_write(led_pattern, 1);
+	unsigned char pattern = 0x7F; // Binary: 01111111
+	led_pattern(0x7F);
 
 	// Display educational information
 	lcd_clear();
@@ -194,22 +192,23 @@ void main_port_rotation(void)
 			rotation_count++;
 
 			// Read button state using modernized port function
-			unsigned char button_pressed = !Port_read_pin(0, 4); // Inverted due to pull-up
+			unsigned char buttons = read_buttons();
+			unsigned char button_pressed = (buttons & 0x01) ? 0 : 1; // Button 0 (PD0), inverted logic
 
 			// Perform pattern rotation based on button state
 			if (button_pressed)
 			{
 				// Clockwise rotation (left shift with wrap-around)
-				led_pattern = (led_pattern << 1) | (led_pattern >> 7);
+				pattern = (pattern << 1) | (pattern >> 7);
 			}
 			else
 			{
 				// Counter-clockwise rotation (right shift with wrap-around)
-				led_pattern = (led_pattern >> 1) | (led_pattern << 7);
+				pattern = (pattern >> 1) | (pattern << 7);
 			}
 
 			// Update LEDs with new pattern
-			Port_write(led_pattern, 1);
+			led_pattern(pattern);
 
 			// Track direction changes for educational feedback
 			if (last_direction != button_pressed)
@@ -227,7 +226,7 @@ void main_port_rotation(void)
 			// Show binary pattern for educational value
 			for (int i = 7; i >= 0; i--)
 			{
-				lcd_char((led_pattern & (1 << i)) ? '1' : '0');
+				lcd_char((pattern & (1 << i)) ? '1' : '0');
 			}
 
 			// Display rotation count

@@ -5,7 +5,11 @@
  * LEARNING PROGRESSION:
  * Phase 1: Assembly Fundamentals (direct register access)
  * Phase 2: C Hardware Abstraction (library functions)
- * Phase 3: Communication & Sensors (data exchange)
+ * Phase 3: Communication & Sen// Additional graphics examples
+// #define GRAPHICS_BASICS                 // Basic graphics operations
+// #define GRAPHICS_MOVEMENT               // Moving graphics elements
+// #define GRAPHICS_RANDOM                 // Random graphics patterns
+#define GRAPHICS_BOUNCING_BALL          // Bouncing ball animation(data exchange)
  * Phase 4: Advanced Applications (complex projects)
  * Phase 5: Python Integration (high-level programming)
  *
@@ -50,72 +54,26 @@
 #include <avr/interrupt.h> // Interrupt handling (always needed)
 #include <util/delay.h>    // Delay functions (always needed)
 
-// Standard library includes (conditional compilation)
-#if defined(EDUCATIONAL_DEMO) || defined(SERIAL_POLLING_STRING) ||           \
-    defined(SERIAL_INTERRUPT_SENTENCE) || defined(ADC_VOLTAGE_CONVERSION) || \
-    defined(MEMORY_EEPROM) || defined(PYTHON_BASIC_PROTOCOL)
+// Standard library includes (Always available for simplicity)
 #include <stdio.h>  // Standard I/O (sprintf, etc.)
 #include <string.h> // String manipulation
-#endif
-
-#if defined(GRAPHICS_RANDOM) || defined(GAME_HANGMAN) || \
-    defined(ADC_INTERRUPT) || defined(PYTHON_SENSOR_STREAMING)
 #include <stdlib.h> // Standard library functions
-#endif
 
 /*
- * OPTIMIZED PROJECT MODULES - Conditional inclusion for memory efficiency
- * Only include headers for active functionality
+ * PROJECT MODULES - All libraries always available for simplicity
  */
 #include "_main.h" // Always needed for core functionality
 
-// Core hardware abstraction (conditional)
-#if defined(ASSEMBLY_BLINK_BASIC) || defined(C_LED_BASIC) || \
-    defined(PORT_BLINKING) || defined(PORT_ROTATION) ||      \
-    defined(EDUCATIONAL_DEMO) || defined(GRAPHICS_BASICS)
+// Essential library includes (Always available for simplicity)
 #include "_port.h"
-#endif
-
-#if defined(SERIAL_POLLING_SINGLE_CHAR) || defined(SERIAL_INTERRUPT_RX) || \
-    defined(EDUCATIONAL_DEMO) || defined(PYTHON_BASIC_PROTOCOL) ||         \
-    defined(IOT) || defined(ADC_POLLING_UART_POLLING)
 #include "_uart.h"
-#endif
-
 #include "_init.h" // Always needed for device initialization
-
-#if defined(ADC_BASIC_READING) || defined(ADC_INTERRUPT) ||        \
-    defined(EDUCATIONAL_DEMO) || defined(IOT_SENSOR_MONITORING) || \
-    defined(MOTORS_SERVO_ADC) || defined(JOYSTICK) || defined(CDS)
 #include "_adc.h"
-#endif
-
-#if defined(BUZZER_BASIC_BEEP) || defined(SOUND) || \
-    defined(EDUCATIONAL_DEMO) || defined(GAME_SIMON_SAYS)
 #include "_buzzer.h"
-#endif
-
-#if defined(TIMER_COUNTER) || defined(C_TIMER_BASIC) ||      \
-    defined(EDUCATIONAL_DEMO) || defined(MOTORS_PWM_FAST) || \
-    defined(INTERRUPT_TIMER) || defined(GRAPHICS_ANIMATION)
 #include "_timer2.h"
-#endif
-
-#if defined(INTERRUPT_EXTERNAL) || defined(INTERRUPT_LAB) || \
-    defined(EDUCATIONAL_DEMO) || defined(GAME_REACTION_TIMER)
 #include "_interrupt.h"
-#endif
-
-#if defined(MEMORY_EEPROM) || defined(MEMORY_BASIC_EEPROM) || \
-    defined(EDUCATIONAL_DEMO) || defined(MEMORY_SENSOR_LOGGING)
 #include "_eeprom.h"
-#endif
-
-#if defined(GRAPHICS_BASICS) || defined(GRAPHICS_ANIMATION) ||      \
-    defined(EDUCATIONAL_DEMO) || defined(GAME_PONG_UART_CONTROL) || \
-    defined(IOT_DATA_VISUALIZATION)
 #include "_glcd.h"
-#endif
 
 /*
  * ============================================================================
@@ -203,14 +161,16 @@
 // #define ASSEMBLY_BLINK_BASIC            // Simple LED blinking with PORTB
 // #define ASSEMBLY_BLINK_PATTERN          // LED patterns with bit manipulation
 // #define ASSEMBLY_BLINK_INDIVIDUAL       // Individual LED control
-// #define ASSEMBLY_PORT_ROTATION          // Rotating LED patterns
+// // #define PORT_ROTATION // Rotating LED patterns
 
 // Legacy compatibility names (deprecated - use optimized versions above)
 // #define BLINK_PORT                      // → Use ASSEMBLY_BLINK_BASIC
 // #define BLINK_PIN                       // → Use ASSEMBLY_BLINK_INDIVIDUAL
 // #define BLINK_ASM                       // → Use ASSEMBLY_BLINK_BASIC
 // #define BLINK_ASM_MACRO                 // → Use ASSEMBLY_BLINK_PATTERN
-// #define PORT_BLINKING                   // → Use ASSEMBLY_BLINK_PATTERN
+// Individual Example Testing (Enable ONE at a time)
+// #define PORT_BLINKING                   // → Testing: Port-based LED patterns
+// #define ASSEMBLY_BLINK_BASIC            // Simple LED blinking with PORTB
 // #define PORT_ROTATION                   // → Use ASSEMBLY_PORT_ROTATION
 
 /*
@@ -233,7 +193,9 @@
  * 2.1 Port Control with C Functions
  * Optimized C abstraction layer with inline function support
  */
-// #define C_LED_BASIC                     // LED control using C functions
+// COMMUNICATION PROTOCOLS
+// #define BUZZER_BASIC_BEEP                    // Basic buzzer beep sounds
+// #define C_TIMER_BASIC // Basic timer functionality
 // #define C_LED_PATTERNS                  // Pattern generation with C loops
 // #define C_LED_BUTTON_INTERACTIVE        // Interactive LED control
 
@@ -241,12 +203,12 @@
  * 2.2 Timer and PWM Control
  * Optimized timer configurations for precise educational timing
  */
-// #define C_TIMER_BASIC                   // Timer initialization with C
+// // #define C_TIMER_BASIC                   // Timer initialization with C
 // #define C_TIMER_INTERRUPT               // Timer interrupts and ISRs
-// #define C_TIMER_PWM                     // PWM generation
+// #define C_TIMER_PWM // PWM generation
 
 // Legacy timer examples
-// #define TIMER_COUNTER                   // Basic timer/counter usage
+// #define TIMER_COUNTER // Basic timer/counter usage
 // #define TIMER_CTC                       // Clear Timer on Compare match
 // #define TIMER_FASTPWM                   // Fast PWM generation
 // #define TIMER_NORMAL                    // Normal timer mode
@@ -260,13 +222,14 @@
  */
 
 /*
- * 3.1 UART Communication (Currently Active for Educational Demo)
+ * 3.1 UART Communication - TESTING ONE BY ONE
+ * Current test: Disabled for individual example testing
  */
-#define EDUCATIONAL_DEMO // Complete educational demonstration
+// #define EDUCATIONAL_DEMO // Complete educational demonstration - DISABLED FOR TESTING
 
 // UART polling examples
 // #define SERIAL_POLLING_SINGLE_CHAR      // Single character communication
-// #define SERIAL_POLLING_STRING           // String communication
+// #define SERIAL_POLLING_STRING // String communication
 // #define SERIAL_POLLING_ECHO             // Echo received characters
 // #define SERIAL_POLLING_SENTENCE         // Sentence processing
 // #define SERIAL_POLLING_WORD             // Word processing
@@ -328,22 +291,33 @@
  */
 // #define GRAPHICS_BASIC_SHAPES           // Draw basic shapes on GLCD
 // #define GRAPHICS_ANIMATION              // Simple animations
+// #define GRAPHICS_BASIC_SHAPES           // Draw basic shapes on GLCD
+// #define GRAPHICS_ANIMATION              // Simple animations
 // #define GRAPHICS_SENSOR_DISPLAY         // Display sensor data graphically
 
-// Legacy graphics examples
+// Additional graphics examples
 // #define GRAPHICS_BASICS                 // Basic graphics operations
 // #define GRAPHICS_MOVEMENT               // Moving graphics elements
-// #define GRAPHICS_RANDOM                 // Random graphics patterns
-// #define GRAPHICS_BOUNCING_BALL          // Bouncing ball animation
+// #define GRAPHICS_RANDOM // Random graphics patterns
+// // #define GRAPHICS_BOUNCING_BALL          // Bouncing ball animation
 // #define GRAPHICS_MOVING_SQUARE          // Moving square animation
-// #define GRAPHICS_SINE_WAVE              // Sine wave visualization
+// #define GRAPHICS_SINE_WAVE // Sine wave visualization
 
 /*
  * 4.2 Motor Control Systems
  */
 // #define MOTORS_DC_PWM                   // DC motor speed control
 // #define MOTORS_SERVO_BASIC              // Servo motor positioning
-// #define MOTORS_STEPPER_BASIC            // Stepper motor control
+// #define MOTORS_STEPPER_BASIC // Stepper motor control
+
+// ========================================
+// PHASE 8: INTERACTIVE GAMES SERIES
+// ========================================
+// #define GAME_SIMON_SAYS                 // Memory game with LEDs/buttons
+// #define GAME_REACTION_TIMER             // Reaction time measurement
+// #define GAME_SENSOR_TARGET              // Target practice with sensors
+// #define GAME_HANGMAN                    // Hangman word guessing game
+// #define GAME_OBSTACLE                   // Obstacle avoidance game
 
 // Legacy motor examples
 // #define MOTORS_FULLSTEP                 // Full-step stepper control
@@ -374,6 +348,22 @@
 /*
  * 4.4 Data Logging and Memory
  */
+// Memory Management Series (New Architecture)
+// #define MEMORY_BASIC                    // Basic memory operations and concepts
+// #define MEMORY_STACK                    // Stack memory management
+// #define MEMORY_HEAP                     // Heap simulation and management
+
+// EEPROM Data Storage Series (New Architecture)
+// #define EEPROM_BASIC                    // Basic EEPROM operations
+// #define EEPROM_LOGGER                   // Data logging to EEPROM
+#define EEPROM_SETTINGS // Settings storage in EEPROM
+
+// EEPROM Data Storage Series
+// #define EEPROM_BASIC                    // Basic EEPROM read/write operations
+// #define EEPROM_LOGGER                   // Data logging to EEPROM
+// #define EEPROM_SETTINGS                 // Configuration settings storage
+
+// Legacy memory examples (deprecated)
 // #define MEMORY_BASIC_EEPROM             // Basic EEPROM operations
 // #define MEMORY_SENSOR_LOGGING           // Log sensor data to EEPROM
 // #define MEMORY_SETTINGS_STORAGE         // Store configuration settings
@@ -402,7 +392,7 @@
  */
 // #define IOT_SENSOR_MONITORING           // Send sensor data to Python
 // #define IOT_REMOTE_CONTROL              // Control hardware via web
-// #define IOT_DATA_VISUALIZATION          // Real-time data plotting
+#define IOT_DATA_VISUALIZATION // Real-time data plotting
 
 // Legacy IoT examples
 // #define IOT                             // Basic IoT functionality
@@ -446,6 +436,36 @@
 #define _COUNT_ASSEMBLY_1 1
 #else
 #define _COUNT_ASSEMBLY_1 0
+#endif
+
+#ifdef ASSEMBLY_BLINK_PATTERN
+#define _COUNT_ASSEMBLY_2 1
+#else
+#define _COUNT_ASSEMBLY_2 0
+#endif
+
+#ifdef ASSEMBLY_BLINK_INDIVIDUAL
+#define _COUNT_ASSEMBLY_3 1
+#else
+#define _COUNT_ASSEMBLY_3 0
+#endif
+
+#ifdef PORT_ROTATION
+#define _COUNT_ASSEMBLY_4 1
+#else
+#define _COUNT_ASSEMBLY_4 0
+#endif
+
+#ifdef ASSEMBLY_BUTTON_SIMPLE
+#define _COUNT_ASSEMBLY_5 1
+#else
+#define _COUNT_ASSEMBLY_5 0
+#endif
+
+#ifdef ASSEMBLY_BUTTON_LED_CONTROL
+#define _COUNT_ASSEMBLY_6 1
+#else
+#define _COUNT_ASSEMBLY_6 0
 #endif
 
 #ifdef C_LED_BASIC
@@ -511,9 +531,9 @@
 
 // Calculate total active examples
 #define COUNT_END __COUNTER__
-#define ACTIVE_COUNT (_COUNT_EDUCATIONAL + _COUNT_ASSEMBLY_1 + _COUNT_C_1 + \
-                      _COUNT_COMM_1 + _COUNT_ADVANCED_1 + _COUNT_PYTHON_1 + \
-                      _COUNT_LEGACY_1 + _COUNT_LEGACY_2 + _COUNT_LEGACY_3 + \
+#define ACTIVE_COUNT (_COUNT_EDUCATIONAL + _COUNT_ASSEMBLY_1 + _COUNT_ASSEMBLY_2 + _COUNT_ASSEMBLY_3 + _COUNT_ASSEMBLY_4 + _COUNT_ASSEMBLY_5 + _COUNT_ASSEMBLY_6 + _COUNT_C_1 + \
+                      _COUNT_COMM_1 + _COUNT_ADVANCED_1 + _COUNT_PYTHON_1 +                                                                                                     \
+                      _COUNT_LEGACY_1 + _COUNT_LEGACY_2 + _COUNT_LEGACY_3 +                                                                                                     \
                       _COUNT_LEGACY_4 + _COUNT_LEGACY_5 + _COUNT_LEGACY_6)
 
 // Enhanced validation with optimization suggestions

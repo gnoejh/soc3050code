@@ -109,15 +109,15 @@ void main_blink_port(void)
  * - State machine implementation
  * - Binary pattern manipulation
  */
-#ifdef BLINK_PIN
+#ifdef ASSEMBLY_BLINK_INDIVIDUAL
 
 void main_blink_pin(void)
 {
     /*
      * EDUCATIONAL STEP 1: Initialize ports using modernized library
      */
-    Port_init_output(PORT_B, 0xFF);                      // Configure PORTB as output for LEDs
-    Port_init_input(PORT_D, (1 << PD7), PULLUP_ENABLED); // PD7 as input with pullup
+    Port_init();   // Initialize port system
+    button_init(); // Initialize button system
 
     /*
      * EDUCATIONAL STEP 2: Initialize state machine variables
@@ -138,7 +138,7 @@ void main_blink_pin(void)
          * Old way: uint8_t current_button_state = PIND & (1 << PD7);
          * New way: unsigned char current_button_state = Port_read_pin(PORT_D, PD7);
          */
-        unsigned char current_button_state = Port_read_pin(PORT_D, PD7);
+        unsigned char current_button_state = read_buttons();
 
         /*
          * EDUCATIONAL STEP 3.2: Edge detection (falling edge)
@@ -172,7 +172,7 @@ void main_blink_pin(void)
         if (direction == 0) // Clockwise
         {
             /* Use modernized port library for output */
-            Port_write(PORT_B, ~led_state); // Invert for active-low LEDs
+            led_pattern(led_state);
 
             led_state <<= 1;       // Shift left (next LED)
             if (led_state == 0x00) // Wrap around check
@@ -182,7 +182,7 @@ void main_blink_pin(void)
         }
         else // Counterclockwise
         {
-            Port_write(PORT_B, ~led_state); // Output inverted pattern
+            led_pattern(led_state); // Output pattern
 
             led_state >>= 1;       // Shift right (previous LED)
             if (led_state == 0x00) // Wrap around check

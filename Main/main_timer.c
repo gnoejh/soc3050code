@@ -159,9 +159,7 @@ void main_timer_counter(void)
 	Timer2_start();
 
 	// Configure GPIO using modernized port library
-	Port_init_output(7, 1);	  // PORTB.7 as output (LED)
-	Port_init_input(6, 4);	  // PORTD.6 as input (button)
-	Port_set_pullup(6, 4, 1); // Enable pull-up resistor
+	Port_init(); // Initialize all ports (LEDs, buttons with pull-ups)
 
 	// Display educational information
 	lcd_string(0, 0, "Event Counter");
@@ -181,7 +179,8 @@ void main_timer_counter(void)
 		unsigned long current_time = Timer2_get_milliseconds();
 
 		// Read current button state using modernized port functions
-		unsigned char current_button_state = Port_read_pin(6, 4);
+		unsigned char buttons = read_buttons();
+		unsigned char current_button_state = (buttons & 0x40) ? 0 : 1; // Button 6 (PD6), inverted logic
 
 		// Button debouncing using timer
 		if (current_button_state != last_button_state)
@@ -204,15 +203,15 @@ void main_timer_counter(void)
 				GLCD_4DigitDecimal(event_count);
 
 				// Visual feedback - brief LED flash
-				Port_write_pin(7, 1, 1); // Turn on LED
+				led_on(7); // Turn on LED 7
 				last_led_time = current_time;
 			}
 		}
 
 		// Automatic LED turn-off after brief flash
-		if (Port_read_pin(7, 1) && (current_time - last_led_time > LED_BLINK_RATE))
+		if ((current_time - last_led_time > LED_BLINK_RATE))
 		{
-			Port_write_pin(7, 1, 0); // Turn off LED
+			led_off(7); // Turn off LED 7
 		}
 
 		// Update button state for next iteration

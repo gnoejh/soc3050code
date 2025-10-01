@@ -2,6 +2,36 @@
 
 int main(void)
 {
+// Assembly Fundamentals Examples
+#ifdef ASSEMBLY_BLINK_BASIC
+	main_blink_asm();
+#endif
+
+#ifdef ASSEMBLY_BLINK_PATTERN
+	main_blink_asm_macro();
+#endif
+
+#ifdef ASSEMBLY_BLINK_INDIVIDUAL
+	main_blink_pin();
+#endif
+
+#ifdef ASSEMBLY_BUTTON_SIMPLE
+	main_button_simple();
+#endif
+
+#ifdef ASSEMBLY_BUTTON_LED_CONTROL
+	main_button_led_control();
+#endif
+
+// C Hardware Abstraction Examples
+#ifdef BUZZER_BASIC_BEEP
+	main_buzzer_basic_beep();
+#endif
+
+#ifdef ASSEMBLY_BLINK_INDIVIDUAL
+	main_blink_pin();
+#endif
+
 // UART Examples
 #ifdef SERIAL_POLLING_SINGLE_CHAR
 	main_serial_polling_single_char();
@@ -44,6 +74,24 @@ int main(void)
 	main_adc_polling();
 #endif
 
+// Audio Examples
+#ifdef BUZZER_BASIC_BEEP
+	main_buzzer_basic_beep();
+#endif
+
+// Timer Examples
+#ifdef C_TIMER_BASIC
+	main_timer_basic();
+#endif
+
+#ifdef C_TIMER_INTERRUPT
+	main_timer_interrupt();
+#endif
+
+#ifdef C_TIMER_PWM
+	main_timer_pwm();
+#endif
+
 // Graphics Examples
 #ifdef GRAPHICS_BASICS
 	main_graphics_basics();
@@ -67,6 +115,63 @@ int main(void)
 
 #ifdef GRAPHICS_SINE_WAVE
 	main_graphics_sine_wave();
+#endif #ifdef GRAPHICS_BOUNCING_BALL
+	main_graphics_bouncing_ball();
+#endif
+
+#ifdef GRAPHICS_MOVING_SQUARE
+	main_graphics_moving_square();
+#endif
+
+#ifdef GRAPHICS_SINE_WAVE
+	main_graphics_sine_wave();
+#endif
+
+#ifdef MEMORY_BASIC
+	main_memory_basic();
+#endif
+
+#ifdef MEMORY_STACK
+	main_memory_stack();
+#endif
+
+#ifdef MEMORY_HEAP
+	main_memory_heap();
+#endif
+
+// EEPROM Data Storage Examples
+#ifdef EEPROM_BASIC
+	main_eeprom_basic();
+#endif
+
+#ifdef EEPROM_LOGGER
+	main_eeprom_logger();
+#endif
+
+#ifdef EEPROM_SETTINGS
+	main_eeprom_settings();
+#endif
+
+	// IoT and Advanced Communication Examples
+#ifdef IOT_SENSOR_MONITORING
+	main_iot_sensor_monitoring();
+#endif
+
+#ifdef IOT_REMOTE_CONTROL
+	main_iot_remote_control();
+#endif
+
+#ifdef IOT_DATA_VISUALIZATION
+	main_iot_data_visualization();
+#endif
+
+	// Port Control Examples
+#ifdef PORT_BLINKING
+	main_port_blinking();
+#endif
+
+#ifdef PORT_ROTATION
+	main_port_rotation();
 #endif
 
 // Motor Examples
@@ -115,7 +220,50 @@ int main(void)
 	main_sound_twingkle();
 #endif
 
+	// Graphics Examples
+#ifdef GRAPHICS_BASIC_SHAPES
+	main_graphics_basic_shapes();
+#endif
+
+#ifdef GRAPHICS_ANIMATION
+	main_graphics_animation();
+#endif
+
+#ifdef GRAPHICS_SENSOR_DISPLAY
+	main_graphics_sensor_display();
+#endif
+
+#ifdef GRAPHICS_BASICS
+	main_graphics_basics();
+#endif
+
+#ifdef GRAPHICS_MOVEMENT
+	main_graphics_movement();
+#endif
+
+#ifdef GRAPHICS_RANDOM
+	main_graphics_random();
+#endif #ifdef GRAPHICS_ANIMATION
+	main_graphics_animation();
+#endif
+
+#ifdef GRAPHICS_SENSOR_DISPLAY
+	main_graphics_sensor_display();
+#endif
+
 // Game Examples
+#ifdef GAME_SIMON_SAYS
+	main_game_simon_says();
+#endif
+
+#ifdef GAME_REACTION_TIMER
+	main_game_reaction_timer();
+#endif
+
+#ifdef GAME_SENSOR_TARGET
+	main_game_sensor_target();
+#endif
+
 #ifdef GAME_HANGMAN
 	main_game_hangman();
 #endif

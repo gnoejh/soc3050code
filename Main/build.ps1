@@ -36,53 +36,48 @@ foreach ($line in $configContent) {
 }
 
 # Determine required source files based on active defines
-$sourceFiles = @("Main.c", "_port.c", "variables.c")
+# SIMPLIFIED: Always include all essential libraries to avoid dependency issues
+$sourceFiles = @("Main.c", "_init.c", "_port.c", "_timer2.c", "_glcd.c", "_uart.c", "_adc.c", "_interrupt.c", "_buzzer.c", "_eeprom.c")
 
-# Add conditional source files  
-if ($activeDefines -contains "BLINK_PORT" -or $activeDefines -contains "BLINK_PIN") {
-    $sourceFiles += "main_blink.c"
-    # For simple blink, we don't need full initialization
-}
-
-if ($activeDefines | Where-Object { $_ -like "SERIAL_*" }) {
-    $sourceFiles += "main_serial.c", "_uart.c", "_init.c", "_interrupt.c", "_timer2.c", "_adc.c", "_glcd.c"
-}
-
-if ($activeDefines | Where-Object { $_ -like "ADC_*" }) {
-    $sourceFiles += "_adc.c", "_init.c"
-}
-
-if ($activeDefines | Where-Object { $_ -like "GRAPHICS_*" }) {
-    $sourceFiles += "_glcd.c", "_init.c"
+# Add specific main files based on active defines
+if ($activeDefines | Where-Object { $_ -like "ASSEMBLY_*" }) {
+    $sourceFiles += "main_blink_asm.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "TIMER_*" }) {
-    $sourceFiles += "_timer2.c", "_init.c"
+    $sourceFiles += "main_timer.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "INTERRUPT_*" }) {
-    $sourceFiles += "_interrupt.c", "_init.c"
+    $sourceFiles += "main_interrupt.c"
+}
+
+if ($activeDefines | Where-Object { $_ -like "PORT_*" }) {
+    $sourceFiles += "main_port.c"
+}
+
+if ($activeDefines | Where-Object { $_ -like "SERIAL_*" }) {
+    $sourceFiles += "main_serial.c"
+}
+
+if ($activeDefines | Where-Object { $_ -like "ADC_*" }) {
+    $sourceFiles += "main_adc.c"
+}
+
+if ($activeDefines | Where-Object { $_ -like "GRAPHICS_*" }) {
+    $sourceFiles += "main_graphics.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "EEPROM_*" }) {
-    $sourceFiles += "_eeprom.c", "_init.c"
-}
-
-# Educational examples
-if ($activeDefines -contains "EDUCATIONAL_FLOW_TEST") {
-    $sourceFiles += "educational_flow_test.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c"
-}
-
-if ($activeDefines -contains "EDUCATIONAL_SIMPLE_TEST") {
-    $sourceFiles += "educational_simple_test.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c"
+    $sourceFiles += "main_memory.c"
 }
 
 if ($activeDefines -contains "EDUCATIONAL_DEMO") {
-    $sourceFiles += "educational_demo.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c", "_buzzer.c", "_eeprom.c"
+    $sourceFiles += "educational_demo.c"
 }
 
 if ($activeDefines -contains "ASSEMBLY_PROGRESSION_EXAMPLE") {
-    $sourceFiles += "main_assembly_progression.c", "_port_optimized.c", "_init_optimized.c"
+    $sourceFiles += "main_assembly_progression.c"
 }
 
 if ($activeDefines -contains "PYTHON_INTERFACE_EXAMPLE") {
