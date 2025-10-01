@@ -1,102 +1,102 @@
 # ATmega128 Educational Framework Documentation
-## Assembly → C → Python Learning Progression
+## Assembly → C Programming Learning Progression
 
 ### Overview
-This educational framework transforms ATmega128 development from basic register manipulation to high-level Python programming. The progression ensures students understand the complete hardware-to-software stack.
+This educational framework provides a structured progression through ATmega128 development, from basic register manipulation to advanced embedded C programming. The 35 projects ensure students understand the complete hardware-software development process.
 
 ---
 
 ## 📚 Learning Progression Phases
 
-### Phase 1: Assembly Fundamentals
-**Focus**: Direct hardware register manipulation
-**Skills**: Bit operations, timing loops, register access
-**Files**: `main_assembly_progression.c`
+### Phase 1: Assembly Fundamentals (Projects 1-4)
+**Focus**: Direct hardware register manipulation and assembly integration
+**Skills**: Bit operations, timing loops, register access, C-assembly interfacing
+**Key Projects**: Basic LED blinking, pattern generation, timing control
 
 **Learning Objectives:**
 - Understand DDR, PORT, and PIN registers
-- Master bit manipulation operations (SBI, CBI, AND, OR, XOR)
-- Learn precise timing with assembly loops
+- Master bit manipulation operations
+- Learn precise timing with assembly and C integration  
 - Grasp the relationship between C and assembly code
 
-**Key Concepts:**
-```assembly
-LDI R16, 0xFF      ; Load immediate value
-OUT DDRB, R16      ; Set port direction
-SBI PORTB, 3       ; Set specific bit
-CBI PORTB, 3       ; Clear specific bit
-```
-
-### Phase 2: C Hardware Abstraction
-**Focus**: C functions that wrap assembly concepts
-**Skills**: Function calls, library usage, abstraction layers
-**Files**: `_port_optimized.c`, `_uart_optimized.c`, `_init_optimized.c`
+### Phase 2: Input/Output Systems (Projects 5-8)
+**Focus**: Button handling and serial communication basics
+**Skills**: Input debouncing, UART protocols, polling vs interrupts
+**Key Projects**: Button-LED control, serial echo, string communication
 
 **Learning Objectives:**
-- Transition from assembly to C syntax
-- Understand function call overhead vs direct access
-- Learn library organization and modularity
-- Bridge hardware concepts to software functions
+- Transition from assembly to structured C programming
+- Understand input signal conditioning and debouncing
+- Learn serial communication fundamentals
+- Master polling and basic interrupt concepts
 
 **Key Concepts:**
 ```c
 DDRB = 0xFF;           // Direct register access in C
-LED_All_On();          // Function abstraction
 Port_init();           // Initialization routines
+Uart1_init();          // Serial communication setup
 ```
 
-### Phase 3: Communication & Sensors
-**Focus**: Data exchange and sensor interfacing
-**Skills**: UART protocols, ADC conversion, interrupt handling
-**Files**: `_adc_optimized.c`, `_buzzer_optimized.c`
+### Phase 3: Analog & Sensor Systems (Projects 9-11)
+**Focus**: Analog-to-digital conversion and sensor interfacing
+**Skills**: ADC configuration, sensor calibration, data processing
+**Key Projects**: Basic ADC reading, light sensor, accelerometer interface
 
 **Learning Objectives:**
-- Master serial communication protocols
-- Understand analog-to-digital conversion
-- Learn interrupt-driven programming
-- Interface with real-world sensors
+- Master analog-to-digital conversion concepts
+- Learn sensor interfacing and calibration
+- Understand data acquisition and processing
+- Implement sensor-based control systems
 
 **Key Concepts:**
 ```c
-Uart1_init();                    // Communication setup
+Adc_init();                      // ADC initialization
 adc_value = Adc_read(channel);   // Sensor reading
-Buzzer_tone(frequency, duration); // Audio feedback
+// Data processing and scaling
 ```
 
-### Phase 4: Advanced Applications
-**Focus**: Complex system integration
-**Skills**: State machines, graphics, motor control
-**Files**: Graphics, motor, and game examples
+### Phase 4: Advanced Peripherals (Projects 12-17)
+**Focus**: Complex peripheral integration
+**Skills**: Graphics programming, timer systems, motor control
+**Key Projects**: GLCD graphics, timer interrupts, joystick control, motor systems
 
 **Learning Objectives:**
-- Integrate multiple subsystems
-- Implement state machine logic
-- Create interactive applications
-- Handle complex timing requirements
+- Integrate graphics display systems
+- Master timer and interrupt programming
+- Implement complex user interfaces
+- Control motors and actuators
 
-### Phase 5: Python Integration
-**Focus**: High-level programming interface
-**Skills**: Serial protocols, web interfaces, data analysis
-**Files**: `main_python_interface.c`, Python client examples
+### Phase 5: Audio & Memory Systems (Projects 18-22)
+**Focus**: Sound generation and memory management
+**Skills**: PWM audio, memory testing, inline assembly optimization
+**Key Projects**: Basic sound, musical sequences, memory testing
 
-**Learning Objectives:**
-- Design communication protocols
-- Create Python interfaces for hardware
-- Build web-based control systems
-- Implement data logging and analysis
+### Phase 6: Communication Systems (Projects 23-27)
+**Focus**: Advanced serial protocols and IoT basics
+**Skills**: Protocol design, data transmission, IoT communication
+**Key Projects**: Serial protocols, general word communication, IoT basics
+
+### Phase 7: Game Development (Projects 28-35)
+**Focus**: Interactive entertainment systems
+**Skills**: Game logic, state machines, user interfaces
+**Key Projects**: Game templates, hangman, obstacle games, puzzles
 
 ---
 
-## 🔧 Library Organization
+## 🔧 Shared Library Organization
 
-### Optimized Educational Libraries
-**Purpose**: Student-friendly versions with clear documentation
+### Educational Shared Libraries
+**Purpose**: Reusable functions across all 35 projects
 
-- `_port_optimized.c/.h` - GPIO control with educational patterns
-- `_uart_optimized.c/.h` - Serial communication with examples
-- `_init_optimized.c/.h` - System initialization with phases
-- `_adc_optimized.c/.h` - Analog input with voltage conversion
-- `_buzzer_optimized.c/.h` - Audio output with musical concepts
+- `_init.c/.h` - System initialization functions
+- `_port.c/.h` - GPIO control and port configuration  
+- `_uart.c/.h` - Serial communication functions
+- `_adc.c/.h` - Analog-to-digital conversion
+- `_glcd.c/.h` - Graphics LCD functions
+- `_timer2.c/.h` - Timer and timing functions
+- `_buzzer.c/.h` - Audio output and sound generation
+- `_interrupt.c/.h` - Interrupt handling functions
+- `_eeprom.c/.h` - EEPROM memory management
 
 **Features:**
 - Clear English documentation

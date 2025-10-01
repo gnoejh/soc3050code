@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="14.0">
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
@@ -28,6 +28,18 @@
     <ResetRule>0</ResetRule>
     <eraseonlaunchrule>0</eraseonlaunchrule>
     <EraseKey />
+    <AsfFrameworkConfig>
+      <framework-data xmlns="">
+  <options />
+  <configurations />
+  <files />
+  <documentation help="" />
+  <offline-documentation help="" />
+  <dependencies>
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.52.0" />
+  </dependencies>
+</framework-data>
+    </AsfFrameworkConfig>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -118,9 +130,11 @@
     </Compile>
     <Compile Include="..\..\shared_libs\main_blink_asm.c">
       <SubType>compile</SubType>
+      <Link>main_blink_asm.c</Link>
     </Compile>
     <Compile Include="..\..\shared_libs\main_blink.s">
       <SubType>compile</SubType>
+      <Link>main_blink.s</Link>
     </Compile>
   </ItemGroup>
 </Project>

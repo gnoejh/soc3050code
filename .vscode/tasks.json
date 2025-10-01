@@ -17,7 +17,7 @@
                 "../../shared_libs/_port.c",
                 "../../shared_libs/_init.c",
                 "-o",
-                "${fileBasenameNoExtension}.elf"
+                "Main.elf"
             ],
             "group": {
                 "kind": "build",
@@ -36,6 +36,50 @@
             }
         },
         {
+            "label": "Build Specific Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "$projects = Get-ChildItem -Path '${workspaceFolder}/projects' -Directory | Sort-Object Name; Write-Host '🔨 Available projects to build:' -ForegroundColor Green; for ($i = 0; $i -lt $projects.Count; $i++) { Write-Host \"  [$($i+1)] $($projects[$i].Name)\" -ForegroundColor Yellow }; $selection = Read-Host 'Enter project number or name'; if ($selection -match '^\\d+$' -and [int]$selection -le $projects.Count -and [int]$selection -gt 0) { $projectName = $projects[[int]$selection - 1].Name } else { $projectName = $selection }; $projectPath = '${workspaceFolder}/projects/' + $projectName; if (Test-Path $projectPath) { Write-Host \"🔨 Building: $projectName\" -ForegroundColor Cyan; Set-Location $projectPath; & 'C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-gcc.exe' -mmcu=atmega128 -DF_CPU=7372800UL -Os -Wall -Wextra -I. -I../../shared_libs Main.c ../../shared_libs/_port.c ../../shared_libs/_init.c -o Main.elf } else { Write-Host \"❌ Project not found: $projectName\" -ForegroundColor Red }"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Build and Program Current Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "w:\\soc3050code\\build_and_program_project.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
             "label": "Generate HEX File",
             "type": "shell",
             "command": "C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-objcopy.exe",
@@ -44,8 +88,8 @@
                 "ihex",
                 "-R",
                 ".eeprom",
-                "${fileBasenameNoExtension}.elf",
-                "${fileBasenameNoExtension}.hex"
+                "Main.elf",
+                "Main.hex"
             ],
             "group": "build",
             "options": {
@@ -151,26 +195,30 @@
             "isBackground": true
         },
         {
-            "label": "Program to ATmega128",
+            "label": "Program Current Project",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "./program.ps1"
+                "w:\\soc3050code\\program_project.ps1",
+                "-FilePath",
+                "${file}"
             ],
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "presentation": {
                 "echo": true,
                 "reveal": "always",
                 "focus": true,
                 "panel": "new"
-            },
-            "dependsOn": "Generate HEX File"
+            }
         },
         {
             "label": "Program with Custom Programmer",
@@ -180,11 +228,11 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-Command",
-                "Write-Host 'Available programmers:' -ForegroundColor Green; Write-Host '  arduino    - Arduino as ISP' -ForegroundColor Yellow; Write-Host '  usbasp     - USBasp programmer' -ForegroundColor Yellow; Write-Host '  avrisp     - AVRISP mkII' -ForegroundColor Yellow; Write-Host '  stk500v2   - STK500 v2' -ForegroundColor Yellow; Write-Host '  dragon_isp - AVR Dragon' -ForegroundColor Yellow; $prog = Read-Host 'Enter programmer type'; & './program.ps1' -Programmer $prog"
+                "Write-Host 'Available programmers:' -ForegroundColor Green; Write-Host '  arduino    - Arduino as ISP' -ForegroundColor Yellow; Write-Host '  usbasp     - USBasp programmer' -ForegroundColor Yellow; Write-Host '  avrisp     - AVRISP mkII' -ForegroundColor Yellow; Write-Host '  stk500v2   - STK500 v2' -ForegroundColor Yellow; Write-Host '  dragon_isp - AVR Dragon' -ForegroundColor Yellow; $prog = Read-Host 'Enter programmer type'; & '${workspaceFolder}/program.ps1' -Programmer $prog"
             ],
             "group": "build",
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "presentation": {
                 "echo": true,
@@ -202,12 +250,12 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "./program.ps1",
+                "${workspaceFolder}/program.ps1",
                 "-ListPorts"
             ],
             "group": "test",
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "presentation": {
                 "echo": true,
@@ -217,7 +265,7 @@
             }
         },
         {
-            "label": "Program Any Project",
+            "label": "Program Any Project (Interactive)",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
