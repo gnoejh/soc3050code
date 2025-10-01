@@ -27,7 +27,8 @@ class DataVisualizer:
         """Load sensor data from CSV file"""
         try:
             df = pd.read_csv(filename)
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            # Convert timestamp column to datetime with flexible parsing
+            df['timestamp'] = pd.to_datetime(df['timestamp'], format='mixed', errors='coerce')
             
             # Convert to list of dictionaries for compatibility
             self.data = df.to_dict('records')

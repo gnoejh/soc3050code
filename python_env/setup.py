@@ -111,7 +111,7 @@ def create_test_data():
         import random
         
         # Create sample CSV data
-        filename = "sample_sensor_data.csv"
+        filename = "data.csv"
         
         start_time = datetime.now()
         
@@ -183,7 +183,7 @@ def main():
     print("   python main.py monitor --duration 60")
     print()
     print("4. [VISUALIZE] Or visualize existing data:")
-    print("   python main.py visualize sample_sensor_data.csv")
+    print("   python main.py visualize data.csv")
     
     return True
 
