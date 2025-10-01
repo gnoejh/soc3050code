@@ -54,6 +54,10 @@ dkms.conf
 # debug information files
 *.dwo
 
+# VS Code MPLAB remnants (not needed for student environment)
+.vscode/Main.mplab.json
+.vscode/*.mplab*
+
 # Python virtual environments (students create these)
 .venv/
 venv/

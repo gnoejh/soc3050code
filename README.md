@@ -1,7 +1,15 @@
 # 🎓 ATmega128 Student Learning Environment
 **From Embedded C to Python IoT Integration**
 
-A complete learning environment that takes you from basic microcontroller programming to advanced IoT applications. Perfect for students learning embedded systems, microcontroller programming, and Python integration.
+A complete learning environment that takes you from basic microcontroller programm### **Common Tasks**
+| Task | Reliable Method | Backup Method | Terminal Method |
+|------|----------------|---------------|----------------|
+| **Build** | `Ctrl+Shift+B` | Ctrl+Shift+P → "Build ATmega128 Project" | `cd Main; .\build.ps1` |
+| **Program** | Ctrl+Shift+P → "Program ATmega128" | Command Palette → Tasks | `cd Main; .\program.ps1` |
+| **Monitor** | Ctrl+Shift+\` | Serial Monitor extension | `cd Main; .\serial.ps1` |
+| **Python** | Activate environment first | Examples menu | `python python\examples\*.py` |
+
+⚠️ **Note**: F7/F8 shortcuts are unreliable in VS Code. Use `Ctrl+Shift+B` instead.advanced IoT applications. Perfect for students learning embedded systems, microcontroller programming, and Python integration.
 
 ## 🚀 Quick Start for Students
 
@@ -77,7 +85,7 @@ python python\examples\quick_start.py
 2. Run `.\activate.ps1` - Start environment  
 3. Run `python python\examples\quick_start.py` - Test connection
 4. Edit `Main\config.h` - Choose your first example
-5. Press **F7** to build, **F8** to program
+5. Press **Ctrl+Shift+B** to build, use Command Palette for programming
 
 ### 📖 **Embedded C Programming** (Weeks 1-4)
 Choose examples in `config.h`:
@@ -175,12 +183,12 @@ mcu.close()
 ## 🎯 Quick Reference
 
 ### **Common Tasks**
-| Task | Method 1 | Method 2 |
-|------|----------|----------|
-| **Build** | Press F7 | `cd Main; .\build.ps1` |
-| **Program** | Press F8 | `cd Main; .\program.ps1` |
-| **Monitor** | Ctrl+Shift+` | `cd Main; .\serial.ps1` |
-| **Python** | Examples menu | `python python\examples\*.py` |
+| Task | Primary Method | Backup Method | Terminal Method |
+|------|---------------|---------------|----------------|
+| **Build** | `Ctrl+Shift+B` | Ctrl+Shift+P → "Build ATmega128 Project" | `cd Main; .\build.ps1` |
+| **Program** | Ctrl+Shift+P → "Program ATmega128" | Command Palette → Tasks | `cd Main; .\program.ps1` |
+| **Monitor** | `Ctrl+Shift+M` | Serial Monitor extension | `cd Main; .\serial.ps1` |
+| **Python** | Run examples after activation | Activate environment first | `python python\examples\*.py` |
 
 ### **File Locations**
 | Need to edit | File | Purpose |
@@ -190,6 +198,15 @@ mcu.close()
 | **Hardware config** | `Main\_main.h` | CPU speed, pin assignments |
 
 ## 🚨 Troubleshooting
+
+### ❌ **"F7/F8 shortcuts don't work"**
+**Problem**: VS Code shortcuts not responding
+**Solutions**:
+- **Method 1**: Reload VS Code (`Ctrl+Shift+P` → "Developer: Reload Window")
+- **Method 2**: Use Command Palette (`Ctrl+Shift+P` → "Tasks: Run Task")
+- **Method 3**: Use `Ctrl+Shift+B` for build instead of F7
+- **Method 4**: Use direct commands: `cd Main; .\build.ps1` and `.\program.ps1`
+- **Method 5**: See `VS_Code_Shortcuts_Fix.md` for detailed solutions
 
 ### ❌ **"Could not connect"**
 **Problem**: Python can't find ATmega128

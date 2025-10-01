@@ -10,11 +10,12 @@ if (Test-Path ".venv\Scripts\Activate.ps1") {
     Write-Host "✅ Python environment activated!" -ForegroundColor Green
     Write-Host ""
     
-    # Show quick commands
-    Write-Host "🚀 Quick Commands:" -ForegroundColor Cyan
-    Write-Host "  F7            - Build C code (or: cd Main; .\build.ps1)" -ForegroundColor White
-    Write-Host "  F8            - Program ATmega128 (or: cd Main; .\program.ps1)" -ForegroundColor White
-    Write-Host "  Ctrl+Shift+``  - Open terminal" -ForegroundColor White
+    # Show reliable commands
+    Write-Host "🚀 RELIABLE Commands (Always Work):" -ForegroundColor Cyan
+    Write-Host "  Ctrl+Shift+B      - Build C code (VS Code standard)" -ForegroundColor White
+    Write-Host "  Ctrl+Shift+P      - Command Palette → 'Tasks: Run Task'" -ForegroundColor White
+    Write-Host "  Ctrl+Shift+M      - Open Serial Monitor" -ForegroundColor White
+    Write-Host "  Terminal method   - cd Main; .\build.ps1; .\program.ps1" -ForegroundColor White
     Write-Host ""
     
     Write-Host "🐍 Python Examples:" -ForegroundColor Cyan

@@ -1,4 +1,0 @@
-W:/soc3050code/_build/Main/Release/CMakeFiles/Main_Release_Release_avr_gcc_compile.dir
-W:/soc3050code/_build/Main/Release/CMakeFiles/Main_Release_image_XHH8Bf3F.dir
-W:/soc3050code/_build/Main/Release/CMakeFiles/edit_cache.dir
-W:/soc3050code/_build/Main/Release/CMakeFiles/rebuild_cache.dir

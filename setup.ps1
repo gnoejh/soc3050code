@@ -28,10 +28,14 @@ WHAT THIS SCRIPT DOES:
 ✅ Tests ATmega128 connection
 ✅ Creates desktop shortcuts
 
+NOTE: Remove MPLAB X IDE extension from VS Code if installed.
+See Remove_MPLAB_Extension_Guide.md for instructions.
+
 REQUIREMENTS:
 - Windows 10/11
-- Internet connection
+- Internet connection  
 - ATmega128 connected via USB (optional for setup)
+- Microchip Studio 7.0 (for AVR-GCC toolchain)
 "@
     exit 0
 }
@@ -46,7 +50,8 @@ function Test-Command {
     try {
         Get-Command $Command -ErrorAction Stop | Out-Null
         return $true
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -59,7 +64,8 @@ function Invoke-SetupCommand {
         Invoke-Expression $Command
         Write-Host "✅ Success!" -ForegroundColor Green
         return $true
-    } catch {
+    }
+    catch {
         Write-Host "❌ Failed: $_" -ForegroundColor Red
         return $false
     }
@@ -81,7 +87,8 @@ if (-not $SkipPython) {
                 Write-Host "⚠️  Python 3.8+ recommended (found $major.$minor)" -ForegroundColor Yellow
             }
         }
-    } else {
+    }
+    else {
         Write-Host "❌ Python not found!" -ForegroundColor Red
         Write-Host "💡 Download from: https://python.org" -ForegroundColor Yellow
         Write-Host "💡 Or install from Microsoft Store" -ForegroundColor Yellow
@@ -99,17 +106,20 @@ if (-not $SkipUv -and -not (Test-Command "uv")) {
         powershell -ExecutionPolicy Bypass -File "uv-installer.ps1"
         Remove-Item "uv-installer.ps1" -Force
         Write-Host "✅ uv installed via official installer!" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "⚠️  Official installer failed, trying pip..." -ForegroundColor Yellow
         try {
             python -m pip install uv
             Write-Host "✅ uv installed via pip!" -ForegroundColor Green
-        } catch {
+        }
+        catch {
             Write-Host "❌ Failed to install uv, will use standard venv" -ForegroundColor Yellow
             $useVenv = $true
         }
     }
-} elseif (Test-Command "uv") {
+}
+elseif (Test-Command "uv") {
     Write-Host "✅ uv already installed" -ForegroundColor Green
 }
 
@@ -119,7 +129,8 @@ if (Test-Path $venvPath) {
     if ($Force) {
         Write-Host "🗑️  Removing existing virtual environment..." -ForegroundColor Yellow
         Remove-Item $venvPath -Recurse -Force
-    } else {
+    }
+    else {
         Write-Host "✅ Virtual environment already exists" -ForegroundColor Green
         $skipVenvCreation = $true
     }
@@ -131,7 +142,8 @@ if (-not $skipVenvCreation) {
     if ((Test-Command "uv") -and -not $useVenv) {
         if (Invoke-SetupCommand "uv venv $venvPath" "Creating venv with uv") {
             Write-Host "✅ Virtual environment created with uv!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  uv failed, using standard venv..." -ForegroundColor Yellow
             $useVenv = $true
         }
@@ -140,7 +152,8 @@ if (-not $skipVenvCreation) {
     if ($useVenv) {
         if (Invoke-SetupCommand "python -m venv $venvPath" "Creating venv with Python") {
             Write-Host "✅ Virtual environment created!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "❌ Failed to create virtual environment!" -ForegroundColor Red
             exit 1
         }
@@ -154,11 +167,13 @@ if (Test-Path "pyproject.toml" -and (Test-Command "uv") -and -not $useVenv) {
     # Use uv sync for modern package management
     if (Invoke-SetupCommand "uv sync" "Installing packages with uv sync") {
         Write-Host "✅ Packages installed with uv!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "⚠️  uv sync failed, falling back to pip..." -ForegroundColor Yellow
         $usePip = $true
     }
-} else {
+}
+else {
     $usePip = $true
 }
 
@@ -172,11 +187,13 @@ if ($usePip) {
         if (Test-Path "requirements.txt") {
             if (Invoke-SetupCommand "python -m pip install -r requirements.txt" "Installing from requirements.txt") {
                 Write-Host "✅ Packages installed with pip!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "❌ Failed to install packages!" -ForegroundColor Red
                 exit 1
             }
-        } else {
+        }
+        else {
             # Install packages manually
             $packages = @("pyserial", "flask", "matplotlib", "pandas", "numpy")
             Write-Host "📦 Installing packages: $($packages -join ', ')" -ForegroundColor Yellow
@@ -187,7 +204,8 @@ if ($usePip) {
                 }
             }
         }
-    } else {
+    }
+    else {
         Write-Host "❌ Cannot find virtual environment activation script!" -ForegroundColor Red
         exit 1
     }
@@ -201,15 +219,19 @@ if (Test-Path "Main\build.ps1") {
         .\build.ps1 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Build system working!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  Build system needs attention (check AVR-GCC installation)" -ForegroundColor Yellow
         }
-    } catch {
+    }
+    catch {
         Write-Host "⚠️  Could not test build system" -ForegroundColor Yellow
-    } finally {
+    }
+    finally {
         Pop-Location
     }
-} else {
+}
+else {
     Write-Host "⚠️  Build script not found" -ForegroundColor Yellow
 }
 
@@ -222,10 +244,12 @@ if (Test-Path $activateScript) {
         $testResult = python -c "from python.atmega128 import list_ports; print('OK')" 2>&1
         if ($testResult -match "OK") {
             Write-Host "✅ Python interface working!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  Python interface has issues: $testResult" -ForegroundColor Yellow
         }
-    } catch {
+    }
+    catch {
         Write-Host "⚠️  Could not test Python interface" -ForegroundColor Yellow
     }
 }
@@ -295,7 +319,8 @@ try {
     $Shortcut.Description = "ATmega128 Student Development Environment"
     $Shortcut.Save()
     Write-Host "✅ Desktop shortcut created!" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "⚠️  Could not create desktop shortcut" -ForegroundColor Yellow
 }
 
