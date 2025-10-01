@@ -2,223 +2,240 @@
 
 int main(void)
 {
-	// UART Examples
-	#ifdef SERIAL_POLLING_SINGLE_CHAR
+// UART Examples
+#ifdef SERIAL_POLLING_SINGLE_CHAR
 	main_serial_polling_single_char();
-	#endif
+#endif
 
-	#ifdef SERIAL_POLLING_STRING
+#ifdef SERIAL_POLLING_STRING
 	main_serial_polling_string();
-	#endif
+#endif
 
-	#ifdef SERIAL_POLLING_ECHO
+#ifdef SERIAL_POLLING_ECHO
 	main_serial_polling_echo();
-	#endif
+#endif
 
-	#ifdef SERIAL_POLLING_SENTENCE
+#ifdef SERIAL_POLLING_SENTENCE
 	main_serial_polling_sentence();
-	#endif
+#endif
 
-	#ifdef SERIAL_INTERRUPT_RX
+#ifdef SERIAL_INTERRUPT_RX
 	main_serial_interrupt_rx();
-	#endif
+#endif
 
-	#ifdef SERIAL_INTERRUPT_TX
+#ifdef SERIAL_INTERRUPT_TX
 	main_serial_interrupt_tx();
-	#endif
+#endif
 
-	// ADC Examples
-	#ifdef ADC_INTERRUPT
+// ADC Examples
+#ifdef ADC_INTERRUPT
 	main_adc_interrupt();
-	#endif
+#endif
 
-	#ifdef ADC_INTERRUPT_UART_INTERRUPT
+#ifdef ADC_INTERRUPT_UART_INTERRUPT
 	main_adc_interrupt_uart_interrupt();
-	#endif
+#endif
 
-	#ifdef ADC_INTERRUPT_UART_POLLING
+#ifdef ADC_INTERRUPT_UART_POLLING
 	main_adc_interrupt_uart_polling();
-	#endif
+#endif
 
-	#ifdef ADC_POLLING
+#ifdef ADC_POLLING
 	main_adc_polling();
-	#endif
+#endif
 
-	// Graphics Examples
-	#ifdef GRAPHICS_BASICS
+// Graphics Examples
+#ifdef GRAPHICS_BASICS
 	main_graphics_basics();
-	#endif
+#endif
 
-	#ifdef GRAPHICS_MOVEMENT
+#ifdef GRAPHICS_MOVEMENT
 	main_graphics_movement();
-	#endif
+#endif
 
-	#ifdef GRAPHICS_RANDOM
+#ifdef GRAPHICS_RANDOM
 	main_graphics_random();
-	#endif
+#endif
 
-	#ifdef GRAPHICS_BOUNCING_BALL
+#ifdef GRAPHICS_BOUNCING_BALL
 	main_graphics_bouncing_ball();
-	#endif
-	
-	#ifdef GRAPHICS_MOVING_SQUARE
+#endif
+
+#ifdef GRAPHICS_MOVING_SQUARE
 	main_graphics_moving_square();
-	#endif
-	
-	#ifdef GRAPHICS_SINE_WAVE
+#endif
+
+#ifdef GRAPHICS_SINE_WAVE
 	main_graphics_sine_wave();
-	#endif
+#endif
 
-	// Motor Examples
-	#ifdef MOTORS_FULLSTEP
+// Motor Examples
+#ifdef MOTORS_FULLSTEP
 	main_motors_fullstep();
-	#endif
+#endif
 
-	#ifdef MOTORS_FULLSTEP_INTERRUPT
+#ifdef MOTORS_FULLSTEP_INTERRUPT
 	main_motors_fullstep_interrupt();
-	#endif
+#endif
 
-	#ifdef MOTORS_HALFSTEP
+#ifdef MOTORS_HALFSTEP
 	main_motors_halfstep();
-	#endif
+#endif
 
-	#ifdef MOTORS_STEPPER_DEMO
+#ifdef MOTORS_STEPPER_DEMO
 	main_motors_stepper_demo();
-	#endif
+#endif
 
-	#ifdef MOTORS_PWM_FAST
+#ifdef MOTORS_PWM_FAST
 	main_motors_pwm_fast();
-	#endif
+#endif
 
-	#ifdef MOTORS_PWM_PHASECORRECT
+#ifdef MOTORS_PWM_PHASECORRECT
 	main_motors_pwm_phasecorrect();
-	#endif
+#endif
 
-	#ifdef MOTORS_SERVO
+#ifdef MOTORS_SERVO
 	main_motors_servo();
-	#endif
+#endif
 
-	#ifdef MOTORS_SERVO_ADC
+#ifdef MOTORS_SERVO_ADC
 	main_motors_servo_adc();
-	#endif
+#endif
 
-	// Sound Examples
-	#ifdef SOUND
+// Sound Examples
+#ifdef SOUND
 	main_sound();
-	#endif
+#endif
 
-	#ifdef SOUND_ATARI
+#ifdef SOUND_ATARI
 	main_sound_atari();
-	#endif
+#endif
 
-	#ifdef SOUND_TWINKLE
+#ifdef SOUND_TWINKLE
 	main_sound_twingkle();
-	#endif
+#endif
 
-	// Game Examples
-	#ifdef GAME_HANGMAN
+// Game Examples
+#ifdef GAME_HANGMAN
 	main_game_hangman();
-	#endif
+#endif
 
-	#ifdef GAME_OBSTACLE
+#ifdef GAME_OBSTACLE
 	main_game_obstacle();
-	#endif
+#endif
 
-	#ifdef GAME_OBSTACLE_LEVEL
+#ifdef GAME_OBSTACLE_LEVEL
 	main_game_obstacle_level();
-	#endif
+#endif
 
-	#ifdef GAME_PUZZLE
+#ifdef GAME_PUZZLE
 	main_game_puzzle();
-	#endif
+#endif
 
-	#ifdef GAME_PONG_UART_CONTROL
+#ifdef GAME_PONG_UART_CONTROL
 	main_game_pong_uart_control();
-	#endif
+#endif
 
-	// Timer Examples
-	#ifdef TIMER_COUNTER
+// Timer Examples
+#ifdef TIMER_COUNTER
 	main_timer_counter();
-	#endif
+#endif
 
-	#ifdef TIMER_CTC
+#ifdef TIMER_CTC
 	main_timer_ctc();
-	#endif
+#endif
 
-	#ifdef TIMER_FASTPWM
+#ifdef TIMER_FASTPWM
 	main_timer_fastpwm();
-	#endif
+#endif
 
-	#ifdef TIMER_NORMAL
+#ifdef TIMER_NORMAL
 	main_timer_normal();
-	#endif
+#endif
 
-	// External Interrupt Examples
-	#ifdef INTERRUPT_EXTERNAL
+// External Interrupt Examples
+#ifdef INTERRUPT_EXTERNAL
 	main_interrupt_external();
-	#endif
+#endif
 
-	#ifdef INTERRUPT_TIMER
+#ifdef INTERRUPT_TIMER
 	main_interrupt_timer();
-	#endif
+#endif
 
-	#ifdef INTERRUPT_TIMER_CTC
+#ifdef INTERRUPT_TIMER_CTC
 	main_interrupt_timer_ctc();
-	#endif
+#endif
 
-	#ifdef INTERRUPT_EXT_TIMER
+#ifdef INTERRUPT_EXT_TIMER
 	main_interrupt_ext_timer();
-	#endif
+#endif
 
-	// Port/Pin Control Examples
-	#ifdef BLINK_PORT
+// Port/Pin Control Examples
+#ifdef BLINK_PORT
 	main_blink_port();
-	#endif
+#endif
 
-	#ifdef BLINK_PIN
+#ifdef BLINK_PIN
 	main_blink_pin();
-	#endif
+#endif
 
-	#ifdef BLINK_ASM
+#ifdef BLINK_ASM
 	main_blink_asm();
-	#endif
+#endif
 
-	#ifdef BLINK_ASM_MACRO
+#ifdef BLINK_ASM_MACRO
 	main_blink_asm_macro();
-	#endif
+#endif
 
-	#ifdef BLINK_ASM_RANDOM
+#ifdef BLINK_ASM_RANDOM
 	main_blink_asm_random();
-	#endif
+#endif
 
-	#ifdef BLINK_ASM_RANDOM_DELAY
+#ifdef BLINK_ASM_RANDOM_DELAY
 	main_blink_asm_random_delay();
-	#endif
+#endif
 
-	// Miscellaneous Examples
-	#ifdef CDS
+// Miscellaneous Examples
+#ifdef CDS
 	main_cds();
-	#endif
+#endif
 
-	#ifdef IOT
+#ifdef IOT
 	main_iot();
-	#endif
+#endif
 
-	#ifdef INLINE
+#ifdef INLINE
 	main_inline();
-	#endif
+#endif
 
-	#ifdef MEMORY_EEPROM
+#ifdef MEMORY_EEPROM
 	main_memory_eeprom();
-	#endif
+#endif
 
-	#ifdef MEMORY_PROGRAM
+#ifdef MEMORY_PROGRAM
 	main_memory_program();
-	#endif
+#endif
 
-	#ifdef JOYSTICK
+#ifdef JOYSTICK
 	main_joystick();
-	#endif
+#endif
+
+// Educational Examples
+#ifdef EDUCATIONAL_FLOW_TEST
+	main_educational_flow_test();
+#endif
+
+#ifdef EDUCATIONAL_SIMPLE_TEST
+	main_educational_simple_test();
+#endif
+
+#ifdef ASSEMBLY_PROGRESSION_EXAMPLE
+	main_assembly_progression();
+#endif
+
+#ifdef EDUCATIONAL_DEMO
+	main_educational_demo();
+#endif
 
 	return 0;
 }

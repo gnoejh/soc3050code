@@ -63,6 +63,27 @@ if ($activeDefines | Where-Object { $_ -like "INTERRUPT_*" }) {
     $sourceFiles += "_interrupt.c", "_init.c"
 }
 
+# Educational examples
+if ($activeDefines -contains "EDUCATIONAL_FLOW_TEST") {
+    $sourceFiles += "educational_flow_test.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c"
+}
+
+if ($activeDefines -contains "EDUCATIONAL_SIMPLE_TEST") {
+    $sourceFiles += "educational_simple_test.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c"
+}
+
+if ($activeDefines -contains "EDUCATIONAL_DEMO") {
+    $sourceFiles += "educational_demo.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c"
+}
+
+if ($activeDefines -contains "ASSEMBLY_PROGRESSION_EXAMPLE") {
+    $sourceFiles += "main_assembly_progression.c", "_port_optimized.c", "_init_optimized.c"
+}
+
+if ($activeDefines -contains "PYTHON_INTERFACE_EXAMPLE") {
+    $sourceFiles += "main_python_interface.c", "_port_optimized.c", "_uart_optimized.c", "_init_optimized.c", "_adc_optimized.c", "_buzzer_optimized.c"
+}
+
 # Remove duplicates
 $sourceFiles = $sourceFiles | Sort-Object | Get-Unique
 
