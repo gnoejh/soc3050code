@@ -44,5 +44,11 @@
         "**/*.d": true,
         "**/Debug": true,
         "**/Release": true
-    }
+    },
+    "cmake.sourceDirectory": "W:/soc3050code/cmake/Main/Debug",
+    "mplab.clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}\\_build\\Main\\Release"
+    ],
+    "mplab.clangd.path": "",
+    "mplab.project.workspace.addNewSourceFiles": "Always"
 }

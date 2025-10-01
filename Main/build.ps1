@@ -35,7 +35,7 @@ foreach ($line in $configContent) {
 }
 
 # Determine required source files based on active defines
-$sourceFiles = @("Main.c")
+$sourceFiles = @("Main.c", "_port.c", "variables.c")
 
 # Add conditional source files  
 if ($activeDefines -contains "BLINK_PORT" -or $activeDefines -contains "BLINK_PIN") {
@@ -90,7 +90,8 @@ try {
         Write-Host "   • ELF: Main.elf" -ForegroundColor White
         Write-Host "   • HEX: Main.hex" -ForegroundColor White
     }
-} catch {
+}
+catch {
     Write-Host "❌ Compilation failed!" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1

@@ -53,3 +53,39 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Python virtual environments (students create these)
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and build files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Data files created by examples
+*.csv
+*.json
+*.png
+sensor_*.txt
+atmega128_*.json

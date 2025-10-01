@@ -44,6 +44,116 @@ cmake_ninja_workdir = W$:/soc3050code/_build/Main/Debug/
 
 build cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile: phony || .
 
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/cu2qu/cu2qu.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/fontTools/cu2qu/cu2qu.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\cu2qu\cu2qu.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\cu2qu
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/feaLib/lexer.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/fontTools/feaLib/lexer.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\feaLib\lexer.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\feaLib
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/misc/bezierTools.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/fontTools/misc/bezierTools.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\misc\bezierTools.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\misc
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/pens/momentsPen.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/fontTools/pens/momentsPen.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\pens\momentsPen.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\fontTools\pens
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/markupsafe/_speedups.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/markupsafe/_speedups.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\markupsafe\_speedups.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\markupsafe
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__multiarray_api.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__multiarray_api.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\include\numpy\__multiarray_api.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\include\numpy
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__ufunc_api.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__ufunc_api.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\include\numpy\__ufunc_api.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\include\numpy
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api1.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api1.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\examples\limited_api\limited_api1.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\examples\limited_api
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api_latest.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api_latest.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\examples\limited_api\limited_api_latest.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\examples\limited_api
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/src/fortranobject.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/f2py/src/fortranobject.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\f2py\src\fortranobject.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\f2py\src
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\f2py\tests\src\array_from_pyobj\wrapmodule.c.o.d
+  FLAGS = -x c -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c -c -funsigned-char -funsigned-bitfields -O3 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\f2py\tests\src\array_from_pyobj
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\
+  TARGET_PDB = ""
+
 build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/Main.c.o: C_COMPILER__Main_Debug_Debug_avr_gcc_compile_unscanned_ W$:/soc3050code/Main/Main.c || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
   DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
   DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile.dir\W_\soc3050code\Main\Main.c.o.d
@@ -389,7 +499,33 @@ build CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variab
 #############################################
 # Object library Main_Debug_Debug_avr_gcc_compile
 
-build Main_Debug_Debug_avr_gcc_compile: phony CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/Main.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_buzzer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_eeprom.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_glcd.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_init.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_timer2.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_uart.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_accelerometer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink_asm.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_cds.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_hangman.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_obstacle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_pong_uart_control.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_word_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_graphics.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_inline.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_iot.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_joystick.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_memory.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_motors.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_serial.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_atari.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_twingkle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_timer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variables.c.o
+build Main_Debug_Debug_avr_gcc_compile: phony CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/cu2qu/cu2qu.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/feaLib/lexer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/misc/bezierTools.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/pens/momentsPen.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/markupsafe/_speedups.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__multiarray_api.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__ufunc_api.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api1.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api_latest.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/src/fortranobject.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/Main.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_buzzer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_eeprom.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_glcd.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_init.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_timer2.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_uart.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_accelerometer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink_asm.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_cds.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_hangman.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_obstacle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_pong_uart_control.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_word_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_graphics.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_inline.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_iot.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_joystick.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_memory.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_motors.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_serial.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_atari.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_twingkle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_timer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variables.c.o
+
+# =============================================================================
+# Object build statements for OBJECT_LIBRARY target Main_Debug_Debug_avr_gcc_compile_cpp
+
+
+#############################################
+# Order-only phony target for Main_Debug_Debug_avr_gcc_compile_cpp
+
+build cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile_cpp: phony || .
+
+build CMakeFiles/Main_Debug_Debug_avr_gcc_compile_cpp.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/data/generate_umath_validation_data.cpp.obj: CXX_COMPILER__Main_Debug_Debug_avr_gcc_compile_cpp_unscanned_ W$:/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/data/generate_umath_validation_data.cpp || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile_cpp
+  DEFINES = -DDEBUG -DDebug=Debug -D__ATmega128__
+  DEP_FILE = CMakeFiles\Main_Debug_Debug_avr_gcc_compile_cpp.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\data\generate_umath_validation_data.cpp.obj.d
+  FLAGS = -x c++ -g -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -x c++ -c -O0 -ffunction-sections -fdata-sections
+  INCLUDES = -IC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/include
+  OBJECT_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile_cpp.dir
+  OBJECT_FILE_DIR = CMakeFiles\Main_Debug_Debug_avr_gcc_compile_cpp.dir\W_\soc3050code\.venv\Lib\site-packages\numpy\_core\tests\data
+  TARGET_COMPILE_PDB = CMakeFiles\Main_Debug_Debug_avr_gcc_compile_cpp.dir\
+  TARGET_PDB = ""
+
+
+
+#############################################
+# Object library Main_Debug_Debug_avr_gcc_compile_cpp
+
+build Main_Debug_Debug_avr_gcc_compile_cpp: phony CMakeFiles/Main_Debug_Debug_avr_gcc_compile_cpp.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/data/generate_umath_validation_data.cpp.obj
 
 # =============================================================================
 # Object build statements for EXECUTABLE target Main_Debug_image__kRIX3bN
@@ -398,7 +534,7 @@ build Main_Debug_Debug_avr_gcc_compile: phony CMakeFiles/Main_Debug_Debug_avr_gc
 #############################################
 # Order-only phony target for Main_Debug_image__kRIX3bN
 
-build cmake_object_order_depends_target_Main_Debug_image__kRIX3bN: phony || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile
+build cmake_object_order_depends_target_Main_Debug_image__kRIX3bN: phony || cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile cmake_object_order_depends_target_Main_Debug_Debug_avr_gcc_compile_cpp
 
 
 # =============================================================================
@@ -408,7 +544,7 @@ build cmake_object_order_depends_target_Main_Debug_image__kRIX3bN: phony || cmak
 #############################################
 # Link the executable W:\soc3050code\out\Main\Debug.elf
 
-build W$:/soc3050code/out/Main/Debug.elf: C_EXECUTABLE_LINKER__Main_Debug_image__kRIX3bN_ CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/Main.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_buzzer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_eeprom.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_glcd.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_init.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_timer2.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_uart.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_accelerometer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink_asm.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_cds.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_hangman.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_obstacle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_pong_uart_control.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_word_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_graphics.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_inline.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_iot.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_joystick.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_memory.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_motors.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_serial.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_atari.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_twingkle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_timer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variables.c.o || Main_Debug_Debug_avr_gcc_compile
+build W$:/soc3050code/out/Main/Debug.elf: CXX_EXECUTABLE_LINKER__Main_Debug_image__kRIX3bN_ CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/cu2qu/cu2qu.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/feaLib/lexer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/misc/bezierTools.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/fontTools/pens/momentsPen.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/markupsafe/_speedups.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__multiarray_api.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/include/numpy/__ufunc_api.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api1.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api_latest.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/src/fortranobject.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/Main.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_buzzer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_eeprom.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_glcd.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_init.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_timer2.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/_uart.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_accelerometer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_adc.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_blink_asm.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_cds.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_hangman.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_obstacle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_pong_uart_control.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_game_word_puzzle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_graphics.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_inline.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_interrupt.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_iot.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_joystick.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_memory.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_motors.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_port.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_serial.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_atari.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_sound_twingkle.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/main_timer.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile.dir/W_/soc3050code/Main/variables.c.o CMakeFiles/Main_Debug_Debug_avr_gcc_compile_cpp.dir/W_/soc3050code/.venv/Lib/site-packages/numpy/_core/tests/data/generate_umath_validation_data.cpp.obj || Main_Debug_Debug_avr_gcc_compile Main_Debug_Debug_avr_gcc_compile_cpp
   LINK_FLAGS = -gdwarf-2 -mmcu=atmega128 -BC:/Users/hjeon/.mchp_packs/Microchip/ATmega_DFP/3.4.282/gcc/dev/atmega128 -o -Wl,--defsym=__MPLAB_BUILD=1,--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1 -Wl,--gc-sections
   OBJECT_DIR = CMakeFiles\Main_Debug_image__kRIX3bN.dir
   POST_BUILD = cmd.exe /C "cd /D W:\soc3050code\out\Main && C:\Users\hjeon\.mplab\app-finder\apps\avr-gcc\v7.3.0\avr8-gnu-toolchain-win32_x86_64\bin\avr-objcopy.exe --output-target=ihex Debug.elf Debug.hex && cd /D W:\soc3050code\out\Main && C:\Users\hjeon\.mplab\app-finder\apps\avr-gcc\v7.3.0\avr8-gnu-toolchain-win32_x86_64\bin\avr-objcopy.exe --only-section=.eeprom --change-section-lma .eeprom=0 --no-change-warnings --output-target=ihex Debug.elf Debug.eep && cd /D W:\soc3050code\out\Main && C:\Users\hjeon\.mplab\app-finder\apps\avr-gcc\v7.3.0\avr8-gnu-toolchain-win32_x86_64\bin\avr-objdump.exe --disassemble --wide --demangle --line-numbers --section-headers --source Debug.elf > Debug.lss && cd /D W:\soc3050code\out\Main && C:\Users\hjeon\.mplab\app-finder\apps\avr-gcc\v7.3.0\avr8-gnu-toolchain-win32_x86_64\bin\avr-objcopy.exe --output-target=srec --remove-section=.eeprom --remove-section=.fuse --remove-section=.lock --remove-section=.signature Debug.elf Debug.srec && cd /D W:\soc3050code\out\Main && C:\Users\hjeon\.mplab\app-finder\apps\avr-gcc\v7.3.0\avr8-gnu-toolchain-win32_x86_64\bin\avr-objcopy.exe --only-section=.user_signatures --change-section-lma .user_signatures=0 --no-change-warnings --output-target=ihex Debug.elf Debug.usersignatures"
@@ -456,7 +592,7 @@ build Main_Debug_image__kRIX3bN: phony W$:/soc3050code/out/Main/Debug.elf
 #############################################
 # Folder: W:/soc3050code/_build/Main/Debug
 
-build all: phony Main_Debug_Debug_avr_gcc_compile W$:/soc3050code/out/Main/Debug.elf
+build all: phony Main_Debug_Debug_avr_gcc_compile Main_Debug_Debug_avr_gcc_compile_cpp W$:/soc3050code/out/Main/Debug.elf
 
 # =============================================================================
 # Built-in targets

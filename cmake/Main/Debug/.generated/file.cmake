@@ -16,6 +16,17 @@ foreach(source_file ${Main_Debug_Debug_avr_gcc_FILE_TYPE_assembleWithPreprocess}
 endforeach()
 
 set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/fontTools/cu2qu/cu2qu.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/fontTools/feaLib/lexer.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/fontTools/misc/bezierTools.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/fontTools/pens/momentsPen.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/markupsafe/_speedups.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/_core/include/numpy/__multiarray_api.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/_core/include/numpy/__ufunc_api.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api1.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/_core/tests/examples/limited_api/limited_api_latest.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/f2py/src/fortranobject.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/Main.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/_adc.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/_buzzer.c"
@@ -51,7 +62,7 @@ set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/main_timer.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../Main/variables.c")
 set_source_files_properties(${Main_Debug_Debug_avr_gcc_FILE_TYPE_compile} PROPERTIES LANGUAGE C)
-set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile_cpp)
+set(Main_Debug_Debug_avr_gcc_FILE_TYPE_compile_cpp "${CMAKE_CURRENT_SOURCE_DIR}/../../../.venv/Lib/site-packages/numpy/_core/tests/data/generate_umath_validation_data.cpp")
 set_source_files_properties(${Main_Debug_Debug_avr_gcc_FILE_TYPE_compile_cpp} PROPERTIES LANGUAGE CXX)
 set(Main_Debug_Debug_avr_gcc_FILE_TYPE_link)
 set(Main_Debug_Debug_avr_gcc_FILE_TYPE_objcopy_ihex)
