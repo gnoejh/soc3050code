@@ -28,7 +28,8 @@ $configContent = Get-Content "config.h"
 $activeDefines = @()
 
 foreach ($line in $configContent) {
-    if ($line -match '^#define\s+(\w+)' -and $line -notmatch '//') {
+    # Match lines like: #define SYMBOL or #define SYMBOL // comment
+    if ($line -match '^#define\s+(\w+)(?:\s|//|$)') {
         $activeDefines += $Matches[1]
         Write-Host "✓ Active: $($Matches[1])" -ForegroundColor Yellow
     }
@@ -63,6 +64,10 @@ if ($activeDefines | Where-Object { $_ -like "INTERRUPT_*" }) {
     $sourceFiles += "_interrupt.c", "_init.c"
 }
 
+if ($activeDefines | Where-Object { $_ -like "EEPROM_*" }) {
+    $sourceFiles += "_eeprom.c", "_init.c"
+}
+
 # Educational examples
 if ($activeDefines -contains "EDUCATIONAL_FLOW_TEST") {
     $sourceFiles += "educational_flow_test.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c"
@@ -73,7 +78,7 @@ if ($activeDefines -contains "EDUCATIONAL_SIMPLE_TEST") {
 }
 
 if ($activeDefines -contains "EDUCATIONAL_DEMO") {
-    $sourceFiles += "educational_demo.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c"
+    $sourceFiles += "educational_demo.c", "_init.c", "_uart.c", "_port.c", "_adc.c", "_timer2.c", "_interrupt.c", "_glcd.c", "_buzzer.c", "_eeprom.c"
 }
 
 if ($activeDefines -contains "ASSEMBLY_PROGRESSION_EXAMPLE") {

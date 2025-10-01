@@ -1,80 +1,243 @@
 /*
- * blink.c
+ * =============================================================================
+ * EDUCATIONAL ATmega128 LED BLINKING DEMONSTRATIONS
+ * =============================================================================
  *
- * Created: 2024-09-22
- * Author : hjeong
- */ 
-#include "config.h"
-#include <avr/io.h>
-//#define F_CPU 16000000UL
-#include "util/delay.h"
+ * COURSE: SOC 3050 - Embedded Systems and IoT
+ * AUTHOR: Professor Kim (Modernized from hjeong original)
+ *
+ * PURPOSE:
+ * Demonstrate LED control using modernized port library functions.
+ * Shows progression from direct register access to structured programming.
+ *
+ * EDUCATIONAL OBJECTIVES:
+ * 1. Learn GPIO (General Purpose Input/Output) concepts
+ * 2. Understand port initialization and control
+ * 3. Practice timing and delay mechanisms
+ * 4. Explore pattern generation and state machines
+ * 5. Integrate button input with LED output
+ *
+ * LEARNING PROGRESSION:
+ * Assembly → C → Python → IoT
+ * Direct registers → Library functions → Object patterns → Remote control
+ *
+ * =============================================================================
+ */
 
+#include "config.h"
+
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Basic Port-Level LED Blinking
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate simple port-based LED control with alternating patterns
+ * CONFIGURATION: Requires BLINK_PORT defined in config.h
+ *
+ * HARDWARE SETUP:
+ * - LEDs connected to PORTB (PB0-PB7)
+ * - Active low configuration (0 = LED on, 1 = LED off)
+ *
+ * EDUCATIONAL VALUE:
+ * - Port initialization using modernized library
+ * - Pattern generation with binary operations
+ * - Timing control with delay functions
+ */
 #ifdef BLINK_PORT
 
 void main_blink_port(void)
 {
-	DDRB = 0xFF; //make port B as output port
-	while(1)
-	{
-		PORTB = 0xAA; //make all pins HIGH
-		_delay_ms(1000); //wait 1 sec
-		PORTB = 0x55; //make all pins LOW
-		_delay_ms(1000); //wait 1 sec
-	}
+    /*
+     * EDUCATIONAL STEP 1: Initialize port using modernized library
+     *
+     * Modern approach: Use library function instead of direct register access
+     * Old way: DDRB = 0xFF;
+     * New way: Port_init_output(PORT_B, 0xFF);
+     */
+    Port_init_output(PORT_B, 0xFF); // Configure all PORTB pins as output
+
+    /*
+     * EDUCATIONAL STEP 2: LED pattern generation loop
+     *
+     * This demonstrates alternating pattern control:
+     * Pattern A: 0xAA = 10101010 (alternating LEDs)
+     * Pattern B: 0x55 = 01010101 (opposite pattern)
+     */
+    while (1)
+    {
+        /* Modern library approach for port output */
+        Port_write(PORT_B, 0xAA); // Set alternating pattern A
+
+        /*
+         * EDUCATIONAL NOTE: Timing considerations
+         * - 1000ms delay provides visible pattern change
+         * - Long enough for human perception
+         * - Educational timing (not optimized for real applications)
+         */
+        _delay_ms(1000); // Wait 1 second
+
+        Port_write(PORT_B, 0x55); // Set alternating pattern B
+        _delay_ms(1000);          // Wait 1 second
+
+        /*
+         * EDUCATIONAL EXERCISE:
+         * Try these pattern modifications:
+         * 1. Port_write(PORT_B, 0x00); // All LEDs on
+         * 2. Port_write(PORT_B, 0xFF); // All LEDs off
+         * 3. Port_write(PORT_B, 0xF0); // Half on, half off
+         * 4. Implement a counting pattern (0x01, 0x02, 0x04, 0x08...)
+         */
+    }
 }
 #endif
 
+/*
+ * =============================================================================
+ * EDUCATIONAL DEMO: Interactive LED Control with Button Input
+ * =============================================================================
+ *
+ * PURPOSE: Demonstrate GPIO input/output integration with state machines
+ * CONFIGURATION: Requires BLINK_PIN defined in config.h
+ *
+ * HARDWARE SETUP:
+ * - LEDs connected to PORTB (PB0-PB7) - active low
+ * - Button connected to PD7 with pull-up resistor
+ *
+ * EDUCATIONAL VALUE:
+ * - Input/output port configuration
+ * - Button debouncing and edge detection
+ * - State machine implementation
+ * - Binary pattern manipulation
+ */
 #ifdef BLINK_PIN
 
 void main_blink_pin(void)
 {
-    // Set PORTB as output for LEDs
-    DDRB = 0xFF; // 0xFF means all bits of PORTB are set as output (all LEDs)
-    // Set PD0 as input for the button and enable the internal pull-up resistor
-    DDRD &= ~(1 << PD7); // Clear bit 0 of DDRD to make PD0 an input
-    PORTD |= (1 << PD7); // Set bit 0 of PORTD to enable the pull-up resistor on PD0, Duplicated (Circuit PU)
+    /*
+     * EDUCATIONAL STEP 1: Initialize ports using modernized library
+     */
+    Port_init_output(PORT_B, 0xFF);                      // Configure PORTB as output for LEDs
+    Port_init_input(PORT_D, (1 << PD7), PULLUP_ENABLED); // PD7 as input with pullup
 
-    uint8_t direction = 0; // 0 for clockwise, 1 for counterclockwise
-    uint8_t led_state = 0x01; // Start with the first LED on (binary: 00000001)
-    uint8_t last_button_state = 1; // Track the last state of the button (1 = not pressed, due to pull-up)
+    /*
+     * EDUCATIONAL STEP 2: Initialize state machine variables
+     */
+    unsigned char direction = 0;         // 0 = clockwise, 1 = counterclockwise
+    unsigned char led_state = 0x01;      // Start with first LED (binary: 00000001)
+    unsigned char last_button_state = 1; // Track button state for edge detection
 
+    /*
+     * EDUCATIONAL STEP 3: Main control loop with state machine
+     */
     while (1)
     {
-        // Read the current state of the button
-        uint8_t current_button_state = PIND & (1 << PD7);
+        /*
+         * EDUCATIONAL STEP 3.1: Button input processing
+         *
+         * Modern approach: Use library function for cleaner code
+         * Old way: uint8_t current_button_state = PIND & (1 << PD7);
+         * New way: unsigned char current_button_state = Port_read_pin(PORT_D, PD7);
+         */
+        unsigned char current_button_state = Port_read_pin(PORT_D, PD7);
 
-        // Check for a falling edge: button is pressed (current state = 0) and was not pressed before (last state = 1)
+        /*
+         * EDUCATIONAL STEP 3.2: Edge detection (falling edge)
+         *
+         * Button press detection using state comparison:
+         * - current_button_state == 0: Button is pressed (active low)
+         * - last_button_state != 0: Button was not pressed before
+         * - This combination = falling edge = button press event
+         */
         if (current_button_state == 0 && last_button_state != 0)
         {
-            // Toggle the direction whenever the button is pressed
-            direction = !direction;
+            direction = !direction; // Toggle direction on button press
+
+            /*
+             * EDUCATIONAL NOTE: Debouncing considerations
+             * In real applications, add delay for debouncing:
+             * _delay_ms(50);  // Simple debounce delay
+             */
         }
 
-        // Store the current button state as the last state for the next loop iteration
+        /* Update button state for next iteration */
         last_button_state = current_button_state;
 
-        // Update LED states based on the direction (active LOW)
-        if (direction == 0)
+        /*
+         * EDUCATIONAL STEP 3.3: LED pattern generation
+         *
+         * State machine for LED rotation:
+         * - Direction 0: Clockwise rotation (left shift)
+         * - Direction 1: Counterclockwise rotation (right shift)
+         */
+        if (direction == 0) // Clockwise
         {
-            PORTB = ~led_state; // Output the inverted LED state to PORTB (turn on a specific LED)
-            led_state <<= 1;   // Shift left to move to the next LED (clockwise)
-            if (led_state == 0x00)
+            /* Use modernized port library for output */
+            Port_write(PORT_B, ~led_state); // Invert for active-low LEDs
+
+            led_state <<= 1;       // Shift left (next LED)
+            if (led_state == 0x00) // Wrap around check
             {
-                led_state = 0x01; // Loop back to the first LED if we reach beyond the last one
+                led_state = 0x01; // Reset to first LED
             }
         }
-        else
+        else // Counterclockwise
         {
-            PORTB = ~led_state; // Output the inverted LED state to PORTB (turn on a specific LED)
-            led_state >>= 1;   // Shift right to move to the previous LED (counterclockwise)
-            if (led_state == 0x00)
+            Port_write(PORT_B, ~led_state); // Output inverted pattern
+
+            led_state >>= 1;       // Shift right (previous LED)
+            if (led_state == 0x00) // Wrap around check
             {
-                led_state = 0x80; // Loop back to the last LED if we reach beyond the first one
+                led_state = 0x80; // Reset to last LED
             }
         }
 
-        // Wait for 1 second before changing to the next LED
+        /*
+         * EDUCATIONAL STEP 3.4: Timing control
+         *
+         * 500ms delay provides smooth visual rotation
+         * Fast enough for responsiveness, slow enough to see
+         */
         _delay_ms(500);
+
+        /*
+         * EDUCATIONAL EXERCISES:
+         * 1. Add multiple LEDs on at once (led_state = 0x03 for two LEDs)
+         * 2. Implement bouncing pattern (direction changes at ends)
+         * 3. Add speed control with different buttons
+         * 4. Create custom patterns (heart beat, police lights, etc.)
+         */
     }
 }
 #endif
+
+/*
+ * =============================================================================
+ * EDUCATIONAL SUMMARY AND LEARNING OBJECTIVES
+ * =============================================================================
+ *
+ * This module demonstrates:
+ *
+ * 1. MODERN LIBRARY USAGE:
+ *    - Port_init_output() for clean port initialization
+ *    - Port_write() for structured output operations
+ *    - Port_read_pin() for reliable input reading
+ *
+ * 2. GPIO PROGRAMMING CONCEPTS:
+ *    - Port direction configuration (input/output)
+ *    - Pull-up resistor activation
+ *    - Active-low LED control
+ *
+ * 3. PROGRAMMING TECHNIQUES:
+ *    - State machine implementation
+ *    - Edge detection for button inputs
+ *    - Binary pattern manipulation
+ *    - Loop-based timing control
+ *
+ * 4. EDUCATIONAL PROGRESSION:
+ *    - Assembly: Direct register manipulation (DDRB, PORTB)
+ *    - C: Structured library functions (Port_init, Port_write)
+ *    - Python: Object-oriented GPIO classes
+ *    - IoT: Remote LED control via web interface
+ *
+ * =============================================================================
+ */
