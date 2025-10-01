@@ -33,6 +33,9 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif
 #include <util/delay.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +43,9 @@
 #include "config.h"
 #include "_main.h"
 #include "_glcd.h"
+
+// Only compile GLCD functions if not using self-contained assembly example
+#ifndef ASSEMBLY_BLINK_BASIC
 
 /*
  * =============================================================================
@@ -83,10 +89,12 @@ unsigned char xchar = 0; // Character X position (0-19)
 unsigned char ychar = 0; // Character Y position (0-7)
 
 /* Display state variables */
+#if defined(GRAPHICS_EXAMPLES) || defined(ADVANCED_EXAMPLES_ACTIVE)
 static unsigned char glcd_initialized = 0; // Initialization flag
 static unsigned char current_page = 0;	   // Current display page
 static unsigned char current_column = 0;   // Current column position
 static word d = 0;						   // General purpose delay variable
+#endif
 
 /*
  * =============================================================================
@@ -665,3 +673,5 @@ void GLCD_4DigitDecimal(unsigned int number)
 }
 
 /*-------------------------------------------------------------------------*/
+
+#endif // !ASSEMBLY_BLINK_BASIC

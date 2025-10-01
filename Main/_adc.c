@@ -34,6 +34,9 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif
 #include <util/delay.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +44,9 @@
 #include "config.h"
 #include "_main.h"
 #include "_adc.h"
+
+// Only compile ADC functions if not using self-contained assembly example
+#ifndef ASSEMBLY_BLINK_BASIC
 
 /*
  * EDUCATIONAL CONSTANTS: ADC Voltage Reference Selection
@@ -406,3 +412,5 @@ unsigned char Is_Adc_Complete(void)
 {
 	return adc_interrupt_complete;
 }
+
+#endif // !ASSEMBLY_BLINK_BASIC

@@ -7,8 +7,7 @@
 
 #include "config.h"
 #include <avr/io.h>
-#define F_CPU 16000000UL
-#include "util/delay.h"
+#include <util/delay.h>
 #include <avr/interrupt.h>
 #include <string.h>
 #include <stdio.h>
@@ -44,7 +43,35 @@ volatile unsigned int adc_interrupt_result = 0;
 volatile uint8_t adc_interrupt_complete = 0;
 volatile uint8_t adc_interrupt_channel = 0;
 
-// Interrupt Service Routine for UART1 receive
+// Minimal UART function implementations for self-contained assembly example
+#ifdef ASSEMBLY_BLINK_BASIC
+void puts_USART1(const char *str)
+{
+    // Simple blocking send for educational purposes
+    while (*str)
+    {
+        while (!(UCSR1A & (1 << UDRE1)))
+            ;          // Wait for empty transmit buffer
+        UDR1 = *str++; // Send character
+    }
+}
+
+void putch_USART1(char ch)
+{
+    while (!(UCSR1A & (1 << UDRE1)))
+        ;      // Wait for empty transmit buffer
+    UDR1 = ch; // Send character
+}
+
+// Minimal function stubs for _init.c compatibility (only when standalone)
+void Timer2_init(void) { /* Stub - not needed for basic blink */ }
+void Uart1_init(void) { /* Stub - not needed for basic blink */ }
+void Adc_init(void) { /* Stub - not needed for basic blink */ }
+void lcd_init(void) { /* Stub - not needed for basic blink */ }
+#endif
+
+// Interrupt Service Routine for UART1 receive - only needed for serial examples
+#if defined(SERIAL_POLLING_SINGLE_CHAR) || defined(SERIAL_POLLING_STRING) || defined(SERIAL_INTERRUPT_CIRCULAR_BUFFER) || defined(SERIAL_INTERRUPT_RX) || defined(SERIAL_INTERRUPT_TX)
 ISR(USART1_RX_vect)
 {
     char received_char = UDR1;
@@ -68,7 +95,7 @@ ISR(USART1_RX_vect)
     else if (rx_buffer_index < sizeof(rx_buffer) - 1)
     {
         rx_buffer[rx_buffer_index++] = received_char;
-        putchar_USART1(received_char); // Echo character
+        putch_USART1(received_char); // Echo character
     }
 }
 
@@ -153,6 +180,7 @@ void circ_buffer_clear(volatile CircularBuffer *cb)
     cb->head = cb->tail = cb->count = 0;
     cb->overflow = 0;
 }
+#endif // End of serial/UART ISR and functions
 
 // Circular buffer ISRs (used conditionally)
 #ifdef SERIAL_INTERRUPT_CIRCULAR_BUFFER

@@ -36,40 +36,44 @@ foreach ($line in $configContent) {
 }
 
 # Determine required source files based on active defines
-# SIMPLIFIED: Always include all essential libraries to avoid dependency issues
-$sourceFiles = @("Main.c", "_init.c", "_port.c", "_timer2.c", "_glcd.c", "_uart.c", "_adc.c", "_interrupt.c", "_buzzer.c", "_eeprom.c")
+# Start with core files
+$sourceFiles = @("Main.c", "_init.c")
 
-# Add specific main files based on active defines
-if ($activeDefines | Where-Object { $_ -like "ASSEMBLY_*" }) {
+# Add files based on which examples are actually active (not just capability flags)
+if ($activeDefines | Where-Object { $_ -like "ASSEMBLY_BLINK*" }) {
+    $sourceFiles += "_port.c"
+    # Only add main_blink_asm.c for assembly examples
     $sourceFiles += "main_blink_asm.c"
+    # Note: main_blink_asm.c has its own UART ISR implementations, so don't include _uart.c
 }
 
-if ($activeDefines | Where-Object { $_ -like "TIMER_*" }) {
-    $sourceFiles += "main_timer.c"
+# Only add library files if specific features are being used
+if ($activeDefines | Where-Object { $_ -like "TIMER_*" -or $_ -like "*TIMER*" }) {
+    $sourceFiles += "_timer2.c", "main_timer.c"
 }
 
-if ($activeDefines | Where-Object { $_ -like "INTERRUPT_*" }) {
-    $sourceFiles += "main_interrupt.c"
+if ($activeDefines | Where-Object { $_ -like "INTERRUPT_*" -or $_ -like "*INTERRUPT*" }) {
+    $sourceFiles += "_interrupt.c", "main_interrupt.c"
 }
 
-if ($activeDefines | Where-Object { $_ -like "PORT_*" }) {
-    $sourceFiles += "main_port.c"
-}
-
-if ($activeDefines | Where-Object { $_ -like "SERIAL_*" }) {
-    $sourceFiles += "main_serial.c"
+if ($activeDefines | Where-Object { $_ -like "SERIAL_*" -and $_ -notlike "ASSEMBLY_*" }) {
+    $sourceFiles += "_uart.c", "main_serial.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "ADC_*" }) {
-    $sourceFiles += "main_adc.c"
+    $sourceFiles += "_adc.c", "main_adc.c"
 }
 
-if ($activeDefines | Where-Object { $_ -like "GRAPHICS_*" }) {
-    $sourceFiles += "main_graphics.c"
+if ($activeDefines | Where-Object { $_ -like "GRAPHICS_*" -or $_ -like "*GLCD*" }) {
+    $sourceFiles += "_glcd.c", "main_graphics.c"
+}
+
+if ($activeDefines | Where-Object { $_ -like "BUZZER_*" -or $_ -like "*BUZZER*" }) {
+    $sourceFiles += "_buzzer.c"
 }
 
 if ($activeDefines | Where-Object { $_ -like "EEPROM_*" }) {
-    $sourceFiles += "main_memory.c"
+    $sourceFiles += "_eeprom.c", "main_memory.c"
 }
 
 if ($activeDefines -contains "EDUCATIONAL_DEMO") {

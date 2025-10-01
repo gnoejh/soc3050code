@@ -5,11 +5,7 @@
  * LEARNING PROGRESSION:
  * Phase 1: Assembly Fundamentals (direct register access)
  * Phase 2: C Hardware Abstraction (library functions)
- * Phase 3: Communication & Sen// Additional graphics examples
-// #define GRAPHICS_BASICS                 // Basic graphics operations
-// #define GRAPHICS_MOVEMENT               // Moving graphics elements
-// #define GRAPHICS_RANDOM                 // Random graphics patterns
-#define GRAPHICS_BOUNCING_BALL          // Bouncing ball animation(data exchange)
+ * Phase 3: Communication & Sensors (UART, ADC, interrupts)
  * Phase 4: Advanced Applications (complex projects)
  * Phase 5: Python Integration (high-level programming)
  *
@@ -26,6 +22,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+// Define F_CPU first to prevent warnings in util/delay.h
+#ifndef F_CPU
+#define F_CPU 16000000UL // 16 MHz crystal oscillator
+#endif
+
 /*
  * ============================================================================
  * SYSTEM OPTIMIZATION CONFIGURATION
@@ -33,8 +34,7 @@
  */
 
 // Core system parameters (optimized for ATmega128)
-#define F_CPU 16000000UL // 16 MHz crystal oscillator
-#define BAUD 9600        // Standard UART baud rate for education
+#define BAUD 9600 // Standard UART baud rate for education
 
 // Optimization flags for educational framework
 #define EDUCATIONAL_FRAMEWORK_VERSION_MAJOR 2
@@ -52,28 +52,53 @@
  */
 #include <avr/io.h>        // Hardware register definitions (always needed)
 #include <avr/interrupt.h> // Interrupt handling (always needed)
-#include <util/delay.h>    // Delay functions (always needed)
+// Note: util/delay.h included in individual files to prevent F_CPU conflicts
 
-// Standard library includes (Always available for simplicity)
+// Standard library includes (conditional for memory optimization)
+#if defined(MEMORY_OPTIMIZED) && MEMORY_OPTIMIZED == 0
 #include <stdio.h>  // Standard I/O (sprintf, etc.)
 #include <string.h> // String manipulation
 #include <stdlib.h> // Standard library functions
+#endif
 
 /*
- * PROJECT MODULES - All libraries always available for simplicity
+ * PROJECT MODULES - Conditional includes for memory optimization
  */
 #include "_main.h" // Always needed for core functionality
+#include "_init.h" // Always needed for device initialization
 
-// Essential library includes (Always available for simplicity)
+// Essential includes for _init.c functionality
+#if defined(ASSEMBLY_EXAMPLES_ACTIVE) && ASSEMBLY_EXAMPLES_ACTIVE == 1
 #include "_port.h"
 #include "_uart.h"
-#include "_init.h" // Always needed for device initialization
+#include "_timer2.h"
+#include "_interrupt.h"
+#include "_adc.h"
+#include "_glcd.h"
+#endif
+
+#if defined(COMMUNICATION_ACTIVE) && COMMUNICATION_ACTIVE == 1
+#include "_uart.h"
+#endif
+
+#if defined(ADVANCED_EXAMPLES_ACTIVE) && ADVANCED_EXAMPLES_ACTIVE == 1
 #include "_adc.h"
 #include "_buzzer.h"
 #include "_timer2.h"
 #include "_interrupt.h"
 #include "_eeprom.h"
 #include "_glcd.h"
+#endif
+
+// Always include basic functionality for current example
+#ifdef ASSEMBLY_BLINK_BASIC
+#include "_port.h"
+#include "_uart.h"
+#include "_timer2.h"
+#include "_interrupt.h"
+#include "_adc.h"
+#include "_glcd.h"
+#endif
 
 /*
  * ============================================================================
@@ -158,20 +183,26 @@
  * 1.1 Basic LED Control (Assembly → C Register Access)
  * Optimized for minimal memory footprint while preserving educational value
  */
-// #define ASSEMBLY_BLINK_BASIC            // Simple LED blinking with PORTB
-// #define ASSEMBLY_BLINK_PATTERN          // LED patterns with bit manipulation
-// #define ASSEMBLY_BLINK_INDIVIDUAL       // Individual LED control
-// // #define PORT_ROTATION // Rotating LED patterns
+/*
+ * ============================================================================
+ * ASSEMBLY EXAMPLE DEFINITIONS
+ * Phase 1: Direct hardware register access
+ * ============================================================================
+ */
 
-// Legacy compatibility names (deprecated - use optimized versions above)
-// #define BLINK_PORT                      // → Use ASSEMBLY_BLINK_BASIC
-// #define BLINK_PIN                       // → Use ASSEMBLY_BLINK_INDIVIDUAL
-// #define BLINK_ASM                       // → Use ASSEMBLY_BLINK_BASIC
-// #define BLINK_ASM_MACRO                 // → Use ASSEMBLY_BLINK_PATTERN
-// Individual Example Testing (Enable ONE at a time)
-// #define PORT_BLINKING                   // → Testing: Port-based LED patterns
-// #define ASSEMBLY_BLINK_BASIC            // Simple LED blinking with PORTB
-// #define PORT_ROTATION                   // → Use ASSEMBLY_PORT_ROTATION
+// #define ASSEMBLY_BLINK_BASIC // Simple LED blinking with PORTB
+
+// Enable only minimal features for assembly example
+#ifdef ASSEMBLY_BLINK_BASIC
+#undef ENABLE_INTERRUPTS
+#undef ENABLE_TIMERS
+#undef ENABLE_UART
+#undef ENABLE_ADC
+#undef ENABLE_LCD
+#endif
+#define ASSEMBLY_BLINK_PATTERN // LED patterns with bit manipulation
+// #define ASSEMBLY_BLINK_INDIVIDUAL       // Individual LED control
+// #define PORT_ROTATION // Rotating LED patterns
 
 /*
  * 1.2 Button Input and Control
@@ -206,12 +237,6 @@
 // // #define C_TIMER_BASIC                   // Timer initialization with C
 // #define C_TIMER_INTERRUPT               // Timer interrupts and ISRs
 // #define C_TIMER_PWM // PWM generation
-
-// Legacy timer examples
-// #define TIMER_COUNTER // Basic timer/counter usage
-// #define TIMER_CTC                       // Clear Timer on Compare match
-// #define TIMER_FASTPWM                   // Fast PWM generation
-// #define TIMER_NORMAL                    // Normal timer mode
 
 /*
  * ============================================================================
@@ -264,11 +289,6 @@
 // #define BUZZER_MUSICAL_NOTES            // Musical note generation
 // #define BUZZER_MELODY_PLAYER            // Play melodies
 
-// Legacy sound examples
-// #define SOUND                           // Basic sound generation
-// #define SOUND_ATARI                     // Atari-style sounds
-// #define SOUND_TWINKLE                   // Twinkle Twinkle Little Star
-
 /*
  * 3.4 External Interrupts
  */
@@ -319,31 +339,12 @@
 // #define GAME_HANGMAN                    // Hangman word guessing game
 // #define GAME_OBSTACLE                   // Obstacle avoidance game
 
-// Legacy motor examples
-// #define MOTORS_FULLSTEP                 // Full-step stepper control
-// #define MOTORS_FULLSTEP_INTERRUPT       // Full-step with interrupts
-// #define MOTORS_HALFSTEP                 // Half-step stepper control
-// #define MOTORS_HALFSTEP_INTERRUPT       // Half-step with interrupts
-// #define MOTORS_STEPPER_DEMO             // Advanced stepper patterns
-// #define MOTORS_SERVO                    // Standard servo control
-// #define MOTORS_SERVO_ADC                // Servo with ADC control
-// #define MOTORS_SERVO_UART               // Servo with UART control
-// #define MOTORS_PWM_FAST                 // Fast PWM for DC motors
-// #define MOTORS_PWM_PHASECORRECT         // Phase-correct PWM
-
 /*
  * 4.3 Interactive Games
  */
 // #define GAME_SIMON_SAYS                 // Memory game with LEDs/buttons
 // #define GAME_REACTION_TIMER             // Reaction time measurement
 // #define GAME_SENSOR_TARGET              // Target practice with sensors
-
-// Legacy game examples
-// #define GAME_HANGMAN                    // Hangman word game
-// #define GAME_OBSTACLE                   // Obstacle avoidance game
-// #define GAME_PUZZLE                     // Logic puzzle game
-// #define GAME_SCRAMBLE                   // Word scramble game
-// #define GAME_PONG_UART_CONTROL          // UART-controlled Pong
 
 /*
  * 4.4 Data Logging and Memory
@@ -356,21 +357,12 @@
 // EEPROM Data Storage Series (New Architecture)
 // #define EEPROM_BASIC                    // Basic EEPROM operations
 // #define EEPROM_LOGGER                   // Data logging to EEPROM
-#define EEPROM_SETTINGS // Settings storage in EEPROM
+// #define EEPROM_SETTINGS // Settings storage in EEPROM
 
 // EEPROM Data Storage Series
 // #define EEPROM_BASIC                    // Basic EEPROM read/write operations
 // #define EEPROM_LOGGER                   // Data logging to EEPROM
 // #define EEPROM_SETTINGS                 // Configuration settings storage
-
-// Legacy memory examples (deprecated)
-// #define MEMORY_BASIC_EEPROM             // Basic EEPROM operations
-// #define MEMORY_SENSOR_LOGGING           // Log sensor data to EEPROM
-// #define MEMORY_SETTINGS_STORAGE         // Store configuration settings
-
-// Legacy memory examples
-// #define MEMORY_EEPROM                   // EEPROM operations
-// #define MEMORY_PROGRAM                  // Program memory access
 
 /*
  * ============================================================================
@@ -392,10 +384,7 @@
  */
 // #define IOT_SENSOR_MONITORING           // Send sensor data to Python
 // #define IOT_REMOTE_CONTROL              // Control hardware via web
-#define IOT_DATA_VISUALIZATION // Real-time data plotting
-
-// Legacy IoT examples
-// #define IOT                             // Basic IoT functionality
+// #define IOT_DATA_VISUALIZATION // Real-time data plotting
 
 /*
  * ============================================================================
@@ -492,49 +481,9 @@
 #define _COUNT_PYTHON_1 0
 #endif
 
-// Additional legacy define checks
-#ifdef PORT_BLINKING
-#define _COUNT_LEGACY_1 1
-#else
-#define _COUNT_LEGACY_1 0
-#endif
-
-#ifdef TIMER_COUNTER
-#define _COUNT_LEGACY_2 1
-#else
-#define _COUNT_LEGACY_2 0
-#endif
-
-#ifdef INTERRUPT_EXTERNAL
-#define _COUNT_LEGACY_3 1
-#else
-#define _COUNT_LEGACY_3 0
-#endif
-
-#ifdef GRAPHICS_RANDOM
-#define _COUNT_LEGACY_4 1
-#else
-#define _COUNT_LEGACY_4 0
-#endif
-
-#ifdef MEMORY_EEPROM
-#define _COUNT_LEGACY_5 1
-#else
-#define _COUNT_LEGACY_5 0
-#endif
-
-#ifdef IOT
-#define _COUNT_LEGACY_6 1
-#else
-#define _COUNT_LEGACY_6 0
-#endif
-
 // Calculate total active examples
 #define COUNT_END __COUNTER__
-#define ACTIVE_COUNT (_COUNT_EDUCATIONAL + _COUNT_ASSEMBLY_1 + _COUNT_ASSEMBLY_2 + _COUNT_ASSEMBLY_3 + _COUNT_ASSEMBLY_4 + _COUNT_ASSEMBLY_5 + _COUNT_ASSEMBLY_6 + _COUNT_C_1 + \
-                      _COUNT_COMM_1 + _COUNT_ADVANCED_1 + _COUNT_PYTHON_1 +                                                                                                     \
-                      _COUNT_LEGACY_1 + _COUNT_LEGACY_2 + _COUNT_LEGACY_3 +                                                                                                     \
-                      _COUNT_LEGACY_4 + _COUNT_LEGACY_5 + _COUNT_LEGACY_6)
+#define ACTIVE_COUNT (_COUNT_EDUCATIONAL + _COUNT_ASSEMBLY_1 + _COUNT_ASSEMBLY_2 + _COUNT_ASSEMBLY_3 + _COUNT_ASSEMBLY_4 + _COUNT_ASSEMBLY_5 + _COUNT_ASSEMBLY_6 + _COUNT_C_1 + _COUNT_COMM_1 + _COUNT_ADVANCED_1 + _COUNT_PYTHON_1)
 
 // Enhanced validation with optimization suggestions
 #if ACTIVE_COUNT > 1
@@ -577,6 +526,7 @@
 
 #ifdef ESTIMATED_FLASH_USAGE
 #pragma message "MEMORY OPTIMIZATION: Estimated flash usage: " ESTIMATED_FLASH_USAGE
+#pragma message "MEMORY OPTIMIZATION: Conditional includes active - unused libraries excluded"
 #endif
 
 #endif /* __COUNTER__ */

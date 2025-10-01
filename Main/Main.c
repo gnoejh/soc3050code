@@ -115,16 +115,10 @@ int main(void)
 
 #ifdef GRAPHICS_SINE_WAVE
 	main_graphics_sine_wave();
-#endif #ifdef GRAPHICS_BOUNCING_BALL
+#endif
+
+#ifdef GRAPHICS_BOUNCING_BALL
 	main_graphics_bouncing_ball();
-#endif
-
-#ifdef GRAPHICS_MOVING_SQUARE
-	main_graphics_moving_square();
-#endif
-
-#ifdef GRAPHICS_SINE_WAVE
-	main_graphics_sine_wave();
 #endif
 
 #ifdef MEMORY_BASIC
@@ -243,7 +237,9 @@ int main(void)
 
 #ifdef GRAPHICS_RANDOM
 	main_graphics_random();
-#endif #ifdef GRAPHICS_ANIMATION
+#endif
+
+#ifdef GRAPHICS_ANIMATION
 	main_graphics_animation();
 #endif
 

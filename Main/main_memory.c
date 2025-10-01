@@ -1,5 +1,8 @@
 #include "config.h"
 
+// Conditional compilation - only compile if a relevant example is selected
+#if defined(MEMORY_BASIC) || defined(MEMORY_STACK) || defined(MEMORY_HEAP) || defined(MEMORY_PROGRAM) || defined(MEMORY_EEPROM)
+
 /*
  * MEMORY_BASIC - Basic Memory Operations and Concepts
  * Educational demonstration of:
@@ -1335,4 +1338,6 @@ void main_memory_eeprom(void)
 		Timer2_delay_ms(10);
 	}
 }
+
+#endif // Conditional compilation guard
 #endif

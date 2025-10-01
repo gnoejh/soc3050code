@@ -26,6 +26,9 @@
 
 #include "config.h"
 
+// Conditional compilation - only compile if a relevant example is selected
+#if defined(C_LED_BASIC) || defined(C_LED_PATTERNS) || defined(C_LED_BUTTON_INTERACTIVE) || defined(PORT_BLINKING) || defined(PORT_ROTATION) || defined(BLINK_PORT)
+
 /*
  * =============================================================================
  * EDUCATIONAL DEMO: Basic Port-Level LED Blinking
@@ -241,3 +244,5 @@ void main_blink_pin(void)
  *
  * =============================================================================
  */
+
+#endif // Conditional compilation guard

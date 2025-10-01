@@ -46,6 +46,12 @@
 #define ADC_DEMO_ENABLED
 #endif
 
+// Ensure ADC_DEMO_ENABLED is defined when no specific ADC example is active
+// This prevents compilation errors when ADC examples are not needed
+#ifndef ADC_DEMO_ENABLED
+#define ADC_DEMO_ENABLED
+#endif
+
 #ifdef ADC_DEMO_ENABLED
 
 /*
@@ -602,12 +608,13 @@ The following registers are used for configuring the ADC (Analog-to-Digital Conv
 
 #####################################################
 #             Example Implementations                #
-#####################################################
+####################################################
 */
 
-/*-----------------------------------*
- * 1. ADC Polling Implementation     *
-/*
+/*-----------------------------------
+ * 1. ADC Polling Implementation
+ *-----------------------------------
+ *
  * =============================================================================
  * EDUCATIONAL DEMO: Basic ADC Polling Mode
  * =============================================================================
@@ -734,23 +741,6 @@ void main_adc_polling(void)
     }
 }
 #endif
-lcd_clear();
-ScreenBuffer_clear();
-
-// Display custom text and ADC value on LCD
-lcd_string(0, 0, " 12345 Hong Jeong");
-lcd_string(2, 0, "ADC0 Potentiometer");
-lcd_string(3, 0, "ADC0 Polling");
-
-// Display graphical representation of ADC value (line gauge)
-GLCD_Rectangle(50, 0, 60, adc_value);
-
-// Display numeric ADC value at specified position
-lcd_xy(4, 0);
-GLCD_4DigitDecimal(adc_value);
-}
-}
-#endif
 
 /*-----------------------------------*
  * 2. ADC Interrupt Implementation   *
@@ -818,7 +808,6 @@ ISR(ADC_vect)
  * 3. ADC Polling with UART Polling Implementation *
  *-----------------------------------------------*/
 #ifdef ADC_POLLING_UART_POLLING
-#define F_CPU 16000000UL
 #define BAUD 9600
 
 // Function prototypes
@@ -881,7 +870,6 @@ void usart_send(unsigned char ch)
  * 4. ADC Interrupt with UART Polling Implementation *
  *--------------------------------------------------*/
 #ifdef ADC_INTERRUPT_UART_POLLING
-#define F_CPU 16000000UL
 #define BAUD 9600
 
 void usart_send(unsigned char ch);
@@ -1026,7 +1014,6 @@ ISR(USART1_RX_vect)
  * 6. ADC Polling with UART Interrupt Implementation    *
  *------------------------------------------------------*/
 #ifdef ADC_POLLING_UART_INTERRUPT
-#define F_CPU 16000000UL
 #define BAUD 9600
 
 #include <avr/io.h>

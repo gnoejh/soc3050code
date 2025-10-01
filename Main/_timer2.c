@@ -41,6 +41,9 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif
 #include <util/delay.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +51,9 @@
 #include "config.h"
 #include "_main.h"
 #include "_timer2.h"
+
+// Only compile Timer2 functions if not using self-contained assembly example
+#ifndef ASSEMBLY_BLINK_BASIC
 
 /*
  * EDUCATIONAL CONSTANTS: Timer2 Prescaler Values
@@ -438,3 +444,5 @@ unsigned char Timer2_check_task3(void)
 	}
 	return 0;
 }
+
+#endif // !ASSEMBLY_BLINK_BASIC

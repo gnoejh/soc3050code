@@ -15,6 +15,9 @@
  */
 
 #include <avr/io.h>
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -23,6 +26,9 @@
 #include "config.h"
 #include "_main.h"
 #include "_uart.h"
+
+// Only compile UART functions if not using self-contained assembly example
+#ifndef ASSEMBLY_BLINK_BASIC
 
 /*
  * UART Communication Variables
@@ -396,6 +402,8 @@ ISR(USART0_RX_vect)
  * These are declared here for header compatibility
  */
 void main_serial_general_word(void) { /* Implemented in main_serial_general_word.c */ }
+
+#endif // !ASSEMBLY_BLINK_BASIC
 void main_serial_sentence(void) { /* Implemented in main_serial_sentence.c */ }
 void main_serial_polling_single_char(void) { /* Implemented in main_serial_polling_single_char.c */ }
 void Serial_Main(void) { /* Implemented in main_serial.c */ }

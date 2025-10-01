@@ -2,28 +2,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build ATmega128 Project",
+            "label": "Build Current Project",
             "type": "shell",
-            "command": "pwsh.exe",
+            "command": "C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-gcc.exe",
             "args": [
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "build.ps1"
+                "-mmcu=atmega128",
+                "-DF_CPU=7372800UL",
+                "-Os",
+                "-Wall",
+                "-Wextra",
+                "-I.",
+                "-I../../shared_libs",
+                "Main.c",
+                "../../shared_libs/_port.c",
+                "../../shared_libs/_init.c",
+                "-o",
+                "${fileBasenameNoExtension}.elf"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "options": {
-                "cwd": "${workspaceFolder}/Main"
+                "cwd": "${fileDirname}"
             },
             "problemMatcher": "$gcc",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "shared"
+                "panel": "shared",
+                "showReuseMessage": true
             }
         },
         {
@@ -33,87 +42,104 @@
             "args": [
                 "-O",
                 "ihex",
-                "Main.elf",
-                "Main.hex"
+                "-R",
+                ".eeprom",
+                "${fileBasenameNoExtension}.elf",
+                "${fileBasenameNoExtension}.hex"
             ],
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/Main"
+                "cwd": "${fileDirname}"
             },
-            "dependsOn": "Build ATmega128 Project"
+            "dependsOn": "Build Current Project",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
         },
         {
             "label": "Build and Generate HEX",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "Build ATmega128 Project",
+                "Build Current Project",
                 "Generate HEX File"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            }
+            "group": "build"
         },
         {
             "label": "Show Memory Usage",
-            "type": "shell", 
+            "type": "shell",
             "command": "C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-size.exe",
             "args": [
-                "Main.elf"
+                "-C",
+                "--mcu=atmega128",
+                "${fileBasenameNoExtension}.elf"
             ],
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/Main"
+                "cwd": "${fileDirname}"
             },
-            "dependsOn": "Build ATmega128 Project"
+            "dependsOn": "Build Current Project",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
         },
         {
-            "label": "Clean Build Files",
+            "label": "Clean Current Project",
             "type": "shell",
             "command": "Remove-Item",
             "args": [
                 "-Path",
                 "*.o,*.elf,*.hex,*.map",
+                "-Force",
                 "-ErrorAction",
                 "SilentlyContinue"
             ],
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/Main",
+                "cwd": "${fileDirname}",
                 "shell": {
                     "executable": "pwsh.exe"
                 }
-            }
-        },
-        {
-            "label": "Program ATmega128 (AVRDUDE)",
-            "type": "shell",
-            "command": "pwsh.exe",
-            "args": [
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "program.ps1"
-            ],
-            "group": "build",
-            "options": {
-                "cwd": "${workspaceFolder}/Main"
             },
-            "dependsOn": "Build and Generate HEX",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": true,
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build All Projects",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-Command",
+                "$projects = Get-ChildItem -Path '${workspaceFolder}/projects' -Directory | Where-Object { Test-Path \"$($_.FullName)/Main.c\" }; $total = $projects.Count; $current = 0; $success = 0; $failed = 0; Write-Host \"Found $total projects to build`n\" -ForegroundColor Green; foreach ($project in $projects) { $current++; Write-Host \"[$current/$total] Building $($project.Name)...\" -ForegroundColor Yellow; Set-Location $project.FullName; $result = & 'C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-gcc.exe' -mmcu=atmega128 -DF_CPU=7372800UL -Os -Wall -I. -I../../shared_libs Main.c ../../shared_libs/_port.c ../../shared_libs/_init.c -o \"$($project.Name).elf\" 2>&1; if ($LASTEXITCODE -eq 0) { $success++; Write-Host \"  ✓ Success\" -ForegroundColor Green } else { $failed++; Write-Host \"  ✗ Failed\" -ForegroundColor Red; Write-Host $result -ForegroundColor Red } }; Write-Host \"`nBuild Summary:\" -ForegroundColor Cyan; Write-Host \"  Success: $success\" -ForegroundColor Green; Write-Host \"  Failed: $failed\" -ForegroundColor Red; Write-Host \"  Total: $total\" -ForegroundColor White"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
                 "panel": "shared"
             }
         },
         {
             "label": "Open Serial Monitor",
-            "type": "shell", 
+            "type": "shell",
             "command": "powershell",
             "args": [
                 "-Command",
-                "Write-Host 'Available COM ports:'; [System.IO.Ports.SerialPort]::getportnames(); Write-Host 'Enter COM port (e.g., COM3):'; $port = Read-Host; Write-Host 'Starting serial monitor on' $port 'at 9600 baud...'; Write-Host 'Press Ctrl+C to exit'; $serialPort = New-Object System.IO.Ports.SerialPort($port, 9600); $serialPort.Open(); try { while($true) { if($serialPort.BytesToRead -gt 0) { Write-Host $serialPort.ReadExisting() -NoNewline } Start-Sleep -Milliseconds 10 } } finally { $serialPort.Close() }"
+                "Write-Host 'Available COM ports:' -ForegroundColor Green; [System.IO.Ports.SerialPort]::getportnames() | ForEach-Object { Write-Host \"  $_\" -ForegroundColor Yellow }; Write-Host 'Enter COM port (e.g., COM3):' -ForegroundColor Green; $port = Read-Host; Write-Host \"Starting serial monitor on $port at 9600 baud...\" -ForegroundColor Green; Write-Host 'Press Ctrl+C to exit' -ForegroundColor Yellow; $serialPort = New-Object System.IO.Ports.SerialPort($port, 9600); try { $serialPort.Open(); Write-Host \"Connected to $port\" -ForegroundColor Green; while($true) { if($serialPort.BytesToRead -gt 0) { Write-Host $serialPort.ReadExisting() -NoNewline } Start-Sleep -Milliseconds 10 } } catch { Write-Host \"Error: $_\" -ForegroundColor Red } finally { if($serialPort.IsOpen) { $serialPort.Close() } }"
             ],
             "group": "test",
             "presentation": {
@@ -123,6 +149,93 @@
                 "panel": "new"
             },
             "isBackground": true
+        },
+        {
+            "label": "Program to ATmega128",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "./program.ps1"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "dependsOn": "Generate HEX File"
+        },
+        {
+            "label": "Program with Custom Programmer",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "Write-Host 'Available programmers:' -ForegroundColor Green; Write-Host '  arduino    - Arduino as ISP' -ForegroundColor Yellow; Write-Host '  usbasp     - USBasp programmer' -ForegroundColor Yellow; Write-Host '  avrisp     - AVRISP mkII' -ForegroundColor Yellow; Write-Host '  stk500v2   - STK500 v2' -ForegroundColor Yellow; Write-Host '  dragon_isp - AVR Dragon' -ForegroundColor Yellow; $prog = Read-Host 'Enter programmer type'; & './program.ps1' -Programmer $prog"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "dependsOn": "Generate HEX File"
+        },
+        {
+            "label": "List COM Ports",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "./program.ps1",
+                "-ListPorts"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Program Any Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/program.ps1"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
         }
     ]
 }
