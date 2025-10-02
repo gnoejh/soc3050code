@@ -18,7 +18,7 @@ param(
     [switch]$TestAll = $false,
     
     [Parameter(Mandatory=$false)]
-    [switch]$Verbose = $false,
+    [switch]$VerboseOutput = $false,
     
     [Parameter(Mandatory=$false)]
     [string]$LogLevel = "INFO"
@@ -40,7 +40,7 @@ function Write-Log {
         default { "Gray" }
     }
     
-    if ($Verbose -or $Level -ne "DEBUG") {
+    if ($VerboseOutput -or $Level -ne "DEBUG") {
         Write-Host "[$timestamp] [$Level] $Message" -ForegroundColor $color
     }
     

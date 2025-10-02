@@ -1,43 +1,121 @@
-# ATmega128 Educational Framework# ATmega128 Educational Framework
+# ATmega128 Educational Framework# ATmega128 Educational Framework# ATmega128 Educational Framework# ATmega128 Educational Framework
 
 
 
-**35 Progressive Projects for Embedded Systems Learning****35 Progressive Projects for Embedded Systems Learning**
+**35 Progressive Projects for Embedded Systems Learning**
 
 
 
-## Quick Start## Quick Start
+## Quick Start**35 Progressive Projects for Embedded Systems Learning**
 
 
 
-1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
+1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
 
-2. **Open:** `projects/01_Port_Assembly/Main.cproj`2. **Open:** `projects/01_Port_Assembly/Main.cproj`
+2. **Open:** `projects/01_Port_Assembly/Main.cproj`
 
-3. **Build:** Press F73. **Build:** Press F7
+3. **Build:** Press F7## Quick Start**35 Progressive Projects for Embedded Systems Learning****35 Progressive Projects for Embedded Systems Learning**
 
-4. **Program:** Connect ATmega128 and press Ctrl+Alt+F54. **Program:** Connect ATmega128 and press Ctrl+Alt+F5
-
-
-
-## Projects Overview## Projects Overview
+4. **Program:** Connect ATmega128 and press Ctrl+Alt+F5
 
 
 
-- **Projects 1-6:** Assembly fundamentals and port control- **Projects 1-6:** Assembly fundamentals and port control
+## Projects Overview
 
-- **Projects 7-14:** C programming with UART and ADC- **Projects 7-14:** C programming with UART and ADC
+1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
 
-- **Projects 15-21:** Advanced interfaces (motors, sound, memory)- **Projects 15-21:** Advanced interfaces (motors, sound, memory)
+- **Projects 1-6:** Assembly fundamentals and port control
 
-- **Projects 22-35:** Complete applications (games, IoT)- **Projects 22-35:** Complete applications (games, IoT)
+- **Projects 7-14:** C programming with UART and ADC2. **Open:** `projects/01_Port_Assembly/Main.cproj`
+
+- **Projects 15-21:** Advanced interfaces (motors, sound, memory)
+
+- **Projects 22-35:** Complete applications (games, IoT)3. **Build:** Press F7## Quick Start## Quick Start
 
 
+
+## Development Tools4. **Program:** Connect ATmega128 and press Ctrl+Alt+F5
+
+
+
+```powershell
+
+.\cli-build-all.ps1            # Build all projects
+
+.\cli-build-project.ps1        # Build current project (generates .hex file)## Projects Overview
+
+.\cli-test-system.ps1          # Test and debug projects
+
+.\cli-analyze-code.ps1         # Check code quality1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
+
+.\cli-new-project.ps1          # Create new project template
+
+```- **Projects 1-6:** Assembly fundamentals and port control
+
+
+
+## Hardware Requirements- **Projects 7-14:** C programming with UART and ADC2. **Open:** `projects/01_Port_Assembly/Main.cproj`2. **Open:** `projects/01_Port_Assembly/Main.cproj`
+
+
+
+- ATmega128 development board- **Projects 15-21:** Advanced interfaces (motors, sound, memory)
+
+- LEDs connected to PORTB
+
+- Switches on PORTC  - **Projects 22-35:** Complete applications (games, IoT)3. **Build:** Press F73. **Build:** Press F7
+
+- UART connection for debugging (9600 baud)
+
+
+
+## Learning Path
+
+## Development Tools4. **Program:** Connect ATmega128 and press Ctrl+Alt+F54. **Program:** Connect ATmega128 and press Ctrl+Alt+F5
+
+Each project includes educational comments and interactive UART commands for testing. Progress sequentially as each project builds on previous concepts.
+
+
+
+For detailed information, see `FRAMEWORK_GUIDE.md`.
+```powershell
+
+.\build-all.ps1                # Build all projects
+
+.\build-project.ps1            # Build current project and program to ATmega128## Projects Overview## Projects Overview
+
+.\test-system.ps1              # Test and debug projects
+
+.\analyze-code.ps1             # Check code quality
+
+.\new-project.ps1              # Create new project template
+
+```- **Projects 1-6:** Assembly fundamentals and port control- **Projects 1-6:** Assembly fundamentals and port control
+
+
+
+## Hardware Requirements- **Projects 7-14:** C programming with UART and ADC- **Projects 7-14:** C programming with UART and ADC
+
+
+
+- ATmega128 development board- **Projects 15-21:** Advanced interfaces (motors, sound, memory)- **Projects 15-21:** Advanced interfaces (motors, sound, memory)
+
+- LEDs connected to PORTB
+
+- Switches on PORTC  - **Projects 22-35:** Complete applications (games, IoT)- **Projects 22-35:** Complete applications (games, IoT)
+
+- UART connection for debugging (9600 baud)
+
+
+
+## Learning Path
 
 ## Development Tools## Development Tools
 
+Each project includes educational comments and interactive UART commands for testing. Progress sequentially as each project builds on previous concepts.
 
 
+
+For detailed information, see `FRAMEWORK_GUIDE.md`.
 ```powershell```powershell
 
 .\enhanced_build_system.ps1 -BuildAll    # Build all projects.\enhanced_build_system.ps1 -BuildAll    # Build all projects
@@ -97,9 +175,11 @@ For detailed information, see `FRAMEWORK_GUIDE.md`.├── projects/          
 
 | Task | Description | Shortcut |
 |------|-------------|----------|
-| **Build Current Project** | Compile current project | `Ctrl+Shift+B` |
+| **Build Current Project** | Compile current project | `F7` |
+| **Program Current Project** | Program ATmega128 (Arduino/COM3 default) | `Ctrl+Alt+F5` |
+| **Build and Program Current Project** | Build then program in sequence | `Ctrl+Alt+F7` |
 | **Generate HEX File** | Create .hex file for programming | Command Palette |
-| **Program Any Project** | Program ATmega128 with auto-detection | Command Palette |
+| **Program with Custom Programmer** | Choose programmer type (USBasp/Arduino/etc) | Command Palette |
 | **Show Memory Usage** | Display flash/RAM usage statistics | Command Palette |
 | **Build All Projects** | Build all 35 projects in sequence | Command Palette |
 | **List COM Ports** | Show available serial ports | Command Palette |

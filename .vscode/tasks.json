@@ -2,40 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build Current Project",
-            "type": "shell",
-            "command": "C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-gcc.exe",
-            "args": [
-                "-mmcu=atmega128",
-                "-DF_CPU=7372800UL",
-                "-Os",
-                "-Wall",
-                "-Wextra",
-                "-I.",
-                "-I../../shared_libs",
-                "Main.c",
-                "../../shared_libs/_port.c",
-                "../../shared_libs/_init.c",
-                "-o",
-                "Main.elf"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": "$gcc",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true
-            }
-        },
-        {
             "label": "Build Specific Project",
             "type": "shell",
             "command": "powershell.exe",
@@ -57,16 +23,46 @@
             }
         },
         {
-            "label": "Build and Program Current Project",
+            "label": "Build Current Project",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "w:\\soc3050code\\build_and_program_project.ps1",
+                "${workspaceFolder}\\cli-build-project.ps1",
                 "-ProjectDir",
                 "${fileDirname}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Program Current Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\cli-program-project.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-Programmer",
+                "arduino",
+                "-Port",
+                "COM3"
             ],
             "group": "build",
             "options": {
@@ -111,6 +107,41 @@
                 "Generate HEX File"
             ],
             "group": "build"
+        },
+        {
+            "label": "Program with Custom Programmer",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\cli-program-project.ps1",
+                "-Programmer",
+                "${input:programmerType}"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build and Program Current Project",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Current Project",
+                "Program Current Project"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
         },
         {
             "label": "Show Memory Usage",
@@ -163,8 +194,11 @@
             "type": "shell",
             "command": "powershell.exe",
             "args": [
-                "-Command",
-                "$projects = Get-ChildItem -Path '${workspaceFolder}/projects' -Directory | Where-Object { Test-Path \"$($_.FullName)/Main.c\" }; $total = $projects.Count; $current = 0; $success = 0; $failed = 0; Write-Host \"Found $total projects to build`n\" -ForegroundColor Green; foreach ($project in $projects) { $current++; Write-Host \"[$current/$total] Building $($project.Name)...\" -ForegroundColor Yellow; Set-Location $project.FullName; $result = & 'C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-gcc.exe' -mmcu=atmega128 -DF_CPU=7372800UL -Os -Wall -I. -I../../shared_libs Main.c ../../shared_libs/_port.c ../../shared_libs/_init.c -o \"$($project.Name).elf\" 2>&1; if ($LASTEXITCODE -eq 0) { $success++; Write-Host \"  ✓ Success\" -ForegroundColor Green } else { $failed++; Write-Host \"  ✗ Failed\" -ForegroundColor Red; Write-Host $result -ForegroundColor Red } }; Write-Host \"`nBuild Summary:\" -ForegroundColor Cyan; Write-Host \"  Success: $success\" -ForegroundColor Green; Write-Host \"  Failed: $failed\" -ForegroundColor Red; Write-Host \"  Total: $total\" -ForegroundColor White"
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\cli-build-all.ps1",
+                "-TestAll"
             ],
             "group": "build",
             "options": {
@@ -195,63 +229,15 @@
             "isBackground": true
         },
         {
-            "label": "Program Current Project",
+            "label": "Test System",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "w:\\soc3050code\\program_project.ps1",
-                "-FilePath",
-                "${file}"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "new"
-            }
-        },
-        {
-            "label": "Program with Custom Programmer",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-ExecutionPolicy",
-                "Bypass",
-                "-Command",
-                "Write-Host 'Available programmers:' -ForegroundColor Green; Write-Host '  arduino    - Arduino as ISP' -ForegroundColor Yellow; Write-Host '  usbasp     - USBasp programmer' -ForegroundColor Yellow; Write-Host '  avrisp     - AVRISP mkII' -ForegroundColor Yellow; Write-Host '  stk500v2   - STK500 v2' -ForegroundColor Yellow; Write-Host '  dragon_isp - AVR Dragon' -ForegroundColor Yellow; $prog = Read-Host 'Enter programmer type'; & '${workspaceFolder}/program.ps1' -Programmer $prog"
-            ],
-            "group": "build",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "new"
-            },
-            "dependsOn": "Generate HEX File"
-        },
-        {
-            "label": "List COM Ports",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "${workspaceFolder}/program.ps1",
-                "-ListPorts"
+                "${workspaceFolder}\\cli-test-system.ps1",
+                "-Interactive"
             ],
             "group": "test",
             "options": {
@@ -265,14 +251,37 @@
             }
         },
         {
-            "label": "Program Any Project (Interactive)",
+            "label": "Analyze Code Quality",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}/program.ps1"
+                "${workspaceFolder}\\cli-analyze-code.ps1",
+                "-ProjectPath",
+                "${fileDirname}"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Create New Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\cli-new-project.ps1"
             ],
             "group": "build",
             "options": {
@@ -284,6 +293,20 @@
                 "focus": true,
                 "panel": "new"
             }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "programmerType",
+            "description": "Select programmer type",
+            "type": "pickString",
+            "options": [
+                "usbasp",
+                "arduino",
+                "avrisp",
+                "stk500v2"
+            ],
+            "default": "usbasp"
         }
     ]
 }

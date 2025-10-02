@@ -1,0 +1,290 @@
+[2025-10-02 07:39:51] [INFO] ATmega128 Educational Framework - Enhanced Build System v2.0
+[2025-10-02 07:39:51] [INFO] Build Mode: Debug, Clean: False, Program: False, TestAll: False
+[2025-10-02 07:39:51] [ERROR] No project specified. Use -ProjectDir or -TestAll
+[2025-10-02 07:39:51] [INFO] Usage examples:
+[2025-10-02 07:39:51] [INFO]   .\enhanced_build_system.ps1 -ProjectDir 'projects\01_Port'
+[2025-10-02 07:39:51] [INFO]   .\enhanced_build_system.ps1 -TestAll
+[2025-10-02 07:39:51] [INFO]   .\enhanced_build_system.ps1 -ProjectDir 'projects\01_Port' -CleanBuild -Program
+[2025-10-02 07:39:51] [INFO] Total execution time: 0.03 seconds
+[2025-10-02 07:39:57] [INFO] ATmega128 Educational Framework - Enhanced Build System v2.0
+[2025-10-02 07:39:57] [INFO] Build Mode: Debug, Clean: False, Program: False, TestAll: True
+[2025-10-02 07:39:57] [INFO] Testing all projects...
+[2025-10-02 07:39:57] [INFO] Processing project: 01_Port
+[2025-10-02 07:39:57] [INFO] Building project: W:\soc3050code\projects\01_Port (Mode: Debug)
+[2025-10-02 07:39:57] [INFO] Validating project structure: W:\soc3050code\projects\01_Port
+[2025-10-02 07:39:57] [SUCCESS] Project structure validation passed
+[2025-10-02 07:39:57] [INFO] Using project file: 01_Port.cproj
+[2025-10-02 07:39:57] [INFO] Starting build process...
+[2025-10-02 07:39:57] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:39:57] [ERROR] Project 01_Port - FAILED (Build)
+[2025-10-02 07:39:57] [INFO] ---
+[2025-10-02 07:39:57] [INFO] Processing project: 01_Port_Assembly
+[2025-10-02 07:39:57] [INFO] Building project: W:\soc3050code\projects\01_Port_Assembly (Mode: Debug)
+[2025-10-02 07:39:57] [INFO] Validating project structure: W:\soc3050code\projects\01_Port_Assembly
+[2025-10-02 07:39:57] [ERROR] Missing required files: config.h
+[2025-10-02 07:39:57] [ERROR] Project validation failed
+[2025-10-02 07:39:57] [ERROR] Project 01_Port_Assembly - FAILED (Build)
+[2025-10-02 07:39:57] [INFO] ---
+[2025-10-02 07:39:57] [INFO] Processing project: 03_Serial_Polling_Single_Char
+[2025-10-02 07:39:57] [INFO] Building project: W:\soc3050code\projects\03_Serial_Polling_Single_Char (Mode: Debug)
+[2025-10-02 07:39:57] [INFO] Validating project structure: W:\soc3050code\projects\03_Serial_Polling_Single_Char
+[2025-10-02 07:39:57] [SUCCESS] Project structure validation passed
+[2025-10-02 07:39:57] [INFO] Using project file: Serial_Polling_Single_Char.cproj
+[2025-10-02 07:39:57] [INFO] Starting build process...
+[2025-10-02 07:39:58] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:39:58] [ERROR] Project 03_Serial_Polling_Single_Char - FAILED (Build)
+[2025-10-02 07:39:58] [INFO] ---
+[2025-10-02 07:39:58] [INFO] Processing project: 04_Assembly_Blink_Individual
+[2025-10-02 07:39:58] [INFO] Building project: W:\soc3050code\projects\04_Assembly_Blink_Individual (Mode: Debug)
+[2025-10-02 07:39:58] [INFO] Validating project structure: W:\soc3050code\projects\04_Assembly_Blink_Individual
+[2025-10-02 07:39:58] [SUCCESS] Project structure validation passed
+[2025-10-02 07:39:58] [INFO] Using project file: Assembly_Blink_Individual.cproj
+[2025-10-02 07:39:58] [INFO] Starting build process...
+[2025-10-02 07:39:59] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:39:59] [ERROR] Project 04_Assembly_Blink_Individual - FAILED (Build)
+[2025-10-02 07:39:59] [INFO] ---
+[2025-10-02 07:39:59] [INFO] Processing project: 05_Assembly_Button_Simple
+[2025-10-02 07:39:59] [INFO] Building project: W:\soc3050code\projects\05_Assembly_Button_Simple (Mode: Debug)
+[2025-10-02 07:39:59] [INFO] Validating project structure: W:\soc3050code\projects\05_Assembly_Button_Simple
+[2025-10-02 07:39:59] [SUCCESS] Project structure validation passed
+[2025-10-02 07:39:59] [INFO] Using project file: Assembly_Button_Simple.cproj
+[2025-10-02 07:39:59] [INFO] Starting build process...
+[2025-10-02 07:39:59] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:39:59] [ERROR] Project 05_Assembly_Button_Simple - FAILED (Build)
+[2025-10-02 07:39:59] [INFO] ---
+[2025-10-02 07:39:59] [INFO] Processing project: 06_Assembly_Button_LED_Control
+[2025-10-02 07:39:59] [INFO] Building project: W:\soc3050code\projects\06_Assembly_Button_LED_Control (Mode: Debug)
+[2025-10-02 07:39:59] [INFO] Validating project structure: W:\soc3050code\projects\06_Assembly_Button_LED_Control
+[2025-10-02 07:39:59] [SUCCESS] Project structure validation passed
+[2025-10-02 07:39:59] [INFO] Using project file: Assembly_Button_LED_Control.cproj
+[2025-10-02 07:39:59] [INFO] Starting build process...
+[2025-10-02 07:40:00] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:00] [ERROR] Project 06_Assembly_Button_LED_Control - FAILED (Build)
+[2025-10-02 07:40:00] [INFO] ---
+[2025-10-02 07:40:00] [INFO] Processing project: 07_Serial_Polling_String
+[2025-10-02 07:40:00] [INFO] Building project: W:\soc3050code\projects\07_Serial_Polling_String (Mode: Debug)
+[2025-10-02 07:40:00] [INFO] Validating project structure: W:\soc3050code\projects\07_Serial_Polling_String
+[2025-10-02 07:40:00] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:00] [INFO] Using project file: 07_Serial_Polling_String.cproj
+[2025-10-02 07:40:00] [INFO] Starting build process...
+[2025-10-02 07:40:00] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:00] [ERROR] Project 07_Serial_Polling_String - FAILED (Build)
+[2025-10-02 07:40:00] [INFO] ---
+[2025-10-02 07:40:00] [INFO] Processing project: 08_Serial_Polling_Echo
+[2025-10-02 07:40:00] [INFO] Building project: W:\soc3050code\projects\08_Serial_Polling_Echo (Mode: Debug)
+[2025-10-02 07:40:00] [INFO] Validating project structure: W:\soc3050code\projects\08_Serial_Polling_Echo
+[2025-10-02 07:40:00] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:00] [INFO] Using project file: Serial_Polling_Echo.cproj
+[2025-10-02 07:40:00] [INFO] Starting build process...
+[2025-10-02 07:40:01] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:01] [ERROR] Project 08_Serial_Polling_Echo - FAILED (Build)
+[2025-10-02 07:40:01] [INFO] ---
+[2025-10-02 07:40:01] [INFO] Processing project: 09_ADC_Basic_Reading
+[2025-10-02 07:40:01] [INFO] Building project: W:\soc3050code\projects\09_ADC_Basic_Reading (Mode: Debug)
+[2025-10-02 07:40:01] [INFO] Validating project structure: W:\soc3050code\projects\09_ADC_Basic_Reading
+[2025-10-02 07:40:01] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:01] [INFO] Using project file: 09_ADC_Basic_Reading.cproj
+[2025-10-02 07:40:01] [INFO] Starting build process...
+[2025-10-02 07:40:01] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:01] [ERROR] Project 09_ADC_Basic_Reading - FAILED (Build)
+[2025-10-02 07:40:01] [INFO] ---
+[2025-10-02 07:40:01] [INFO] Processing project: 10_CDS_Light_Sensor
+[2025-10-02 07:40:01] [INFO] Building project: W:\soc3050code\projects\10_CDS_Light_Sensor (Mode: Debug)
+[2025-10-02 07:40:01] [INFO] Validating project structure: W:\soc3050code\projects\10_CDS_Light_Sensor
+[2025-10-02 07:40:01] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:01] [INFO] Using project file: 10_CDS_Light_Sensor.cproj
+[2025-10-02 07:40:01] [INFO] Starting build process...
+[2025-10-02 07:40:02] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:02] [ERROR] Project 10_CDS_Light_Sensor - FAILED (Build)
+[2025-10-02 07:40:02] [INFO] ---
+[2025-10-02 07:40:02] [INFO] Processing project: 11_Accelerometer_Reading
+[2025-10-02 07:40:02] [INFO] Building project: W:\soc3050code\projects\11_Accelerometer_Reading (Mode: Debug)
+[2025-10-02 07:40:02] [INFO] Validating project structure: W:\soc3050code\projects\11_Accelerometer_Reading
+[2025-10-02 07:40:02] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:02] [INFO] Using project file: 11_Accelerometer_Reading.cproj
+[2025-10-02 07:40:02] [INFO] Starting build process...
+[2025-10-02 07:40:02] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:02] [ERROR] Project 11_Accelerometer_Reading - FAILED (Build)
+[2025-10-02 07:40:02] [INFO] ---
+[2025-10-02 07:40:02] [INFO] Processing project: 12_Graphics_Display
+[2025-10-02 07:40:02] [INFO] Building project: W:\soc3050code\projects\12_Graphics_Display (Mode: Debug)
+[2025-10-02 07:40:02] [INFO] Validating project structure: W:\soc3050code\projects\12_Graphics_Display
+[2025-10-02 07:40:02] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:02] [INFO] Using project file: 12_Graphics_Display.cproj
+[2025-10-02 07:40:02] [INFO] Starting build process...
+[2025-10-02 07:40:03] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:03] [ERROR] Project 12_Graphics_Display - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 13_Timer_Basic
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\13_Timer_Basic (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\13_Timer_Basic
+[2025-10-02 07:40:03] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:03] [INFO] Using project file: 13_Timer_Basic.cproj
+[2025-10-02 07:40:03] [INFO] Starting build process...
+[2025-10-02 07:40:03] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:03] [ERROR] Project 13_Timer_Basic - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 14_Interrupt_Basic
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\14_Interrupt_Basic (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\14_Interrupt_Basic
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 14_Interrupt_Basic - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 15_Joystick_Control
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\15_Joystick_Control (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\15_Joystick_Control
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 15_Joystick_Control - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 16_Motor_Control
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\16_Motor_Control (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\16_Motor_Control
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 16_Motor_Control - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 17_Port_Configuration
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\17_Port_Configuration (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\17_Port_Configuration
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 17_Port_Configuration - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 18_Sound_Basic
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\18_Sound_Basic (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\18_Sound_Basic
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 18_Sound_Basic - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 19_Sound_Twinkle
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\19_Sound_Twinkle (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\19_Sound_Twinkle
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 19_Sound_Twinkle - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 20_Sound_Atari
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\20_Sound_Atari (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\20_Sound_Atari
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 20_Sound_Atari - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 21_Memory_Test
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\21_Memory_Test (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\21_Memory_Test
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 21_Memory_Test - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 22_Inline_Assembly
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\22_Inline_Assembly (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\22_Inline_Assembly
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 22_Inline_Assembly - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 23_Lab_Serial
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\23_Lab_Serial (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\23_Lab_Serial
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 23_Lab_Serial - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 24_Serial_General_Word
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\24_Serial_General_Word (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\24_Serial_General_Word
+[2025-10-02 07:40:03] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:03] [ERROR] Project validation failed
+[2025-10-02 07:40:03] [ERROR] Project 24_Serial_General_Word - FAILED (Build)
+[2025-10-02 07:40:03] [INFO] ---
+[2025-10-02 07:40:03] [INFO] Processing project: 25_IoT_Basic
+[2025-10-02 07:40:03] [INFO] Building project: W:\soc3050code\projects\25_IoT_Basic (Mode: Debug)
+[2025-10-02 07:40:03] [INFO] Validating project structure: W:\soc3050code\projects\25_IoT_Basic
+[2025-10-02 07:40:03] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:03] [INFO] Using project file: 25_IoT_Basic.cproj
+[2025-10-02 07:40:03] [INFO] Starting build process...
+[2025-10-02 07:40:04] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:04] [ERROR] Project 25_IoT_Basic - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 26_IoT_Version1
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\26_IoT_Version1 (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\26_IoT_Version1
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 26_IoT_Version1 - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 27_IoT_Backup
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\27_IoT_Backup (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\27_IoT_Backup
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 27_IoT_Backup - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 28_Game_Template
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\28_Game_Template (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\28_Game_Template
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 28_Game_Template - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 29_Game_Basic
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\29_Game_Basic (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\29_Game_Basic
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 29_Game_Basic - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 30_Game_Hangman
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\30_Game_Hangman (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\30_Game_Hangman
+[2025-10-02 07:40:04] [SUCCESS] Project structure validation passed
+[2025-10-02 07:40:04] [INFO] Using project file: 30_Game_Hangman.cproj
+[2025-10-02 07:40:04] [INFO] Starting build process...
+[2025-10-02 07:40:04] [ERROR] Build failed with exit code: 1
+[2025-10-02 07:40:04] [ERROR] Project 30_Game_Hangman - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 31_Game_Obstacle
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\31_Game_Obstacle (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\31_Game_Obstacle
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 31_Game_Obstacle - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 32_Game_Pong_UART
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\32_Game_Pong_UART (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\32_Game_Pong_UART
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 32_Game_Pong_UART - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 33_Game_Puzzle
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\33_Game_Puzzle (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\33_Game_Puzzle
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 33_Game_Puzzle - FAILED (Build)
+[2025-10-02 07:40:04] [INFO] ---
+[2025-10-02 07:40:04] [INFO] Processing project: 34_Game_Word_Puzzle
+[2025-10-02 07:40:04] [INFO] Building project: W:\soc3050code\projects\34_Game_Word_Puzzle (Mode: Debug)
+[2025-10-02 07:40:04] [INFO] Validating project structure: W:\soc3050code\projects\34_Game_Word_Puzzle
+[2025-10-02 07:40:04] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:04] [ERROR] Project validation failed
+[2025-10-02 07:40:04] [ERROR] Project 34_Game_Word_Puzzle - FAILED (Build)
+[2025-10-02 07:40:05] [INFO] ---
+[2025-10-02 07:40:05] [INFO] Processing project: 35_Game_Word_Puzzle_V2
+[2025-10-02 07:40:05] [INFO] Building project: W:\soc3050code\projects\35_Game_Word_Puzzle_V2 (Mode: Debug)
+[2025-10-02 07:40:05] [INFO] Validating project structure: W:\soc3050code\projects\35_Game_Word_Puzzle_V2
+[2025-10-02 07:40:05] [ERROR] Missing required files: config.h
+[2025-10-02 07:40:05] [ERROR] Project validation failed
+[2025-10-02 07:40:05] [ERROR] Project 35_Game_Word_Puzzle_V2 - FAILED (Build)
+[2025-10-02 07:40:05] [INFO] ---
+[2025-10-02 07:40:05] [INFO] Build Summary:
+[2025-10-02 07:40:05] [INFO] Total Projects: 35
+[2025-10-02 07:40:05] [SUCCESS] Successful: 0
+[2025-10-02 07:40:05] [ERROR] Failed: 35
+[2025-10-02 07:40:05] [INFO] Success Rate: 0%
+[2025-10-02 07:40:05] [INFO] Total execution time: 8.03 seconds
