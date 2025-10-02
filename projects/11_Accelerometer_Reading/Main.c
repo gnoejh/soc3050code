@@ -1,16 +1,97 @@
 /*
- * Accelerometer Reading
+ * Accelerometer Reading - Educational Example
  * ATmega128 Educational Framework
  *
- * This project demonstrates accelerometer sensor reading
- * for motion and orientation detection.
+ * LEARNING OBJECTIVES:
+ * - Understand 3-axis accelerometer operation
+ * - Learn multi-channel ADC reading
+ * - Practice motion detection algorithms
+ * - Master real-time sensor data processing
+ *
+ * HARDWARE SETUP:
+ * - Connect accelerometer X-axis to ADC2 (PA2)
+ * - Connect accelerometer Y-axis to ADC3 (PA3)
+ * - Connect accelerometer Z-axis to ADC4 (PA4)
+ * - LEDs on PORTB for motion indication
+ * - UART for data logging
  */
 
 #include "config.h"
 
 int main(void)
 {
-    main_accelerometer();
+    // Initialize system components
+    init_devices(); // Initialize all peripherals
+
+    // Initialize UART for data output
+    Uart1_init(); // 9600 baud serial communication
+
+    // Send startup message
+    puts_USART1("3-Axis Accelerometer Started\r\n");
+    puts_USART1("Reading X, Y, Z acceleration values...\r\n");
+
+    uint16_t x_axis, y_axis, z_axis;
+    uint16_t x_prev = 512, y_prev = 512, z_prev = 512; // Assume 512 = center
+    char buffer[80];
+    uint8_t motion_detected = 0;
+
+    while (1)
+    {
+        // Read accelerometer values from ADC channels 2, 3, 4
+        x_axis = Adc_read_ch(2); // X-axis
+        y_axis = Adc_read_ch(3); // Y-axis
+        z_axis = Adc_read_ch(4); // Z-axis
+
+        // Detect motion (simple threshold-based)
+        if (abs(x_axis - x_prev) > 50 ||
+            abs(y_axis - y_prev) > 50 ||
+            abs(z_axis - z_prev) > 50)
+        {
+            motion_detected = 1;
+            PORTB = 0x00; // Turn on all LEDs (active LOW)
+        }
+        else
+        {
+            motion_detected = 0;
+            PORTB = 0xFF; // Turn off all LEDs
+        }
+
+        // Send data via UART
+        sprintf(buffer, "X:%u Y:%u Z:%u Motion:%s\r\n",
+                x_axis, y_axis, z_axis,
+                motion_detected ? "YES" : "NO");
+        puts_USART1(buffer);
+
+        // Analyze orientation (simplified)
+        if (z_axis > 700)
+        {
+            puts_USART1("Orientation: FACE UP\r\n");
+        }
+        else if (z_axis < 300)
+        {
+            puts_USART1("Orientation: FACE DOWN\r\n");
+        }
+        else if (x_axis > 700)
+        {
+            puts_USART1("Orientation: TILTED RIGHT\r\n");
+        }
+        else if (x_axis < 300)
+        {
+            puts_USART1("Orientation: TILTED LEFT\r\n");
+        }
+        else
+        {
+            puts_USART1("Orientation: LEVEL\r\n");
+        }
+
+        // Store previous values for motion detection
+        x_prev = x_axis;
+        y_prev = y_axis;
+        z_prev = z_axis;
+
+        // Wait before next reading
+        _delay_ms(200);
+    }
 
     return 0;
 }

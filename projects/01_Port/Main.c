@@ -263,10 +263,10 @@ int main(void)
     // Choose which Port Programming demonstration to run:
 
     // Level 1: Basic port output patterns
-    // demo_basic_port_output();
+    demo_basic_port_output();
 
     // Level 2: Individual bit manipulation techniques
-    demo_bit_manipulation();
+    // demo_bit_manipulation();
 
     // Level 3: Interactive input/output control
     // demo_input_output_interaction();

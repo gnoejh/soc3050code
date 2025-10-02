@@ -1,37 +1,76 @@
-# 🎓 ATmega128 Educational Development Environment
+# ATmega128 Educational Framework# ATmega128 Educational Framework
 
-**Complete VS Code and Microchip Studio Development Environment for ATmega128**
 
-A comprehensive learning environment with 35 educational projects progressing from basic assembly to advanced embedded C programming. Includes both VS Code and Microchip Studio support for flexible development.
 
-## 🚀 Quick Start
+**35 Progressive Projects for Embedded Systems Learning****35 Progressive Projects for Embedded Systems Learning**
 
-### **Prerequisites**
-- **Microchip Studio** (formerly Atmel Studio 7.0) - Primary development environment
-- **VS Code** - Alternative development environment with custom tasks
-- **ATmega128 Development Board** with programmer (Arduino, USBasp, AVRISP mkII, etc.)
 
-### **Development Workflow**
 
-#### **Option 1: VS Code Development (Recommended for Quick Development)**
-1. Open project folder in VS Code: `projects/[project_name]/`
-2. **Build**: `Ctrl+Shift+B` or VS Code Command Palette → "Build Current Project"
-3. **Generate HEX**: Command Palette → "Generate HEX File"
-4. **Program MCU**: Command Palette → "Program Any Project"
+## Quick Start## Quick Start
 
-#### **Option 2: Microchip Studio (Recommended for Advanced Features)**
-1. Open `Main.atsln` in Microchip Studio
-2. Select desired project as startup project
-3. Build with `F7` or Build menu
-4. Program using Tools → Device Programming
 
----
 
-## 📁 Project Structure
+1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)1. **Install:** [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
 
-```
-soc3050code/
-├── projects/                    # 35 Educational Projects
+2. **Open:** `projects/01_Port_Assembly/Main.cproj`2. **Open:** `projects/01_Port_Assembly/Main.cproj`
+
+3. **Build:** Press F73. **Build:** Press F7
+
+4. **Program:** Connect ATmega128 and press Ctrl+Alt+F54. **Program:** Connect ATmega128 and press Ctrl+Alt+F5
+
+
+
+## Projects Overview## Projects Overview
+
+
+
+- **Projects 1-6:** Assembly fundamentals and port control- **Projects 1-6:** Assembly fundamentals and port control
+
+- **Projects 7-14:** C programming with UART and ADC- **Projects 7-14:** C programming with UART and ADC
+
+- **Projects 15-21:** Advanced interfaces (motors, sound, memory)- **Projects 15-21:** Advanced interfaces (motors, sound, memory)
+
+- **Projects 22-35:** Complete applications (games, IoT)- **Projects 22-35:** Complete applications (games, IoT)
+
+
+
+## Development Tools## Development Tools
+
+
+
+```powershell```powershell
+
+.\enhanced_build_system.ps1 -BuildAll    # Build all projects.\enhanced_build_system.ps1 -BuildAll    # Build all projects
+
+.\system_debugger.ps1 -Interactive       # Test and debug.\system_debugger.ps1 -Interactive       # Test and debug
+
+``````
+
+## Hardware Requirements
+
+## Hardware Requirements
+
+- ATmega128 development board
+
+- ATmega128 development board- LEDs connected to PORTB
+
+- LEDs connected to PORTB- Switches on PORTC  
+
+- Switches on PORTC  - UART connection for debugging (9600 baud)
+
+- UART connection for debugging (9600 baud)
+
+## Learning Path
+
+## Learning Path
+
+Each project includes educational comments and interactive UART commands for testing. Progress sequentially as each project builds on previous concepts.
+
+Each project includes educational comments and interactive UART commands for testing. Progress sequentially as each project builds on previous concepts.
+
+For detailed information, see `FRAMEWORK_GUIDE.md`.
+
+For detailed information, see `FRAMEWORK_GUIDE.md`.├── projects/                    # 35 Educational Projects
 │   ├── 01_Assembly_Blink_Basic/     # Basic LED blinking
 │   ├── 02_Assembly_Blink_Pattern/   # Pattern-based blinking
 │   ├── 05_Assembly_Button_Simple/   # Button input handling

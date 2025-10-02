@@ -10,12 +10,12 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdint.h> // For uint8_t types
 
 // Include shared library headers
 #include "_uart.h"
 #include "_init.h"
 
-// External function declaration
-extern void main_serial_polling_string(void);
+#endif /* CONFIG_H_ */
 
 #endif /* CONFIG_H_ */

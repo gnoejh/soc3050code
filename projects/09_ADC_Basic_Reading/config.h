@@ -10,13 +10,12 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdio.h>  // For sprintf
+#include <stdint.h> // For uint16_t types
 
 // Include shared library headers
 #include "_adc.h"
 #include "_uart.h"
 #include "_init.h"
-
-// External function declaration
-extern void main_adc_polling(void);
 
 #endif /* CONFIG_H_ */

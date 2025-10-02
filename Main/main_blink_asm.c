@@ -40,7 +40,7 @@ volatile CircularBuffer circ_tx_buffer = {0};
 
 // Global variables for ADC interrupt processing
 volatile unsigned int adc_interrupt_result = 0;
-volatile uint8_t adc_interrupt_complete = 0;
+extern volatile uint8_t adc_interrupt_complete; // Defined in _adc.c
 volatile uint8_t adc_interrupt_channel = 0;
 
 // Minimal UART function implementations for self-contained assembly example

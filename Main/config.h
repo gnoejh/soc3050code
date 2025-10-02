@@ -52,6 +52,7 @@
  */
 #include <avr/io.h>        // Hardware register definitions (always needed)
 #include <avr/interrupt.h> // Interrupt handling (always needed)
+#include <stdint.h>        // Standard integer types (int8_t, uint16_t, etc.)
 // Note: util/delay.h included in individual files to prevent F_CPU conflicts
 
 // Standard library includes (conditional for memory optimization)

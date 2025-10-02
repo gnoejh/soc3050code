@@ -76,7 +76,7 @@
     <ToolchainSettings>
       <AvrGcc>
   <avrgcc.common.Device>-mmcu=atmega128 -B "%24(PackRepoDir)\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega128"</avrgcc.common.Device>
-  <avrgcc.common.optimization.RelaxBranches>True</avrgcc.common.optimization.RelaxBranches>
+  <avrgcc.common.optimization.RelaxBranches>False</avrgcc.common.optimization.RelaxBranches>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
@@ -115,7 +115,7 @@
     <ToolchainSettings>
       <AvrGcc>
   <avrgcc.common.Device>-mmcu=atmega128 -B "%24(PackRepoDir)\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega128"</avrgcc.common.Device>
-  <avrgcc.common.optimization.RelaxBranches>True</avrgcc.common.optimization.RelaxBranches>
+  <avrgcc.common.optimization.RelaxBranches>False</avrgcc.common.optimization.RelaxBranches>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
@@ -163,75 +163,7 @@
     <Compile Include="Main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="main_accelerometer.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_adc.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_blink.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_blink_asm.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_cds.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_game_hangman.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_game_obstacle.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_game_pong_uart_control.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_game_word_puzzle.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_graphics.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_inline.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_interrupt.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_iot.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_joystick.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_memory.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_motors.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_port.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_game_puzzle.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_serial.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_sound.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_sound_atari.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_sound_twingkle.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="main_timer.c">
-      <SubType>compile</SubType>
-    </Compile>
+    <!-- Library files only - individual main_*.c files excluded to prevent conflicts -->
     <Compile Include="_adc.c">
       <SubType>compile</SubType>
     </Compile>
