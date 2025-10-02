@@ -253,9 +253,9 @@ function Main {
     } else {
         Write-Log "No project specified. Use -ProjectDir or -TestAll" "ERROR"
         Write-Log "Usage examples:" "INFO"
-        Write-Log "  .\enhanced_build_system.ps1 -ProjectDir 'projects\01_Port'" "INFO"
+        Write-Log "  .\enhanced_build_system.ps1 -ProjectDir 'projects\Port'" "INFO"
         Write-Log "  .\enhanced_build_system.ps1 -TestAll" "INFO"
-        Write-Log "  .\enhanced_build_system.ps1 -ProjectDir 'projects\01_Port' -CleanBuild -Program" "INFO"
+        Write-Log "  .\enhanced_build_system.ps1 -ProjectDir 'projects\Port' -CleanBuild -Program" "INFO"
         exit 1
     }
 }

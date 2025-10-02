@@ -1,13 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Atmel Studio Solution File, Format Version 11.00
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Main", "Main\Main.cproj", "{318FD707-4EC4-44D7-984B-18FCDB3002DA}"
 EndProject
-Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "01_Port", "projects\01_Port\01_Port.cproj", "{dce6c7e3-ee26-4d79-826b-08594b9ad898}"
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Port", "projects\Port\Port.cproj", "{dce6c7e3-ee26-4d79-826b-08594b9ad898}"
 EndProject
-Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "01_Port_Assembly", "projects\01_Port_Assembly\01_Port_Assembly.cproj", "{ace6c7e3-ee26-4d79-826b-08594b9ad999}"
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Port_Assembly", "projects\Port_Assembly\Port_Assembly.cproj", "{ace6c7e3-ee26-4d79-826b-08594b9ad999}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{31E07DB8-C23B-493B-B22D-C0E3413BB992}"
 	ProjectSection(SolutionItems) = preProject

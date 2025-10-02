@@ -576,7 +576,7 @@ if ($Interactive) {
     Write-Log "  -Interactive        : Interactive testing mode" "INFO"
     Write-Log "" "INFO"
     Write-Log "Examples:" "INFO"
-    Write-Log "  .\system_debugger.ps1 -ProjectPath 'projects\01_Port'" "INFO"
+    Write-Log "  .\system_debugger.ps1 -ProjectPath 'projects\Port'" "INFO"
     Write-Log "  .\system_debugger.ps1 -FullTest -MemoryTest" "INFO"
     Write-Log "  .\system_debugger.ps1 -Interactive" "INFO"
 }
