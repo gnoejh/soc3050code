@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Main", "Main\Main.cproj", "{318FD707-4EC4-44D7-984B-18FCDB3002DA}"
 EndProject
-Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Port", "projects\Port\Port.cproj", "{dce6c7e3-ee26-4d79-826b-08594b9ad898}"
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Port_Basic", "projects\Port_Basic\Port_Basic.cproj", "{dce6c7e3-ee26-4d79-826b-08594b9ad898}"
 EndProject
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Port_Assembly", "projects\Port_Assembly\Port_Assembly.cproj", "{ace6c7e3-ee26-4d79-826b-08594b9ad999}"
 EndProject
