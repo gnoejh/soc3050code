@@ -158,15 +158,24 @@ class ProjectLauncherDashboard(BaseDashboard):
             if device_type == 'simulator':
                 success, message = self.launch_simulide(project_name)
             else:
-                # For hardware, ensure connected
-                if not self.serial_handler.connected:
-                    port, dev_type = self.serial_handler.auto_detect_device()
-                    if port:
-                        self.serial_handler.connect(port)
-                        self.serial_handler.start_monitoring()
+                # For hardware: program the chip first
+                port = data.get('port', 'COM3')
+                programmer = data.get('programmer', 'arduino')
                 
-                success = self.serial_handler.connected
-                message = f"Connected to hardware on {self.serial_handler.port}" if success else "No hardware detected"
+                success, prog_output = self.program_hardware(project_name, port, programmer)
+                
+                if success:
+                    # Connect to serial after programming
+                    time.sleep(2)  # Give hardware time to reset
+                    if not self.serial_handler.connected:
+                        detected_port, dev_type = self.serial_handler.auto_detect_device()
+                        if detected_port:
+                            self.serial_handler.connect(detected_port)
+                            self.serial_handler.start_monitoring()
+                    
+                    message = f"✅ Programmed and connected on {port}\n{prog_output}"
+                else:
+                    message = prog_output
             
             return jsonify({
                 'success': success,
@@ -479,6 +488,76 @@ class ProjectLauncherDashboard(BaseDashboard):
             return False, "Build timeout (60s exceeded)"
         except Exception as e:
             return False, f"Build error: {str(e)}"
+    
+    def program_hardware(self, project_name, port='COM3', programmer='arduino'):
+        """Program the ATmega128 hardware using avrdude"""
+        project_path = self.projects_dir / project_name
+        hex_file = project_path / "Main.hex"
+        
+        if not hex_file.exists():
+            return False, "HEX file not found. Build first!"
+        
+        try:
+            self.log(f"Programming {project_name} to hardware on {port}")
+            
+            # avrdude path (commonly installed location)
+            avrdude_paths = [
+                r"C:\Program Files (x86)\AVRDUDESS\avrdude.exe",
+                r"C:\Program Files (x86)\Arduino\hardware\tools\avr\bin\avrdude.exe",
+                r"C:\avrdude\avrdude.exe"
+            ]
+            
+            avrdude_exe = None
+            for path in avrdude_paths:
+                if Path(path).exists():
+                    avrdude_exe = path
+                    break
+            
+            if not avrdude_exe:
+                return False, "avrdude not found. Please install Arduino IDE or AVRDUDESS."
+            
+            # Build avrdude command
+            # For ATmega128: -p m128, -b 115200 for arduino bootloader
+            # Don't quote the path - subprocess handles it correctly
+            hex_path = str(hex_file.absolute())
+            flash_param = f'flash:w:{hex_path}:a'
+            
+            cmd = [
+                avrdude_exe,
+                '-c', programmer,  # arduino, usbasp, etc.
+                '-p', 'm128',      # ATmega128
+                '-P', port,        # COM port
+                '-b', '115200',    # Baud rate for arduino bootloader
+                '-U', flash_param  # Flash operation
+            ]
+            
+            self.log(f"Running: {' '.join(cmd)}")
+            
+            # Run avrdude
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            output = result.stdout + result.stderr
+            
+            # Check for success (avrdude returns 0 on success)
+            success = result.returncode == 0 or 'bytes of flash verified' in output.lower()
+            
+            if success:
+                self.log(f"Programming successful: {project_name}")
+                return True, f"✅ Programmed to hardware on {port}\n{output}"
+            else:
+                self.log(f"Programming failed: {output}", "ERROR")
+                return False, f"❌ Programming failed:\n{output}"
+            
+        except subprocess.TimeoutExpired:
+            return False, "Programming timeout (30s exceeded)"
+        except Exception as e:
+            self.log(f"Programming error: {e}", "ERROR")
+            return False, f"Programming error: {str(e)}"
     
     def launch_simulide(self, project_name):
         """Launch SimulIDE with the project"""
