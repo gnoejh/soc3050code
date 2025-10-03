@@ -372,13 +372,13 @@ void demo_07_combined(void)
  */
 int main(void)
 {
-    demo_01_write_port(); // ← START HERE: Learn writing to ports
-    // demo_02_read_port();     // Learn reading from ports
+    // demo_01_write_port(); // ← START HERE: Learn writing to ports
+    // demo_02_read_port(); // Learn reading from ports
     // demo_03_set_bits();      // Learn setting bits
     // demo_04_clear_bits();    // Learn clearing bits
     // demo_05_test_bit_clear();// Learn testing if bit is clear
     // demo_06_test_bit_set();  // Learn testing if bit is set
-    // demo_07_combined();      // See everything together
+     demo_07_combined();      // See everything together
 
     return 0;
 }

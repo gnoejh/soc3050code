@@ -293,6 +293,62 @@
                 "focus": true,
                 "panel": "new"
             }
+        },
+        {
+            "label": "Simulate in SimulIDE (Current Project)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\cli-simulide.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Build and Simulate Current Project",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build and Generate HEX",
+                "Simulate in SimulIDE (Current Project)"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Open SimulIDE Circuit Editor",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "$simulidePath = Join-Path '${workspaceFolder}' 'SimulIDE_1.1.0-SR1_Win64\\simulide.exe'; if (Test-Path $simulidePath) { Start-Process $simulidePath -ArgumentList '\"${workspaceFolder}\\Simulator.simu\"' } else { Write-Host 'SimulIDE not found at expected location!' -ForegroundColor Red; Write-Host 'Tried: ' + $simulidePath -ForegroundColor Yellow }"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
         }
     ],
     "inputs": [
