@@ -1,281 +1,422 @@
+
+
 /*
- * ATmega128 Port Programming Comprehensive Examples
- * Educational Framework for Learning Port Manipulation
+ * ===========================================================================
+ * PORT PROGRAMMING IN C - Level 1: Fundamentals
+ * ATmega128 @ 16MHz
+ * ===========================================================================
+ * FOCUS: Learning port I/O operations using C language
  *
- * This project demonstrates various port programming techniques:
- * - Basic port output control
- * - Individual bit manipulation
- * - Input/output interaction
- * - Multi-port coordination
- * - Advanced pattern generation
+ * This project teaches the SAME concepts as Port_Assembly, but in C.
+ * Learn these concepts here first, then see how they translate to assembly!
  *
- * Hardware Setup:
- * - PORTB: 8 LEDs (active LOW)
- * - PORTD7: Push button (with pull-up)
- * - PORTC: Additional output indicators
+ * KEY CONCEPTS:
+ * 1. Writing to ports (like assembly OUT instruction)
+ * 2. Reading from ports (like assembly IN instruction)
+ * 3. Setting individual bits (like assembly SBI instruction)
+ * 4. Clearing individual bits (like assembly CBI instruction)
+ * 5. Testing bit conditions (like assembly SBIC/SBIS instructions)
+ *
+ * HARDWARE:
+ * - ATmega128 @ 16MHz
+ * - 8 LEDs on PORTB (PB0-PB7)
+ * - 1 Button on PORTD.7 (active LOW with pull-up)
  */
 
-#include <avr/io.h>
-#include <util/delay.h>
-#include <stdint.h>
+#include "config.h"
 
-// Educational Constants
-#define LED_PORT PORTB
-#define LED_DDR DDRB
-#define LED_ALL_ON 0x00    // Active LOW LEDs
-#define LED_ALL_OFF 0xFF   // Active LOW LEDs
-#define LED_PATTERN_1 0xAA // Alternating pattern 1
-#define LED_PATTERN_2 0x55 // Alternating pattern 2
-
-#define BUTTON_PORT PORTD
-#define BUTTON_DDR DDRD
-#define BUTTON_PIN PIND
-#define BUTTON_BIT PD7
-
-// Delay constants for better readability
 #define DELAY_SHORT 100
-#define DELAY_MEDIUM 200
+#define DELAY_MEDIUM 250
 #define DELAY_LONG 500
 
+// ============================================================================
+// Demo 1: Writing to Ports (C equivalent of OUT instruction)
+// ============================================================================
 /*
- * Example 1: Basic Port Output Control
- * Demonstrates fundamental port manipulation
+ * CONCEPT: Writing entire byte to port
+ *
+ * In C:        PORTB = 0xFF;
+ * In Assembly: OUT PORTB, r16
+ *
+ * Both do the same thing - write a value to the port register
  */
-void demo_basic_port_output(void)
+void demo_01_write_port(void)
 {
-    // Initialize PORTB as output for LEDs
-    LED_DDR = 0xFF; // All pins as output
+    // Configure PORTB as output
+    DDRB = 0xFF; // All pins are outputs
 
     while (1)
     {
-        // Pattern sequence demonstration
-        LED_PORT = LED_PATTERN_1; // Pattern: 10101010
+        // Turn all LEDs ON
+        PORTB = 0xFF; // Binary: 11111111
         _delay_ms(DELAY_LONG);
 
-        LED_PORT = LED_PATTERN_2; // Pattern: 01010101
+        // Turn all LEDs OFF
+        PORTB = 0x00; // Binary: 00000000
         _delay_ms(DELAY_LONG);
 
-        LED_PORT = LED_ALL_ON; // All LEDs on
+        // Alternating pattern
+        PORTB = 0xAA; // Binary: 10101010
         _delay_ms(DELAY_LONG);
 
-        LED_PORT = LED_ALL_OFF; // All LEDs off
+        // Opposite pattern
+        PORTB = 0x55; // Binary: 01010101
         _delay_ms(DELAY_LONG);
     }
 }
 
+// ============================================================================
+// Demo 2: Reading from Ports (C equivalent of IN instruction)
+// ============================================================================
 /*
- * Example 2: Individual Bit Manipulation
- * Demonstrates precise bit-level control
+ * CONCEPT: Reading entire byte from port
+ *
+ * In C:        value = PIND;
+ * In Assembly: IN r16, PIND
+ *
+ * Both read the current state of input pins
  */
-void demo_bit_manipulation(void)
+void demo_02_read_port(void)
 {
-    LED_DDR = 0xFF;         // Configure as output
-    LED_PORT = LED_ALL_OFF; // Start with all LEDs off
+    uint8_t input_value;
+
+    // Configure PORTB as output (LEDs)
+    DDRB = 0xFF;
+
+    // Configure PORTD.7 as input with pull-up (button)
+    DDRD &= ~(1 << 7); // Clear bit 7 = input
+    PORTD |= (1 << 7); // Set bit 7 = enable pull-up
 
     while (1)
     {
-        // Sequential LED turn-on (right to left)
-        for (uint8_t i = 0; i < 8; i++)
+        // Read the input port
+        input_value = PIND;
+
+        // Check if button is pressed (bit 7 will be 0 when pressed)
+        if (input_value & 0x80) // If bit 7 is HIGH (not pressed)
         {
-            LED_PORT &= ~(1 << i); // Clear bit i (turn on LED i)
-            _delay_ms(DELAY_MEDIUM);
+            PORTB = 0x0F; // Low pattern: 00001111
+        }
+        else // Bit 7 is LOW (pressed)
+        {
+            PORTB = 0xF0; // High pattern: 11110000
         }
 
-        _delay_ms(DELAY_LONG);
-
-        // Sequential LED turn-off (right to left)
-        for (uint8_t i = 0; i < 8; i++)
-        {
-            LED_PORT |= (1 << i); // Set bit i (turn off LED i)
-            _delay_ms(DELAY_MEDIUM);
-        }
-
-        _delay_ms(DELAY_LONG);
-
-        // Bit toggle demonstration
-        for (uint8_t cycle = 0; cycle < 5; cycle++)
-        {
-            LED_PORT ^= LED_PATTERN_1; // Toggle pattern
-            _delay_ms(DELAY_MEDIUM);
-            LED_PORT ^= LED_PATTERN_1; // Toggle back
-            _delay_ms(DELAY_MEDIUM);
-        }
+        _delay_ms(10); // Debounce delay
     }
 }
 
+// ============================================================================
+// Demo 3: Setting Individual Bits (C equivalent of SBI instruction)
+// ============================================================================
 /*
- * Example 3: Input/Output Interaction
- * Demonstrates reading inputs and controlling outputs
+ * CONCEPT: Setting one bit without affecting others
+ *
+ * In C:        PORTB |= (1 << bit);
+ * In Assembly: SBI PORTB, bit
+ *
+ * Assembly SBI is ATOMIC (can't be interrupted)
+ * C version uses read-modify-write (can be interrupted)
  */
-void demo_input_output_interaction(void)
+void demo_03_set_bits(void)
 {
-    // Configure ports
-    LED_DDR = 0xFF;                   // PORTB as output (LEDs)
-    BUTTON_DDR &= ~(1 << BUTTON_BIT); // PORTD7 as input (button)
-    BUTTON_PORT |= (1 << BUTTON_BIT); // Enable pull-up resistor
+    // Configure PORTB as output
+    DDRB = 0xFF;
 
-    uint8_t led_position = 0;      // Current LED position (0-7)
-    uint8_t last_button_state = 1; // Previous button state
-
-    // Initialize display
-    LED_PORT = ~(1 << led_position); // Turn on first LED
+    // Start with all LEDs OFF
+    PORTB = 0x00;
 
     while (1)
     {
-        // Read current button state (active low)
-        uint8_t current_button_state = (BUTTON_PIN & (1 << BUTTON_BIT)) ? 1 : 0;
+        // Turn ON LEDs one by one (set bits)
+        PORTB |= (1 << 0); // Set bit 0
+        _delay_ms(DELAY_MEDIUM);
 
-        // Detect button press (falling edge)
-        if (current_button_state == 0 && last_button_state == 1)
-        {
-            // Move to next LED position
-            led_position = (led_position + 1) % 8;
+        PORTB |= (1 << 1); // Set bit 1
+        _delay_ms(DELAY_MEDIUM);
 
-            // Update LED display
-            LED_PORT = ~(1 << led_position);
+        PORTB |= (1 << 2); // Set bit 2
+        _delay_ms(DELAY_MEDIUM);
 
-            // Simple debouncing
-            _delay_ms(50);
-        }
+        PORTB |= (1 << 3); // Set bit 3
+        _delay_ms(DELAY_MEDIUM);
 
-        last_button_state = current_button_state;
-        _delay_ms(10); // Small delay for stable reading
+        PORTB |= (1 << 4); // Set bit 4
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB |= (1 << 5); // Set bit 5
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB |= (1 << 6); // Set bit 6
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB |= (1 << 7); // Set bit 7
+        _delay_ms(DELAY_LONG);
+
+        // Reset all to OFF
+        PORTB = 0x00;
+        _delay_ms(DELAY_LONG);
     }
 }
 
+// ============================================================================
+// Demo 4: Clearing Individual Bits (C equivalent of CBI instruction)
+// ============================================================================
 /*
- * Example 4: Multi-Port Coordination
- * Demonstrates coordinated control of multiple ports
+ * CONCEPT: Clearing one bit without affecting others
+ *
+ * In C:        PORTB &= ~(1 << bit);
+ * In Assembly: CBI PORTB, bit
+ *
+ * Assembly CBI is ATOMIC (can't be interrupted)
+ * C version uses read-modify-write (can be interrupted)
  */
-void demo_multi_port_control(void)
+void demo_04_clear_bits(void)
 {
-    // Configure ports
-    DDRB = 0xFF;  // PORTB: LED display
-    DDRC = 0xFF;  // PORTC: Status indicators
-    DDRD = 0x00;  // PORTD: Input sensors
-    PORTD = 0xFF; // Enable pull-ups on all PORTD pins
-
-    uint8_t counter = 0;
-    uint8_t direction = 1; // 1 = up, 0 = down
+    // Configure PORTB as output
+    DDRB = 0xFF;
 
     while (1)
     {
-        // Display counter on PORTB (LEDs)
-        PORTB = ~counter;
+        // Start with all LEDs ON
+        PORTB = 0xFF;
+        _delay_ms(DELAY_LONG);
 
-        // Display counter status on PORTC
-        PORTC = counter;
+        // Turn OFF LEDs one by one (clear bits)
+        PORTB &= ~(1 << 0); // Clear bit 0
+        _delay_ms(DELAY_MEDIUM);
 
-        // Check input on PORTD
-        uint8_t input_state = PIND;
+        PORTB &= ~(1 << 1); // Clear bit 1
+        _delay_ms(DELAY_MEDIUM);
 
-        if (input_state != 0xFF) // Any button pressed
+        PORTB &= ~(1 << 2); // Clear bit 2
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB &= ~(1 << 3); // Clear bit 3
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB &= ~(1 << 4); // Clear bit 4
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB &= ~(1 << 5); // Clear bit 5
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB &= ~(1 << 6); // Clear bit 6
+        _delay_ms(DELAY_MEDIUM);
+
+        PORTB &= ~(1 << 7); // Clear bit 7
+        _delay_ms(DELAY_LONG);
+    }
+}
+
+// ============================================================================
+// Demo 5: Testing if Bit is Clear (C equivalent of SBIC instruction)
+// ============================================================================
+/*
+ * CONCEPT: Check if a bit is 0 (clear)
+ *
+ * In C:        if (!(PIND & (1 << bit)))
+ * In Assembly: SBIC PIND, bit
+ *
+ * Assembly SBIC skips next instruction if bit is clear
+ * C version uses conditional if-statement
+ */
+void demo_05_test_bit_clear(void)
+{
+    // Configure PORTB as output (LEDs)
+    DDRB = 0xFF;
+
+    // Configure PORTD.7 as input with pull-up (button)
+    DDRD &= ~(1 << 7); // Clear bit 7 = input
+    PORTD |= (1 << 7); // Set bit 7 = pull-up
+
+    while (1)
+    {
+        // Test if bit 7 is CLEAR (button pressed)
+        if (!(PIND & (1 << 7))) // If bit 7 is 0
         {
-            // Change direction on button press
-            direction = !direction;
-            _delay_ms(DELAY_MEDIUM); // Debounce
-        }
-
-        // Update counter based on direction
-        if (direction)
-        {
-            counter++;
+            // Button IS pressed
+            PORTB = 0xFF; // All LEDs ON
         }
         else
         {
-            counter--;
+            // Button NOT pressed
+            PORTB = 0x00; // All LEDs OFF
         }
 
-        _delay_ms(DELAY_SHORT);
+        _delay_ms(10);
     }
 }
 
+// ============================================================================
+// Demo 6: Testing if Bit is Set (C equivalent of SBIS instruction)
+// ============================================================================
 /*
- * Example 5: Advanced Pattern Generation
- * Demonstrates complex LED patterns and effects
+ * CONCEPT: Check if a bit is 1 (set)
+ *
+ * In C:        if (PIND & (1 << bit))
+ * In Assembly: SBIS PIND, bit
+ *
+ * Assembly SBIS skips next instruction if bit is set
+ * C version uses conditional if-statement
  */
-void demo_advanced_patterns(void)
+void demo_06_test_bit_set(void)
 {
-    LED_DDR = 0xFF; // Configure PORTB as output
+    // Configure PORTB as output (LEDs)
+    DDRB = 0xFF;
+
+    // Configure PORTD.7 as input with pull-up (button)
+    DDRD &= ~(1 << 7); // Clear bit 7 = input
+    PORTD |= (1 << 7); // Set bit 7 = pull-up
 
     while (1)
     {
-        // Pattern 1: Knight Rider (bouncing LED)
-        uint8_t led = 0x01;
-
-        // Move right
-        for (uint8_t i = 0; i < 7; i++)
+        // Test if bit 7 is SET (button NOT pressed)
+        if (PIND & (1 << 7)) // If bit 7 is 1
         {
-            LED_PORT = ~led;
-            led <<= 1;
+            // Button NOT pressed
+            PORTB = 0xAA; // Alternating pattern: 10101010
+        }
+        else
+        {
+            // Button IS pressed
+            PORTB = 0x55; // Opposite pattern: 01010101
+        }
+
+        _delay_ms(10);
+    }
+}
+
+// ============================================================================
+// Demo 7: Combined Example - All Concepts Together
+// ============================================================================
+/*
+ * This demo combines all the concepts:
+ * - Reading input (like IN)
+ * - Writing output (like OUT)
+ * - Setting bits (like SBI)
+ * - Clearing bits (like CBI)
+ * - Testing bits (like SBIC/SBIS)
+ */
+void demo_07_combined(void)
+{
+    // Setup
+    DDRB = 0xFF;       // PORTB all outputs
+    DDRD &= ~(1 << 7); // PORTD.7 input
+    PORTD |= (1 << 7); // Enable pull-up
+
+    PORTB = 0x00; // Start with LEDs off
+
+    while (1)
+    {
+        // Test button state
+        if (!(PIND & (1 << 7))) // If button pressed
+        {
+            // Count UP by setting bits one by one
+            PORTB |= (1 << 0);
             _delay_ms(DELAY_SHORT);
-        }
-
-        // Move left
-        for (uint8_t i = 0; i < 7; i++)
-        {
-            LED_PORT = ~led;
-            led >>= 1;
+            PORTB |= (1 << 1);
             _delay_ms(DELAY_SHORT);
-        }
-
-        // Pattern 2: Binary counter display
-        for (uint16_t count = 0; count < 256; count++)
-        {
-            LED_PORT = ~((uint8_t)count);
-            _delay_ms(30); // Fast counting
-        }
-
-        // Pattern 3: Breathing effect
-        for (uint8_t breath = 0; breath < 3; breath++)
-        {
-            // Fade in effect (simulated)
-            for (uint8_t intensity = 0; intensity < 8; intensity++)
-            {
-                LED_PORT = ~((1 << (intensity + 1)) - 1); // Progressive fill
-                _delay_ms(DELAY_SHORT);
-            }
-
-            // Fade out effect (simulated)
-            for (int8_t intensity = 7; intensity >= 0; intensity--)
-            {
-                LED_PORT = ~((1 << (intensity + 1)) - 1); // Progressive empty
-                _delay_ms(DELAY_SHORT);
-            }
-        }
-
-        // Pattern 4: Random-like pattern (pseudo-random)
-        uint8_t seed = 0x5A; // Pseudo-random seed
-        for (uint8_t i = 0; i < 32; i++)
-        {
-            seed = (seed << 1) ^ (seed >> 7) ^ 0x1D; // Simple LFSR
-            LED_PORT = ~seed;
+            PORTB |= (1 << 2);
             _delay_ms(DELAY_SHORT);
+            PORTB |= (1 << 3);
+            _delay_ms(DELAY_SHORT);
+            PORTB |= (1 << 4);
+            _delay_ms(DELAY_SHORT);
+            PORTB |= (1 << 5);
+            _delay_ms(DELAY_SHORT);
+            PORTB |= (1 << 6);
+            _delay_ms(DELAY_SHORT);
+            PORTB |= (1 << 7);
+            _delay_ms(DELAY_MEDIUM);
+        }
+        else // Button not pressed
+        {
+            // Count DOWN by clearing bits one by one
+            PORTB &= ~(1 << 7);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 6);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 5);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 4);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 3);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 2);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 1);
+            _delay_ms(DELAY_SHORT);
+            PORTB &= ~(1 << 0);
+            _delay_ms(DELAY_MEDIUM);
         }
     }
 }
 
+// ============================================================================
+// MAIN - Select Your Demo
+// ============================================================================
 /*
- * Main function - Select which demonstration to run
+ * LEARNING PROGRESSION (C Language):
+ *
+ * 1. demo_01_write_port     - Write entire port (like OUT)
+ * 2. demo_02_read_port      - Read entire port (like IN)
+ * 3. demo_03_set_bits       - Set individual bits (like SBI)
+ * 4. demo_04_clear_bits     - Clear individual bits (like CBI)
+ * 5. demo_05_test_bit_clear - Test if bit is 0 (like SBIC)
+ * 6. demo_06_test_bit_set   - Test if bit is 1 (like SBIS)
+ * 7. demo_07_combined       - All concepts together
+ *
+ * After completing these C demos, move to Port_Assembly to see
+ * how the same operations are done in assembly language!
  */
 int main(void)
 {
-    // Choose which Port Programming demonstration to run:
+    demo_01_write_port(); // ← START HERE: Learn writing to ports
+    // demo_02_read_port();     // Learn reading from ports
+    // demo_03_set_bits();      // Learn setting bits
+    // demo_04_clear_bits();    // Learn clearing bits
+    // demo_05_test_bit_clear();// Learn testing if bit is clear
+    // demo_06_test_bit_set();  // Learn testing if bit is set
+    // demo_07_combined();      // See everything together
 
-    // Level 1: Basic port output patterns
-    //demo_basic_port_output();
-
-    // Level 2: Individual bit manipulation techniques
-     demo_bit_manipulation();
-
-    // Level 3: Interactive input/output control
-    // demo_input_output_interaction();
-
-    // Level 4: Multi-port coordination
-    // demo_multi_port_control();
-
-    // Level 5: Advanced pattern generation
-    // demo_advanced_patterns();
-
-    return 0; // Never reached due to infinite loops
+    return 0;
 }
+
+/*
+ * ============================================================================
+ * COMPARISON: C vs Assembly
+ * ============================================================================
+ *
+ * OPERATION          C CODE                    ASSEMBLY
+ * ---------          ------                    --------
+ * Write port         PORTB = 0xFF;             OUT PORTB, r16
+ * Read port          val = PIND;               IN r16, PIND
+ * Set bit            PORTB |= (1<<3);          SBI PORTB, 3
+ * Clear bit          PORTB &= ~(1<<3);         CBI PORTB, 3
+ * Test bit clear     if(!(PIND & (1<<7)))      SBIC PIND, 7
+ * Test bit set       if(PIND & (1<<7))         SBIS PIND, 7
+ *
+ * KEY DIFFERENCES:
+ * 1. Assembly SBI/CBI are ATOMIC (can't be interrupted)
+ *    C bit operations use read-modify-write (can be interrupted)
+ *
+ * 2. Assembly SBIC/SBIS skip instructions (no branching)
+ *    C uses if-statements (requires branching)
+ *
+ * 3. Assembly is typically faster (fewer cycles)
+ *    C is more readable and portable
+ *
+ * WHEN TO USE ASSEMBLY:
+ * - Interrupt service routines (need atomic operations)
+ * - Time-critical code (need exact cycle counts)
+ * - Bit manipulation where atomicity matters
+ *
+ * WHEN TO USE C:
+ * - Most application code
+ * - Complex logic and algorithms
+ * - Code that needs to be portable
+ * - Rapid development
+ *
+ * ============================================================================
+ */

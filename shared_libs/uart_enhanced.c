@@ -96,7 +96,7 @@ uint8_t uart_enhanced_init(uint32_t baud_rate, uint8_t data_bits, uint8_t parity
 
     // Configure UART registers
     UBRR1H = (uint8_t)(ubrr_value >> 8);
-    \n UBRR1L = (uint8_t)ubrr_value;
+    UBRR1L = (uint8_t)ubrr_value;
 
     // Configure frame format
     uint8_t ucsrc_val = 0;

@@ -15,7 +15,16 @@
  * - UART for configuration monitoring and control
  */
 
-#include "config.h"
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <stdio.h>
+#include "../../shared_libs/_uart.h"
+
+// Compatibility macros for UART functions
+#define is_USART1_received() USART1_data_available()
+#define get_USART1() getch_USART1()
+#define put_USART1(x) putch_USART1(x)
 
 // Port configuration structures for educational demonstration
 typedef struct
@@ -379,8 +388,9 @@ void handle_port_commands()
 int main(void)
 {
     // Initialize system components
-    init_devices();
+    cli(); // Disable interrupts during initialization
     Uart1_init();
+    sei(); // Enable interrupts
 
     puts_USART1("Port Configuration System Starting...\r\n");
     puts_USART1("Educational port control and bit manipulation demo\r\n");
@@ -404,21 +414,6 @@ int main(void)
 
         _delay_ms(50);
     }
-
-    return 0;
-}
-iguration
-        *ATmega128 Educational Framework
-            *
-                *This project demonstrates port configuration
-                    *and GPIO pin control operations.
-                        * /
-
-#include "config.h"
-
-    int main(void)
-{
-    main_port_blinking();
 
     return 0;
 }
