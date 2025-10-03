@@ -194,11 +194,11 @@ void demo_06_sbis(void)
 int main(void)
 {
     // demo_01_out(); // Start here: Learn OUT
-    //demo_02_in(); // Learn IN
+    demo_02_in(); // Learn IN
     // demo_03_sbi();    // Learn SBI
     // demo_04_cbi();    // Learn CBI
     // demo_05_sbic();   // Learn SBIC
-     demo_06_sbis();   // Learn SBIS
+    // demo_06_sbis();   // Learn SBIS
 
     return 0;
 }

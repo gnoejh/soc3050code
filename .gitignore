@@ -93,3 +93,24 @@ MANIFEST
 *.png
 sensor_*.txt
 atmega128_*.json
+
+# CMake build artifacts
+build/
+cmake/
+CMakeCache.txt
+CMakeFiles/
+
+# Legacy folders (removed during cleanup)
+python/
+python_env/
+projects_archive/
+
+# Visual Studio cache
+.vs/
+
+# Build logs and temporary files
+build.log
+*.log
+
+# Old web dashboard (superseded by dashboards/)
+web_dashboard.py

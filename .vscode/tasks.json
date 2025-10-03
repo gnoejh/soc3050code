@@ -30,7 +30,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-build-project.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-build-project.ps1",
                 "-ProjectDir",
                 "${fileDirname}"
             ],
@@ -56,7 +56,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-program-project.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-program-project.ps1",
                 "-ProjectDir",
                 "${fileDirname}",
                 "-Programmer",
@@ -116,7 +116,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-program-project.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-program-project.ps1",
                 "-Programmer",
                 "${input:programmerType}"
             ],
@@ -197,7 +197,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-build-all.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-build-all.ps1",
                 "-TestAll"
             ],
             "group": "build",
@@ -236,7 +236,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-test-system.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-test-system.ps1",
                 "-Interactive"
             ],
             "group": "test",
@@ -258,7 +258,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-analyze-code.ps1",
+                "${workspaceFolder}\\tools\\cli\\cli-analyze-code.ps1",
                 "-ProjectPath",
                 "${fileDirname}"
             ],
@@ -281,7 +281,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-new-project.ps1"
+                "${workspaceFolder}\\tools\\cli\\cli-new-project.ps1"
             ],
             "group": "build",
             "options": {
@@ -302,7 +302,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\cli-simulide.ps1",
+                "${workspaceFolder}\\tools\\simulide\\cli-simulide.ps1",
                 "-ProjectDir",
                 "${fileDirname}"
             ],
