@@ -430,3 +430,6 @@ Start-Process "SimulIDE_1.1.0-SR1_Win64\simulide.exe" -ArgumentList "Simulator.s
 ---
 
 *SimulIDE 1.1.0-SR1 | ATmega128 Framework | October 2025*
+
+© 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
+**Contact:** [linkedin.com/in/gnoejh53](https://linkedin.com/in/gnoejh53)

@@ -289,7 +289,26 @@ For detailed information, see `FRAMEWORK_GUIDE.md`.├── projects/          
 
 ---
 
-## 📖 Educational Objectives
+## � Documentation
+
+**All documentation has been organized in the `docs/` folder:**
+
+- 📘 **[Complete Documentation Index](docs/README.md)** - Start here for all guides
+- 🎮 **[SimulIDE Guide](docs/simulide/SIMULIDE_GUIDE.md)** - Hardware-free simulation (91+ pages)
+- 🧪 **[Lab Exercise Guide](docs/labs/LAB_EXERCISE_GUIDE.md)** - 65 hands-on exercises (138+ pages)
+- 🛠️ **[Framework Guide](FRAMEWORK_GUIDE.md)** - Development framework (kept in root)
+- 📜 **[Scripts Guide](SCRIPTS.md)** - PowerShell automation tools
+
+**Quick Links:**
+- For Students: [Lab Quick Start](docs/labs/LAB_QUICK_START.md)
+- For Setup: [SimulIDE Quick Reference](docs/simulide/SIMULIDE_QUICK_REFERENCE.md)
+- For Development: [Library Enhancements](docs/development/LIBRARY_ENHANCEMENTS_SUMMARY.md)
+
+**Total Documentation: 289+ pages across 23 organized files**
+
+---
+
+## �📖 Educational Objectives
 
 This framework teaches:
 - **Low-level Programming**: Direct register manipulation and assembly integration
@@ -306,3 +325,10 @@ Perfect for computer science students learning embedded systems, microcontroller
 ## 📝 License
 
 Educational use - designed for SOC3050 course and similar embedded systems education.
+
+---
+
+© 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
+All rights reserved for educational purposes.
+
+**Contact:** [linkedin.com/in/gnoejh53](https://linkedin.com/in/gnoejh53)

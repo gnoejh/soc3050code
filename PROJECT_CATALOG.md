@@ -398,3 +398,7 @@ All verified projects meet these criteria:
 **Last Updated:** 2025-10-03  
 **Curriculum Status:** ✅ Production Ready  
 **Total Teaching Hours:** 60+ hours of content
+
+© 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
+All rights reserved for educational purposes.  
+**Contact:** [linkedin.com/in/gnoejh53](https://linkedin.com/in/gnoejh53)

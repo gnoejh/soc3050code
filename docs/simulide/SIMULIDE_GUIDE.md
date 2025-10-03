@@ -45,7 +45,7 @@ This guide explains how to use **SimulIDE 1.1.0 SR1** as a virtual ATmega128 exp
 
 1. Build your project to generate `Main.hex`
 2. Open `SimulIDE_1.1.0-SR1_Win64\bin\simulide.exe`
-3. Load circuit: `File → Open → Simulator.simu`
+3. Load circuit: `File → Open → SimulIDE_1.1.0-SR1_Win64\Simulator.simu`
 4. Right-click MCU → `Load Firmware` → Select your `Main.hex`
 5. Click **Play** button (▶) to start simulation
 
@@ -81,7 +81,11 @@ SimulIDE is already included in your workspace:
 soc3050code/
 ├── SimulIDE_1.1.0-SR1_Win64/     ← SimulIDE installation
 │   └── bin/simulide.exe           ← Main executable
-├── Simulator.simu                 ← ATmega128 circuit file
+├── SimulIDE_1.1.0-SR1_Win64/
+│   ├── simulide.exe              ← SimulIDE executable
+│   ├── Simulator.simu            ← ATmega128 circuit file
+│   ├── data/                     ← Component libraries
+│   └── examples/                 ← Example circuits
 ├── Simulator.simu                 ← Alternative circuit file
 └── cli-simulide.ps1               ← Launch script
 ```
@@ -382,7 +386,106 @@ Copy-Item "Simulator.simu" "SimulIDE_1.1.0-SR1_Win64\"
 
 ---
 
-## ⚠️ Limitations
+## ⚠️ Known Issues & Limitations
+
+### ⚠️ ELPM Warnings (Expected & Harmless!)
+
+**You WILL see repeated console warnings:**
+```
+ERROR: AVR Invalid instruction: ELPM with no RAMPZ
+ERROR: AVR Invalid instruction: ELPM with no RAMPZ
+... (repeated multiple times)
+```
+
+**✅ This is COMPLETELY NORMAL and HARMLESS!**
+
+| Aspect | Status | Details |
+|--------|--------|---------|
+| **Your Code** | ✅ Correct | No bugs in your program |
+| **Simulation** | ✅ Works | All features function properly |
+| **Real Hardware** | ✅ Perfect | Zero warnings on actual ATmega128 |
+| **Action Needed** | ✅ None | Just ignore the warnings |
+
+**Why it happens:**
+- GCC compiler uses ELPM (Extended Load Program Memory) for optimized code (good!)
+- ELPM needs RAMPZ register for >64KB flash access
+- SimulIDE 1.1.0-SR1 doesn't fully emulate RAMPZ (SimulIDE limitation)
+- Warnings appear but program works correctly anyway
+
+**What to do:** **Ignore them!** Focus on testing functionality (LEDs, buttons, serial, ADC).
+
+**For students:** Tell them on day 1: "You'll see ELPM errors - that's normal, your code is fine!"
+
+---
+
+### Common Simulation Issues
+
+<details>
+<summary><b>Problem: HEX file not loading automatically</b></summary>
+
+**Symptoms:** SimulIDE opens but circuit shows old program or nothing
+
+**Solutions:**
+1. Check `Simulator.simu` has absolute path: `Program="W:/soc3050code/projects/Port_Basic/Main.hex"`
+2. Verify `Auto_Load="true"` in circuit file
+3. Or manually load: Right-click MCU → Load Firmware → Select Main.hex
+4. Rebuild project to ensure fresh HEX file
+
+</details>
+
+<details>
+<summary><b>Problem: Serial terminal shows garbage characters</b></summary>
+
+**Symptoms:** Random characters instead of readable text
+
+**Solutions:**
+1. Check baud rate matches: Code = `UART_init(9600)`, Terminal = 9600
+2. Verify F_CPU: Simulator uses 16MHz, check `-DF_CPU=16000000UL`
+3. Reset simulation: Stop (■) then Play (▶) button
+4. Clear terminal and try again
+
+</details>
+
+<details>
+<summary><b>Problem: LEDs not turning on</b></summary>
+
+**Symptoms:** Port changes in code but LEDs stay off
+
+**Solutions:**
+1. Check data direction: `DDRB = 0xFF;` (output)
+2. Verify pin connections in circuit
+3. Try simple test: `PORTB = 0xFF;` (all on)
+4. Check resistor values aren't too high
+
+</details>
+
+<details>
+<summary><b>Problem: Buttons not responding</b></summary>
+
+**Symptoms:** Button presses don't affect program
+
+**Solutions:**
+1. Set as input: `DDRC = 0x00;`
+2. Enable pull-ups if needed: `PORTC = 0xFF;`
+3. Check active-low vs active-high logic
+4. Verify button connections in circuit
+
+</details>
+
+<details>
+<summary><b>Problem: Simulation runs too fast/slow</b></summary>
+
+**Symptoms:** Program timing doesn't match expectations
+
+**Solutions:**
+1. Adjust simulation speed slider (bottom toolbar)
+2. Remember: Not cycle-accurate, but close enough for learning
+3. Use delays for visible LED changes: `_delay_ms(500)`
+4. Real hardware timing will be more precise
+
+</details>
+
+---
 
 ### What Works Perfectly
 
@@ -567,3 +670,7 @@ Open any project in VS Code, press `Ctrl+Shift+B`, select `Build and Simulate Cu
 *Last Updated: October 2025*  
 *SimulIDE Version: 1.1.0-SR1*  
 *ATmega128 Framework v2.0*
+
+© 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
+All rights reserved for educational purposes.  
+**Contact:** [linkedin.com/in/gnoejh53](https://linkedin.com/in/gnoejh53)

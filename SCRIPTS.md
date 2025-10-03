@@ -29,3 +29,9 @@ Quick reference for the 5 essential development scripts:
 # Create new UART project
 .\cli-new-project.ps1 -ProjectName "MyUART" -ProjectType "uart"
 ```
+---
+
+© 2025 Prof. Hong Jeaong, IUT (Incheon National University)
+All rights reserved for educational purposes.
+
+Contact: https://linkedin.com/in/gnoejh53

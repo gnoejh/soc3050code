@@ -82,3 +82,7 @@ For technical issues, use the system debugger:
 ---
 
 **Educational framework optimized for progressive learning from assembly basics to advanced embedded applications.**
+
+© 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
+All rights reserved for educational purposes.  
+**Contact:** [linkedin.com/in/gnoejh53](https://linkedin.com/in/gnoejh53)
