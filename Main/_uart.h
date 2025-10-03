@@ -108,6 +108,154 @@ void main_serial_sentence(void);            // Sentence processing
 void Serial_Main(void);                     // Main serial demonstration
 
 /*
+ * =============================================================================
+ * ENHANCED UART FUNCTIONS - PROFESSIONAL COMMUNICATION
+ * =============================================================================
+ */
+
+/*
+ * Formatted Output Functions - Printf-Style
+ */
+void USART1_printf(const char *format, ...);                  // Printf-style formatted output
+void USART1_print_int(signed int value);                      // Print signed integer
+void USART1_print_uint(unsigned int value);                   // Print unsigned integer
+void USART1_print_long(signed long value);                    // Print signed long
+void USART1_print_float(float value, unsigned char decimals); // Print floating point
+
+/*
+ * String Reception Functions - Buffered Input
+ */
+unsigned char USART1_read_line(char *buffer, unsigned char max_len);   // Read until newline
+unsigned char USART1_read_string(char *buffer, unsigned char max_len); // Read with timeout
+unsigned char USART1_available(void);                                  // Check data available
+void USART1_flush_rx(void);                                            // Clear receive buffer
+
+/*
+ * Receive Buffer with Timeout
+ */
+typedef struct
+{
+    char buffer[128];        // Receive buffer
+    unsigned char head;      // Buffer head index
+    unsigned char tail;      // Buffer tail index
+    unsigned char count;     // Number of bytes in buffer
+    unsigned int timeout_ms; // Timeout in milliseconds
+    unsigned char overflow;  // Overflow flag
+} UART_RxBuffer;
+
+void UART_Buffer_Init(UART_RxBuffer *buf, unsigned int timeout_ms);                        // Initialize buffer
+unsigned char UART_Buffer_Get_Char(UART_RxBuffer *buf, char *ch);                          // Get character from buffer
+unsigned char UART_Buffer_Get_Line(UART_RxBuffer *buf, char *line, unsigned char max_len); // Get line
+void UART_Buffer_Clear(UART_RxBuffer *buf);                                                // Clear buffer
+
+/*
+ * Command Parsing Functions
+ */
+typedef struct
+{
+    char command[32];       // Command string
+    char args[4][32];       // Up to 4 arguments
+    unsigned char num_args; // Number of arguments parsed
+    unsigned char valid;    // Command valid flag
+} UART_Command;
+
+unsigned char UART_Parse_Command(char *input, UART_Command *cmd);       // Parse command string
+unsigned char UART_Match_Command(UART_Command *cmd, const char *match); // Match command
+signed int UART_Get_Arg_Int(UART_Command *cmd, unsigned char arg_num);  // Get integer argument
+float UART_Get_Arg_Float(UART_Command *cmd, unsigned char arg_num);     // Get float argument
+
+/*
+ * Binary Data Transfer Functions
+ */
+void USART1_write_bytes(const unsigned char *data, unsigned int length);                                 // Send binary data
+unsigned int USART1_read_bytes(unsigned char *buffer, unsigned int max_length, unsigned int timeout_ms); // Read binary
+
+/*
+ * Packet Framing Functions
+ */
+typedef struct
+{
+    unsigned char start_byte; // Packet start delimiter
+    unsigned char end_byte;   // Packet end delimiter
+    unsigned char data[64];   // Packet data
+    unsigned char length;     // Data length
+    unsigned char checksum;   // Packet checksum
+    unsigned char valid;      // Packet valid flag
+} UART_Packet;
+
+void UART_Packet_Init(UART_Packet *pkt, unsigned char start, unsigned char end); // Initialize packet
+void UART_Packet_Add_Byte(UART_Packet *pkt, unsigned char byte);                 // Add data byte
+unsigned char UART_Packet_Calculate_Checksum(UART_Packet *pkt);                  // Calculate checksum
+void UART_Packet_Send(UART_Packet *pkt);                                         // Send packet
+unsigned char UART_Packet_Receive(UART_Packet *pkt, unsigned int timeout_ms);    // Receive packet
+
+/*
+ * Checksum and CRC Functions
+ */
+unsigned char UART_Checksum_XOR(const unsigned char *data, unsigned char length); // XOR checksum
+unsigned char UART_Checksum_Sum(const unsigned char *data, unsigned char length); // Sum checksum
+unsigned int UART_CRC16(const unsigned char *data, unsigned char length);         // CRC-16 checksum
+
+/*
+ * Stream Processing Functions
+ */
+void USART1_print_buffer_hex(const unsigned char *buffer, unsigned char length);   // Print buffer as hex
+void USART1_print_buffer_ascii(const unsigned char *buffer, unsigned char length); // Print buffer as ASCII
+
+/*
+ * Data Encoding Functions
+ */
+void USART1_encode_base64(const unsigned char *input, unsigned char in_len, char *output); // Base64 encode
+unsigned char USART1_decode_base64(const char *input, unsigned char *output);              // Base64 decode
+
+/*
+ * Interactive Menu Functions
+ */
+typedef struct
+{
+    const char *title;         // Menu title
+    const char *options[10];   // Menu options (up to 10)
+    unsigned char num_options; // Number of options
+} UART_Menu;
+
+void UART_Menu_Init(UART_Menu *menu, const char *title);        // Initialize menu
+void UART_Menu_Add_Option(UART_Menu *menu, const char *option); // Add menu option
+void UART_Menu_Display(UART_Menu *menu);                        // Display menu
+unsigned char UART_Menu_Get_Selection(UART_Menu *menu);         // Get user selection
+
+/*
+ * Status and Statistics
+ */
+typedef struct
+{
+    unsigned long tx_count;      // Transmitted bytes
+    unsigned long rx_count;      // Received bytes
+    unsigned int tx_errors;      // Transmission errors
+    unsigned int rx_errors;      // Reception errors
+    unsigned int overflow_count; // Buffer overflows
+    unsigned int frame_errors;   // Framing errors
+    unsigned int parity_errors;  // Parity errors
+} UART_Statistics;
+
+extern UART_Statistics uart_stats;
+void UART_Reset_Statistics(void); // Reset counters
+void UART_Print_Statistics(void); // Print statistics
+
+/*
+ * Advanced Configuration
+ */
+void UART_Set_Baud_Rate(unsigned long baud);        // Change baud rate
+void UART_Enable_Parity(unsigned char parity_type); // Enable parity
+void UART_Set_Stop_Bits(unsigned char stop_bits);   // Set stop bits
+
+/*
+ * Flow Control Functions
+ */
+void UART_Enable_RTS_CTS(void);         // Enable hardware flow control
+unsigned char UART_Check_CTS(void);     // Check Clear To Send
+void UART_Set_RTS(unsigned char state); // Set Request To Send
+
+/*
  * Interrupt Service Routine Declarations
  */
 void __vector_30(void) __attribute__((signal, __INTR_ATTRS)); // USART1_RX_vect

@@ -413,4 +413,477 @@ unsigned char Is_Adc_Complete(void)
 	return adc_interrupt_complete;
 }
 
+/*
+ * =============================================================================
+ * ENHANCED ADC FUNCTIONS - PROFESSIONAL SENSOR INTERFACE
+ * =============================================================================
+ */
+
+/*
+ * ADVANCED FUNCTION: Median Filter for Noise Reduction
+ *
+ * PURPOSE: Remove outliers and spikes using median filtering
+ * LEARNING: Statistical noise rejection, robust measurement
+ * ALGORITHM: Bubble sort to find median value
+ */
+unsigned int Read_Adc_Median(unsigned char adc_input, unsigned char num_samples)
+{
+	unsigned int samples[16]; // Support up to 16 samples
+	unsigned int temp;
+	unsigned char i, j;
+
+	// Limit number of samples
+	if (num_samples > 16)
+		num_samples = 16;
+	if (num_samples < 3)
+		num_samples = 3;
+
+	// Collect samples
+	for (i = 0; i < num_samples; i++)
+	{
+		samples[i] = Read_Adc_Data(adc_input);
+		_delay_us(100);
+	}
+
+	// Bubble sort to find median
+	for (i = 0; i < num_samples - 1; i++)
+	{
+		for (j = 0; j < num_samples - i - 1; j++)
+		{
+			if (samples[j] > samples[j + 1])
+			{
+				temp = samples[j];
+				samples[j] = samples[j + 1];
+				samples[j + 1] = temp;
+			}
+		}
+	}
+
+	// Return median value (middle element)
+	return samples[num_samples / 2];
+}
+
+/*
+ * ADVANCED FUNCTION: Moving Average Filter
+ *
+ * PURPOSE: Smooth sensor readings with exponential moving average
+ * LEARNING: Digital filter implementation, real-time smoothing
+ */
+#define MOVING_AVG_SIZE 8
+static unsigned int moving_avg_buffer[MOVING_AVG_SIZE];
+static unsigned char moving_avg_index = 0;
+static unsigned char moving_avg_filled = 0;
+
+unsigned int Read_Adc_Moving_Average(unsigned char adc_input)
+{
+	unsigned long sum = 0;
+	unsigned char i, count;
+
+	// Add new sample to buffer
+	moving_avg_buffer[moving_avg_index] = Read_Adc_Data(adc_input);
+	moving_avg_index = (moving_avg_index + 1) % MOVING_AVG_SIZE;
+
+	if (moving_avg_index == 0)
+		moving_avg_filled = 1;
+
+	// Calculate average
+	count = moving_avg_filled ? MOVING_AVG_SIZE : moving_avg_index;
+	for (i = 0; i < count; i++)
+	{
+		sum += moving_avg_buffer[i];
+	}
+
+	return (unsigned int)(sum / count);
+}
+
+void Reset_Moving_Average(void)
+{
+	moving_avg_index = 0;
+	moving_avg_filled = 0;
+}
+
+/*
+ * ADVANCED FUNCTION: ADC Statistics Collection
+ *
+ * PURPOSE: Collect comprehensive statistics for sensor analysis
+ * LEARNING: Data analysis, min/max tracking, statistical processing
+ */
+void ADC_Init_Statistics(ADC_Statistics *stats)
+{
+	stats->min_value = 1023;
+	stats->max_value = 0;
+	stats->current_value = 0;
+	stats->sum = 0;
+	stats->count = 0;
+	stats->average = 0;
+}
+
+void ADC_Update_Statistics(ADC_Statistics *stats, unsigned int new_value)
+{
+	stats->current_value = new_value;
+
+	// Update min/max
+	if (new_value < stats->min_value)
+		stats->min_value = new_value;
+	if (new_value > stats->max_value)
+		stats->max_value = new_value;
+
+	// Update running average
+	stats->sum += new_value;
+	stats->count++;
+	stats->average = (unsigned int)(stats->sum / stats->count);
+}
+
+void ADC_Get_Statistics(unsigned char adc_input, ADC_Statistics *stats, unsigned char num_samples)
+{
+	unsigned char i;
+
+	ADC_Init_Statistics(stats);
+
+	for (i = 0; i < num_samples; i++)
+	{
+		unsigned int value = Read_Adc_Data(adc_input);
+		ADC_Update_Statistics(stats, value);
+		_delay_ms(1);
+	}
+}
+
+/*
+ * ADVANCED FUNCTION: Threshold Detection
+ *
+ * PURPOSE: Detect when sensor values cross thresholds
+ * LEARNING: Event detection, hysteresis, state machines
+ * APPLICATIONS: Alarm systems, limit switches, range detection
+ */
+void ADC_Set_Threshold(ADC_Threshold *threshold, unsigned int low, unsigned int high)
+{
+	threshold->low_threshold = low;
+	threshold->high_threshold = high;
+	threshold->state = 0;
+	threshold->event_occurred = 0;
+}
+
+unsigned char ADC_Check_Threshold(ADC_Threshold *threshold, unsigned int adc_value)
+{
+	unsigned char new_state = threshold->state;
+
+	// Check for threshold crossings with hysteresis
+	if (adc_value > threshold->high_threshold)
+	{
+		new_state = 1; // Above upper threshold
+	}
+	else if (adc_value < threshold->low_threshold)
+	{
+		new_state = 0; // Below lower threshold
+	}
+	// Stay in current state if between thresholds (hysteresis)
+
+	// Detect state change
+	if (new_state != threshold->state)
+	{
+		threshold->event_occurred = 1;
+		threshold->state = new_state;
+		return 1; // Threshold crossed
+	}
+
+	return 0; // No threshold crossing
+}
+
+unsigned char ADC_Read_With_Threshold(unsigned char adc_input, ADC_Threshold *threshold)
+{
+	unsigned int value = Read_Adc_Data(adc_input);
+	return ADC_Check_Threshold(threshold, value);
+}
+
+/*
+ * ADVANCED FUNCTION: Multi-Point Calibration
+ *
+ * PURPOSE: Linear interpolation between calibration points
+ * LEARNING: Sensor linearization, lookup tables, interpolation
+ * APPLICATIONS: Non-linear sensors, temperature compensation
+ */
+void ADC_Add_Calibration_Point(ADC_Calibration *cal, unsigned int adc_val, unsigned int real_val)
+{
+	if (cal->num_points < 10)
+	{
+		cal->adc_points[cal->num_points] = adc_val;
+		cal->real_values[cal->num_points] = real_val;
+		cal->num_points++;
+	}
+}
+
+unsigned int ADC_Apply_Calibration(ADC_Calibration *cal, unsigned int adc_value)
+{
+	unsigned char i;
+
+	if (cal->num_points == 0)
+		return adc_value;
+
+	// Find calibration points bracketing the ADC value
+	for (i = 0; i < cal->num_points - 1; i++)
+	{
+		if (adc_value >= cal->adc_points[i] && adc_value <= cal->adc_points[i + 1])
+		{
+			// Linear interpolation
+			unsigned int adc_span = cal->adc_points[i + 1] - cal->adc_points[i];
+			unsigned int real_span = cal->real_values[i + 1] - cal->real_values[i];
+			unsigned int adc_offset = adc_value - cal->adc_points[i];
+
+			return cal->real_values[i] + ((unsigned long)adc_offset * real_span) / adc_span;
+		}
+	}
+
+	// Outside calibration range - use nearest point
+	if (adc_value < cal->adc_points[0])
+		return cal->real_values[0];
+	else
+		return cal->real_values[cal->num_points - 1];
+}
+
+/*
+ * ADVANCED FUNCTION: Data Logging Buffer
+ *
+ * PURPOSE: Circular buffer for continuous data logging
+ * LEARNING: Ring buffer implementation, data streaming
+ * APPLICATIONS: Waveform capture, trend analysis, data recording
+ */
+void ADC_Logger_Init(ADC_Logger *logger, unsigned char channel)
+{
+	logger->head = 0;
+	logger->tail = 0;
+	logger->count = 0;
+	logger->channel = channel;
+}
+
+void ADC_Logger_Add_Sample(ADC_Logger *logger, unsigned int sample)
+{
+	logger->buffer[logger->head] = sample;
+	logger->head = (logger->head + 1) % ADC_LOG_BUFFER_SIZE;
+
+	if (logger->count < ADC_LOG_BUFFER_SIZE)
+	{
+		logger->count++;
+	}
+	else
+	{
+		// Buffer full - overwrite oldest data
+		logger->tail = (logger->tail + 1) % ADC_LOG_BUFFER_SIZE;
+	}
+}
+
+unsigned char ADC_Logger_Get_Sample(ADC_Logger *logger, unsigned int *sample)
+{
+	if (logger->count == 0)
+		return 0; // Buffer empty
+
+	*sample = logger->buffer[logger->tail];
+	logger->tail = (logger->tail + 1) % ADC_LOG_BUFFER_SIZE;
+	logger->count--;
+
+	return 1; // Sample retrieved
+}
+
+unsigned char ADC_Logger_Is_Full(ADC_Logger *logger)
+{
+	return (logger->count >= ADC_LOG_BUFFER_SIZE);
+}
+
+void ADC_Logger_Clear(ADC_Logger *logger)
+{
+	logger->head = 0;
+	logger->tail = 0;
+	logger->count = 0;
+}
+
+/*
+ * ADVANCED FUNCTION: Differential ADC Reading
+ *
+ * PURPOSE: Measure voltage difference between two inputs
+ * LEARNING: Differential measurement, common-mode rejection
+ */
+signed int Read_Adc_Differential(unsigned char positive_input, unsigned char negative_input)
+{
+	unsigned int pos_value = Read_Adc_Averaged(positive_input, 4);
+	unsigned int neg_value = Read_Adc_Averaged(negative_input, 4);
+
+	return (signed int)pos_value - (signed int)neg_value;
+}
+
+/*
+ * ADVANCED FUNCTION: Ratiometric Measurement
+ *
+ * PURPOSE: Measure ratio independent of supply voltage
+ * LEARNING: Ratiometric sensors, supply voltage compensation
+ */
+unsigned int Read_Adc_Ratiometric(unsigned char signal_input, unsigned char reference_input)
+{
+	unsigned int signal = Read_Adc_Averaged(signal_input, 4);
+	unsigned int reference = Read_Adc_Averaged(reference_input, 4);
+
+	if (reference == 0)
+		return 0;
+
+	// Return ratio as percentage (0-100%)
+	return (unsigned long)(signal * 100UL) / reference;
+}
+
+/*
+ * ADVANCED FUNCTION: Auto-Ranging
+ *
+ * PURPOSE: Automatically adjust gain for optimal resolution
+ * LEARNING: Automatic gain control, dynamic range extension
+ */
+void ADC_AutoRange_Init(ADC_AutoRange *ar)
+{
+	ar->current_gain = 0;
+	ar->scaled_value = 0;
+	ar->overrange = 0;
+	ar->underrange = 0;
+}
+
+unsigned int ADC_Read_AutoRange(unsigned char adc_input, ADC_AutoRange *ar)
+{
+	unsigned int raw_value = Read_Adc_Data(adc_input);
+
+	// Check for overrange (>90% of full scale)
+	if (raw_value > 921)
+	{
+		ar->overrange = 1;
+		ar->underrange = 0;
+	}
+	// Check for underrange (<10% of full scale)
+	else if (raw_value < 102)
+	{
+		ar->overrange = 0;
+		ar->underrange = 1;
+	}
+	else
+	{
+		ar->overrange = 0;
+		ar->underrange = 0;
+	}
+
+	// Scale value based on current gain
+	ar->scaled_value = raw_value << ar->current_gain;
+
+	return ar->scaled_value;
+}
+
+/*
+ * ADVANCED FUNCTION: Fast Burst Sampling
+ *
+ * PURPOSE: Capture waveforms at maximum ADC speed
+ * LEARNING: High-speed acquisition, waveform capture
+ */
+void ADC_Fast_Sample_Array(unsigned char adc_input, unsigned int *buffer, unsigned char num_samples)
+{
+	unsigned char i;
+
+	// Configure channel
+	ADMUX = (adc_input & 0x1F) | ADC_AVCC_TYPE;
+
+	for (i = 0; i < num_samples; i++)
+	{
+		// Start conversion
+		ADCSRA |= (1 << ADSC);
+
+		// Wait for completion (no delay for maximum speed)
+		while (ADCSRA & (1 << ADSC))
+			;
+
+		// Read result
+		buffer[i] = ADCL + (ADCH << 8);
+	}
+}
+
+unsigned int ADC_Get_Sample_Rate_Hz(void)
+{
+	// ADC clock = F_CPU / prescaler
+	// Conversion time = 13 ADC clock cycles
+	// For F_CPU=7372800Hz, prescaler=128: 7372800/128/13 ≈ 4434 Hz
+	return (F_CPU / 128UL / 13UL);
+}
+
+/*
+ * ADVANCED FUNCTION: Calibrated Temperature Reading
+ *
+ * PURPOSE: Temperature measurement with user calibration
+ * LEARNING: Sensor calibration, offset and scale correction
+ */
+signed int Read_Temperature_Calibrated(unsigned char adc_input, signed int offset, unsigned int scale)
+{
+	unsigned int voltage_mV = Read_Adc_Voltage_mV(adc_input);
+	signed int temperature = (signed int)(voltage_mV / 10);
+
+	// Apply calibration: temp_calibrated = (temp * scale / 1000) + offset
+	temperature = (signed int)(((long)temperature * scale) / 1000) + offset;
+
+	return temperature;
+}
+
+float Read_Temperature_Float(unsigned char adc_input)
+{
+	unsigned int voltage_mV = Read_Adc_Voltage_mV(adc_input);
+	return (float)voltage_mV / 10.0f;
+}
+
+/*
+ * ADVANCED FUNCTION: Voltage Reference Management
+ *
+ * PURPOSE: Switch between different voltage references
+ * LEARNING: Reference voltage selection, measurement accuracy
+ */
+void ADC_Set_Reference(unsigned char ref_type)
+{
+	// Preserve channel selection while changing reference
+	unsigned char channel = ADMUX & 0x1F;
+	ADMUX = ref_type | channel;
+
+	// Wait for reference to stabilize
+	_delay_ms(10);
+
+	// Dummy conversion
+	ADCSRA |= (1 << ADSC);
+	while (ADCSRA & (1 << ADSC))
+		;
+}
+
+/*
+ * ADVANCED FUNCTION: Measure VCC Using Internal Reference
+ *
+ * PURPOSE: Measure supply voltage without external reference
+ * LEARNING: Self-measurement, bandgap reference
+ */
+unsigned int ADC_Measure_VCC_mV(void)
+{
+	// Select internal 2.56V reference and channel 0x1E (1.1V bandgap)
+	ADMUX = ADC_2_56_TYPE | 0x1E;
+	_delay_ms(10); // Wait for reference to stabilize
+
+	// Perform conversion
+	ADCSRA |= (1 << ADSC);
+	while (ADCSRA & (1 << ADSC))
+		;
+	unsigned int result = ADCL + (ADCH << 8);
+
+	// VCC = (1.1V * 1024) / ADC_result * (2.56V / Vref)
+	// Simplified: VCC = 1126400 / result (in mV)
+	if (result == 0)
+		return 0;
+	return (unsigned int)(1126400UL / result);
+}
+
+unsigned int ADC_Measure_Internal_Ref(void)
+{
+	// Measure internal 1.1V reference
+	ADMUX = ADC_AVCC_TYPE | 0x1E; // AVCC reference, internal 1.1V
+	_delay_ms(10);
+
+	ADCSRA |= (1 << ADSC);
+	while (ADCSRA & (1 << ADSC))
+		;
+
+	return ADCL + (ADCH << 8);
+}
+
 #endif // !ASSEMBLY_BLINK_BASIC

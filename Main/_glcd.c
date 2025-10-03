@@ -608,6 +608,383 @@ void GLCD_Circle(unsigned char x1, unsigned char y1, unsigned char r)
 	}
 }
 
+/*
+ * =============================================================================
+ * ENHANCED GRAPHICS FUNCTIONS - FILLED SHAPES
+ * =============================================================================
+ */
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Filled Rectangle
+ *
+ * PURPOSE: Draw solid filled rectangle for backgrounds, bars, and UI elements
+ * ALGORITHM: Scan-line filling by drawing horizontal lines
+ * EDUCATIONAL VALUE:
+ * - Area filling techniques
+ * - Nested loop optimization
+ * - Coordinate boundary checking
+ * - Practical UI element creation
+ */
+void GLCD_Rectangle_Fill(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2)
+{
+	unsigned char x, y;
+	unsigned char x_start, x_end, y_start, y_end;
+
+	// Ensure proper ordering (top-left to bottom-right)
+	x_start = (x1 < x2) ? x1 : x2;
+	x_end = (x1 < x2) ? x2 : x1;
+	y_start = (y1 < y2) ? y1 : y2;
+	y_end = (y1 < y2) ? y2 : y1;
+
+	// Fill rectangle using horizontal scan lines
+	for (x = x_start; x <= x_end; x++)
+	{
+		for (y = y_start; y <= y_end; y++)
+		{
+			GLCD_Dot(x, y);
+		}
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Filled Circle
+ *
+ * PURPOSE: Draw solid filled circle for indicators, buttons, and decorations
+ * ALGORITHM: Circle equation with scan-line filling
+ * EDUCATIONAL VALUE:
+ * - Circle mathematics and equations
+ * - Area filling within curved boundaries
+ * - Symmetry exploitation for efficiency
+ */
+void GLCD_Circle_Fill(unsigned char x1, unsigned char y1, unsigned char r)
+{
+	int x, y;
+	float s;
+
+	// Fill circle by drawing horizontal lines from center outward
+	for (y = y1 - r; y <= y1 + r; y++)
+	{
+		if (y < 0 || y >= 128)
+			continue; // Boundary check
+
+		s = sqrt((float)(r * r - (y - y1) * (y - y1)));
+		int x_offset = (int)(s + 0.5);
+
+		// Draw horizontal line at this y position
+		for (x = x1 - x_offset; x <= x1 + x_offset; x++)
+		{
+			if (x >= 0 && x < 64) // Boundary check
+				GLCD_Dot(x, y);
+		}
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Triangle
+ *
+ * PURPOSE: Draw triangle outline connecting three vertices
+ * ALGORITHM: Three line segments connecting the vertices
+ * EDUCATIONAL VALUE:
+ * - Polygon rendering basics
+ * - Geometric shape composition
+ * - Vector graphics principles
+ */
+void GLCD_Triangle(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2,
+				   unsigned char x3, unsigned char y3)
+{
+	GLCD_Line(x1, y1, x2, y2); // Side 1
+	GLCD_Line(x2, y2, x3, y3); // Side 2
+	GLCD_Line(x3, y3, x1, y1); // Side 3
+}
+
+/*
+ * =============================================================================
+ * DATA VISUALIZATION FUNCTIONS - CHARTS AND GRAPHS
+ * =============================================================================
+ */
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Horizontal Bar Graph
+ *
+ * PURPOSE: Visual representation of data values as horizontal bars
+ * APPLICATIONS: Battery level, sensor readings, progress indicators
+ * EDUCATIONAL VALUE:
+ * - Data visualization principles
+ * - Proportional representation
+ * - Real-time data display
+ */
+void GLCD_Bar_Horizontal(unsigned char x, unsigned char y, unsigned char width,
+						 unsigned char height, unsigned char value)
+{
+	unsigned char fill_width;
+
+	// Clamp value to 0-100%
+	if (value > 100)
+		value = 100;
+
+	// Calculate fill width based on percentage
+	fill_width = (width * value) / 100;
+
+	// Draw outer border
+	GLCD_Rectangle(x, y, x + height, y + width);
+
+	// Fill the bar according to value
+	if (fill_width > 2)
+	{
+		GLCD_Rectangle_Fill(x + 1, y + 1, x + height - 1, y + fill_width - 1);
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Vertical Bar Graph
+ *
+ * PURPOSE: Visual representation of data values as vertical bars
+ * APPLICATIONS: Signal strength, temperature, volume level
+ * EDUCATIONAL VALUE:
+ * - Column chart creation
+ * - Vertical data representation
+ * - Multi-bar graph foundations
+ */
+void GLCD_Bar_Vertical(unsigned char x, unsigned char y, unsigned char width,
+					   unsigned char height, unsigned char value)
+{
+	unsigned char fill_height;
+
+	// Clamp value to 0-100%
+	if (value > 100)
+		value = 100;
+
+	// Calculate fill height based on percentage
+	fill_height = (height * value) / 100;
+
+	// Draw outer border (bottom to top)
+	GLCD_Rectangle(x, y - height, x + width, y);
+
+	// Fill the bar from bottom up according to value
+	if (fill_height > 2)
+	{
+		GLCD_Rectangle_Fill(x + 1, y - fill_height + 1, x + width - 1, y - 1);
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Progress Bar
+ *
+ * PURPOSE: Display progress with border and percentage fill
+ * APPLICATIONS: Loading indicators, task completion, download progress
+ * EDUCATIONAL VALUE:
+ * - UI element design
+ * - User feedback mechanisms
+ * - Professional interface creation
+ */
+void GLCD_Progress_Bar(unsigned char x, unsigned char y, unsigned char width,
+					   unsigned char height, unsigned char value)
+{
+	unsigned char fill_width;
+
+	// Clamp value to 0-100%
+	if (value > 100)
+		value = 100;
+
+	// Calculate fill width based on percentage
+	fill_width = ((width - 4) * value) / 100;
+
+	// Draw double border for professional look
+	GLCD_Rectangle(x, y, x + height, y + width);
+	GLCD_Rectangle(x + 1, y + 1, x + height - 1, y + width - 1);
+
+	// Fill the progress bar
+	if (fill_width > 0)
+	{
+		GLCD_Rectangle_Fill(x + 2, y + 2, x + height - 2, y + 2 + fill_width);
+	}
+}
+
+/*
+ * =============================================================================
+ * TEXT ENHANCEMENT FUNCTIONS - LARGE TEXT AND FORMATTING
+ * =============================================================================
+ */
+
+/*
+ * EDUCATIONAL FUNCTION: Display Large Character (2x size)
+ *
+ * PURPOSE: Render character at double size for headings and emphasis
+ * ALGORITHM: Pixel replication - each pixel becomes 2x2 block
+ * EDUCATIONAL VALUE:
+ * - Font scaling techniques
+ * - Pixel manipulation
+ * - Display hierarchy creation
+ */
+void GLCD_Char_Large(unsigned char x, unsigned char y, unsigned char character)
+{
+	unsigned char i, j, byte_data, bit;
+	unsigned char screen_x, screen_y;
+
+	// Large characters are 12x16 pixels (2x normal 5x7)
+	screen_x = x;
+	screen_y = y * 12; // Large chars need more vertical space
+
+	for (i = 0; i < 5; i++) // For each column of the font
+	{
+		byte_data = font[character - 0x20][i];
+
+		for (j = 0; j < 8; j++) // For each bit in the column
+		{
+			bit = (byte_data >> j) & 0x01;
+
+			if (bit)
+			{
+				// Draw 2x2 pixel block for each original pixel
+				GLCD_Dot(screen_x + (j * 2), screen_y + (i * 2));
+				GLCD_Dot(screen_x + (j * 2) + 1, screen_y + (i * 2));
+				GLCD_Dot(screen_x + (j * 2), screen_y + (i * 2) + 1);
+				GLCD_Dot(screen_x + (j * 2) + 1, screen_y + (i * 2) + 1);
+			}
+		}
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Display Large String (2x size)
+ *
+ * PURPOSE: Render string at double size for titles and important information
+ * EDUCATIONAL VALUE:
+ * - Text layout management
+ * - Scaled text positioning
+ * - User interface design
+ */
+void GLCD_String_Large(unsigned char x, unsigned char y, char *string)
+{
+	unsigned char pos = 0;
+
+	while (*string != '\0')
+	{
+		GLCD_Char_Large(x, y + pos, *string);
+		string++;
+		pos += 12; // Large character width spacing
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Display Formatted Integer Value
+ *
+ * PURPOSE: Display labeled sensor readings and data values
+ * APPLICATIONS: "Temp: 25°C", "Speed: 120", "Level: 75"
+ * EDUCATIONAL VALUE:
+ * - Formatted output creation
+ * - Data labeling best practices
+ * - Sensor data presentation
+ */
+void GLCD_Display_Value(unsigned char x, unsigned char y, char *label,
+						unsigned int value, unsigned char digits)
+{
+	lcd_xy(x, y);
+	lcd_string(x, y, label);
+
+	// Move cursor to after label
+	unsigned char label_len = 0;
+	while (label[label_len] != '\0')
+		label_len++;
+
+	lcd_xy(x, y + label_len);
+
+	// Display value with appropriate digit function
+	switch (digits)
+	{
+	case 2:
+		GLCD_2DigitDecimal(value);
+		break;
+	case 3:
+		GLCD_3DigitDecimal(value);
+		break;
+	case 4:
+		GLCD_4DigitDecimal(value);
+		break;
+	default:
+		GLCD_3DigitDecimal(value);
+	}
+}
+
+/*
+ * =============================================================================
+ * BITMAP AND ICON FUNCTIONS - CUSTOM GRAPHICS
+ * =============================================================================
+ */
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Bitmap Image
+ *
+ * PURPOSE: Display custom bitmap images, logos, and graphics
+ * FORMAT: Bitmap data is array of bytes, each byte = 8 vertical pixels
+ * EDUCATIONAL VALUE:
+ * - Image rendering techniques
+ * - Memory-to-display mapping
+ * - Custom graphics integration
+ * - Logo and icon display
+ */
+void GLCD_Bitmap(unsigned char x, unsigned char y, unsigned char width,
+				 unsigned char height, const unsigned char *bitmap)
+{
+	unsigned char i, j, k;
+	unsigned char byte_data;
+	unsigned char pages = (height + 7) / 8; // Number of 8-pixel rows needed
+
+	for (i = 0; i < pages; i++) // For each page (8 pixels high)
+	{
+		for (j = 0; j < width; j++) // For each column
+		{
+			byte_data = bitmap[i * width + j];
+
+			// Draw each bit in the byte as a pixel
+			for (k = 0; k < 8; k++)
+			{
+				if ((i * 8 + k) < height) // Don't exceed bitmap height
+				{
+					if (byte_data & (1 << k))
+					{
+						GLCD_Dot(x + (i * 8 + k), y + j);
+					}
+				}
+			}
+		}
+	}
+}
+
+/*
+ * EDUCATIONAL FUNCTION: Draw Small Icon (8x8)
+ *
+ * PURPOSE: Display small icons for UI elements and indicators
+ * APPLICATIONS: Battery icon, WiFi symbol, warning signs, arrows
+ * EDUCATIONAL VALUE:
+ * - Icon system creation
+ * - Compact graphics
+ * - User interface elements
+ */
+void GLCD_Icon_8x8(unsigned char x, unsigned char y, const unsigned char *icon)
+{
+	unsigned char i, j;
+	unsigned char byte_data;
+
+	for (i = 0; i < 8; i++) // 8 columns
+	{
+		byte_data = icon[i];
+		for (j = 0; j < 8; j++) // 8 rows
+		{
+			if (byte_data & (1 << j))
+			{
+				GLCD_Dot(x + j, y + i);
+			}
+		}
+	}
+}
+
+/*
+ * =============================================================================
+ * NUMERIC DISPLAY FUNCTIONS (Original)
+ * =============================================================================
+ */
+
 // display 1-digit decimal number
 unsigned char GLCD_1DigitDecimal(unsigned char number, unsigned char flag)
 {

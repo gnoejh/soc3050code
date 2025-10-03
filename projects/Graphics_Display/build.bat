@@ -1,5 +1,5 @@
 @echo off
-echo Building 12_Graphics_Display Project...
+echo Building Graphics_Display Project...
 
 "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe" ^
     -mmcu=atmega128 ^
@@ -9,9 +9,14 @@ echo Building 12_Graphics_Display Project...
     -Wall ^
     -Wextra ^
     -I. ^
-    -I../../shared_libs ^
+    -I../../Main ^
     Main.c ^
-    ../../shared_libs/_uart.c ^
+    ../../Main/_port.c ^
+    ../../Main/_init.c ^
+    ../../Main/_glcd.c ^
+    ../../Main/_uart.c ^
+    ../../Main/_timer2.c ^
+    -lm ^
     -o Main.elf
 
 if %errorlevel% neq 0 (

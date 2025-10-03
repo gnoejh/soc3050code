@@ -257,6 +257,162 @@ void GLCD_Rectangle(unsigned char x1, unsigned char y1, unsigned char x2, unsign
 void GLCD_Circle(unsigned char x1, unsigned char y1, unsigned char r);
 
 /*
+ * GRAPHICS FUNCTION: Draw Filled Rectangle
+ *
+ * PURPOSE: Draw solid filled rectangle between two corner points
+ * PARAMETERS:
+ *   x1, y1 - Top-left corner coordinates (0-127, 0-63)
+ *   x2, y2 - Bottom-right corner coordinates (0-127, 0-63)
+ * EDUCATIONAL VALUE: Area filling algorithms, pixel scanning
+ */
+void GLCD_Rectangle_Fill(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
+
+/*
+ * GRAPHICS FUNCTION: Draw Filled Circle
+ *
+ * PURPOSE: Draw solid filled circle using scan-line fill algorithm
+ * PARAMETERS:
+ *   x1, y1 - Center point coordinates (0-127, 0-63)
+ *   r - Radius in pixels
+ * EDUCATIONAL VALUE: Scan-line filling, circle equations
+ */
+void GLCD_Circle_Fill(unsigned char x1, unsigned char y1, unsigned char r);
+
+/*
+ * GRAPHICS FUNCTION: Draw Triangle
+ *
+ * PURPOSE: Draw triangle outline connecting three points
+ * PARAMETERS:
+ *   x1, y1 - First vertex coordinates (0-127, 0-63)
+ *   x2, y2 - Second vertex coordinates (0-127, 0-63)
+ *   x3, y3 - Third vertex coordinates (0-127, 0-63)
+ * EDUCATIONAL VALUE: Polygon rendering, vector graphics
+ */
+void GLCD_Triangle(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2,
+                   unsigned char x3, unsigned char y3);
+
+/*
+ * =============================================================================
+ * DATA VISUALIZATION FUNCTIONS
+ * =============================================================================
+ */
+
+/*
+ * VISUALIZATION FUNCTION: Draw Horizontal Bar Graph
+ *
+ * PURPOSE: Display horizontal bar representing value magnitude
+ * PARAMETERS:
+ *   x, y - Starting position (0-127, 0-63)
+ *   width - Maximum bar width in pixels
+ *   height - Bar height in pixels
+ *   value - Current value (0-100 percentage)
+ * EDUCATIONAL VALUE: Data visualization, proportional representation
+ */
+void GLCD_Bar_Horizontal(unsigned char x, unsigned char y, unsigned char width,
+                         unsigned char height, unsigned char value);
+
+/*
+ * VISUALIZATION FUNCTION: Draw Vertical Bar Graph
+ *
+ * PURPOSE: Display vertical bar representing value magnitude
+ * PARAMETERS:
+ *   x, y - Starting position (bottom-left, 0-127, 0-63)
+ *   width - Bar width in pixels
+ *   height - Maximum bar height in pixels
+ *   value - Current value (0-100 percentage)
+ * EDUCATIONAL VALUE: Data visualization, column charts
+ */
+void GLCD_Bar_Vertical(unsigned char x, unsigned char y, unsigned char width,
+                       unsigned char height, unsigned char value);
+
+/*
+ * VISUALIZATION FUNCTION: Draw Progress Bar
+ *
+ * PURPOSE: Display progress indicator with border and fill
+ * PARAMETERS:
+ *   x, y - Top-left position (0-127, 0-63)
+ *   width - Total width in pixels
+ *   height - Total height in pixels
+ *   value - Progress value (0-100 percentage)
+ * EDUCATIONAL VALUE: User interface elements, status indicators
+ */
+void GLCD_Progress_Bar(unsigned char x, unsigned char y, unsigned char width,
+                       unsigned char height, unsigned char value);
+
+/*
+ * =============================================================================
+ * TEXT ENHANCEMENT FUNCTIONS
+ * =============================================================================
+ */
+
+/*
+ * TEXT FUNCTION: Display Large Character (2x size)
+ *
+ * PURPOSE: Render character at double size for better visibility
+ * PARAMETERS:
+ *   x, y - Character position (0-9, 0-3)
+ *   character - ASCII character code (32-126)
+ * EDUCATIONAL VALUE: Font scaling, pixel replication
+ */
+void GLCD_Char_Large(unsigned char x, unsigned char y, unsigned char character);
+
+/*
+ * TEXT FUNCTION: Display Large String (2x size)
+ *
+ * PURPOSE: Render string at double size for headings and important text
+ * PARAMETERS:
+ *   x, y - Starting position (0-9, 0-3)
+ *   string - Null-terminated text string
+ * EDUCATIONAL VALUE: Scaled text rendering, display hierarchy
+ */
+void GLCD_String_Large(unsigned char x, unsigned char y, char *string);
+
+/*
+ * TEXT FUNCTION: Display Formatted Integer
+ *
+ * PURPOSE: Display integer with label for sensor readings
+ * PARAMETERS:
+ *   x, y - Text position (0-19, 0-7)
+ *   label - Descriptive text label
+ *   value - Integer value to display
+ *   digits - Number of digits (2-4)
+ * EDUCATIONAL VALUE: Formatted output, data labeling
+ */
+void GLCD_Display_Value(unsigned char x, unsigned char y, char *label,
+                        unsigned int value, unsigned char digits);
+
+/*
+ * =============================================================================
+ * BITMAP AND ICON FUNCTIONS
+ * =============================================================================
+ */
+
+/*
+ * GRAPHICS FUNCTION: Draw Bitmap Image
+ *
+ * PURPOSE: Display custom bitmap at specified position
+ * PARAMETERS:
+ *   x, y - Top-left position (0-127, 0-63)
+ *   width - Bitmap width in pixels
+ *   height - Bitmap height in pixels
+ *   bitmap - Pointer to bitmap data array
+ * EDUCATIONAL VALUE: Image rendering, memory-to-display mapping
+ */
+void GLCD_Bitmap(unsigned char x, unsigned char y, unsigned char width,
+                 unsigned char height, const unsigned char *bitmap);
+
+/*
+ * GRAPHICS FUNCTION: Draw Small Icon (8x8)
+ *
+ * PURPOSE: Display 8x8 pixel icon for UI elements
+ * PARAMETERS:
+ *   x, y - Icon position (0-127, 0-63)
+ *   icon - Pointer to 8-byte icon data
+ * EDUCATIONAL VALUE: Icon systems, compact graphics
+ */
+void GLCD_Icon_8x8(unsigned char x, unsigned char y, const unsigned char *icon);
+
+/*
  * =============================================================================
  * NUMERIC DISPLAY FUNCTIONS
  * =============================================================================
@@ -315,20 +471,66 @@ void GLCD_4DigitDecimal(unsigned int number);
  *   GLCD_Line(0, 0, 127, 63);               // Draw diagonal line
  *   GLCD_Rectangle(10, 10, 50, 30);         // Draw rectangle
  *   GLCD_Circle(64, 32, 20);                // Draw circle
+ *   GLCD_Rectangle_Fill(15, 15, 45, 25);    // Draw filled rectangle
+ *   GLCD_Circle_Fill(64, 32, 15);           // Draw filled circle
+ *   GLCD_Triangle(30, 10, 20, 30, 40, 30);  // Draw triangle
  *
- * NUMERIC DISPLAY EXAMPLE:
- *   lcd_xy(0, 2);                           // Position cursor
- *   GLCD_3DigitDecimal(temperature);        // Display sensor value
+ * DATA VISUALIZATION EXAMPLE:
+ *   GLCD_Bar_Horizontal(10, 20, 60, 8, 75);      // 75% horizontal bar
+ *   GLCD_Bar_Vertical(10, 50, 8, 30, 50);        // 50% vertical bar
+ *   GLCD_Progress_Bar(10, 10, 80, 10, 65);       // 65% progress bar
+ *
+ * TEXT FORMATTING EXAMPLE:
+ *   lcd_string(0, 0, "Normal Text");             // Regular 5x7 text
+ *   GLCD_String_Large(0, 2, "BIG");              // Large 2x text
+ *   GLCD_Display_Value(0, 4, "Temp:", 25, 2);    // Labeled value
+ *
+ * ICON AND BITMAP EXAMPLE:
+ *   const unsigned char battery_icon[8] = {0x3C,0x24,0x24,0x24,0x24,0x24,0x24,0x3C};
+ *   GLCD_Icon_8x8(10, 10, battery_icon);         // Display 8x8 icon
+ *   GLCD_Bitmap(20, 30, 16, 16, my_logo);        // Display bitmap
+ *
+ * SENSOR DASHBOARD EXAMPLE:
+ *   lcd_string(0, 0, "Dashboard");
+ *   GLCD_Display_Value(0, 2, "ADC:", adc_val, 3);
+ *   GLCD_Bar_Horizontal(8, 40, 60, 6, battery_pct);
+ *   GLCD_Icon_8x8(5, 10, temp_icon);
+ *
+ * COMMON ICON DEFINITIONS (8x8 pixels):
+ *   Battery:    {0x3C,0x24,0x24,0x24,0x24,0x24,0x24,0x3C}
+ *   Temp:       {0x04,0x0A,0x0A,0x0A,0x0A,0x1F,0x1F,0x0E}
+ *   Signal:     {0x01,0x03,0x07,0x0F,0x1F,0x3F,0x7F,0xFF}
+ *   WiFi:       {0x00,0x0E,0x11,0x04,0x0A,0x00,0x04,0x00}
+ *   Heart:      {0x00,0x66,0x99,0x81,0x42,0x24,0x18,0x00}
+ *   Star:       {0x08,0x08,0x2A,0x1C,0x1C,0x2A,0x08,0x08}
+ *   Check:      {0x00,0x01,0x02,0x04,0x48,0x50,0x20,0x00}
+ *   X:          {0x00,0x41,0x22,0x14,0x14,0x22,0x41,0x00}
+ *   Arrow Up:   {0x08,0x1C,0x2A,0x49,0x08,0x08,0x08,0x00}
+ *   Arrow Down: {0x00,0x08,0x08,0x08,0x49,0x2A,0x1C,0x08}
  *
  * LEARNING OBJECTIVES ACHIEVED:
  * 1. ✓ Graphics LCD hardware interface and communication
  * 2. ✓ Pixel addressing and coordinate systems
- * 3. ✓ Text rendering and font management
+ * 3. ✓ Text rendering and font management (normal and scaled)
  * 4. ✓ Graphics primitives and geometric algorithms
  * 5. ✓ Buffer management and display optimization
  * 6. ✓ Numeric formatting and data presentation
  * 7. ✓ Real-time graphics and user interface design
  * 8. ✓ Integration with sensor data and system feedback
+ * 9. ✓ Data visualization with charts and graphs
+ * 10. ✓ Custom icon and bitmap display
+ * 11. ✓ Professional UI element creation
+ * 12. ✓ Complete sensor dashboard development
+ *
+ * PRACTICAL APPLICATIONS:
+ * - Sensor data visualization (temperature, humidity, light)
+ * - System status displays (battery, signal, CPU usage)
+ * - User interfaces (menus, selections, confirmations)
+ * - Real-time monitoring (ADC values, motor speed, position)
+ * - IoT device displays (connection status, data sync)
+ * - Educational demonstrations (waveforms, patterns, animations)
+ * - Embedded system debugging (variable monitoring, state display)
+ * - Industrial displays (process control, alarm indicators)
  *
  * =============================================================================
  */
