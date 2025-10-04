@@ -3,7 +3,7 @@ echo Building Graphics_Display Project...
 
 "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe" ^
     -mmcu=atmega128 ^
-    -DF_CPU=7372800UL ^
+    -DF_CPU=16000000UL ^
     -DBAUD=9600 ^
     -Os ^
     -Wall ^

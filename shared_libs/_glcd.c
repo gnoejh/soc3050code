@@ -230,10 +230,12 @@ void lcd_clear(void) /* clear LCD screen */
 /* GLCD Initialize */
 void lcd_init(void)
 {
-	cmnda(DISPON); // Display ON
-	cmnda(0xc0);   // z = 0 first line
-	cmnda(0xb8);   // x = 0 first page
-	cmnda(0x40);   // y = 0 first column
+	_delay_ms(100); // Wait for LCD to stabilize
+	cmnda(0x3F);	// Display ON (DISPON) for both panels
+	_delay_ms(10);
+	cmnda(0xc0); // z = 0 first line
+	cmnda(0xb8); // x = 0 first page
+	cmnda(0x40); // y = 0 first column
 }
 
 /* character position */
