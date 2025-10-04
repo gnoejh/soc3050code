@@ -170,7 +170,8 @@ if ($BuildFirst) {
             Write-Host "❌ Build failed!" -ForegroundColor $ErrorColor
             exit 1
         }
-    } else {
+    }
+    else {
         Write-Host "⚠️  Warning: Build script not found, skipping build" -ForegroundColor $WarningColor
     }
 }
@@ -184,7 +185,8 @@ if (-not (Test-Path $HexFile)) {
     if ($BuildFirst) {
         Write-Host "   Build completed but HEX file is missing" -ForegroundColor $WarningColor
         Write-Host "   Check build output for errors" -ForegroundColor $WarningColor
-    } else {
+    }
+    else {
         Write-Host "   Try building the project first:" -ForegroundColor $WarningColor
         Write-Host "   .\cli-simulide.ps1 -ProjectDir '$ProjectDir' -BuildFirst `$true" -ForegroundColor White
     }
@@ -197,15 +199,16 @@ Write-Host "$HexFile" -ForegroundColor White
 # Determine circuit file with auto-detection
 if ([string]::IsNullOrEmpty($CircuitFile)) {
     Write-Host "🔍 Searching for circuit file..." -ForegroundColor $InfoColor
+    Write-Host "   Priority: simulators/Simulator.simu (official circuit)" -ForegroundColor $InfoColor
     
     $PossibleCircuits = @(
+        Join-Path $WorkspaceRoot "simulators\Simulator.simu"          # PRIMARY: Official circuit
         Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1_Win64\Simulator.simu"
-        Join-Path $WorkspaceRoot "simulators\Simulator.simu"
-        Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1_Win64\Simulator.simu"
-        Join-Path $WorkspaceRoot "Simulator.simu"
-        Join-Path $WorkspaceRoot "atmega128.simu"
+        Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1_Win64\Simulator.simu"  # Legacy location
+        Join-Path $WorkspaceRoot "Simulator.simu"                    # Workspace root fallback
+        Join-Path $WorkspaceRoot "atmega128.simu"                    # Alternative names
         Join-Path $WorkspaceRoot "circuit.simu"
-        Join-Path $ProjectDir "circuit.simu"
+        Join-Path $ProjectDir "circuit.simu"                         # Project-specific
         Join-Path $ProjectDir "Simulator.simu"
     )
     
@@ -214,6 +217,11 @@ if ([string]::IsNullOrEmpty($CircuitFile)) {
             $CircuitFile = $circuit
             Write-Host "   ✅ Found: " -NoNewline -ForegroundColor $SuccessColor
             Write-Host "$CircuitFile" -ForegroundColor White
+            
+            # Highlight if using the official circuit
+            if ($circuit -like "*simulators\Simulator.simu") {
+                Write-Host "   🎯 Using official circuit file (recommended)" -ForegroundColor $SuccessColor
+            }
             break
         }
     }
@@ -222,14 +230,17 @@ if ([string]::IsNullOrEmpty($CircuitFile)) {
 if ([string]::IsNullOrEmpty($CircuitFile) -or -not (Test-Path $CircuitFile)) {
     Write-Host "❌ Error: Circuit file not found!" -ForegroundColor $ErrorColor
     Write-Host ""
-    Write-Host "Please create or specify a SimulIDE circuit file (.simu)" -ForegroundColor $WarningColor
+    Write-Host "Please ensure the official SimulIDE circuit file exists:" -ForegroundColor $WarningColor
     Write-Host ""
-    Write-Host "Options:" -ForegroundColor $InfoColor
-    Write-Host "   1. Create Simulator.simu in workspace root: $WorkspaceRoot" -ForegroundColor White
-    Write-Host "   2. Specify custom circuit with -CircuitFile parameter" -ForegroundColor White
+    Write-Host "Required:" -ForegroundColor $InfoColor
+    Write-Host "   📂 $WorkspaceRoot\simulators\Simulator.simu (official circuit)" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Alternative options:" -ForegroundColor $InfoColor
+    Write-Host "   1. Check if simulators/Simulator.simu exists in workspace" -ForegroundColor White
+    Write-Host "   2. Specify custom circuit: -CircuitFile 'path\to\circuit.simu'" -ForegroundColor White
     Write-Host ""
     Write-Host "Example:" -ForegroundColor $InfoColor
-    Write-Host "   .\cli-simulide.ps1 -CircuitFile 'path\to\circuit.simu'" -ForegroundColor White
+    Write-Host "   .\cli-simulide.ps1 -CircuitFile 'simulators\Simulator.simu'" -ForegroundColor White
     Write-Host ""
     exit 1
 }
@@ -286,7 +297,8 @@ try {
         Write-Host "   ✅ Updated MCU program path" -ForegroundColor $SuccessColor
         Write-Host "      Old: $OldPath" -ForegroundColor Gray
         Write-Host "      New: Program=`"$AbsoluteHexPath`"" -ForegroundColor Gray
-    } else {
+    }
+    else {
         Write-Host "   ⚠️  Warning: Could not find Program attribute in circuit" -ForegroundColor $WarningColor
         Write-Host "      You may need to manually load firmware in SimulIDE" -ForegroundColor $WarningColor
     }
@@ -295,7 +307,8 @@ try {
     if ($CircuitContent -match 'Auto_Load="false"') {
         $CircuitContent = $CircuitContent -replace 'Auto_Load="false"', 'Auto_Load="true"'
         Write-Host "   ✅ Enabled Auto_Load" -ForegroundColor $SuccessColor
-    } elseif ($CircuitContent -match 'Auto_Load="true"') {
+    }
+    elseif ($CircuitContent -match 'Auto_Load="true"') {
         Write-Host "   ✅ Auto_Load already enabled" -ForegroundColor $SuccessColor
     }
     
@@ -309,11 +322,13 @@ try {
         }
         
         Write-Host "   ✅ Created temporary circuit: $TempCircuitFile" -ForegroundColor $SuccessColor
-    } catch {
+    }
+    catch {
         throw "Failed to save temporary circuit file: $_"
     }
     
-} catch {
+}
+catch {
     Write-Host "❌ Error updating circuit file: $_" -ForegroundColor $ErrorColor
     exit 1
 }
@@ -356,7 +371,8 @@ try {
     Write-Host "  • Circuit file: $TempCircuitFile" -ForegroundColor Gray
     Write-Host ""
     
-} catch {
+}
+catch {
     Write-Host "❌ Error launching SimulIDE: $_" -ForegroundColor $ErrorColor
     Write-Host ""
     Write-Host "Troubleshooting steps:" -ForegroundColor $InfoColor
