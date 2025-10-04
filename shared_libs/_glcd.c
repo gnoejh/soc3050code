@@ -508,4 +508,488 @@ void GLCD_4DigitDecimal(unsigned int number)
 	lcd_char(i + '0'); // 10^0
 }
 
+/*=========================================================================*/
+/*                    ADVANCED GRAPHICS LIBRARY EXTENSIONS                */
+/*=========================================================================*/
+
+static GLCD_DrawMode current_draw_mode = GLCD_MODE_SET;
+
+/* Set drawing mode */
+void GLCD_SetDrawMode(GLCD_DrawMode mode)
+{
+	current_draw_mode = mode;
+}
+
+/* Enhanced dot function with drawing modes */
+void GLCD_Dot_Advanced(unsigned char xx, unsigned char y)
+{
+	unsigned char x, i, bit_mask, current_data;
+
+	// Boundary check
+	if ((xx > 63) || (y > 127))
+		return;
+
+	x = xx / 8;
+	i = 1 << (xx % 8); // More efficient bit calculation
+
+	// Set position and read current data
+	GLCD_Axis_xy(x, y);
+
+	// Get current screen buffer data
+	current_data = ScreenBuffer[x][y];
+
+	// Apply drawing mode
+	switch (current_draw_mode)
+	{
+	case GLCD_MODE_SET:
+		ScreenBuffer[x][y] = current_data | i;
+		break;
+	case GLCD_MODE_CLEAR:
+		ScreenBuffer[x][y] = current_data & (~i);
+		break;
+	case GLCD_MODE_XOR:
+		ScreenBuffer[x][y] = current_data ^ i;
+		break;
+	case GLCD_MODE_OR:
+		ScreenBuffer[x][y] = current_data | i;
+		break;
+	case GLCD_MODE_AND:
+		ScreenBuffer[x][y] = current_data & i;
+		break;
+	}
+
+	// Update display
+	if (y <= 63)
+		datal(ScreenBuffer[x][y]);
+	else
+		datar(ScreenBuffer[x][y]);
+}
+
+/* Filled Rectangle */
+void GLCD_Rectangle_Filled(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2)
+{
+	unsigned char x, y;
+	unsigned char temp;
+
+	// Ensure x1 <= x2, y1 <= y2
+	if (x1 > x2)
+	{
+		temp = x1;
+		x1 = x2;
+		x2 = temp;
+	}
+	if (y1 > y2)
+	{
+		temp = y1;
+		y1 = y2;
+		y2 = temp;
+	}
+
+	for (x = x1; x <= x2; x++)
+	{
+		for (y = y1; y <= y2; y++)
+		{
+			GLCD_Dot_Advanced(x, y);
+		}
+	}
+}
+
+/* Filled Circle */
+void GLCD_Circle_Filled(unsigned char cx, unsigned char cy, unsigned char radius)
+{
+	int x, y, r_squared;
+
+	r_squared = radius * radius;
+
+	for (x = cx - radius; x <= cx + radius; x++)
+	{
+		for (y = cy - radius; y <= cy + radius; y++)
+		{
+			if (((x - cx) * (x - cx) + (y - cy) * (y - cy)) <= r_squared)
+			{
+				if (x >= 0 && x <= 63 && y >= 0 && y <= 127)
+				{
+					GLCD_Dot_Advanced(x, y);
+				}
+			}
+		}
+	}
+}
+
+/* Ellipse */
+void GLCD_Ellipse(unsigned char cx, unsigned char cy, unsigned char a, unsigned char b)
+{
+	int x, y;
+	int a_squared = a * a;
+	int b_squared = b * b;
+	int two_a_squared = 2 * a_squared;
+	int two_b_squared = 2 * b_squared;
+
+	// Bresenham's ellipse algorithm
+	x = 0;
+	y = b;
+	int dx = 0;
+	int dy = two_a_squared * y;
+	int d1 = b_squared - a_squared * b + a_squared / 4;
+
+	// First region
+	while (dx < dy)
+	{
+		GLCD_Dot_Advanced(cx + x, cy + y);
+		GLCD_Dot_Advanced(cx - x, cy + y);
+		GLCD_Dot_Advanced(cx + x, cy - y);
+		GLCD_Dot_Advanced(cx - x, cy - y);
+
+		if (d1 < 0)
+		{
+			x++;
+			dx += two_b_squared;
+			d1 += dx + b_squared;
+		}
+		else
+		{
+			x++;
+			y--;
+			dx += two_b_squared;
+			dy -= two_a_squared;
+			d1 += dx - dy + b_squared;
+		}
+	}
+
+	// Second region
+	int d2 = b_squared * (x + 0.5) * (x + 0.5) + a_squared * (y - 1) * (y - 1) - a_squared * b_squared;
+
+	while (y >= 0)
+	{
+		GLCD_Dot_Advanced(cx + x, cy + y);
+		GLCD_Dot_Advanced(cx - x, cy + y);
+		GLCD_Dot_Advanced(cx + x, cy - y);
+		GLCD_Dot_Advanced(cx - x, cy - y);
+
+		if (d2 > 0)
+		{
+			y--;
+			dy -= two_a_squared;
+			d2 += a_squared - dy;
+		}
+		else
+		{
+			y--;
+			x++;
+			dx += two_b_squared;
+			dy -= two_a_squared;
+			d2 += dx - dy + a_squared;
+		}
+	}
+}
+
+/* Triangle */
+void GLCD_Triangle(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char x3, unsigned char y3)
+{
+	GLCD_Line(x1, y1, x2, y2);
+	GLCD_Line(x2, y2, x3, y3);
+	GLCD_Line(x3, y3, x1, y1);
+}
+
+/* Filled Triangle */
+void GLCD_Triangle_Filled(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char x3, unsigned char y3)
+{
+	// Sort vertices by y-coordinate
+	unsigned char temp;
+	if (y1 > y2)
+	{
+		temp = x1;
+		x1 = x2;
+		x2 = temp;
+		temp = y1;
+		y1 = y2;
+		y2 = temp;
+	}
+	if (y2 > y3)
+	{
+		temp = x2;
+		x2 = x3;
+		x3 = temp;
+		temp = y2;
+		y2 = y3;
+		y3 = temp;
+	}
+	if (y1 > y2)
+	{
+		temp = x1;
+		x1 = x2;
+		x2 = temp;
+		temp = y1;
+		y1 = y2;
+		y2 = temp;
+	}
+
+	// Fill triangle using scanlines
+	int y, x_left, x_right;
+
+	for (y = y1; y <= y3; y++)
+	{
+		if (y <= y2)
+		{
+			// Upper part
+			x_left = x1 + (y - y1) * (x2 - x1) / (y2 - y1 + 1);
+			x_right = x1 + (y - y1) * (x3 - x1) / (y3 - y1 + 1);
+		}
+		else
+		{
+			// Lower part
+			x_left = x2 + (y - y2) * (x3 - x2) / (y3 - y2 + 1);
+			x_right = x1 + (y - y1) * (x3 - x1) / (y3 - y1 + 1);
+		}
+
+		if (x_left > x_right)
+		{
+			temp = x_left;
+			x_left = x_right;
+			x_right = temp;
+		}
+
+		for (int x = x_left; x <= x_right; x++)
+		{
+			GLCD_Dot_Advanced(x, y);
+		}
+	}
+}
+
+/* Polygon (up to 8 vertices) */
+void GLCD_Polygon(unsigned char vertices[][2], unsigned char num_vertices)
+{
+	unsigned char i;
+	for (i = 0; i < num_vertices; i++)
+	{
+		unsigned char next = (i + 1) % num_vertices;
+		GLCD_Line(vertices[i][0], vertices[i][1], vertices[next][0], vertices[next][1]);
+	}
+}
+
+/* Pattern Fill */
+void GLCD_Pattern_Fill(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char pattern)
+{
+	unsigned char x, y, bit_pos;
+
+	for (x = x1; x <= x2; x++)
+	{
+		for (y = y1; y <= y2; y++)
+		{
+			bit_pos = ((x - x1) + (y - y1)) % 8;
+			if (pattern & (1 << bit_pos))
+			{
+				GLCD_Dot_Advanced(x, y);
+			}
+		}
+	}
+}
+
+/* Draw Bitmap (8x8) */
+void GLCD_Bitmap_8x8(unsigned char x, unsigned char y, const unsigned char bitmap[8])
+{
+	unsigned char row, col, byte_data;
+
+	for (row = 0; row < 8; row++)
+	{
+		byte_data = bitmap[row];
+		for (col = 0; col < 8; col++)
+		{
+			if (byte_data & (1 << (7 - col)))
+			{
+				GLCD_Dot_Advanced(x + col, y + row);
+			}
+		}
+	}
+}
+
+/* Draw Bitmap (16x16) */
+void GLCD_Bitmap_16x16(unsigned char x, unsigned char y, const unsigned char bitmap[32])
+{
+	unsigned char row, col, byte_data;
+
+	for (row = 0; row < 16; row++)
+	{
+		// Upper byte
+		byte_data = bitmap[row * 2];
+		for (col = 0; col < 8; col++)
+		{
+			if (byte_data & (1 << (7 - col)))
+			{
+				GLCD_Dot_Advanced(x + col, y + row);
+			}
+		}
+
+		// Lower byte
+		byte_data = bitmap[row * 2 + 1];
+		for (col = 0; col < 8; col++)
+		{
+			if (byte_data & (1 << (7 - col)))
+			{
+				GLCD_Dot_Advanced(x + col + 8, y + row);
+			}
+		}
+	}
+}
+
+/* Large Font (8x16) - Basic Numbers */
+const unsigned char large_font_numbers[10][16] = {
+	// 0
+	{0x3E, 0x7F, 0x71, 0x59, 0x4D, 0x47, 0x7F, 0x3E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 1
+	{0x40, 0x42, 0x7F, 0x7F, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 2
+	{0x62, 0x73, 0x59, 0x49, 0x6F, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 3
+	{0x22, 0x63, 0x49, 0x49, 0x7F, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 4
+	{0x18, 0x1C, 0x16, 0x53, 0x7F, 0x7F, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 5
+	{0x27, 0x67, 0x45, 0x45, 0x7D, 0x39, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 6
+	{0x3C, 0x7E, 0x4B, 0x49, 0x79, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 7
+	{0x03, 0x03, 0x71, 0x79, 0x0F, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 8
+	{0x36, 0x7F, 0x49, 0x49, 0x7F, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	// 9
+	{0x06, 0x4F, 0x49, 0x69, 0x3F, 0x1E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+
+/* Draw Large Number */
+void GLCD_Large_Number(unsigned char x, unsigned char y, unsigned char number)
+{
+	if (number <= 9)
+	{
+		GLCD_Bitmap_8x8(x, y, large_font_numbers[number]);
+		GLCD_Bitmap_8x8(x, y + 8, &large_font_numbers[number][8]);
+	}
+}
+
+/* Progress Bar */
+void GLCD_Progress_Bar(unsigned char x, unsigned char y, unsigned char width, unsigned char height, unsigned char percentage)
+{
+	unsigned char fill_width = (width * percentage) / 100;
+
+	// Draw border
+	GLCD_Rectangle(x, y, x + width - 1, y + height - 1);
+
+	// Fill progress
+	if (fill_width > 2)
+	{
+		GLCD_Rectangle_Filled(x + 1, y + 1, x + fill_width - 2, y + height - 2);
+	}
+}
+
+/* Scroll Text */
+void GLCD_Scroll_Text(unsigned char y, char *text, unsigned char speed)
+{
+	static int scroll_pos = 128;			   // Start from right edge
+	unsigned char text_len = strlen(text) * 6; // 6 pixels per character
+
+	lcd_string(y, scroll_pos, text);
+
+	scroll_pos -= speed;
+
+	if (scroll_pos < -text_len)
+	{
+		scroll_pos = 128; // Reset to right edge
+	}
+}
+
+/* Simple Animation Frame */
+void GLCD_Animation_Frame(unsigned char x, unsigned char y, const unsigned char frames[][8], unsigned char frame_count, unsigned char current_frame)
+{
+	if (current_frame < frame_count)
+	{
+		GLCD_Bitmap_8x8(x, y, frames[current_frame]);
+	}
+}
+
+/* Graph/Chart Functions */
+void GLCD_Bar_Chart(unsigned char x, unsigned char y, unsigned char values[], unsigned char count, unsigned char max_value)
+{
+	unsigned char i, bar_height;
+	unsigned char bar_width = 8;
+	unsigned char max_height = 40;
+
+	for (i = 0; i < count && i < 8; i++) // Maximum 8 bars
+	{
+		bar_height = (values[i] * max_height) / max_value;
+		GLCD_Rectangle_Filled(x + i * (bar_width + 2), y + max_height - bar_height,
+							  x + i * (bar_width + 2) + bar_width - 1, y + max_height);
+	}
+}
+
+void GLCD_Line_Graph(unsigned char x, unsigned char y, unsigned char values[], unsigned char count, unsigned char max_value)
+{
+	unsigned char i, point_y, prev_y;
+	unsigned char max_height = 40;
+	unsigned char step = 60 / (count - 1); // Distribute points across 60 pixels
+
+	if (count < 2)
+		return;
+
+	prev_y = y + max_height - (values[0] * max_height) / max_value;
+
+	for (i = 1; i < count; i++)
+	{
+		point_y = y + max_height - (values[i] * max_height) / max_value;
+		GLCD_Line(x + (i - 1) * step, prev_y, x + i * step, point_y);
+		prev_y = point_y;
+	}
+}
+
+/*=========================================================================*/
+/*                        UTILITY FUNCTIONS                               */
+/*=========================================================================*/
+
+/* Screen Capture to Buffer */
+void GLCD_Screen_Capture(unsigned char buffer[8][128])
+{
+	unsigned char x, y;
+	for (x = 0; x < 8; x++)
+	{
+		for (y = 0; y < 128; y++)
+		{
+			buffer[x][y] = ScreenBuffer[x][y];
+		}
+	}
+}
+
+/* Restore Screen from Buffer */
+void GLCD_Screen_Restore(unsigned char buffer[8][128])
+{
+	unsigned char x, y;
+	for (x = 0; x < 8; x++)
+	{
+		for (y = 0; y < 128; y++)
+		{
+			ScreenBuffer[x][y] = buffer[x][y];
+			GLCD_Axis_xy(x, y);
+			if (y <= 63)
+				datal(buffer[x][y]);
+			else
+				datar(buffer[x][y]);
+		}
+	}
+}
+
+/* Invert Screen */
+void GLCD_Invert_Screen(void)
+{
+	unsigned char x, y;
+	for (x = 0; x < 8; x++)
+	{
+		for (y = 0; y < 128; y++)
+		{
+			ScreenBuffer[x][y] = ~ScreenBuffer[x][y];
+			GLCD_Axis_xy(x, y);
+			if (y <= 63)
+				datal(ScreenBuffer[x][y]);
+			else
+				datar(ScreenBuffer[x][y]);
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------*/

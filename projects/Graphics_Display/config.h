@@ -9,8 +9,10 @@
 // F_CPU is defined by build script (-DF_CPU=16000000UL)
 // BAUD is defined by build script (-DBAUD=9600)
 
-// Enable Comprehensive Graphics Test
+// Enable ALL Graphics Tests
+#define BASIC_TEST_MODE
 #define GRAPHICS_COMPREHENSIVE_TEST
+#define GRAPHICS_FULL_TEST
 
 #include <avr/io.h>
 #include <util/delay.h>
