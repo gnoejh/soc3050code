@@ -1,122 +1,28 @@
-﻿/*
- * =============================================================================
- * EDUCATIONAL ATmega128 GRAPHICS LCD LIBRARY - IMPLEMENTATION
- * =============================================================================
- *
- * COURSE: SOC 3050 - Embedded Systems and IoT
- * AUTHOR: Professor Kim
- *
- * PURPOSE:
- * Comprehensive Graphics LCD library for ATmega128 using KS0108 controller.
- * This implementation provides educational framework for learning graphics
- * programming, display interfaces, and visual feedback systems.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master parallel interface protocols and timing
- * 2. Understand pixel addressing and memory organization
- * 3. Implement graphics algorithms and geometric primitives
- * 4. Learn text rendering and font management
- * 5. Explore user interface design principles
- *
- * HARDWARE INTERFACE:
- * - KS0108 Graphics LCD Controller (128x64 pixels)
- * - Dual controller architecture (left/right halves)
- * - 8-bit parallel data bus with control signals
- * - Memory-mapped display with page organization
- *
- * LEARNING PROGRESSION:
- * Assembly → C → Python → IoT
- * Port operations → Graphics functions → GUI frameworks → Web interfaces
- *
- * =============================================================================
- */
-
-#include <avr/io.h>
+﻿#include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "_main.h"
+#include "_glcd.h"
+
 #ifndef F_CPU
 #define F_CPU 16000000UL
 #endif
 #include <util/delay.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
-#ifndef F_CPU
-#define F_CPU 7372800UL
-#endif
-#include "_main.h"
-#include "_glcd.h"
 
-// Only compile GLCD functions if not using self-contained assembly example
-#ifndef ASSEMBLY_BLINK_BASIC
+typedef unsigned char byte;
+typedef unsigned int word;
 
-/*
- * =============================================================================
- * EDUCATIONAL CONSTANTS AND TYPE DEFINITIONS
- * =============================================================================
- */
+#define D_BEFORE 0
+#define D_AFTER 10
+#define D_MIDDLE 0
+#define DISPON 0x3f
+#define DISPOFF 0x3e
+word d;
 
-/* Legacy type definitions for compatibility */
-typedef unsigned char byte; // 8-bit unsigned integer
-typedef unsigned int word;	// 16-bit unsigned integer
-
-/* Display timing constants (microseconds) */
-#define GLCD_DELAY_BEFORE 0 // Setup time before operation
-#define GLCD_DELAY_AFTER 10 // Hold time after operation
-#define GLCD_DELAY_MIDDLE 0 // Intermediate timing
-
-/* Legacy timing constants for compatibility */
-#define D_BEFORE GLCD_DELAY_BEFORE
-#define D_AFTER GLCD_DELAY_AFTER
-#define D_MIDDLE GLCD_DELAY_MIDDLE
-
-/* KS0108 Controller Commands */
-#define GLCD_CMD_DISPLAY_ON 0x3F  // Turn display on
-#define GLCD_CMD_DISPLAY_OFF 0x3E // Turn display off
-#define GLCD_CMD_SET_ADDRESS 0x40 // Set Y address (0-63)
-#define GLCD_CMD_SET_PAGE 0xB8	  // Set X page (0-7)
-#define GLCD_CMD_START_LINE 0xC0  // Set start line (0-63)
-
-/* Legacy command constants for compatibility */
-#define DISPON GLCD_CMD_DISPLAY_ON
-#define DISPOFF GLCD_CMD_DISPLAY_OFF
-
-/*
- * =============================================================================
- * GLOBAL VARIABLES FOR GRAPHICS STATE MANAGEMENT
- * =============================================================================
- */
-
-/* Current cursor position for character operations */
-unsigned char xchar = 0; // Character X position (0-19)
-unsigned char ychar = 0; // Character Y position (0-7)
-
-/* Display state variables */
-#if defined(GRAPHICS_EXAMPLES) || defined(ADVANCED_EXAMPLES_ACTIVE)
-static unsigned char glcd_initialized = 0; // Initialization flag
-static unsigned char current_page = 0;	   // Current display page
-static unsigned char current_column = 0;   // Current column position
-static word d = 0;						   // General purpose delay variable
-#endif
-
-/*
- * =============================================================================
- * EDUCATIONAL FONT DATA - 5x7 ASCII CHARACTER SET
- * =============================================================================
- *
- * PURPOSE: Bitmap font data for text rendering
- * FORMAT: Each character is 5 bytes wide, drawn vertically (top to bottom)
- * RANGE: ASCII 32-126 (printable characters)
- * SIZE: 95 characters × 5 bytes = 475 bytes
- *
- * EDUCATIONAL NOTES:
- * - Each byte represents 8 vertical pixels
- * - Font is stored column by column (not row by row)
- * - Bit 0 = top pixel, Bit 7 = bottom pixel
- * - Characters are 5 pixels wide with 1 pixel spacing
- */
+byte xchar, ychar; /* x character(0-7), y character(0-19) */
 
 byte font[95][5] = {								 /* 5x7 ASCII character font draw a byte downwards */
 					{0x00, 0x00, 0x00, 0x00, 0x00},	 /* 0x20 space */
@@ -215,131 +121,54 @@ byte font[95][5] = {								 /* 5x7 ASCII character font draw a byte downwards *
 					{0x00, 0x41, 0x36, 0x08, 0x00},	 /* 0x7d } */
 					{0x08, 0x04, 0x08, 0x10, 0x08}}; /* 0x7e ~ */
 
-/*
- * =============================================================================
- * HARDWARE INTERFACE DOCUMENTATION
- * =============================================================================
- *
- * KS0108 GRAPHICS LCD CONTROLLER PIN CONFIGURATION:
- *
- * Control Pins (connected to ATmega128 PORTE):
- * - RS  (PE4): Register Select [L=Command, H=Data]        → PIN 14
- * - RW  (GND): Read/Write [L=Write fixed]                 → GND
- * - E   (PE5): Enable [L=Off, H=On]                       → PIN 1
- * - CS1 (PE7): Chip Select 1 (Left controller) [L=Off, H=On]  → PIN 16
- * - CS2 (PE6): Chip Select 2 (Right controller) [L=Off, H=On] → PIN 17
- *
- * Data Bus (connected to ATmega128 PORTA):
- * - D0-D7: 8-bit parallel data bus                        → PORTA
- *
- * TIMING REQUIREMENTS:
- * - Enable pulse width: minimum 450ns
- * - Setup time: minimum 140ns
- * - Hold time: minimum 10ns
- * - Command execution: varies by operation
- *
- * DUAL CONTROLLER ARCHITECTURE:
- * - Left controller (CS1): manages columns 0-63
- * - Right controller (CS2): manages columns 64-127
- * - Independent addressing and operation
- * - Synchronized for seamless display
- */
+/* command output */
 
-/*
- * EDUCATIONAL FUNCTION: Send Command to Left Controller
- *
- * PURPOSE: Send control commands to left half of display (columns 0-63)
- * PARAMETERS: cmd - KS0108 command byte
- *
- * HARDWARE INTERFACE:
- * - PORTA: 8-bit data bus (command byte)
- * - PORTE.4 (RS): Register Select (0=Command, 1=Data)
- * - PORTE.5 (E): Enable signal (falling edge triggers operation)
- * - PORTE.6 (CS2): Chip Select 2 (right controller)
- * - PORTE.7 (CS1): Chip Select 1 (left controller)
- */
-void cmndl(unsigned char cmd) // left 128x64
+// RS	pin PE4 [L:command, H:data]		PIN14
+// RW	pin GND [L write fixed]			GND
+// E	pin PE5 [L:off, H:on]			PIN1
+// CS1	pin PE7 [L:off, H:on]			PIN16
+// CS2	pin PE6 [L:off, H:on]			PIN17
+// DATA pin PORTA
+// SetBit(x,y);
+// ClrBit(x,y);
+
+void cmndl(byte cmd) // left 128x64
 {
-	PORTA = cmd;		   // Place command on data bus
-	ClrBit(PORTE, PORTE4); // RS = 0 (Command mode)
-	ClrBit(PORTE, PORTE6); // CS2 = 0 (Disable right controller)
-	SetBit(PORTE, PORTE7); // CS1 = 1 (Enable left controller)
-
-	_delay_us(D_MIDDLE);   // Setup time
-	SetBit(PORTE, PORTE5); // E = 1 (Enable high)
-	_delay_us(D_BEFORE);   // Enable pulse width
-	ClrBit(PORTE, PORTE5); // E = 0 (Enable low - execute command)
-	_delay_us(D_AFTER);	   // Hold time
-
-	/*
-	 * EDUCATIONAL NOTE:
-	 * The KS0108 requires specific timing:
-	 * - Enable pulse width: minimum 450ns
-	 * - Setup time: minimum 140ns
-	 * - Hold time: minimum 10ns
-	 * - Command execution time: varies by command
-	 */
-} /*
-   * EDUCATIONAL FUNCTION: Send Command to Right Controller
-   *
-   * PURPOSE: Send control commands to right half of display (columns 64-127)
-   * PARAMETERS: cmd - KS0108 command byte
-   *
-   * DUAL CONTROLLER ARCHITECTURE:
-   * The 128x64 GLCD uses two KS0108 controllers:
-   * - Left controller: manages columns 0-63
-   * - Right controller: manages columns 64-127
-   * - Each controller has independent addressing
-   * - Enables parallel processing for better performance
-   */
-void cmndr(unsigned char cmd)
-{
-	PORTA = cmd;		   // Place command on data bus
-	ClrBit(PORTE, PORTE4); // RS = 0 (Command mode)
-	SetBit(PORTE, PORTE6); // CS2 = 1 (Enable right controller)
-	ClrBit(PORTE, PORTE7); // CS1 = 0 (Disable left controller)
-
-	_delay_us(D_MIDDLE);   // Setup time
-	SetBit(PORTE, PORTE5); // E = 1 (Enable high)
-	_delay_us(D_BEFORE);   // Enable pulse width
-	ClrBit(PORTE, PORTE5); // E = 0 (Enable low - execute command)
-	_delay_us(D_AFTER);	   // Hold time
+	PORTA = cmd;		   // DATA pin PORTA	write vertical upwards at current character position
+	ClrBit(PORTE, PORTE4); // PORTE.4 = 0;		//	RS
+	ClrBit(PORTE, PORTE6); // PORTE.6 = 0;
+	SetBit(PORTE, PORTE7); // PORTE.7 = 1;		// left pannel
+	_delay_us(D_MIDDLE);
+	SetBit(PORTE, PORTE5); // PORTE.5 = 1;		//  E
+	_delay_us(D_BEFORE);
+	ClrBit(PORTE, PORTE5); // PORTE.5 = 0;		// E
+	_delay_us(D_AFTER);
 }
 
-/*
- * EDUCATIONAL FUNCTION: Send Command to Both Controllers
- *
- * PURPOSE: Send same command to both display halves simultaneously
- * PARAMETERS: cmd - KS0108 command byte
- *
- * BROADCAST OPERATION:
- * This function demonstrates broadcast communication:
- * - Single command affects entire display
- * - Reduces communication overhead
- * - Ensures synchronization between controllers
- * - Used for global operations (clear, display on/off)
- */
-void cmnda(unsigned char cmd)
+void cmndr(byte cmd) // right 128x64
 {
-	PORTA = cmd;		   // Place command on data bus
-	ClrBit(PORTE, PORTE4); // RS = 0 (Command mode)
-	SetBit(PORTE, PORTE6); // CS2 = 1 (Enable right controller)
-	SetBit(PORTE, PORTE7); // CS1 = 1 (Enable left controller)
+	PORTA = cmd;		   // DATA pin PORTA
+	ClrBit(PORTE, PORTE4); // RS
+	SetBit(PORTE, PORTE6); // PORTE.6 = 1;  right pannel
+	ClrBit(PORTE, PORTE7); // PORTE.7 = 0;
+	_delay_us(D_MIDDLE);
+	SetBit(PORTE, PORTE5); // PORTE.5 = 1;		//  E
+	_delay_us(D_BEFORE);
+	ClrBit(PORTE, PORTE5); // PORTE.5 = 0;		// E
+	_delay_us(D_AFTER);
+}
 
-	_delay_us(D_MIDDLE);   // Setup time
-	SetBit(PORTE, PORTE5); // E = 1 (Enable high)
-	_delay_us(D_BEFORE);   // Enable pulse width
-	ClrBit(PORTE, PORTE5); // E = 0 (Enable low - execute command)
-	_delay_us(D_AFTER);	   // Hold time
-
-	/*
-	 * EDUCATIONAL NOTE:
-	 * Broadcast operations are useful for:
-	 * - Display initialization
-	 * - Global clear operations
-	 * - Display on/off control
-	 * - Start line synchronization
-	 */
+void cmnda(byte cmd) // both 128x64
+{
+	PORTA = cmd;		   // DATA pin PORTA
+	ClrBit(PORTE, PORTE4); // RS
+	SetBit(PORTE, PORTE6);
+	SetBit(PORTE, PORTE7); // PORTE.6 = 1;  PORTE.7 = 1;	both pannels
+	_delay_us(D_MIDDLE);
+	SetBit(PORTE, PORTE5); // PORTE.5 = 1;		//  E
+	_delay_us(D_BEFORE);
+	ClrBit(PORTE, PORTE5); // PORTE.5 = 0;		// E
+	_delay_us(D_AFTER);
 }
 
 /* 1 character output  */
@@ -678,5 +507,3 @@ void GLCD_4DigitDecimal(unsigned int number)
 }
 
 /*-------------------------------------------------------------------------*/
-
-#endif // !ASSEMBLY_BLINK_BASIC

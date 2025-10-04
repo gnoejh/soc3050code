@@ -56,8 +56,8 @@ $SuccessColor = "Green"
 $InfoColor = "Cyan"
 $WarningColor = "Yellow"
 
-# Get workspace root
-$WorkspaceRoot = $PSScriptRoot
+# Get workspace root (navigate up from tools/simulide to workspace root)
+$WorkspaceRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
 Write-Host "`n========================================" -ForegroundColor $InfoColor
 Write-Host "  SimulIDE ATmega128 Launcher" -ForegroundColor $InfoColor
@@ -82,7 +82,15 @@ if ([string]::IsNullOrEmpty($SimulIDEPath)) {
     
     # Build comprehensive search list
     $PossiblePaths = @(
-        # In workspace (portable installation)
+        # In workspace simulators folder (portable installation)
+        Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1_Win64\simulide.exe"
+        Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1_Win64\bin\simulide.exe"
+        Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1\simulide.exe"
+        Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1\bin\simulide.exe"
+        Join-Path $WorkspaceRoot "simulators\SimulIDE\simulide.exe"
+        Join-Path $WorkspaceRoot "simulators\SimulIDE\bin\simulide.exe"
+        
+        # In workspace root (legacy/portable installation)
         Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1_Win64\simulide.exe"
         Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1_Win64\bin\simulide.exe"
         Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1\simulide.exe"
@@ -135,7 +143,7 @@ if ([string]::IsNullOrEmpty($SimulIDEPath) -or -not (Test-Path $SimulIDEPath)) {
     Write-Host "   https://simulide.com/p/downloads/" -ForegroundColor White
     Write-Host ""
     Write-Host "Installation options:" -ForegroundColor $InfoColor
-    Write-Host "   1. Extract to workspace: $WorkspaceRoot\SimulIDE_1.1.0-SR1_Win64\" -ForegroundColor White
+    Write-Host "   1. Extract to workspace: $WorkspaceRoot\simulators\SimulIDE_1.1.0-SR1_Win64\" -ForegroundColor White
     Write-Host "   2. Install to Program Files" -ForegroundColor White
     Write-Host "   3. Specify custom path with -SimulIDEPath parameter" -ForegroundColor White
     Write-Host ""
@@ -191,6 +199,8 @@ if ([string]::IsNullOrEmpty($CircuitFile)) {
     Write-Host "🔍 Searching for circuit file..." -ForegroundColor $InfoColor
     
     $PossibleCircuits = @(
+        Join-Path $WorkspaceRoot "simulators\SimulIDE_1.1.0-SR1_Win64\Simulator.simu"
+        Join-Path $WorkspaceRoot "simulators\Simulator.simu"
         Join-Path $WorkspaceRoot "SimulIDE_1.1.0-SR1_Win64\Simulator.simu"
         Join-Path $WorkspaceRoot "Simulator.simu"
         Join-Path $WorkspaceRoot "atmega128.simu"

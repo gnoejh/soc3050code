@@ -1,14 +1,14 @@
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ProjectDir,
     
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$Programmer = "usbasp",
     
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$Port = "COM3",
     
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$DryRun
 )
 
@@ -58,9 +58,11 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
     
     if (Test-Path $debugHexFile) {
         $hexFilePath = $debugHexFile
-    } elseif (Test-Path $mainHexFile) {
+    }
+    elseif (Test-Path $mainHexFile) {
         $hexFilePath = $mainHexFile
-    } else {
+    }
+    else {
         Write-Host "No HEX file found in Debug\ or main directory!" -ForegroundColor Red
         exit 1
     }
@@ -80,18 +82,21 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
                 Write-Host "`"$avrdudeExe`" -c usbasp -p m128 -U `"$flashParam`"" -ForegroundColor Gray
                 $LASTEXITCODE = 0
                 $programResult = "Dry run - would program successfully"
-            } else {
+            }
+            else {
                 $programResult = & $avrdudeExe -c usbasp -p m128 -U $flashParam 2>&1
             }
         }
         "arduino" {
             if ($DryRun) {
                 Write-Host "DRY RUN: Would execute:" -ForegroundColor Yellow
-                Write-Host "`"$avrdudeExe`" -c arduino -p m128 -P $Port -U `"$flashParam`"" -ForegroundColor Gray
+                Write-Host "`"$avrdudeExe`" -c arduino -p m128 -P $Port -b 115200 -D -U `"$flashParam`"" -ForegroundColor Gray
                 $LASTEXITCODE = 0
                 $programResult = "Dry run - would program successfully"
-            } else {
-                $programResult = & $avrdudeExe -c arduino -p m128 -P $Port -U $flashParam 2>&1
+            }
+            else {
+                # Match MC Studio: -b 115200 for baud rate, -D to disable erase
+                $programResult = & $avrdudeExe -c arduino -p m128 -P $Port -b 115200 -D -U $flashParam 2>&1
             }
         }
         "avrisp" {
@@ -100,7 +105,8 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
                 Write-Host "`"$avrdudeExe`" -c avrisp -p m128 -P $Port -U `"$flashParam`"" -ForegroundColor Gray
                 $LASTEXITCODE = 0
                 $programResult = "Dry run - would program successfully"
-            } else {
+            }
+            else {
                 $programResult = & $avrdudeExe -c avrisp -p m128 -P $Port -U $flashParam 2>&1
             }
         }
@@ -110,7 +116,8 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
                 Write-Host "`"$avrdudeExe`" -c stk500v2 -p m128 -P $Port -U `"$flashParam`"" -ForegroundColor Gray
                 $LASTEXITCODE = 0
                 $programResult = "Dry run - would program successfully"
-            } else {
+            }
+            else {
                 $programResult = & $avrdudeExe -c stk500v2 -p m128 -P $Port -U $flashParam 2>&1
             }
         }
@@ -124,7 +131,8 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Programming completed successfully!" -ForegroundColor Green
         Write-Host "ATmega128 has been programmed with $projectName" -ForegroundColor Cyan
-    } else {
+    }
+    else {
         Write-Host "Programming failed!" -ForegroundColor Red
         Write-Host $programResult -ForegroundColor Red
         Write-Host "" -ForegroundColor White
@@ -136,7 +144,8 @@ if ($ProjectDir -like '*\projects\*' -or $ProjectDir -like '*\Main') {
         exit 1
     }
     
-} else {
+}
+else {
     Write-Host "Error: Not a valid project directory" -ForegroundColor Red
     Write-Host "Current directory: $ProjectDir" -ForegroundColor Gray
     exit 1

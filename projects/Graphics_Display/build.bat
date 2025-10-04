@@ -9,13 +9,13 @@ echo Building Graphics_Display Project...
     -Wall ^
     -Wextra ^
     -I. ^
-    -I../../Main ^
+    -I../../shared_libs ^
     Main.c ^
-    ../../Main/_port.c ^
-    ../../Main/_init.c ^
-    ../../Main/_glcd.c ^
-    ../../Main/_uart.c ^
-    ../../Main/_timer2.c ^
+    ../../shared_libs/_port.c ^
+    ../../shared_libs/_init.c ^
+    ../../shared_libs/_glcd.c ^
+    ../../shared_libs/_uart.c ^
+    ../../shared_libs/_timer2.c ^
     -lm ^
     -o Main.elf
 

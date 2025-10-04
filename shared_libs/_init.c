@@ -46,3 +46,23 @@ unsigned char check_init_status(void)
 		return 0; // Initialization incomplete
 	}
 }
+/*
+ * EDUCATIONAL FUNCTION: Complete Device Initialization
+ *
+ * PURPOSE: Initialize all peripherals for advanced projects
+ * LEARNING: Shows comprehensive system setup sequence
+ * USE CASE: For projects using multiple peripherals (GLCD, sensors, etc.)
+ */
+void init_devices(void)
+{
+	cli();		 // Disable interrupts during initialization
+	Port_init(); // Initialize I/O ports
+
+	// Initialize GLCD (Graphics LCD)
+	// Note: lcd_init() is declared in _glcd.h
+	// Make sure _glcd.h is included in the project that uses this
+	extern void lcd_init(void);
+	lcd_init(); // Initialize Graphics LCD
+
+	sei(); // Enable global interrupts
+}

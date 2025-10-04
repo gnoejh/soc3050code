@@ -6,18 +6,24 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define F_CPU 7372800UL
-#define BAUD 9600
+// F_CPU is defined by build script (-DF_CPU=16000000UL)
+// BAUD is defined by build script (-DBAUD=9600)
+
+// Enable Graphics Basics Demo
+#define GRAPHICS_BASICS
 
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdio.h>
 #include <string.h>
 #include <avr/interrupt.h>
+#include <stdlib.h>
+#include <time.h>
 
-// Include shared library headers from Main folder
-#include "../../Main/_port.h"
-#include "../../Main/_init.h"
-#include "../../Main/_glcd.h"
+// Include shared library headers
+#include "../../shared_libs/_port.h"
+#include "../../shared_libs/_init.h"
+#include "../../shared_libs/_glcd.h"
+#include "../../shared_libs/_buzzer.h"
 
 #endif /* CONFIG_H_ */
