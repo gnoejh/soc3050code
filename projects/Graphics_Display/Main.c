@@ -6,7 +6,7 @@
 /*=========================================================================*/
 #ifdef BASIC_TEST_MODE
 
-void test_basic_lcd_text(void)
+void demo_01_basic_lcd_text(void)
 {
     lcd_clear();
     lcd_string(0, 0, "=== BASIC MODE ===");
@@ -23,7 +23,7 @@ void test_basic_lcd_text(void)
     _delay_ms(3000);
 }
 
-void test_basic_primitives(void)
+void demo_02_basic_primitives(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Basic Graphics");
@@ -66,7 +66,7 @@ void test_basic_primitives(void)
     _delay_ms(2000);
 }
 
-void main_basic_test(void)
+void demo_basic_test_suite(void)
 {
     init_devices();
     lcd_clear();
@@ -75,8 +75,8 @@ void main_basic_test(void)
     lcd_string(3, 0, "Starting...");
     _delay_ms(2000);
 
-    test_basic_lcd_text();
-    test_basic_primitives();
+    demo_01_basic_lcd_text();
+    demo_02_basic_primitives();
 
     lcd_clear();
     lcd_string(2, 0, "BASIC TESTS");
@@ -91,7 +91,7 @@ void main_basic_test(void)
 /*=========================================================================*/
 #ifdef GRAPHICS_COMPREHENSIVE_TEST
 
-void test_comprehensive_text(void)
+void demo_03_comprehensive_text(void)
 {
     lcd_clear();
     lcd_string(0, 0, "=COMPREHENSIVE=");
@@ -108,7 +108,7 @@ void test_comprehensive_text(void)
     _delay_ms(4000);
 }
 
-void test_comprehensive_shapes(void)
+void demo_04_comprehensive_shapes(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Shape Variations");
@@ -145,7 +145,7 @@ void test_comprehensive_shapes(void)
     _delay_ms(2000);
 }
 
-void test_comprehensive_numbers(void)
+void demo_05_comprehensive_numbers(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Number Functions");
@@ -171,7 +171,7 @@ void test_comprehensive_numbers(void)
     _delay_ms(4000);
 }
 
-void main_graphics_comprehensive_test(void)
+void demo_comprehensive_test_suite(void)
 {
     init_devices();
     lcd_clear();
@@ -181,9 +181,9 @@ void main_graphics_comprehensive_test(void)
     lcd_string(3, 0, "Starting...");
     _delay_ms(2000);
 
-    test_comprehensive_text();
-    test_comprehensive_shapes();
-    test_comprehensive_numbers();
+    demo_03_comprehensive_text();
+    demo_04_comprehensive_shapes();
+    demo_05_comprehensive_numbers();
 
     lcd_clear();
     lcd_string(1, 0, "COMPREHENSIVE");
@@ -197,7 +197,7 @@ void main_graphics_comprehensive_test(void)
 /* Full Graphics Library Test */
 #ifdef GRAPHICS_FULL_TEST
 
-void test_basic_functions(void)
+void demo_06_basic_functions(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Basic Functions Test");
@@ -217,7 +217,7 @@ void test_basic_functions(void)
     _delay_ms(2000);
 }
 
-void test_drawing_modes(void)
+void demo_07_drawing_modes(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Drawing Modes Test");
@@ -242,7 +242,7 @@ void test_drawing_modes(void)
     GLCD_SetDrawMode(GLCD_MODE_SET);
 }
 
-void test_filled_shapes(void)
+void demo_08_filled_shapes(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Filled Shapes Test");
@@ -261,7 +261,7 @@ void test_filled_shapes(void)
     _delay_ms(2000);
 }
 
-void test_advanced_shapes(void)
+void demo_09_advanced_shapes(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Advanced Shapes");
@@ -278,7 +278,7 @@ void test_advanced_shapes(void)
     _delay_ms(2000);
 }
 
-void test_patterns_bitmaps(void)
+void demo_10_patterns_bitmaps(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Patterns & Bitmaps");
@@ -295,7 +295,7 @@ void test_patterns_bitmaps(void)
     _delay_ms(2000);
 }
 
-void test_large_text(void)
+void demo_11_large_text(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Large Numbers Test");
@@ -312,7 +312,7 @@ void test_large_text(void)
     _delay_ms(1000);
 }
 
-void test_ui_elements(void)
+void demo_12_ui_elements(void)
 {
     lcd_clear();
     lcd_string(0, 0, "UI Elements Test");
@@ -334,7 +334,7 @@ void test_ui_elements(void)
     _delay_ms(1000);
 }
 
-void test_charts(void)
+void demo_13_charts(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Charts Test");
@@ -355,7 +355,7 @@ void test_charts(void)
     _delay_ms(2000);
 }
 
-void test_screen_effects(void)
+void demo_14_screen_effects(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Screen Effects");
@@ -377,7 +377,7 @@ void test_screen_effects(void)
     _delay_ms(1000);
 }
 
-void test_animation_demo(void)
+void demo_15_animation_demo(void)
 {
     lcd_clear();
     lcd_string(0, 0, "Animation Demo");
@@ -413,7 +413,7 @@ void test_animation_demo(void)
     _delay_ms(1000);
 }
 
-void main_graphics_full_test(void)
+void demo_advanced_test_suite(void)
 {
     init_devices();
     lcd_clear();
@@ -429,16 +429,16 @@ void main_graphics_full_test(void)
     _delay_ms(1000);
 
     // Run all tests
-    test_basic_functions();
-    test_drawing_modes();
-    test_filled_shapes();
-    test_advanced_shapes();
-    test_patterns_bitmaps();
-    test_large_text();
-    test_ui_elements();
-    test_charts();
-    test_screen_effects();
-    test_animation_demo();
+    demo_06_basic_functions();
+    demo_07_drawing_modes();
+    demo_08_filled_shapes();
+    demo_09_advanced_shapes();
+    demo_10_patterns_bitmaps();
+    demo_11_large_text();
+    demo_12_ui_elements();
+    demo_13_charts();
+    demo_14_screen_effects();
+    demo_15_animation_demo();
 
     // Final message
     lcd_clear();
@@ -479,18 +479,16 @@ int main(void)
 
 // Run all enabled test modes
 #ifdef BASIC_TEST_MODE
-    main_basic_test();
+    demo_basic_test_suite();
 #endif
 
 #ifdef GRAPHICS_COMPREHENSIVE_TEST
-    main_graphics_comprehensive_test();
+    demo_comprehensive_test_suite();
 #endif
 
 #ifdef GRAPHICS_FULL_TEST
-    main_graphics_full_test();
-#endif
-
-    // Final completion screen
+    demo_advanced_test_suite();
+#endif // Final completion screen
     lcd_clear();
     lcd_string(0, 0, "ALL TESTS COMPLETE");
     lcd_string(1, 0, "==================");
