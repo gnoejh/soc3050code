@@ -166,12 +166,18 @@ class ProjectLauncherDashboard(BaseDashboard):
                 
                 if success:
                     # Connect to serial after programming
-                    time.sleep(2)  # Give hardware time to reset
+                    time.sleep(2)  # Give hardware time to reset after programming
+                    
+                    # Ensure monitoring is started
                     if not self.serial_handler.connected:
                         detected_port, dev_type = self.serial_handler.auto_detect_device()
                         if detected_port:
                             self.serial_handler.connect(detected_port)
-                            self.serial_handler.start_monitoring()
+                    
+                    # Always start monitoring (restart if needed)
+                    if self.serial_handler.connected:
+                        self.serial_handler.start_monitoring()
+                        self.log(f"Serial monitoring started on {self.serial_handler.port}")
                     
                     message = f"✅ Programmed and connected on {port}\n{prog_output}"
                 else:
@@ -290,6 +296,12 @@ class ProjectLauncherDashboard(BaseDashboard):
         def handle_connect():
             emit('status', {'connected': True, 'message': 'Connected to Project Launcher'})
             self.log('Client connected')
+            
+            # Send test message to verify WebSocket works
+            self.socketio.emit('serial_data', {
+                'timestamp': datetime.now().isoformat(),
+                'data': '🔌 WebSocket connected - Serial monitor ready'
+            })
         
         @self.socketio.on('disconnect')
         def handle_disconnect():
@@ -636,6 +648,9 @@ class ProjectLauncherDashboard(BaseDashboard):
         data = data_entry['data']
         timestamp = data_entry['timestamp']
         
+        # Debug logging
+        self.log(f"Serial RX: {data}")
+        
         # Parse LED states
         if 'PORTB' in data or 'LED' in data:
             led_states = self.parser.parse_led_state(data)
@@ -660,6 +675,7 @@ class ProjectLauncherDashboard(BaseDashboard):
             'timestamp': timestamp,
             'data': data
         })
+        self.log(f"Emitted serial_data event to frontend")
 
 # Create dashboard instance
 dashboard = ProjectLauncherDashboard()
