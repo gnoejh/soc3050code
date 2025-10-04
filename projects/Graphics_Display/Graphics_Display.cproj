@@ -132,6 +132,33 @@
     <Compile Include="config.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="..\..\shared_libs\_port.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_init.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_glcd.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_timer2.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_adc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_buzzer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_eeprom.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\shared_libs\_interrupt.c">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\..\extensions\Application\AvrGCC.targets" />
 </Project>
