@@ -9,20 +9,8 @@
         "*.hex": "intel-hex",
         "*.elf": "binary"
     },
-    // C/C++ IntelliSense for ATmega128
-    "C_Cpp.default.includePath": [
-        "${workspaceFolder}/Main",
-        "${workspaceFolder}/shared_libs",
-        "${workspaceFolder}/tools/avr-toolchain/avr/include",
-        "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include"
-    ],
-    "C_Cpp.default.compilerPath": "${workspaceFolder}/tools/avr-toolchain/bin/avr-gcc.exe",
-    "C_Cpp.default.defines": [
-        "F_CPU=16000000UL",
-        "__AVR_ATmega128__"
-    ],
-    "C_Cpp.default.cStandard": "gnu99",
-    "C_Cpp.default.intelliSenseMode": "gcc-x86",
+    // C/C++ IntelliSense configured via c_cpp_properties.json
+    // (Settings removed to avoid conflicts)
     // Python environment configuration
     "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
     "python.terminal.activateEnvironment": true,
