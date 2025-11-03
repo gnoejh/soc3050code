@@ -1,0 +1,111 @@
+<circuit version="1.1.0" rev="2000" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" >
+
+<item itemtype="MCU" CircId="atmega128-1" mainComp="false" Show_id="true" Show_Val="false" Pos="-200,-100" rotation="0" hflip="1" vflip="1" label="ATmega128" idLabRot="0" valLabRot="0" Frequency="16 MHz" Program="main.hex" Auto_Load="false" saveEepr="true" Logic_Symbol="false" Rst_enabled="true" Ext_Osc="false" Wdt_enabled="false" Clk_Out="false" SerialMon="-1" />
+
+<item itemtype="Ground" CircId="Ground-2" mainComp="false" Show_id="false" Show_Val="false" Pos="-80,180" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" />
+
+<!-- 8 LEDs on Port G -->
+<item itemtype="Led" CircId="Led-10" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-140" rotation="0" hflip="1" vflip="1" label="LED0" idLabRot="-10" valLabRot="0" Color="Yellow" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-11" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-120" rotation="0" hflip="1" vflip="1" label="LED1" idLabRot="-10" valLabRot="0" Color="Yellow" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-12" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-100" rotation="0" hflip="1" vflip="1" label="LED2" idLabRot="-10" valLabRot="0" Color="Yellow" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-13" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-80" rotation="0" hflip="1" vflip="1" label="LED3" idLabRot="-10" valLabRot="0" Color="Yellow" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-14" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-60" rotation="0" hflip="1" vflip="1" label="LED4" idLabRot="-10" valLabRot="0" Color="Green" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-15" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-40" rotation="0" hflip="1" vflip="1" label="LED5" idLabRot="-10" valLabRot="0" Color="Green" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-16" mainComp="false" Show_id="true" Show_Val="false" Pos="40,-20" rotation="0" hflip="1" vflip="1" label="LED6" idLabRot="-10" valLabRot="0" Color="Blue" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+<item itemtype="Led" CircId="Led-17" mainComp="false" Show_id="true" Show_Val="false" Pos="40,0" rotation="0" hflip="1" vflip="1" label="LED7" idLabRot="-10" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="30 mA" Resistance="0.6 Ω" />
+
+<!-- Resistors for LEDs -->
+<item itemtype="Resistor" CircId="Resistor-20" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-140" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-21" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-120" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-22" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-100" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-23" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-80" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-24" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-60" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-25" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-40" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-26" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,-20" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+<item itemtype="Resistor" CircId="Resistor-27" mainComp="false" Show_id="false" Show_Val="true" Pos="-20,0" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Resistance="220 Ω" />
+
+<!-- 2 Potentiometers for ADC -->
+<item itemtype="Potentiometer" CircId="Pot-30" mainComp="false" Show_id="true" Show_Val="true" Pos="-320,-60" rotation="0" hflip="1" vflip="1" label="POT1_ADC0" idLabRot="-20" valLabRot="-20" Resistance="10 kΩ" Value_Ohm="5000 Ω" />
+<item itemtype="Potentiometer" CircId="Pot-31" mainComp="false" Show_id="true" Show_Val="true" Pos="-320,-20" rotation="0" hflip="1" vflip="1" label="POT2_ADC1" idLabRot="-20" valLabRot="-20" Resistance="10 kΩ" Value_Ohm="5000 Ω" />
+
+<!-- 4 Buttons on Port D -->
+<item itemtype="Push" CircId="Button-40" mainComp="false" Show_id="true" Show_Val="false" Pos="-320,60" rotation="0" hflip="1" vflip="1" label="BTN0" idLabRot="-10" valLabRot="0" Norm_Close="false" Poles="1 _Poles" />
+<item itemtype="Push" CircId="Button-41" mainComp="false" Show_id="true" Show_Val="false" Pos="-320,80" rotation="0" hflip="1" vflip="1" label="BTN1" idLabRot="-10" valLabRot="0" Norm_Close="false" Poles="1 _Poles" />
+<item itemtype="Push" CircId="Button-42" mainComp="false" Show_id="true" Show_Val="false" Pos="-320,100" rotation="0" hflip="1" vflip="1" label="BTN2" idLabRot="-10" valLabRot="0" Norm_Close="false" Poles="1 _Poles" />
+<item itemtype="Push" CircId="Button-43" mainComp="false" Show_id="true" Show_Val="false" Pos="-320,120" rotation="0" hflip="1" vflip="1" label="BTN3" idLabRot="-10" valLabRot="0" Norm_Close="false" Poles="1 _Poles" />
+
+<!-- Serial Terminal -->
+<item itemtype="SerialTerm" CircId="SerialTerm-50" mainComp="false" Show_id="false" Show_Val="false" Pos="120,-200" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" />
+
+<!-- Power supplies -->
+<item itemtype="Fixed Voltage" CircId="Voltage-60" mainComp="false" Show_id="false" Show_Val="true" Pos="-380,-60" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Voltage="5 V" />
+<item itemtype="Fixed Voltage" CircId="Voltage-61" mainComp="false" Show_id="false" Show_Val="true" Pos="-380,-20" rotation="0" hflip="1" vflip="1" label="" idLabRot="0" valLabRot="0" Voltage="5 V" />
+
+<!-- Nodes for common connections -->
+<item itemtype="Node" CircId="Node-70" mainComp="false" Pos="80,40" />
+<item itemtype="Node" CircId="Node-71" mainComp="false" Pos="80,20" />
+<item itemtype="Node" CircId="Node-72" mainComp="false" Pos="80,0" />
+<item itemtype="Node" CircId="Node-73" mainComp="false" Pos="80,-20" />
+<item itemtype="Node" CircId="Node-74" mainComp="false" Pos="80,-40" />
+<item itemtype="Node" CircId="Node-75" mainComp="false" Pos="80,-60" />
+<item itemtype="Node" CircId="Node-76" mainComp="false" Pos="80,-80" />
+
+<!-- LED connections -->
+<item itemtype="Connector" uid="Connector-100" startpinid="atmega128-1-PORTG0" endpinid="Resistor-20-lPin" pointList="-152,-140,-36,-140" />
+<item itemtype="Connector" uid="Connector-101" startpinid="atmega128-1-PORTG1" endpinid="Resistor-21-lPin" pointList="-152,-132,-60,-132,-60,-120,-36,-120" />
+<item itemtype="Connector" uid="Connector-102" startpinid="atmega128-1-PORTG2" endpinid="Resistor-22-lPin" pointList="-152,-124,-64,-124,-64,-100,-36,-100" />
+<item itemtype="Connector" uid="Connector-103" startpinid="atmega128-1-PORTG3" endpinid="Resistor-23-lPin" pointList="-152,-116,-68,-116,-68,-80,-36,-80" />
+<item itemtype="Connector" uid="Connector-104" startpinid="atmega128-1-PORTG4" endpinid="Resistor-24-lPin" pointList="-152,-108,-72,-108,-72,-60,-36,-60" />
+<item itemtype="Connector" uid="Connector-105" startpinid="atmega128-1-PORTG5" endpinid="Resistor-25-lPin" pointList="-152,-100,-76,-100,-76,-40,-36,-40" />
+<item itemtype="Connector" uid="Connector-106" startpinid="atmega128-1-PORTG6" endpinid="Resistor-26-lPin" pointList="-152,-92,-80,-92,-80,-20,-36,-20" />
+<item itemtype="Connector" uid="Connector-107" startpinid="atmega128-1-PORTG7" endpinid="Resistor-27-lPin" pointList="-152,-84,-84,-84,-84,0,-36,0" />
+
+<item itemtype="Connector" uid="Connector-110" startpinid="Resistor-20-rPin" endpinid="Led-10-lPin" pointList="-4,-140,24,-140" />
+<item itemtype="Connector" uid="Connector-111" startpinid="Resistor-21-rPin" endpinid="Led-11-lPin" pointList="-4,-120,24,-120" />
+<item itemtype="Connector" uid="Connector-112" startpinid="Resistor-22-rPin" endpinid="Led-12-lPin" pointList="-4,-100,24,-100" />
+<item itemtype="Connector" uid="Connector-113" startpinid="Resistor-23-rPin" endpinid="Led-13-lPin" pointList="-4,-80,24,-80" />
+<item itemtype="Connector" uid="Connector-114" startpinid="Resistor-24-rPin" endpinid="Led-14-lPin" pointList="-4,-60,24,-60" />
+<item itemtype="Connector" uid="Connector-115" startpinid="Resistor-25-rPin" endpinid="Led-15-lPin" pointList="-4,-40,24,-40" />
+<item itemtype="Connector" uid="Connector-116" startpinid="Resistor-26-rPin" endpinid="Led-16-lPin" pointList="-4,-20,24,-20" />
+<item itemtype="Connector" uid="Connector-117" startpinid="Resistor-27-rPin" endpinid="Led-17-lPin" pointList="-4,0,24,0" />
+
+<!-- LED ground chain -->
+<item itemtype="Connector" uid="Connector-120" startpinid="Led-10-rPin" endpinid="Node-76-0" pointList="56,-140,80,-140,80,-80" />
+<item itemtype="Connector" uid="Connector-121" startpinid="Led-11-rPin" endpinid="Node-75-0" pointList="56,-120,80,-120,80,-60" />
+<item itemtype="Connector" uid="Connector-122" startpinid="Led-12-rPin" endpinid="Node-74-0" pointList="56,-100,80,-100,80,-40" />
+<item itemtype="Connector" uid="Connector-123" startpinid="Led-13-rPin" endpinid="Node-76-1" pointList="56,-80,80,-80" />
+<item itemtype="Connector" uid="Connector-124" startpinid="Node-76-2" endpinid="Node-75-1" pointList="80,-80,80,-60" />
+<item itemtype="Connector" uid="Connector-125" startpinid="Led-14-rPin" endpinid="Node-75-2" pointList="56,-60,80,-60" />
+<item itemtype="Connector" uid="Connector-126" startpinid="Node-75-2" endpinid="Node-74-1" pointList="80,-60,80,-40" />
+<item itemtype="Connector" uid="Connector-127" startpinid="Led-15-rPin" endpinid="Node-74-2" pointList="56,-40,80,-40" />
+<item itemtype="Connector" uid="Connector-128" startpinid="Node-74-2" endpinid="Node-73-0" pointList="80,-40,80,-20" />
+<item itemtype="Connector" uid="Connector-129" startpinid="Led-16-rPin" endpinid="Node-73-1" pointList="56,-20,80,-20" />
+<item itemtype="Connector" uid="Connector-130" startpinid="Node-73-2" endpinid="Node-72-0" pointList="80,-20,80,0" />
+<item itemtype="Connector" uid="Connector-131" startpinid="Led-17-rPin" endpinid="Node-72-1" pointList="56,0,80,0" />
+<item itemtype="Connector" uid="Connector-132" startpinid="Node-72-2" endpinid="Node-71-0" pointList="80,0,80,20" />
+<item itemtype="Connector" uid="Connector-133" startpinid="Node-71-2" endpinid="Node-70-0" pointList="80,20,80,40" />
+<item itemtype="Connector" uid="Connector-134" startpinid="Node-70-2" endpinid="Ground-2-Gnd" pointList="80,40,-80,40,-80,164" />
+
+<!-- ADC potentiometer connections -->
+<item itemtype="Connector" uid="Connector-140" startpinid="Voltage-60-outnod" endpinid="Pot-30-rPin" pointList="-364,-60,-336,-60" />
+<item itemtype="Connector" uid="Connector-141" startpinid="Voltage-61-outnod" endpinid="Pot-31-rPin" pointList="-364,-20,-336,-20" />
+<item itemtype="Connector" uid="Connector-142" startpinid="Pot-30-lPin" endpinid="Ground-2-Gnd" pointList="-304,-60,-280,-60,-280,140,-80,140,-80,164" />
+<item itemtype="Connector" uid="Connector-143" startpinid="Pot-31-lPin" endpinid="Ground-2-Gnd" pointList="-304,-20,-280,-20,-280,140,-80,140,-80,164" />
+<item itemtype="Connector" uid="Connector-144" startpinid="Pot-30-outpin" endpinid="atmega128-1-PORTF0" pointList="-320,-44,-280,-44,-280,-196,-152,-196" />
+<item itemtype="Connector" uid="Connector-145" startpinid="Pot-31-outpin" endpinid="atmega128-1-PORTF1" pointList="-320,-4,-276,-4,-276,-188,-152,-188" />
+
+<!-- Button connections -->
+<item itemtype="Connector" uid="Connector-150" startpinid="Button-40-pinP0" endpinid="atmega128-1-PORTD0" pointList="-336,60,-260,60,-260,156,-152,156" />
+<item itemtype="Connector" uid="Connector-151" startpinid="Button-41-pinP0" endpinid="atmega128-1-PORTD1" pointList="-336,80,-256,80,-256,164,-152,164" />
+<item itemtype="Connector" uid="Connector-152" startpinid="Button-42-pinP0" endpinid="atmega128-1-PORTD2" pointList="-336,100,-252,100,-252,172,-152,172" />
+<item itemtype="Connector" uid="Connector-153" startpinid="Button-43-pinP0" endpinid="atmega128-1-PORTD3" pointList="-336,120,-248,120,-248,180,-152,180" />
+<item itemtype="Connector" uid="Connector-154" startpinid="Button-40-switch0pinN" endpinid="Ground-2-Gnd" pointList="-304,60,-80,60,-80,164" />
+<item itemtype="Connector" uid="Connector-155" startpinid="Button-41-switch0pinN" endpinid="Ground-2-Gnd" pointList="-304,80,-80,80,-80,164" />
+<item itemtype="Connector" uid="Connector-156" startpinid="Button-42-switch0pinN" endpinid="Ground-2-Gnd" pointList="-304,100,-80,100,-80,164" />
+<item itemtype="Connector" uid="Connector-157" startpinid="Button-43-switch0pinN" endpinid="Ground-2-Gnd" pointList="-304,120,-80,120,-80,164" />
+
+<!-- Serial connections -->
+<item itemtype="Connector" uid="Connector-160" startpinid="atmega128-1-PORTE0" endpinid="SerialTerm-50-pin1" pointList="-152,52,20,52,20,-184,104,-184" />
+<item itemtype="Connector" uid="Connector-161" startpinid="atmega128-1-PORTE1" endpinid="SerialTerm-50-pin0" pointList="-152,60,24,60,24,-192,104,-192" />
+
+</circuit>
