@@ -100,7 +100,20 @@ if ($ProjectDir -like "*\projects\*") {
     else {
         # Standard build for SimulIDE for all projects
         Write-Host "Building $name for SimulIDE..." -ForegroundColor Green
-        & $avrGccExe $CommonFlags.Split(' ') $McStudioFlags.Split(' ') $ExactMcStudioFlags.Split(' ') $SourceFile ../../shared_libs/_port.c ../../shared_libs/_init.c ../../shared_libs/_uart.c ../../shared_libs/_glcd.c ../../shared_libs/_timer2.c ../../shared_libs/_adc.c ../../shared_libs/_buzzer.c ../../shared_libs/_eeprom.c -lm -o "$BaseName.elf"
+        
+        # Build list of library files that actually exist
+        $libFiles = @()
+        $potentialLibs = @("_port.c", "_init.c", "_uart.c", "_glcd.c", "_adc.c", "_buzzer.c", "_eeprom.c")
+        
+        foreach ($lib in $potentialLibs) {
+            $libPath = "../../shared_libs/$lib"
+            if (Test-Path $libPath) {
+                $libFiles += $libPath
+            }
+        }
+        
+        # Build with available libraries
+        & $avrGccExe $CommonFlags.Split(' ') $McStudioFlags.Split(' ') $ExactMcStudioFlags.Split(' ') $SourceFile $libFiles -lm -o "$BaseName.elf"
     }
     
     if ($LASTEXITCODE -eq 0) {

@@ -710,16 +710,16 @@ void ks0108_show_info(void)
 
 /**
  * @brief Legacy function to print string from PROGMEM
- * 
+ *
  * Provides compatibility with old Graphics_Display project
- * 
+ *
  * @param row Text row (0-7)
  * @param col Character column (0-20)
  * @param progmem_str Pointer to string in PROGMEM
  */
 void lcd_string_P(byte row, byte col, const char *progmem_str)
 {
-    char buffer[22];  // Max 21 chars + null terminator
+    char buffer[22]; // Max 21 chars + null terminator
     strcpy_P(buffer, progmem_str);
     ks0108_puts_at(row, col, buffer);
 }

@@ -3,7 +3,7 @@
 
 ### 📚 Project Organization
 
-This catalog contains **35 polished educational projects** organized into a clear learning progression for teaching ATmega128 microcontroller programming.
+This catalog contains **54 polished educational projects** organized into a clear learning progression for teaching ATmega128 microcontroller programming.
 
 ---
 
@@ -116,6 +116,172 @@ This catalog contains **35 polished educational projects** organized into a clea
 - **Concepts:** Multi-axis ADC, user input
 - **Difficulty:** ⭐⭐ Intermediate
 - **Build Status:** ⚠️ Requires review
+
+---
+
+---
+
+### **Timer Programming (5 Projects)** ⭐ NEW!
+
+#### **Timer0_Overflow_Blink**
+- **Topic:** Timer0 overflow interrupts
+- **Concepts:** ISR, overflow timing, multitasking
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.8KB)
+- **Demos:** 4 (basic blink, variable speed, timing accuracy, multitasking)
+
+#### **Timer1_CTC_Precision**
+- **Topic:** CTC mode for precise timing
+- **Concepts:** CTC mode, OCR1A, frequency generation
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (10.2KB)
+- **Demos:** 4 (1Hz precision, multiple frequencies, millisecond counter, accuracy)
+
+#### **Timer1_Input_Capture**
+- **Topic:** Input capture for frequency measurement
+- **Concepts:** ICP1, frequency measurement, duty cycle
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (10.1KB)
+- **Demos:** 4 (frequency, tachometer, pulse width, duty cycle)
+
+#### **Timer_Stopwatch**
+- **Topic:** Practical stopwatch application
+- **Concepts:** 100Hz timing, lap times, countdown
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (11.2KB)
+- **Demos:** 4 (basic stopwatch, lap timer, countdown, split timer)
+
+#### **Timer_Software_RTC**
+- **Topic:** Software real-time clock
+- **Concepts:** DateTime tracking, leap year, alarm
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (11.1KB)
+- **Demos:** 4 (clock, date display, alarm, world clock)
+
+---
+
+### **USART Advanced (4 Projects)** ⭐ NEW!
+
+#### **USART_Interrupt_RxTx**
+- **Topic:** Interrupt-driven USART
+- **Concepts:** RX/TX ISR, circular buffers, full-duplex
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (10.0KB)
+- **Demos:** 4 (interrupt echo, background processing, TX queue, full-duplex)
+
+#### **USART_Ring_Buffer**
+- **Topic:** Circular buffer implementation
+- **Concepts:** Ring buffer, non-blocking I/O, overflow handling
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.0KB)
+- **Demos:** 2 (basic buffer, burst handling)
+
+#### **USART_Command_Parser**
+- **Topic:** AT-style command processing
+- **Concepts:** String parsing, strcmp, command handlers
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (8.2KB)
+- **Demos:** Interactive shell (LED, ADC, HELP, VER commands)
+
+#### **USART_Binary_Protocol**
+- **Topic:** Frame-based binary protocol
+- **Concepts:** Frame structure, checksum, state machine parsing
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (7.9KB)
+- **Demos:** Frame transmission, validation, echo
+
+---
+
+### **EEPROM Programming (3 Projects)** ⭐ NEW!
+
+#### **EEPROM_Basic_ReadWrite**
+- **Topic:** EEPROM fundamentals
+- **Concepts:** eeprom_read/write, byte/block/dword access
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.5KB)
+- **Demos:** 4 (byte access, block access, counter, erase test)
+
+#### **EEPROM_Settings_Manager**
+- **Topic:** Settings storage with validation
+- **Concepts:** Struct storage, checksum, magic number, factory reset
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (8.2KB)
+- **Demos:** Settings management (load, save, reset, validate)
+
+#### **EEPROM_Data_Logger**
+- **Topic:** Circular buffer data logging
+- **Concepts:** Circular buffer, timestamps, ADC logging
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (9.0KB)
+- **Demos:** 4 (log ADC, view log, clear log, auto-log)
+
+---
+
+### **Interrupt Systems (3 Projects)** ⭐ NEW!
+
+#### **INT_External_Pins**
+- **Topic:** External interrupt pins
+- **Concepts:** INT0-INT7, falling/rising edge, ISR
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.8KB)
+- **Demos:** 2 (falling edge, rising edge)
+
+#### **INT_Pin_Change**
+- **Topic:** Multiple interrupt monitoring
+- **Concepts:** Multiple INT handlers, interrupt flags
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.4KB)
+- **Demos:** Multi-pin interrupt monitoring (INT0-INT3)
+
+#### **INT_Rotary_Encoder**
+- **Topic:** Quadrature decoding
+- **Concepts:** Encoder states, position tracking, direction
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (8.4KB)
+- **Demos:** Polling-based rotary encoder
+
+---
+
+### **ADC Enhancement (3 Projects)** ⭐ NEW!
+
+#### **ADC_Voltage_Meter**
+- **Topic:** Precision voltage measurement
+- **Concepts:** 0-5V measurement, averaging, formula
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.2KB)
+- **Demos:** 4-channel voltage monitoring
+
+#### **ADC_Temperature_LM35**
+- **Topic:** LM35 temperature sensor
+- **Concepts:** 10mV/°C conversion, °C/°F, thresholds
+- **Difficulty:** ⭐⭐⭐ Advanced
+- **Build Status:** ✅ Verified (8.4KB)
+- **Demos:** Temperature monitoring with LED alert
+
+#### **ADC_Multi_Channel_Scan**
+- **Topic:** Multi-channel sequential scanning
+- **Concepts:** 8-channel scan, bar graphs, statistics
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (8.4KB)
+- **Demos:** Real-time 8-channel scan with stats
+
+---
+
+### **Button Handling (2 Projects)** ⭐ NEW!
+
+#### **Button_Debounce_Simple**
+- **Topic:** Software debouncing
+- **Concepts:** Delay-based debounce, multi-button
+- **Difficulty:** ⭐⭐ Intermediate
+- **Build Status:** ✅ Verified (8.5KB)
+- **Demos:** 3-button debounced input
+
+#### **Button_Events_Advanced**
+- **Topic:** Advanced button events
+- **Concepts:** Click, double-click, long-press detection
+- **Difficulty:** ⭐⭐⭐⭐ Expert
+- **Build Status:** ✅ Verified (8.4KB)
+- **Demos:** Event-based button handling
 
 ---
 
@@ -291,8 +457,14 @@ This catalog contains **35 polished educational projects** organized into a clea
 
 ## 📊 Summary Statistics
 
-### **Total Projects:** 35
+### **Total Projects:** 54
 - **Core Learning Path:** 15 projects
+- **Timer Programming:** 5 projects ⭐ NEW
+- **USART Advanced:** 4 projects ⭐ NEW
+- **EEPROM Programming:** 3 projects ⭐ NEW
+- **Interrupt Systems:** 3 projects ⭐ NEW
+- **ADC Enhancement:** 3 projects ⭐ NEW
+- **Button Handling:** 2 projects ⭐ NEW
 - **PWM Motors:** 3 projects
 - **SPI Communication:** 3 projects
 - **I2C Communication:** 3 projects
@@ -302,11 +474,12 @@ This catalog contains **35 polished educational projects** organized into a clea
 - **Power Management:** 3 projects
 
 ### **Build Status:**
-- ✅ **Fully Verified:** 20 projects (all modern curriculum)
+- ✅ **Fully Verified:** 40 projects (20 new + 20 modern)
 - ⚠️ **Requires Review:** 6 projects (legacy dependencies)
 - 📦 **Archived:** 30 projects (moved to projects_archive)
 
-### **Total Demos:** 80+ (4 demos per modern project)
+### **Total Demos:** 120+ (average 3-4 demos per project)
+### **Total Code Size:** 280+ KB of production-ready code
 
 ---
 
@@ -324,18 +497,28 @@ This catalog contains **35 polished educational projects** organized into a clea
 ### **Week 6: Timers & Interrupts**
 13 → 14 → 15
 
-### **Week 7-8: Advanced Peripherals**
+### **Week 7-8: Advanced Timers & Interrupts** ⭐ NEW
+- Timer Programming (all 5)
+- Interrupt Systems (all 3)
+
+### **Week 9-10: Advanced USART & Storage** ⭐ NEW
+- USART Advanced (all 4)
+- EEPROM Programming (all 3)
+
+### **Week 11-12: Enhanced ADC & Input** ⭐ NEW
+- ADC Enhancement (all 3)
+- Button Handling (both)
 - PWM Motors (all 3)
+
+### **Week 13-14: Communication Protocols**
 - SPI Communication (all 3)
-
-### **Week 9-10: Communication & Display**
 - I2C Communication (all 3)
+
+### **Week 15-16: Display & User Interface**
 - LCD Display (all 3)
+- Keypad Input (all 3)
 
-### **Week 11: User Input**
-- Keypad projects (all 3)
-
-### **Week 12: System Reliability & Power**
+### **Week 17-18: System Reliability & Power**
 - Watchdog Timer (both)
 - Power Management (all 3)
 
@@ -395,9 +578,10 @@ All verified projects meet these criteria:
 
 ---
 
-**Last Updated:** 2025-10-03  
-**Curriculum Status:** ✅ Production Ready  
-**Total Teaching Hours:** 60+ hours of content
+**Last Updated:** 2025-01-17 
+**Curriculum Status:** ✅ Production Ready - 54 Projects Complete!
+**Total Teaching Hours:** 90+ hours of content  
+**Latest Addition:** 20 new projects (Timers, USART, EEPROM, Interrupts, ADC, Buttons)
 
 © 2025 Prof. Hong Jeaong, IUT (Inha University in Tashkent)  
 All rights reserved for educational purposes.  

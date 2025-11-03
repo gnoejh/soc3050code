@@ -1,9 +1,9 @@
 /*
  * Graphics_Display - KS0108 Graphic LCD (128x64) Programming
- * 
+ *
  * Demonstrates: Dual-controller GLCD, pixel/line/rectangle/circle drawing,
  * text rendering with 5x7 font, page-based memory addressing.
- * 
+ *
  * DOCUMENTATION REFERENCE:
  * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
  */

@@ -19,11 +19,11 @@
 
 // Keep constants for reference and debugging output
 #define SERVO_FREQ_HZ 50
-#define TIMER_FREQ (F_CPU / 8)  // PWM library uses prescaler 8 for servos
+#define TIMER_FREQ (F_CPU / 8) // PWM library uses prescaler 8 for servos
 #define SERVO_TOP (TIMER_FREQ / SERVO_FREQ_HZ - 1)
-#define SERVO_MIN_PULSE 544      // 0° in microseconds  
-#define SERVO_MAX_PULSE 2400     // 180° in microseconds
-#define SERVO_MID_PULSE 1472     // 90° in microseconds
+#define SERVO_MIN_PULSE 544  // 0° in microseconds
+#define SERVO_MAX_PULSE 2400 // 180° in microseconds
+#define SERVO_MID_PULSE 1472 // 90° in microseconds
 
 /*
  * Initialize servos using PWM library

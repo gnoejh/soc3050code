@@ -193,7 +193,7 @@ void main_adc_interrupt_driven(void);    // Interrupt-driven ADC example
 
 /*
  * =============================================================================
- * BACKWARD COMPATIBILITY LAYER  
+ * BACKWARD COMPATIBILITY LAYER
  * =============================================================================
  * Legacy function names for older projects
  */

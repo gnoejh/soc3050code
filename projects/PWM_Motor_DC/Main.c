@@ -6,7 +6,7 @@
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: DC motor speed control, PWM generation, direction control
- * 
+ *
  * EDUCATIONAL NOTE: This version uses the _pwm.h library for motor control
  * OLD APPROACH: Manual Timer1 configuration (~25 lines of TCCR1A/B, ICR1, OCR1A)
  * NEW APPROACH: PWM_motor_init(), PWM_motor_set_speed() (~3 lines)
@@ -23,7 +23,7 @@
 #define MOTOR_DIR2_PIN (1 << PB7) // Direction control 2
 
 // PWM TOP value for demo functions that access ICR1 directly
-#define PWM_TOP 999 // 10-bit resolution (0-999)
+#define PWM_TOP 999           // 10-bit resolution (0-999)
 #define MOTOR_PWM_FREQ 1000UL // 1 kHz motor PWM frequency
 
 // Motor direction definitions
@@ -55,10 +55,10 @@ void timer1_pwm_init(void)
 {
     // Set direction pins as output
     DDRB |= MOTOR_DIR1_PIN | MOTOR_DIR2_PIN;
-    
+
     // Initialize PWM for motor control (library handles Timer1 config)
     PWM_motor_init(MOTOR_CHANNEL, MOTOR_PWM_FREQ);
-    
+
     // Initial state: braked
     MOTOR_BRAKE();
 }

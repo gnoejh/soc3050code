@@ -6,7 +6,7 @@
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: Light sensor reading, ADC conversion, ambient light detection
- * 
+ *
  * EDUCATIONAL NOTE: Using enhanced ADC library for stable light readings
  * OLD APPROACH: Simple Adc_read_ch() with fluctuating values
  * NEW APPROACH: Read_Adc_Averaged() for smooth, reliable light detection
@@ -15,7 +15,7 @@
 
 #include "config.h"
 
-    int main(void)
+int main(void)
 {
     // Initialize system components
     init_devices(); // Initialize all peripherals

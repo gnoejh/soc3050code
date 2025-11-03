@@ -1,15 +1,15 @@
 /*
  * GLCD Library Test Program
- * 
+ *
  * PURPOSE:
  * Test the standardized GLCD library (_glcd.h)
  * Validates upgrade from ks0108_complete to production standard
- * 
+ *
  * HARDWARE:
  * - ATmega128 board
  * - KS0108 128x64 Graphics LCD
  * - Serial connection for test output
- * 
+ *
  * TESTS PERFORMED:
  * 1. Display initialization
  * 2. Clear screen
@@ -21,14 +21,14 @@
  * 8. Printf functionality (formatted output)
  * 9. Screen inversion
  * 10. Performance test
- * 
+ *
  * EXPECTED RESULTS:
  * - LCD displays various graphics primitives
  * - Text appears correctly
  * - Printf works with formatting
  * - All shapes render accurately
  * - Serial output confirms test status
- * 
+ *
  * AUTHOR: Framework Test Suite
  * DATE: November 2025
  * VERSION: 1.0
@@ -48,10 +48,11 @@ uint8_t total_tests = 10;
 /*
  * INITIALIZE HARDWARE
  */
-void init_hardware(void) {
+void init_hardware(void)
+{
     // Initialize UART
     uart_enhanced_init(9600, 8, 0, 1);
-    
+
     // Print header
     uart_enhanced_printf("\r\n");
     uart_enhanced_printf("============================================\r\n");
@@ -66,11 +67,12 @@ void init_hardware(void) {
 /*
  * TEST 1: DISPLAY INITIALIZATION
  */
-void test_glcd_init(void) {
+void test_glcd_init(void)
+{
     uart_enhanced_printf("[TEST 1] Display Initialization\r\n");
-    
+
     ks0108_init();
-    
+
     uart_enhanced_printf("  [PASS] Display initialized\r\n\r\n");
     tests_passed++;
     _delay_ms(500);
@@ -79,21 +81,24 @@ void test_glcd_init(void) {
 /*
  * TEST 2: CLEAR SCREEN
  */
-void test_clear_screen(void) {
+void test_clear_screen(void)
+{
     uart_enhanced_printf("[TEST 2] Clear Screen\r\n");
-    
+
     // Fill screen
-    for(uint8_t page = 0; page < 8; page++) {
-        for(uint8_t x = 0; x < 128; x++) {
+    for (uint8_t page = 0; page < 8; page++)
+    {
+        for (uint8_t x = 0; x < 128; x++)
+        {
             ks0108_set_pixel(x, page * 8, KS0108_PIXEL_ON);
         }
     }
     _delay_ms(1000);
-    
+
     // Clear
     ks0108_clear_screen();
     _delay_ms(500);
-    
+
     uart_enhanced_printf("  [PASS] Screen cleared\r\n\r\n");
     tests_passed++;
 }
@@ -101,31 +106,36 @@ void test_clear_screen(void) {
 /*
  * TEST 3: PIXEL OPERATIONS
  */
-void test_pixel_ops(void) {
+void test_pixel_ops(void)
+{
     uart_enhanced_printf("[TEST 3] Pixel Operations\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     // Draw pattern with individual pixels
     uart_enhanced_printf("  Drawing pixel pattern...\r\n");
-    for(uint8_t x = 0; x < 128; x += 4) {
-        for(uint8_t y = 0; y < 64; y += 4) {
+    for (uint8_t x = 0; x < 128; x += 4)
+    {
+        for (uint8_t y = 0; y < 64; y += 4)
+        {
             ks0108_set_pixel(x, y, KS0108_PIXEL_ON);
         }
     }
     _delay_ms(1500);
-    
+
     // Test XOR mode
     uart_enhanced_printf("  Testing XOR mode...\r\n");
-    for(uint8_t x = 0; x < 128; x += 2) {
-        for(uint8_t y = 0; y < 64; y += 2) {
+    for (uint8_t x = 0; x < 128; x += 2)
+    {
+        for (uint8_t y = 0; y < 64; y += 2)
+        {
             ks0108_set_pixel(x, y, KS0108_PIXEL_XOR);
         }
     }
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Pixel operations working\r\n\r\n");
     tests_passed++;
 }
@@ -133,37 +143,40 @@ void test_pixel_ops(void) {
 /*
  * TEST 4: LINE DRAWING
  */
-void test_line_drawing(void) {
+void test_line_drawing(void)
+{
     uart_enhanced_printf("[TEST 4] Line Drawing\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     // Horizontal lines
     uart_enhanced_printf("  Horizontal lines...\r\n");
-    for(uint8_t y = 10; y < 60; y += 10) {
+    for (uint8_t y = 10; y < 60; y += 10)
+    {
         ks0108_draw_line(10, y, 118, y, KS0108_PIXEL_ON);
     }
     _delay_ms(1000);
-    
+
     ks0108_clear_screen();
-    
+
     // Vertical lines
     uart_enhanced_printf("  Vertical lines...\r\n");
-    for(uint8_t x = 20; x < 120; x += 20) {
+    for (uint8_t x = 20; x < 120; x += 20)
+    {
         ks0108_draw_line(x, 5, x, 58, KS0108_PIXEL_ON);
     }
     _delay_ms(1000);
-    
+
     ks0108_clear_screen();
-    
+
     // Diagonal lines
     uart_enhanced_printf("  Diagonal lines...\r\n");
     ks0108_draw_line(0, 0, 127, 63, KS0108_PIXEL_ON);
     ks0108_draw_line(127, 0, 0, 63, KS0108_PIXEL_ON);
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Line drawing working\r\n\r\n");
     tests_passed++;
 }
@@ -171,20 +184,21 @@ void test_line_drawing(void) {
 /*
  * TEST 5: RECTANGLE DRAWING
  */
-void test_rectangles(void) {
+void test_rectangles(void)
+{
     uart_enhanced_printf("[TEST 5] Rectangle Drawing\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     // Outline rectangles
     uart_enhanced_printf("  Outline rectangles...\r\n");
     ks0108_draw_rect(10, 10, 40, 30, KS0108_PIXEL_ON);
     ks0108_draw_rect(60, 10, 40, 30, KS0108_PIXEL_ON);
     ks0108_draw_rect(35, 35, 40, 20, KS0108_PIXEL_ON);
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     // Filled rectangles
     uart_enhanced_printf("  Filled rectangles...\r\n");
     ks0108_fill_rect(10, 10, 30, 20, KS0108_PIXEL_ON);
@@ -192,9 +206,9 @@ void test_rectangles(void) {
     ks0108_fill_rect(90, 10, 30, 20, KS0108_PIXEL_ON);
     ks0108_fill_rect(30, 35, 60, 20, KS0108_PIXEL_ON);
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Rectangle drawing working\r\n\r\n");
     tests_passed++;
 }
@@ -202,29 +216,30 @@ void test_rectangles(void) {
 /*
  * TEST 6: CIRCLE DRAWING
  */
-void test_circles(void) {
+void test_circles(void)
+{
     uart_enhanced_printf("[TEST 6] Circle Drawing\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     // Outline circles
     uart_enhanced_printf("  Outline circles...\r\n");
     ks0108_draw_circle(30, 32, 25, KS0108_PIXEL_ON);
     ks0108_draw_circle(64, 32, 20, KS0108_PIXEL_ON);
     ks0108_draw_circle(98, 32, 15, KS0108_PIXEL_ON);
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     // Filled circles
     uart_enhanced_printf("  Filled circles...\r\n");
     ks0108_fill_circle(30, 32, 20, KS0108_PIXEL_ON);
     ks0108_fill_circle(64, 32, 15, KS0108_PIXEL_ON);
     ks0108_fill_circle(98, 32, 10, KS0108_PIXEL_ON);
     _delay_ms(1500);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Circle drawing working\r\n\r\n");
     tests_passed++;
 }
@@ -232,13 +247,14 @@ void test_circles(void) {
 /*
  * TEST 7: TEXT RENDERING
  */
-void test_text(void) {
+void test_text(void)
+{
     uart_enhanced_printf("[TEST 7] Text Rendering\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  Rendering text...\r\n");
-    
+
     ks0108_puts_at(0, 0, "GLCD Library Test");
     ks0108_puts_at(1, 0, "Line 1: Hello!");
     ks0108_puts_at(2, 0, "Line 2: 12345");
@@ -247,10 +263,10 @@ void test_text(void) {
     ks0108_puts_at(5, 0, "ASCII: !@#$%");
     ks0108_puts_at(6, 0, "Nums: 67890");
     ks0108_puts_at(7, 0, "End of test");
-    
+
     _delay_ms(2000);
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Text rendering working\r\n\r\n");
     tests_passed++;
 }
@@ -258,35 +274,36 @@ void test_text(void) {
 /*
  * TEST 8: PRINTF FUNCTIONALITY
  */
-void test_printf(void) {
+void test_printf(void)
+{
     uart_enhanced_printf("[TEST 8] Printf Functionality\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  Testing formatted output...\r\n");
-    
+
     int temp = 25;
     int humidity = 60;
     int voltage = 4987;
-    
+
     ks0108_set_cursor(0, 0);
     ks0108_printf("Temp: %dC", temp);
-    
+
     ks0108_set_cursor(1, 0);
     ks0108_printf("Humid: %d%%", humidity);
-    
+
     ks0108_set_cursor(2, 0);
     ks0108_printf("Volt: %d mV", voltage);
-    
+
     ks0108_set_cursor(4, 0);
     ks0108_printf("Hex: 0x%X", 0xABCD);
-    
+
     ks0108_set_cursor(5, 0);
     ks0108_printf("Count: %d/%d", 7, 10);
-    
+
     _delay_ms(2000);
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Printf working\r\n\r\n");
     tests_passed++;
 }
@@ -294,28 +311,29 @@ void test_printf(void) {
 /*
  * TEST 9: SCREEN INVERSION
  */
-void test_inversion(void) {
+void test_inversion(void)
+{
     uart_enhanced_printf("[TEST 9] Screen Inversion\r\n");
-    
+
     ks0108_clear_screen();
-    
+
     // Draw something
     ks0108_puts_at(2, 10, "INVERTED");
     ks0108_draw_rect(30, 20, 60, 20, KS0108_PIXEL_ON);
     _delay_ms(1000);
-    
+
     // Invert
     uart_enhanced_printf("  Inverting display...\r\n");
     ks0108_invert_screen();
     _delay_ms(1000);
-    
+
     // Back to normal
     uart_enhanced_printf("  Restoring normal...\r\n");
     ks0108_invert_screen();
     _delay_ms(1000);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Inversion working\r\n\r\n");
     tests_passed++;
 }
@@ -323,35 +341,39 @@ void test_inversion(void) {
 /*
  * TEST 10: PERFORMANCE TEST
  */
-void test_performance(void) {
+void test_performance(void)
+{
     uart_enhanced_printf("[TEST 10] Performance Test\r\n");
-    
+
     // Clear screen test
     uart_enhanced_printf("  Clear screen speed...\r\n");
-    for(uint8_t i = 0; i < 5; i++) {
+    for (uint8_t i = 0; i < 5; i++)
+    {
         ks0108_clear_screen();
         _delay_ms(100);
     }
-    
+
     // Line drawing speed
     uart_enhanced_printf("  Line drawing speed...\r\n");
     ks0108_clear_screen();
-    for(uint8_t i = 0; i < 64; i++) {
-        ks0108_draw_line(0, i, 127, 63-i, KS0108_PIXEL_ON);
+    for (uint8_t i = 0; i < 64; i++)
+    {
+        ks0108_draw_line(0, i, 127, 63 - i, KS0108_PIXEL_ON);
     }
     _delay_ms(1000);
-    
+
     // Text rendering speed
     uart_enhanced_printf("  Text rendering speed...\r\n");
     ks0108_clear_screen();
-    for(uint8_t line = 0; line < 8; line++) {
+    for (uint8_t line = 0; line < 8; line++)
+    {
         ks0108_set_cursor(line, 0);
         ks0108_printf("Line %d Test", line);
     }
     _delay_ms(1000);
-    
+
     ks0108_clear_screen();
-    
+
     uart_enhanced_printf("  [PASS] Performance acceptable\r\n\r\n");
     tests_passed++;
 }
@@ -359,7 +381,8 @@ void test_performance(void) {
 /*
  * PRINT TEST SUMMARY
  */
-void print_test_summary(void) {
+void print_test_summary(void)
+{
     uart_enhanced_printf("============================================\r\n");
     uart_enhanced_printf("  TEST SUMMARY\r\n");
     uart_enhanced_printf("============================================\r\n");
@@ -376,10 +399,11 @@ void print_test_summary(void) {
     uart_enhanced_printf("\r\n");
     uart_enhanced_printf("Tests passed: %d/%d\r\n", tests_passed, total_tests);
     uart_enhanced_printf("\r\n");
-    
-    if(tests_passed == total_tests) {
+
+    if (tests_passed == total_tests)
+    {
         uart_enhanced_printf("*** ALL GLCD TESTS PASSED ***\r\n");
-        
+
         // Victory display on LCD
         ks0108_clear_screen();
         ks0108_set_cursor(2, 20);
@@ -389,20 +413,21 @@ void print_test_summary(void) {
         ks0108_draw_rect(15, 15, 100, 35, KS0108_PIXEL_ON);
         ks0108_draw_rect(13, 13, 104, 39, KS0108_PIXEL_ON);
     }
-    
+
     uart_enhanced_printf("============================================\r\n");
 }
 
 /*
  * MAIN FUNCTION
  */
-int main(void) {
+int main(void)
+{
     // Initialize hardware
     init_hardware();
-    
+
     uart_enhanced_printf("Starting tests in 2 seconds...\r\n\r\n");
     _delay_ms(2000);
-    
+
     // Run all tests
     test_glcd_init();
     test_clear_screen();
@@ -414,16 +439,17 @@ int main(void) {
     test_printf();
     test_inversion();
     test_performance();
-    
+
     // Print summary
     print_test_summary();
-    
+
     uart_enhanced_printf("\r\nTest complete. Press RESET to run again.\r\n");
-    
+
     // Halt
-    while(1) {
+    while (1)
+    {
         _delay_ms(1000);
     }
-    
+
     return 0;
 }
