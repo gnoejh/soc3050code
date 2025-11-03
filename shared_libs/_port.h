@@ -50,4 +50,105 @@ void led_knight_rider(unsigned char cycles);    // Knight Rider bouncing pattern
 void test_all_leds(void);    // Test each LED individually
 void test_all_buttons(void); // Test buttons with LED feedback
 
+/*
+ * =============================================================================
+ * ENHANCED PORT FEATURES - Professional Quality Additions
+ * =============================================================================
+ */
+
+/**
+ * @brief Read button state with software debouncing
+ * 
+ * @param button_number Button to read (0-7)
+ * @return 1 if button pressed (debounced), 0 if not pressed
+ * 
+ * EDUCATIONAL NOTE: Implements software debounce algorithm to filter
+ * mechanical switch bounce. Waits for stable reading before returning.
+ */
+unsigned char button_pressed_debounced(unsigned char button_number);
+
+/**
+ * @brief Wait for button release (debounced)
+ * 
+ * @param button_number Button to wait for (0-7)
+ * 
+ * EDUCATIONAL NOTE: Blocks until button is released and debounced.
+ * Prevents detecting single press multiple times.
+ */
+void button_wait_release(unsigned char button_number);
+
+/**
+ * @brief Enable internal pull-up resistor for input pin
+ * 
+ * @param pin_number Pin to enable pull-up (0-7, typically PORTD)
+ * 
+ * EDUCATIONAL NOTE: Internal pull-ups eliminate need for external resistors.
+ * Essential for button inputs to prevent floating inputs.
+ */
+void port_enable_pullup(unsigned char pin_number);
+
+/**
+ * @brief Disable internal pull-up resistor for input pin
+ * 
+ * @param pin_number Pin to disable pull-up (0-7)
+ */
+void port_disable_pullup(unsigned char pin_number);
+
+/**
+ * @brief Read port with bit masking
+ * 
+ * @param port_register Port to read (e.g., PIND)
+ * @param mask Bit mask to apply
+ * @return Masked port value
+ * 
+ * EDUCATIONAL NOTE: Reads only specific bits of interest.
+ * Example: port_read_masked(PIND, 0x0F) reads lower 4 bits only.
+ */
+unsigned char port_read_masked(volatile unsigned char port_register, unsigned char mask);
+
+/**
+ * @brief Write to port with bit masking
+ * 
+ * @param port_register Port to write (e.g., PORTB)
+ * @param mask Bit mask (which bits to modify)
+ * @param value Value to write to masked bits
+ * 
+ * EDUCATIONAL NOTE: Modifies only specific bits without affecting others.
+ * Example: port_write_masked(PORTB, 0xF0, 0xA0) sets upper nibble to 0xA.
+ */
+void port_write_masked(volatile unsigned char *port_register, unsigned char mask, unsigned char value);
+
+/**
+ * @brief Set debounce delay in milliseconds
+ * 
+ * @param delay_ms Debounce delay (default: 20ms)
+ * 
+ * EDUCATIONAL NOTE: Adjustable debounce time for different switch types.
+ * Typical values: 10-50ms depending on switch quality.
+ */
+void port_set_debounce_delay(unsigned char delay_ms);
+
+/**
+ * @brief Get debounce delay
+ * 
+ * @return Current debounce delay in milliseconds
+ */
+unsigned char port_get_debounce_delay(void);
+
+/**
+ * @brief Read multiple buttons as a byte
+ * 
+ * @return Button states as 8-bit value (1=pressed, 0=not pressed)
+ * 
+ * EDUCATIONAL NOTE: All buttons debounced simultaneously.
+ */
+unsigned char read_buttons_debounced(void);
+
+/**
+ * @brief Wait for any button press (debounced)
+ * 
+ * @return Button number that was pressed (0-7)
+ */
+unsigned char wait_for_any_button_debounced(void);
+
 #endif /* _PORT_H_ */

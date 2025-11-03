@@ -417,4 +417,267 @@ unsigned char Is_Adc_Complete(void)
 	return adc_interrupt_complete;
 }
 
+/*
+ * =============================================================================
+ * ENHANCED ADC FUNCTIONS - Professional Quality Additions
+ * =============================================================================
+ */
+
+/* Internal state variables for enhanced features */
+static unsigned char adc_precision_bits = 10;  // Default 10-bit precision
+static unsigned char adc_reference_type = 1;   // Default AVCC reference
+static unsigned char adc_free_running = 0;     // Free-running mode flag
+
+/*
+ * ADC CALIBRATION FUNCTION
+ *
+ * PURPOSE: Calibrate ADC using known reference voltage
+ * LEARNING: Shows calibration techniques for improved accuracy
+ *
+ * CALIBRATION PROCEDURE:
+ * 1. Apply known voltage (e.g., from precision power supply)
+ * 2. Read ADC value
+ * 3. Calculate calibration factors
+ * 4. Apply factors to future readings
+ */
+void ADC_calibrate(unsigned int reference_voltage_mV)
+{
+	/* Read current ADC value (assume channel 0 for calibration) */
+	unsigned int raw_value = Read_Adc(ADC_CHANNEL_0);
+	
+	/* Calculate expected value based on current reference voltage */
+	unsigned int expected_value;
+	if(adc_reference_type == 1) {
+		/* AVCC reference (5000mV) */
+		expected_value = (reference_voltage_mV * 1023UL) / 5000UL;
+	} else if(adc_reference_type == 2) {
+		/* Internal 2.56V reference */
+		expected_value = (reference_voltage_mV * 1023UL) / 2560UL;
+	} else {
+		/* AREF - cannot auto-calibrate, return */
+		return;
+	}
+	
+	/* Calculate calibration offset and scale */
+	if(raw_value > 0) {
+		/* Offset = difference between expected and actual */
+		adc_calibration_offset = (raw_value > expected_value) ? 
+		                         (raw_value - expected_value) : 
+		                         (expected_value - raw_value);
+		
+		/* Scale factor = (expected / actual) * 1024 */
+		adc_calibration_scale = (expected_value * 1024UL) / raw_value;
+	}
+}
+
+/*
+ * ADC PRECISION CONTROL
+ *
+ * PURPOSE: Set 8-bit or 10-bit resolution
+ * LEARNING: Shows resolution vs speed tradeoff
+ *
+ * IMPLEMENTATION:
+ * - 10-bit: Right-adjusted result (ADLAR=0), read ADCL+ADCH
+ * - 8-bit:  Left-adjusted result (ADLAR=1), read ADCH only
+ */
+void ADC_set_precision(unsigned char bits)
+{
+	if(bits == 8) {
+		/* Left-adjust for 8-bit precision */
+		ADMUX |= (1 << ADLAR);
+		adc_precision_bits = 8;
+	} else {
+		/* Right-adjust for 10-bit precision */
+		ADMUX &= ~(1 << ADLAR);
+		adc_precision_bits = 10;
+	}
+}
+
+unsigned char ADC_get_precision(void)
+{
+	return adc_precision_bits;
+}
+
+/*
+ * FREE-RUNNING (CONTINUOUS) MODE
+ *
+ * PURPOSE: Continuous ADC conversion without manual triggering
+ * LEARNING: Shows auto-triggering and continuous data acquisition
+ *
+ * OPERATION:
+ * - ADC starts new conversion automatically after each completion
+ * - Much faster than polling mode
+ * - Useful for data logging and signal monitoring
+ */
+void ADC_start_free_running(unsigned char channel)
+{
+	/* Select channel */
+	ADMUX = (ADMUX & 0xE0) | (channel & 0x1F);
+	
+	/* Enable auto-trigger */
+	ADCSRA |= (1 << ADATE);
+	
+	/* Set free-run mode (ADTS2:0 = 000 in ADCSRB) */
+	ADCSRB &= ~((1 << ADTS2) | (1 << ADTS1) | (1 << ADTS0));
+	
+	/* Enable ADC interrupt */
+	ADCSRA |= (1 << ADIE);
+	
+	/* Start first conversion */
+	ADCSRA |= (1 << ADSC);
+	
+	adc_free_running = 1;
+}
+
+void ADC_stop_free_running(void)
+{
+	/* Disable auto-trigger */
+	ADCSRA &= ~(1 << ADATE);
+	
+	/* Disable interrupt */
+	ADCSRA &= ~(1 << ADIE);
+	
+	adc_free_running = 0;
+}
+
+unsigned int ADC_get_last_result(void)
+{
+	return adc_result;  // Global variable updated by ISR
+}
+
+/*
+ * DIFFERENTIAL ADC READING
+ *
+ * PURPOSE: Measure voltage difference between two channels
+ * LEARNING: Shows differential measurement techniques
+ *
+ * DIFFERENTIAL CHANNELS (ATmega128):
+ * - ADC0-ADC1 with gain 1x, 10x, 200x
+ * - ADC2-ADC3 with gain 1x, 10x, 200x
+ * - Result is signed: positive if pos > neg, negative otherwise
+ */
+int ADC_read_differential(unsigned char pos_channel, unsigned char neg_channel, unsigned char gain)
+{
+	unsigned char mux_setting = 0;
+	
+	/* Determine MUX setting for differential input */
+	/* Simplified implementation - supports ADC0-ADC1 and ADC2-ADC3 */
+	if(pos_channel == 0 && neg_channel == 1) {
+		if(gain == 1)   mux_setting = 0x10;      // ADC0-ADC1, gain 1x
+		else if(gain == 10)  mux_setting = 0x08; // ADC0-ADC1, gain 10x
+		else if(gain == 200) mux_setting = 0x09; // ADC0-ADC1, gain 200x
+		else mux_setting = 0x10; // Default to gain 1x
+	} else if(pos_channel == 2 && neg_channel == 3) {
+		if(gain == 1)   mux_setting = 0x11;      // ADC2-ADC3, gain 1x
+		else if(gain == 10)  mux_setting = 0x0A; // ADC2-ADC3, gain 10x
+		else if(gain == 200) mux_setting = 0x0B; // ADC2-ADC3, gain 200x
+		else mux_setting = 0x11; // Default to gain 1x
+	} else {
+		/* Unsupported channel combination */
+		return 0;
+	}
+	
+	/* Configure for differential mode */
+	ADMUX = (ADMUX & 0xE0) | mux_setting;
+	
+	/* Start conversion */
+	ADCSRA |= (1 << ADSC);
+	
+	/* Wait for completion */
+	while(ADCSRA & (1 << ADSC));
+	
+	/* Read result (10-bit signed) */
+	int result = ADCL;
+	result |= (ADCH << 8);
+	
+	/* Convert to signed value (-512 to +511) */
+	if(result & 0x0200) {
+		/* Negative result - extend sign */
+		result |= 0xFC00;
+	}
+	
+	return result;
+}
+
+/*
+ * VOLTAGE REFERENCE MANAGEMENT
+ *
+ * PURPOSE: Configure and detect voltage reference
+ * LEARNING: Shows reference voltage selection importance
+ */
+void ADC_set_reference(unsigned char reference)
+{
+	/* Clear reference bits */
+	ADMUX &= ~((1 << REFS1) | (1 << REFS0));
+	
+	switch(reference) {
+		case 0:  /* AREF, internal Vref turned off */
+			/* REFS1:0 = 00 - already cleared */
+			adc_reference_type = 0;
+			break;
+		case 1:  /* AVCC reference */
+			ADMUX |= (1 << REFS0);
+			adc_reference_type = 1;
+			break;
+		case 2:  /* Internal 2.56V reference */
+			ADMUX |= (1 << REFS1) | (1 << REFS0);
+			adc_reference_type = 2;
+			break;
+	}
+	
+	/* Wait for reference to stabilize */
+	_delay_ms(10);
+}
+
+unsigned char ADC_get_reference(void)
+{
+	return adc_reference_type;
+}
+
+unsigned int ADC_set_reference_auto(void)
+{
+	/* This is a simplified implementation */
+	/* Actual implementation would measure internal bandgap reference */
+	/* For now, return the configured reference voltage */
+	
+	if(adc_reference_type == 1) {
+		return 5000;  /* AVCC = 5V */
+	} else if(adc_reference_type == 2) {
+		return 2560;  /* Internal = 2.56V */
+	}
+	
+	return 0;  /* AREF - unknown */
+}
+
+/*
+ * CALIBRATION MANAGEMENT
+ */
+void ADC_reset_calibration(void)
+{
+	adc_calibration_offset = 0;
+	adc_calibration_scale = 1024;
+}
+
+/*
+ * SAMPLE RATE CALCULATION
+ *
+ * PURPOSE: Calculate ADC sampling rate
+ * LEARNING: Shows timing analysis
+ *
+ * CALCULATION:
+ * ADC clock = F_CPU / prescaler
+ * Conversion time = 13 ADC clock cycles (first conversion: 25 cycles)
+ * Sample rate = ADC clock / 13
+ */
+unsigned int ADC_get_sample_rate_Hz(void)
+{
+	/* Assume prescaler = 128 (typical) */
+	unsigned long adc_clock = F_CPU / 128;
+	
+	/* Conversion time = 13 ADC clock cycles */
+	unsigned int sample_rate = adc_clock / 13;
+	
+	return sample_rate;
+}
+
 #endif // !ASSEMBLY_BLINK_BASIC
