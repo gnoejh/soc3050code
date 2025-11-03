@@ -2,6 +2,42 @@
 
 **Comprehensive Hands-On Experience for SOC 3050 Embedded Systems**
 
+---
+
+## ⚠️ IMPORTANT: Separate Projects Approach
+
+**NEW STRATEGY (2025-11-03):**
+
+Integrated labs should be **separate standalone projects**, not embedded within the existing educational demo projects.
+
+**Directory Structure:**
+```
+soc3050code/
+├── projects/                    # Educational demos (Main.c only)
+│   ├── Timer_Programming/      # Focused timer demos
+│   ├── ADC_Basic/              # Focused ADC demos
+│   └── ...                     # Each project: ONE concept, clearly
+│
+└── integrated_labs/            # Comprehensive integrated systems
+    ├── Timer_Dashboard/        # Timer + ISR + GLCD + Serial + Buttons
+    ├── Sensor_Monitor/         # I2C + ADC + GLCD + Serial + Data logging
+    ├── Motor_Controller/       # PWM + Encoder + GLCD + PID + Serial
+    └── ...                     # Each lab: FULL system integration
+```
+
+**Rationale:**
+- ✅ **Modularity**: Educational demos stay focused and simple
+- ✅ **Clarity**: Students learn fundamentals first (Main.c), integration later (integrated_labs)
+- ✅ **Flexibility**: Integrated labs can combine ANY modules without cluttering base projects
+- ✅ **Maintenance**: Easier to update demos without breaking integrated systems
+
+**Migration:**
+- All `Lab.c` files removed from `projects/*/`
+- Integrated lab concepts documented here for future implementation
+- Create `integrated_labs/` folder structure when ready
+
+---
+
 ## Philosophy: Integration Over Isolation
 
 ### Traditional Approach (OLD - Isolated Exercises)
@@ -21,39 +57,67 @@ Problem:
 
 ### New Approach (NEW - Integrated System)
 ```
-Lab.c Structure (New):
+Separate Integrated Lab Project Structure:
 ┌─────────────────────────────────────────────────┐
-│          INTEGRATED DASHBOARD SYSTEM             │
+│   INTEGRATED LAB: TIMER DASHBOARD SYSTEM        │
+│   (Standalone project in integrated_labs/)      │
 ├─────────────────────────────────────────────────┤
-│  Major Topic (e.g., Timer)                      │
-│     ↓                                            │
-│  + Interrupt Service Routines (ISR)             │
-│     ↓                                            │
-│  + Graphics LCD Display (User Interface)        │
-│     ↓                                            │
-│  + Serial Communication (Debug/Control)         │
-│     ↓                                            │
-│  + Button Handling (User Input)                 │
-│     ↓                                            │
+│  Main.c:                                        │
+│    ├─ Timer (Timer0/1/2)                        │
+│    ├─ Interrupt Service Routines (ISR)         │
+│    ├─ Graphics LCD Display (User Interface)    │
+│    ├─ Serial Communication (Debug/Control)     │
+│    ├─ Button Handling (User Input)             │
+│    └─ Task Scheduler (Integration)             │
+│                                                 │
+│  Includes from shared_libs:                     │
+│    #include "_init.h"                           │
+│    #include "_uart.h"                           │
+│    #include "_glcd.h"                           │
+│    #include "_port.h"                           │
+│                                                 │
 │  = COMPLETE EMBEDDED SYSTEM                     │
 └─────────────────────────────────────────────────┘
 
+Educational projects/ folder:
+┌─────────────────────────────────────────────────┐
+│   EDUCATIONAL PROJECT: TIMER_PROGRAMMING        │
+│   (Focused demos in projects/ folder)           │
+├─────────────────────────────────────────────────┤
+│  Main.c only:                                   │
+│    ├─ demo1_normal_polling()                    │
+│    ├─ demo2_normal_interrupt()                  │
+│    ├─ demo3_ctc_polling()                       │
+│    ├─ demo4_ctc_interrupt()                     │
+│    ├─ demo5_fast_pwm()                          │
+│    └─ ...                                       │
+│                                                 │
+│  Focus: ONE concept demonstrated clearly        │
+│  Minimal includes (local simple_init only)      │
+│  = EDUCATIONAL CLARITY                          │
+└─────────────────────────────────────────────────┘
+
 Benefits:
-✓ Students see how subsystems integrate
-✓ Real-world application builds motivation
-✓ Comprehensive understanding emerges
-✓ Debugging skills across multiple domains
-✓ Industry-standard development patterns
+✓ Students learn fundamentals FIRST (projects/)
+✓ Students tackle integration SECOND (integrated_labs/)
+✓ No mixing of simple demos with complex systems
+✓ Each project stays focused and maintainable
+✓ Integration labs can combine ANY modules freely
 ```
 
 ## The Integration Pattern
 
 ### Core Formula
 ```
-Lab.c = Major Topic + Graphics + Interrupts + Serial + UI
+Integrated Lab Project = Major Topic + Graphics + Interrupts + Serial + UI
+
+Location: integrated_labs/[ProjectName]/
+Structure: Main.c (all-in-one integrated system)
+          config.h (includes all shared libraries)
+          README.md (learning objectives, setup instructions)
 ```
 
-### Example: Timer_Programming/Lab.c
+### Example: integrated_labs/Timer_Dashboard/
 
 **Major Topic**: Timer/Counter Programming
 **Integration Components**:
@@ -75,7 +139,11 @@ Lab.c = Major Topic + Graphics + Interrupts + Serial + UI
 
 ## Application to Other Projects
 
-### 1. Serial_Communications/Lab.c
+**IMPORTANT**: These are designs for future **separate integrated lab projects**, NOT additions to existing projects/*/Main.c files.
+
+Create these as standalone projects in `integrated_labs/` folder.
+
+### 1. integrated_labs/Serial_Terminal/
 
 **Major Topic**: UART Communication
 
@@ -101,7 +169,7 @@ Real-World Application:
 - Timer-based auto-send at intervals
 - Button shortcuts for common commands
 
-### 2. I2C_Master_Basic/Lab.c
+### 2. integrated_labs/I2C_Sensor_Dashboard/
 
 **Major Topic**: I2C Communication
 
@@ -127,7 +195,7 @@ Real-World Application:
 - Timer-triggered multi-sensor polling
 - Error detection and recovery visualization
 
-### 3. PWM_Motor_DC/Lab.c
+### 3. integrated_labs/Motor_Speed_Controller/
 
 **Major Topic**: Motor Control
 
@@ -154,7 +222,7 @@ Real-World Application:
 - Acceleration/deceleration curves visualization
 - Button controls: START, STOP, SPEED_UP, SPEED_DOWN
 
-### 4. ADC_Basic/Lab.c
+### 4. integrated_labs/Multi_Channel_Oscilloscope/
 
 **Major Topic**: Analog-to-Digital Conversion
 
@@ -181,7 +249,7 @@ Real-World Application:
 - Threshold alerts (visual + serial)
 - Waveform display (simple oscilloscope mode)
 
-### 5. Interrupt/Lab.c
+### 5. integrated_labs/Event_Logger/
 
 **Major Topic**: Interrupt Programming
 
@@ -207,7 +275,7 @@ Real-World Application:
 - Debounce implementation with Timer
 - Serial log of all events with microsecond precision
 
-### 6. SPI_Master_Basic/Lab.c
+### 6. integrated_labs/SPI_Data_Recorder/
 
 **Major Topic**: SPI Communication
 
@@ -235,7 +303,20 @@ Real-World Application:
 
 ## Implementation Guidelines
 
-### 1. File Structure
+### 1. Project Structure (Standalone Integrated Labs)
+
+**Create new folder**: `integrated_labs/[ProjectName]/`
+
+```
+integrated_labs/Timer_Dashboard/
+├── Main.c              # Complete integrated system
+├── config.h            # Include all needed libraries
+├── README.md           # Learning objectives, setup, usage
+├── circuit.simu        # SimulIDE circuit file
+└── Makefile            # Build configuration (optional)
+```
+
+**Main.c Template:**
 
 ```c
 /* ========================================
@@ -472,7 +553,13 @@ void update_screen(void) {
 - MODE_RTC: Clock with calendar
 - MODE_I2C_SCANNER: Bus enumeration
 
-## Checklist: Is This an Integrated Lab?
+## Checklist: Is This a Proper Integrated Lab?
+
+✅ **Structure Criteria**:
+- [ ] Located in `integrated_labs/` folder (NOT in projects/)
+- [ ] Standalone project (can build independently)
+- [ ] Has README.md with clear learning objectives
+- [ ] Includes SimulIDE circuit file for testing
 
 ✅ **Integration Criteria**:
 - [ ] Major topic demonstrated comprehensively
@@ -485,12 +572,17 @@ void update_screen(void) {
 - [ ] Students motivated by functionality
 - [ ] Debugging requires multi-domain knowledge
 
-❌ **NOT Integrated** (Avoid):
+❌ **NOT an Integrated Lab** (These belong in projects/):
+- Single-concept demos ("blink LED")
+- Only one subsystem used
+- No user interaction
+- No real-world application
 - Isolated exercises (Exercise 1, Exercise 2, ...)
-- Serial output only (no GLCD)
-- No interrupts (all polling)
-- Hardcoded behavior (no user input)
-- Trivial demos ("blink LED with serial command")
+
+❌ **DON'T Mix**:
+- Don't add Lab.c to existing projects/* folders
+- Don't complicate educational Main.c demos
+- Don't blur the line between "learning fundamentals" and "integration"
 
 ## Benefits for Students
 
@@ -506,21 +598,25 @@ void update_screen(void) {
 2. **Creativity**: Students experiment with features
 3. **Problem Solving**: Integration bugs require deeper thinking
 4. **Communication**: Explaining complex systems builds understanding
+5. **Project Management**: Larger codebases need organization
 
 ### Industry Readiness
 1. **Professional Pattern**: Multi-subsystem integration is standard
-2. **Portfolio Piece**: Labs become impressive demo projects
+2. **Portfolio Piece**: Integrated labs become impressive demo projects
 3. **Interview Prep**: "Tell me about a complex embedded system you built"
 4. **Confidence**: "I can build complete embedded products"
 
 ## Migration Strategy
 
-### Rewriting Existing Labs
+### Creating New Integrated Labs
 
-1. **Audit Current Lab.c**:
-   - Identify major topic
-   - Note any existing integration
-   - List missing subsystems (GLCD? Serial? ISR?)
+**IMPORTANT**: Don't modify existing `projects/` - create new `integrated_labs/` structure.
+
+1. **Create Folder Structure**:
+   ```powershell
+   mkdir integrated_labs
+   mkdir integrated_labs/Timer_Dashboard
+   ```
 
 2. **Design Integrated Application**:
    - What real-world device uses this major topic?
@@ -528,31 +624,98 @@ void update_screen(void) {
    - What serial commands make sense?
    - What ISRs are needed?
 
-3. **Implement Incrementally**:
-   - Start with major topic (ensure it works)
-   - Add ISRs (non-blocking updates)
-   - Add basic GLCD display (one mode)
-   - Add serial commands (minimal set)
-   - Add more display modes
-   - Add button handling
-   - Polish UI and help text
+3. **Implement From Scratch**:
+   - Create Main.c (not Lab.c!)
+   - Create config.h with all includes
+   - Write README.md with objectives
+   - Create SimulIDE circuit
+   - Test integration thoroughly
 
-4. **Test Integration**:
-   - Build and upload to hardware
-   - Verify all subsystems work together
-   - Test edge cases (button during serial command, etc.)
-   - Have student beta-test for clarity
+4. **Document**:
+   - Clear learning objectives
+   - Setup instructions
+   - User guide (button/serial commands)
+   - Expected behavior
+   - Troubleshooting tips
 
-5. **Document**:
-   - Update Lab.c header comments
-   - Add serial help (? command)
-   - Update project README if exists
+### Example: Creating Timer_Dashboard
 
-### Example: Rewriting PWM_Motor_DC/Lab.c
+1. **Create project**:
+   ```powershell
+   mkdir integrated_labs/Timer_Dashboard
+   cd integrated_labs/Timer_Dashboard
+   ```
+
+2. **Create Main.c** (600+ lines - comprehensive dashboard)
+
+3. **Create config.h**:
+   ```c
+   #include <avr/io.h>
+   #include <avr/interrupt.h>
+   #include <util/delay.h>
+   #include <stdio.h>
+   
+   #include "_init.h"
+   #include "_uart.h"
+   #include "_glcd.h"
+   #include "_port.h"
+   ```
+
+4. **Create README.md**:
+   ```markdown
+   # Timer Dashboard - Integrated Lab
+   
+   ## Learning Objectives
+   - Master Timer0/1/2 for different purposes
+   - ISR-based real-time event handling
+   - Graphics LCD user interface design
+   - Serial command parsing
+   - Multi-mode system architecture
+   
+   ## Features
+   - Real-time clock (Timer2 ISR)
+   - Stopwatch with laps (Timer1 ISR)
+   - PWM LED control (Timer0)
+   - 4 display modes
+   - Serial command interface
+   - Button controls
+   
+   ## Hardware
+   - ATmega128 @ 16MHz
+   - KS0108 GLCD
+   - 3 push buttons (PD4, PD5, PD6)
+   - 8 LEDs (PORTB)
+   - UART1 @ 9600 baud
+   
+   ## Commands
+   ...
+   ```
+
+5. **Build and test**:
+   ```powershell
+   # Use existing build system
+   ../../tools/cli/cli-build-project.ps1 -ProjectDir . -SourceFile Main.c
+   
+   # Simulate
+   ../../tools/simulide/cli-simulide.ps1 -ProjectDir .
+   ```
+
+### Reusing Code from Old Lab.c Files
+
+The Timer_Programming/Lab.c that was created (before deletion) can be:
+1. Retrieved from git history: `git show 4aed867:projects/Timer_Programming/Lab.c`
+2. Saved as template for `integrated_labs/Timer_Dashboard/Main.c`
+3. Adapted for standalone project structure
+4. Enhanced with better documentation
+
+**Git command to recover**:
+```powershell
+git show 4aed867:projects/Timer_Programming/Lab.c > integrated_labs/Timer_Dashboard/Main.c
+```
 
 **Current**: Isolated PWM speed demos (10%, 50%, 100%)
 
-**Integrated Design**:
+**Integrated Design** (for `integrated_labs/Motor_Speed_Controller/`):
 ```
 Application: Motor Speed Controller Dashboard
 
@@ -594,8 +757,13 @@ Integration:
 
 ## Resources
 
+### Existing Code
+- **Git History**: Retrieve old Lab.c files
+  - Timer_Programming/Lab.c: `git show 4aed867:projects/Timer_Programming/Lab.c`
+  - Use as templates for new integrated labs
+
 ### Code Templates
-- `projects/Timer_Programming/Lab.c` - Reference implementation
+- `projects/*/Main.c` - Educational demo patterns
 - `shared_libs/_glcd.h` - Graphics LCD API reference
 - `shared_libs/_uart.h` - Serial communication API
 - `shared_libs/_port.h` - Button handling functions
@@ -604,6 +772,7 @@ Integration:
 - `docs/LIBRARY_REFERENCE.md` - Shared library function catalog
 - `docs/HARDWARE_REFERENCE.md` - Pin assignments, peripherals
 - `docs/PROJECT_CATALOG.md` - Overview of all 33 projects
+- This document - Integration design patterns
 
 ### Tools
 - SimulIDE - Hardware simulation (test without physical board)
@@ -612,23 +781,39 @@ Integration:
 
 ## Conclusion
 
-**Integrated labs transform learning**:
-- Students don't just understand timers—they build timer-based systems
-- Students don't just know I2C—they create sensor dashboards
-- Students don't just learn interrupts—they master real-time event handling
+**Integrated labs transform learning, but they need proper structure**:
+
+✅ **DO**:
+- Create separate `integrated_labs/` folder
+- Design comprehensive real-world applications
+- Combine Timer+ISR+Graphics+Serial+Buttons
+- Write clear documentation and READMEs
+- Test thoroughly in SimulIDE and hardware
+
+❌ **DON'T**:
+- Mix Lab.c into projects/* folders
+- Complicate educational Main.c demos
+- Create half-integrated systems
+- Sacrifice educational clarity for features
+
+**Educational Flow**:
+1. **projects/**: Students learn fundamentals (ONE concept at a time)
+2. **integrated_labs/**: Students build systems (ALL concepts together)
+3. **Result**: Deep understanding of both components AND integration
 
 **This approach prepares students for industry**, where embedded systems are always integrated, always real-time, and always user-facing.
 
 **Next Steps**:
-1. Review `Timer_Programming/Lab.c` as reference
-2. Identify 3-5 projects to rewrite next
-3. Apply integration pattern iteratively
-4. Gather student feedback
-5. Iterate and improve
+1. Create `integrated_labs/` folder structure
+2. Start with Timer_Dashboard (retrieve from git history)
+3. Develop 2-3 more integrated labs as templates
+4. Test with students
+5. Iterate based on feedback
+6. Eventually create 10-15 integrated labs covering all major topics
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-01-15  
+**Document Version**: 2.0 (Updated for separate projects approach)  
+**Last Updated**: 2025-11-03  
 **Author**: SOC 3050 Teaching Team  
 **Related**: `COMBINING_MODULES_GUIDE.md`, `PROJECT_MODULARITY_GUIDE.md`
