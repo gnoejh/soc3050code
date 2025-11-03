@@ -35,9 +35,9 @@ int main(void)
 
     // Uncomment ONE demo to run:
     // demo0_led_test();              // Simple LED blink test
-    demo1_normal_polling(); // Timer0 overflow polling
+    // demo1_normal_polling(); // Timer0 overflow polling
     // demo2_normal_interrupt();      // Timer0 overflow interrupt
-    // demo3_ctc_polling();           // Timer1 CTC polling
+    demo3_ctc_polling(); // Timer1 CTC polling
     // demo4_ctc_interrupt();         // Timer1 CTC interrupt
     // demo5_fast_pwm();              // Timer1 Fast PWM
     // demo6_phase_correct_pwm();     // Timer1 Phase Correct PWM

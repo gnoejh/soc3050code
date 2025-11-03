@@ -92,7 +92,7 @@
 
 <item itemtype="Led" CircId="Led-21" mainComp="false" Show_id="false" Show_Val="false" Pos="-500,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="MCU" CircId="mega128-20" mainComp="false" Show_id="true" Show_Val="false" Pos="-268,-504" rotation="0" hflip="1" vflip="1" label="atmega128-1" idLabPos="-68,-11" labelrot="0" valLabPos="0,0" valLabRot="0" Frequency="16 MHz" Program="W:/soc3050code/projects/Timer_Programming/Main.hex" Auto_Load="true" saveEepr="true" Logic_Symbol="false" Wdt_enabled="false" MainMcu="true" SerialMon="-1" />
+<item itemtype="MCU" CircId="mega128-20" mainComp="false" Show_id="true" Show_Val="false" Pos="-268,-504" rotation="0" hflip="1" vflip="1" label="atmega128-1" idLabPos="-68,-11" labelrot="0" valLabPos="0,0" valLabRot="0" Frequency="16 MHz" Program="w:/soc3050code/projects/Timer_Programming/Main.hex" Auto_Load="true" saveEepr="true" Logic_Symbol="false" Wdt_enabled="false" MainMcu="true" SerialMon="-1" />
 
 <item itemtype="Rail" CircId="Rail-19" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-556,-100" rotation="90" hflip="1" vflip="1" label="Rail-16" idLabPos="-16,-24" labelrot="0" valLabPos="-24,7" valLabRot="-90" Voltage="5 V" />
 
@@ -537,12 +537,6 @@
 <item itemtype="Connector" uid="Connector-1712" startpinid="mega128-20-PORTD3" endpinid="SerialPort-1706-pin1" pointList="-164,-344,-164,-312,-48,-312" />
 
 </circuit>
-
-
-
-
-
-
 
 
 
