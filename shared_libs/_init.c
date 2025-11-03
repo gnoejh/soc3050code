@@ -12,6 +12,7 @@
 #include <avr/interrupt.h>
 #include "_init.h"
 #include "_port.h"
+#include "_glcd.h"
 
 /*
  * EDUCATIONAL FUNCTION: Basic System Initialization
@@ -66,9 +67,7 @@ void init_devices(void)
 	cli();		 // Disable interrupts during initialization
 	Port_init(); // Initialize I/O ports (this function exists)
 
-	// Declare lcd_init function
-	extern void lcd_init(void);
-	lcd_init(); // Initialize Graphics LCD
+	lcd_init(); // Initialize Graphics LCD (macro expands to ks0108_init)
 
 	sei(); // Enable global interrupts
 }

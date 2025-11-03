@@ -56,16 +56,6 @@ const char STR_RIGHT_PANEL[] PROGMEM = "Right (CS2: y 64..127)";
 const char STR_CS_SPLIT[] PROGMEM = "CS1: y 0..63  CS2: y 64..127";
 const char STR_CHECKER[] PROGMEM = "Checker Pattern";
 
-// Helper to print PROGMEM strings
-// Note: lcd_string expects RAM string, so we copy to buffer first
-static void lcd_string_P(byte row, byte col, const char *progmem_str)
-{
-    char buffer[21]; // Max 20 chars + null terminator
-    strncpy_P(buffer, progmem_str, 20);
-    buffer[20] = '\0';
-    lcd_string(row, col, buffer);
-}
-
 /* =============================================================================
  * DEMO 1: TEXT HEADER - Basic Text Display
  * =============================================================================

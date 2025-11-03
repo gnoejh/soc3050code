@@ -314,7 +314,19 @@ void test_all_buttons(void)
  */
 
 /* Debounce configuration */
-static unsigned char debounce_delay_ms = 20;  // Default 20ms debounce
+static unsigned char debounce_delay_ms = 20; // Default 20ms debounce
+
+/*
+ * Variable delay function for debouncing
+ * Uses busy-wait loop since _delay_ms() requires compile-time constant
+ */
+static void delay_ms_variable(unsigned char ms)
+{
+	while (ms--)
+	{
+		_delay_ms(1); // 1ms is compile-time constant
+	}
+}
 
 /*
  * BUTTON DEBOUNCING ALGORITHM
@@ -336,24 +348,26 @@ static unsigned char debounce_delay_ms = 20;  // Default 20ms debounce
  */
 unsigned char button_pressed_debounced(unsigned char button_number)
 {
-	if(button_number > 7) return 0;
-	
+	if (button_number > 7)
+		return 0;
+
 	unsigned char pin_mask = (1 << button_number);
-	
+
 	/* First reading */
-	unsigned char state1 = (PIND & pin_mask) ? 0 : 1;  // Active LOW
-	
+	unsigned char state1 = (PIND & pin_mask) ? 0 : 1; // Active LOW
+
 	/* Wait debounce delay */
-	_delay_ms(debounce_delay_ms);
-	
+	delay_ms_variable(debounce_delay_ms);
+
 	/* Second reading */
 	unsigned char state2 = (PIND & pin_mask) ? 0 : 1;
-	
+
 	/* Return stable state if both readings match */
-	if(state1 == state2) {
+	if (state1 == state2)
+	{
 		return state2;
 	}
-	
+
 	/* Unstable - return not pressed */
 	return 0;
 }
@@ -366,20 +380,23 @@ unsigned char button_pressed_debounced(unsigned char button_number)
  */
 void button_wait_release(unsigned char button_number)
 {
-	if(button_number > 7) return;
-	
+	if (button_number > 7)
+		return;
+
 	unsigned char pin_mask = (1 << button_number);
-	
+
 	/* Wait while button is pressed */
-	while(!(PIND & pin_mask)) {
+	while (!(PIND & pin_mask))
+	{
 		_delay_ms(10);
 	}
-	
+
 	/* Debounce the release */
-	_delay_ms(debounce_delay_ms);
-	
+	delay_ms_variable(debounce_delay_ms);
+
 	/* Verify still released */
-	while(!(PIND & pin_mask)) {
+	while (!(PIND & pin_mask))
+	{
 		_delay_ms(10);
 	}
 }
@@ -402,16 +419,18 @@ void button_wait_release(unsigned char button_number)
  */
 void port_enable_pullup(unsigned char pin_number)
 {
-	if(pin_number > 7) return;
-	
+	if (pin_number > 7)
+		return;
+
 	/* Enable pull-up on PORTD (typical for buttons) */
 	PORTD |= (1 << pin_number);
 }
 
 void port_disable_pullup(unsigned char pin_number)
 {
-	if(pin_number > 7) return;
-	
+	if (pin_number > 7)
+		return;
+
 	PORTD &= ~(1 << pin_number);
 }
 
@@ -435,16 +454,16 @@ unsigned char port_read_masked(volatile unsigned char port_register, unsigned ch
 void port_write_masked(volatile unsigned char *port_register, unsigned char mask, unsigned char value)
 {
 	unsigned char temp;
-	
+
 	/* Read current value */
 	temp = *port_register;
-	
+
 	/* Clear masked bits */
 	temp &= ~mask;
-	
+
 	/* Set new value in masked bits */
 	temp |= (value & mask);
-	
+
 	/* Write back */
 	*port_register = temp;
 }
@@ -454,8 +473,10 @@ void port_write_masked(volatile unsigned char *port_register, unsigned char mask
  */
 void port_set_debounce_delay(unsigned char delay_ms)
 {
-	if(delay_ms < 5) delay_ms = 5;    // Minimum 5ms
-	if(delay_ms > 100) delay_ms = 100;  // Maximum 100ms
+	if (delay_ms < 5)
+		delay_ms = 5; // Minimum 5ms
+	if (delay_ms > 100)
+		delay_ms = 100; // Maximum 100ms
 	debounce_delay_ms = delay_ms;
 }
 
@@ -473,14 +494,16 @@ unsigned char port_get_debounce_delay(void)
 unsigned char read_buttons_debounced(void)
 {
 	unsigned char result = 0;
-	
+
 	/* Debounce each button */
-	for(unsigned char i = 0; i < 8; i++) {
-		if(button_pressed_debounced(i)) {
+	for (unsigned char i = 0; i < 8; i++)
+	{
+		if (button_pressed_debounced(i))
+		{
 			result |= (1 << i);
 		}
 	}
-	
+
 	return result;
 }
 
@@ -492,9 +515,12 @@ unsigned char read_buttons_debounced(void)
  */
 unsigned char wait_for_any_button_debounced(void)
 {
-	while(1) {
-		for(unsigned char i = 0; i < 8; i++) {
-			if(button_pressed_debounced(i)) {
+	while (1)
+	{
+		for (unsigned char i = 0; i < 8; i++)
+		{
+			if (button_pressed_debounced(i))
+			{
 				/* Wait for release */
 				button_wait_release(i);
 				return i;

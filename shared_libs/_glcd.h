@@ -145,12 +145,6 @@ typedef struct
  */
 void ks0108_init(void);
 
-/*
- * Compatibility function for legacy code
- * Provides backward compatibility with old lcd_init() calls
- */
-void lcd_init(void);
-
 /**
  * @brief Send command to specified controller(s)
  *
@@ -396,5 +390,47 @@ void ks0108_test_display(void);
  * @brief Display information about the library
  */
 void ks0108_show_info(void);
+
+/**
+ * @brief Invert entire screen display (swap black/white pixels)
+ */
+void ks0108_invert_screen(void);
+
+/*
+ * =============================================================================
+ * BACKWARD COMPATIBILITY LAYER
+ * =============================================================================
+ * These aliases provide compatibility with legacy Graphics_Display project
+ * that used older function names. New projects should use ks0108_* names.
+ */
+
+/* Legacy type definitions */
+typedef uint8_t byte;
+
+/* Legacy initialization */
+#define lcd_init() ks0108_init()
+
+/* Legacy display control */
+#define lcd_clear() ks0108_clear_screen()
+#define ScreenBuffer_clear() ks0108_clear_screen()
+
+/* Legacy graphics primitives */
+#define GLCD_Dot(x, y) ks0108_set_pixel(x, y, KS0108_PIXEL_ON)
+#define GLCD_Line(x1, y1, x2, y2) ks0108_draw_line(x1, y1, x2, y2, KS0108_PIXEL_ON)
+#define GLCD_Rectangle(x, y, w, h) ks0108_draw_rect(x, y, w, h, KS0108_PIXEL_ON)
+#define GLCD_Circle(cx, cy, r) ks0108_draw_circle(cx, cy, r, KS0108_PIXEL_ON)
+
+/* Legacy low-level page access */
+#define GLCD_Axis_xy(page, col) ks0108_goto_xy(page, col)
+#define datal(data) ks0108_data(data, KS0108_LEFT_CONTROLLER)
+#define datar(data) ks0108_data(data, KS0108_RIGHT_CONTROLLER)
+
+/* Legacy text functions */
+#define lcd_xy(line, col) ks0108_set_cursor(line, col)
+#define lcd_string(line, col, str) ks0108_puts_at(line, col, str)
+#define GLCD_4DigitDecimal(val) ks0108_printf("%4d", val)
+
+/* Legacy string printing from PROGMEM */
+void lcd_string_P(byte row, byte col, const char *progmem_str);
 
 #endif /* KS0108_COMPLETE_H */

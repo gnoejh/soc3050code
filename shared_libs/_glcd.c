@@ -17,7 +17,8 @@
  * =============================================================================
  */
 
-#include "ks0108_complete.h"
+#include "_glcd.h"
+#include <avr/pgmspace.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -283,15 +284,6 @@ void ks0108_init(void)
     // Initialize text cursor
     g_text_line = 0;
     g_text_column = 0;
-}
-
-/*
- * Compatibility wrapper for legacy code
- * This allows old code calling lcd_init() to work with new library
- */
-void lcd_init(void)
-{
-    ks0108_init();
 }
 
 void ks0108_command(uint8_t cmd, uint8_t controller)
@@ -708,4 +700,26 @@ void ks0108_show_info(void)
     ks0108_puts_at(3, 0, "ATmega128 Optimized");
     ks0108_set_cursor(4, 0);
     ks0108_printf("Display: %s", g_ks0108_state.display_on ? "ON" : "OFF");
+}
+
+/*
+ * =============================================================================
+ * BACKWARD COMPATIBILITY FUNCTIONS
+ * =============================================================================
+ */
+
+/**
+ * @brief Legacy function to print string from PROGMEM
+ * 
+ * Provides compatibility with old Graphics_Display project
+ * 
+ * @param row Text row (0-7)
+ * @param col Character column (0-20)
+ * @param progmem_str Pointer to string in PROGMEM
+ */
+void lcd_string_P(byte row, byte col, const char *progmem_str)
+{
+    char buffer[22];  // Max 21 chars + null terminator
+    strcpy_P(buffer, progmem_str);
+    ks0108_puts_at(row, col, buffer);
 }
