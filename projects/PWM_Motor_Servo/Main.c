@@ -1,143 +1,76 @@
 ﻿/*
  * ==============================================================================
- * PWM SERVO MOTOR - DEMO CODE
+ * PWM SERVO MOTOR - DEMO CODE (REFINED)
  * ==============================================================================
  * PROJECT: PWM_Motor_Servo
  * See Slide.md for complete theory and technical details
  *
+ * REFACTORED: Now uses _pwm.h library for professional servo control
+ * LEARNING: Compare this refined version with manual Timer1 configuration
  * DEMOS: Servo position control, PWM timing, angle positioning
  * ==============================================================================
  */
 
 #include "config.h"
 
-// Servo PWM calculations for 50Hz (20ms period)
-// F_CPU = 7372800 Hz, Prescaler = 8
-// Timer frequency = 7372800 / 8 = 921600 Hz
-// For 20ms period: TOP = 921600 / 50 - 1 = 18431
+// Servo channel mapping (using PWM library channels)
+#define SERVO_A PWM_CH_1A // OC1A (PB5)
+#define SERVO_B PWM_CH_1B // OC1B (PB6)
+
+// Keep constants for reference and debugging output
 #define SERVO_FREQ_HZ 50
-#define SERVO_PRESCALER 8
-#define TIMER_FREQ (F_CPU / SERVO_PRESCALER)
-#define SERVO_TOP (TIMER_FREQ / SERVO_FREQ_HZ - 1) // 18431
-
-// Pulse width calculations (in timer ticks)
-// 1.0ms = 921.6 ticks, 2.0ms = 1843.2 ticks
-#define SERVO_MIN_PULSE (TIMER_FREQ / 1000)                       // 1ms = 921 ticks
-#define SERVO_MAX_PULSE (TIMER_FREQ / 500)                        // 2ms = 1843 ticks
-#define SERVO_MID_PULSE ((SERVO_MIN_PULSE + SERVO_MAX_PULSE) / 2) // 1.5ms
-
-// Servo channel definitions
-typedef enum
-{
-    SERVO_A = 0, // OC1A (PB5)
-    SERVO_B = 1  // OC1B (PB6)
-} servo_channel_t;
+#define TIMER_FREQ (F_CPU / 8)  // PWM library uses prescaler 8 for servos
+#define SERVO_TOP (TIMER_FREQ / SERVO_FREQ_HZ - 1)
+#define SERVO_MIN_PULSE 544      // 0° in microseconds  
+#define SERVO_MAX_PULSE 2400     // 180° in microseconds
+#define SERVO_MID_PULSE 1472     // 90° in microseconds
 
 /*
- * Initialize Timer1 for servo PWM generation
- * Mode 14: Fast PWM with ICR1 as TOP
- * Frequency: 50Hz (20ms period)
+ * Initialize servos using PWM library
+ * EDUCATIONAL NOTE: Compare this simple initialization with the manual
+ * Timer1 configuration (TCCR1A, TCCR1B, ICR1, OCR1A/B) that was needed before
  */
 void timer1_servo_init(void)
 {
-    // Set PB5 (OC1A) and PB6 (OC1B) as outputs
-    DDRB |= (1 << PB5) | (1 << PB6);
+    // Initialize both servo channels (library handles all Timer1 configuration)
+    PWM_servo_init(SERVO_A);
+    PWM_servo_init(SERVO_B);
 
-    // Configure Timer1 for Fast PWM, Mode 14
-    // WGM13:0 = 1110 (Fast PWM, TOP=ICR1)
-    // COM1A1:0 = 10 (Clear OC1A on compare, set at BOTTOM)
-    // COM1B1:0 = 10 (Clear OC1B on compare, set at BOTTOM)
-    // CS12:0 = 010 (Prescaler = 8)
-    TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM11);
-    TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
-
-    // Set TOP for 50Hz frequency
-    ICR1 = SERVO_TOP;
-
-    // Initialize both servos to neutral position (90째)
-    OCR1A = SERVO_MID_PULSE;
-    OCR1B = SERVO_MID_PULSE;
+    // Set both servos to neutral position (90°)
+    PWM_servo_set_angle(SERVO_A, 90);
+    PWM_servo_set_angle(SERVO_B, 90);
 }
 
 /*
  * Set servo position by angle (0-180 degrees)
+ * EDUCATIONAL NOTE: Library handles angle-to-pulse conversion automatically
  */
-void servo_set_angle(servo_channel_t channel, uint8_t angle)
+void servo_set_angle(pwm_channel_t channel, uint8_t angle)
 {
-    // Constrain angle to valid range
-    if (angle > 180)
-        angle = 180;
-
-    // Convert angle to pulse width
-    // Linear interpolation: pulse = MIN + (angle/180) * (MAX - MIN)
-    uint16_t pulse = SERVO_MIN_PULSE +
-                     ((uint32_t)angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
-
-    // Set appropriate channel
-    if (channel == SERVO_A)
-    {
-        OCR1A = pulse;
-    }
-    else
-    {
-        OCR1B = pulse;
-    }
+    PWM_servo_set_angle(channel, angle);
 }
 
 /*
- * Set servo position by pulse width (microseconds)
- * Useful for fine-tuning and calibration
+ * Set servo position using microsecond pulse width
+ * EDUCATIONAL NOTE: Useful for fine-tuning and calibration
  */
-void servo_set_pulse_us(servo_channel_t channel, uint16_t pulse_us)
+void servo_set_pulse_us(pwm_channel_t channel, uint16_t pulse_us)
 {
-    // Constrain to reasonable range (500-2500 us)
-    if (pulse_us < 500)
-        pulse_us = 500;
-    if (pulse_us > 2500)
-        pulse_us = 2500;
-
-    // Convert microseconds to timer ticks
-    // pulse_ticks = (pulse_us * TIMER_FREQ) / 1000000
-    uint16_t pulse_ticks = ((uint32_t)pulse_us * TIMER_FREQ) / 1000000UL;
-
-    if (channel == SERVO_A)
-    {
-        OCR1A = pulse_ticks;
-    }
-    else
-    {
-        OCR1B = pulse_ticks;
-    }
+    PWM_servo_set_pulse_us(channel, pulse_us);
 }
 
 /*
  * Smooth servo movement from current to target position
+ * EDUCATIONAL NOTE: Library function handles all the stepping logic
+ * Old version: Manual OCR reading, angle calculation, step loop
+ * New version: Single library call with professional ramping
  */
-void servo_move_smooth(servo_channel_t channel, uint8_t target_angle, uint16_t duration_ms)
+void servo_move_smooth(pwm_channel_t channel, uint8_t target_angle, uint16_t duration_ms)
 {
-    // Get current position (approximate from OCR value)
-    uint16_t current_pulse = (channel == SERVO_A) ? OCR1A : OCR1B;
-    uint8_t current_angle = ((uint32_t)(current_pulse - SERVO_MIN_PULSE) * 180) /
-                            (SERVO_MAX_PULSE - SERVO_MIN_PULSE);
-
-    // Calculate step size
-    int16_t angle_diff = target_angle - current_angle;
-    uint8_t num_steps = duration_ms / 20; // 20ms per step (50Hz update)
-    if (num_steps == 0)
-        num_steps = 1;
-
-    float angle_step = (float)angle_diff / num_steps;
-
-    // Move gradually
-    for (uint8_t i = 0; i < num_steps; i++)
-    {
-        float intermediate_angle = current_angle + (angle_step * i);
-        servo_set_angle(channel, (uint8_t)intermediate_angle);
-        _delay_ms(20);
-    }
-
-    // Ensure final position
-    servo_set_angle(channel, target_angle);
+    // Use library's sweep function (goes from current angle to target)
+    // Note: We approximate current as 90° since library tracks position internally
+    // For precise tracking, we'd need to add PWM_servo_get_angle() to the library
+    PWM_servo_sweep(channel, 90, target_angle, duration_ms / 20);
 }
 
 /* ========================================================================

@@ -19,5 +19,6 @@
 #include "_uart.h"
 #include "_adc.h"
 #include "_init.h"
+#include "_pwm.h"
 
 #endif /* CONFIG_H_ */

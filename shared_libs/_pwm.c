@@ -354,7 +354,11 @@ void PWM_servo_sweep(pwm_channel_t channel, uint8_t start_angle, uint8_t end_ang
         for (uint8_t angle = start_angle; angle <= end_angle; angle++)
         {
             PWM_servo_set_angle(channel, angle);
-            _delay_ms(step_delay_ms);
+            // Variable delay loop (not compile-time constant safe)
+            for (uint16_t i = 0; i < step_delay_ms; i++)
+            {
+                _delay_ms(1);
+            }
         }
     }
     else
@@ -363,7 +367,11 @@ void PWM_servo_sweep(pwm_channel_t channel, uint8_t start_angle, uint8_t end_ang
         for (uint8_t angle = start_angle; angle >= end_angle; angle--)
         {
             PWM_servo_set_angle(channel, angle);
-            _delay_ms(step_delay_ms);
+            // Variable delay loop
+            for (uint16_t i = 0; i < step_delay_ms; i++)
+            {
+                _delay_ms(1);
+            }
             if (angle == 0)
                 break; // Prevent underflow
         }
