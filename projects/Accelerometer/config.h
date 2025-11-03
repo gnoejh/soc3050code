@@ -10,6 +10,8 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // Include shared library headers
 #include "_adc.h"

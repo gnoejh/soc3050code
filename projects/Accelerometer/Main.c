@@ -1,11 +1,15 @@
 ﻿/*
  * ==============================================================================
- * ACCELEROMETER - DEMO CODE
+ * ACCELEROMETER - DEMO CODE (REFINED)
  * ==============================================================================
  * PROJECT: Accelerometer
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: Accelerometer interfacing, axis reading, motion detection
+ * 
+ * EDUCATIONAL NOTE: Using enhanced ADC library for noise-free readings
+ * OLD APPROACH: Simple Adc_read_ch() with noisy data
+ * NEW APPROACH: Read_Adc_Averaged() for stable, reliable measurements
  * ==============================================================================
  */
 
@@ -31,9 +35,10 @@ int main(void)
      while (1)
      {
          // Read accelerometer values from ADC channels 2, 3, 4
-         x_axis = Adc_read_ch(2); // X-axis
-         y_axis = Adc_read_ch(3); // Y-axis
-         z_axis = Adc_read_ch(4); // Z-axis
+         // Using averaging for stable, noise-free readings
+         x_axis = Read_Adc_Averaged(2, 8); // X-axis (8 samples)
+         y_axis = Read_Adc_Averaged(3, 8); // Y-axis
+         z_axis = Read_Adc_Averaged(4, 8); // Z-axis
 
          // Detect motion (simple threshold-based)
          if (abs(x_axis - x_prev) > 50 ||
