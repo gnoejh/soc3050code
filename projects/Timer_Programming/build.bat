@@ -14,7 +14,6 @@ set AVR_OBJCOPY=w:\soc3050code\tools\avr-toolchain\bin\avr-objcopy.exe
     -I../../shared_libs ^
     Main.c ^
     ../../shared_libs/_uart.c ^
-    ../../shared_libs/_timer2.c ^
     -lm ^
     -o Main.elf
 
