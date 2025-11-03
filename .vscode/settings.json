@@ -1,0 +1,50 @@
+{
+    // Student-friendly ATmega128 development environment
+    // Simple configuration without complex MPLAB dependencies
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    // File associations for embedded development
+    "files.associations": {
+        "*.c": "c",
+        "*.h": "c",
+        "*.hex": "intel-hex",
+        "*.elf": "binary"
+    },
+    // C/C++ IntelliSense for ATmega128
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/Main",
+        "${workspaceFolder}/shared_libs",
+        "${workspaceFolder}/tools/avr-toolchain/avr/include",
+        "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include"
+    ],
+    "C_Cpp.default.compilerPath": "${workspaceFolder}/tools/avr-toolchain/bin/avr-gcc.exe",
+    "C_Cpp.default.defines": [
+        "F_CPU=16000000UL",
+        "__AVR_ATmega128__"
+    ],
+    "C_Cpp.default.cStandard": "gnu99",
+    "C_Cpp.default.intelliSenseMode": "gcc-x86",
+    // Python environment configuration
+    "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true,
+    // Extensions for student workflow
+    "extensions.recommendations": [
+        "ms-vscode.vscode-serial-monitor",
+        "ms-vscode.cpptools",
+        "ms-vscode.powershell",
+        "ms-python.python"
+    ],
+    // Clean editor settings
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    // Hide complex files from students
+    "files.exclude": {
+        "**/.git": true,
+        "**/cmake": true,
+        "**/_build": true,
+        "**/*.o": true,
+        "**/*.d": true,
+        "**/Debug": true,
+        "**/Release": true
+    }
+}

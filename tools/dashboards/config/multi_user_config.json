@@ -1,0 +1,10 @@
+{
+  "max_students": 50,
+  "workspace_cleanup_days": 7,
+  "teacher_password": "admin123",
+  "session_timeout_hours": 8,
+  "server_ip": "192.168.0.202",
+  "auto_backup": true,
+  "debug": false,
+  "port": 5001
+}
