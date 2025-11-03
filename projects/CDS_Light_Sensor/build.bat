@@ -1,7 +1,13 @@
 @echo off
-echo Building 10_CDS_Light_Sensor Project...
+REM Build script for CDS Light Sensor project (REFINED)
+REM Now uses enhanced _adc.h library for stable light readings
 
-"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe" ^
+echo Building CDS Light Sensor (Refined with _adc.h)...
+
+set AVR_GCC=w:\soc3050code\tools\avr-toolchain\bin\avr-gcc.exe
+set AVR_OBJCOPY=w:\soc3050code\tools\avr-toolchain\bin\avr-objcopy.exe
+
+"%AVR_GCC%" ^
     -mmcu=atmega128 ^
     -DF_CPU=7372800UL ^
     -DBAUD=9600 ^
@@ -12,6 +18,10 @@ echo Building 10_CDS_Light_Sensor Project...
     -I../../shared_libs ^
     Main.c ^
     ../../shared_libs/_uart.c ^
+    ../../shared_libs/_adc.c ^
+    ../../shared_libs/_init.c ^
+    ../../shared_libs/_port.c ^
+    ../../shared_libs/_glcd.c ^
     -o Main.elf
 
 if %errorlevel% neq 0 (
@@ -21,7 +31,7 @@ if %errorlevel% neq 0 (
 
 echo Build successful! Generating HEX file...
 
-"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-objcopy.exe" ^
+"%AVR_OBJCOPY%" ^
     -O ihex ^
     -R .eeprom ^
     Main.elf ^
@@ -33,3 +43,7 @@ if %errorlevel% neq 0 (
 )
 
 echo Files created: Main.elf, Main.hex
+echo.
+"%AVR_GCC:avr-gcc.exe=avr-size.exe%" Main.elf
+echo.
+echo Build complete!

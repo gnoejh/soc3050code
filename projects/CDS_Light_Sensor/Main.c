@@ -1,11 +1,15 @@
 ﻿/*
  * ==============================================================================
- * CDS LIGHT SENSOR - DEMO CODE
+ * CDS LIGHT SENSOR - DEMO CODE (REFINED)
  * ==============================================================================
  * PROJECT: CDS_Light_Sensor
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: Light sensor reading, ADC conversion, ambient light detection
+ * 
+ * EDUCATIONAL NOTE: Using enhanced ADC library for stable light readings
+ * OLD APPROACH: Simple Adc_read_ch() with fluctuating values
+ * NEW APPROACH: Read_Adc_Averaged() for smooth, reliable light detection
  * ==============================================================================
  */
 
@@ -30,7 +34,8 @@
     while (1)
     {
         // Read light sensor value from ADC1 (PA1)
-        light_value = Adc_read_ch(1);
+        // Using averaging for stable, flicker-free readings
+        light_value = Read_Adc_Averaged(1, 16); // 16 samples for smooth detection
 
         // Convert to light level (0-8 scale)
         light_level = light_value >> 7; // Convert 10-bit to 3-bit
