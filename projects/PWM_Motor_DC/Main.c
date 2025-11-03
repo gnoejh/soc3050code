@@ -1,20 +1,30 @@
 ﻿/*
  * ==============================================================================
- * PWM DC MOTOR - DEMO CODE
+ * PWM DC MOTOR - DEMO CODE (REFINED)
  * ==============================================================================
  * PROJECT: PWM_Motor_DC
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: DC motor speed control, PWM generation, direction control
+ * 
+ * EDUCATIONAL NOTE: This version uses the _pwm.h library for motor control
+ * OLD APPROACH: Manual Timer1 configuration (~25 lines of TCCR1A/B, ICR1, OCR1A)
+ * NEW APPROACH: PWM_motor_init(), PWM_motor_set_speed() (~3 lines)
  * ==============================================================================
  */
 
 #include "config.h"
 
-// Motor control pins
-#define MOTOR_PWM_PIN (1 << PB5)  // OC1A - Timer1 PWM output
+// Motor control using PWM library channel
+#define MOTOR_CHANNEL PWM_CH_1A // OC1A (PB5)
+
+// Motor control pins for direction
 #define MOTOR_DIR1_PIN (1 << PB6) // Direction control 1
 #define MOTOR_DIR2_PIN (1 << PB7) // Direction control 2
+
+// PWM TOP value for demo functions that access ICR1 directly
+#define PWM_TOP 999 // 10-bit resolution (0-999)
+#define MOTOR_PWM_FREQ 1000UL // 1 kHz motor PWM frequency
 
 // Motor direction definitions
 #define MOTOR_FORWARD()           \
@@ -35,50 +45,31 @@
         PORTB &= ~(MOTOR_DIR1_PIN | MOTOR_DIR2_PIN); \
     } while (0)
 
-// PWM frequency calculation
-// F_PWM = F_CPU / (Prescaler * (1 + TOP))
-// Example: 7372800 / (8 * 1000) = 921 Hz
-#define PWM_TOP 999 // 10-bit resolution (0-999)
-
-    /*
-     * Initialize Timer1 for Fast PWM mode
-     * Mode 14: Fast PWM with ICR1 as TOP
-     * Prescaler: 8
-     * Non-inverting mode on OC1A
-     */
-    void timer1_pwm_init(void)
+/*
+ * Initialize motor control
+ * EDUCATIONAL NOTE: Library handles all Timer1 PWM configuration
+ * Old version: 25+ lines of manual Timer1 setup
+ * New version: 3 lines using PWM library
+ */
+void timer1_pwm_init(void)
 {
-    // Set PB5 (OC1A) as output
-    DDRB |= MOTOR_PWM_PIN | MOTOR_DIR1_PIN | MOTOR_DIR2_PIN;
-
-    // Configure Timer1 for Fast PWM, Mode 14
-    // WGM13:0 = 1110 (Fast PWM, TOP=ICR1)
-    // COM1A1:0 = 10 (Clear OC1A on compare match, set at BOTTOM)
-    // CS12:0 = 010 (Prescaler = 8)
-    TCCR1A = (1 << COM1A1) | (1 << WGM11);
-    TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
-
-    // Set TOP value for desired PWM frequency
-    ICR1 = PWM_TOP;
-
-    // Initialize duty cycle to 0 (motor stopped)
-    OCR1A = 0;
-
+    // Set direction pins as output
+    DDRB |= MOTOR_DIR1_PIN | MOTOR_DIR2_PIN;
+    
+    // Initialize PWM for motor control (library handles Timer1 config)
+    PWM_motor_init(MOTOR_CHANNEL, MOTOR_PWM_FREQ);
+    
     // Initial state: braked
     MOTOR_BRAKE();
 }
 
 /*
  * Set motor speed (0-100%)
+ * EDUCATIONAL NOTE: Library handles percentage-to-PWM conversion
  */
 void motor_set_speed(uint8_t speed_percent)
 {
-    if (speed_percent > 100)
-        speed_percent = 100;
-
-    // Convert percentage to PWM value
-    uint16_t pwm_value = ((uint32_t)speed_percent * PWM_TOP) / 100;
-    OCR1A = pwm_value;
+    PWM_motor_set_speed(MOTOR_CHANNEL, speed_percent);
 }
 
 /*
