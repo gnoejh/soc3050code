@@ -10,7 +10,8 @@
         "*.elf": "binary"
     },
     // C/C++ IntelliSense configured via c_cpp_properties.json
-    // (Settings removed to avoid conflicts)
+    // Disable error squiggles for AVR cross-compilation (known IntelliSense limitation)
+    "C_Cpp.errorSquiggles": "disabled",
     // Python environment configuration
     "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
     "python.terminal.activateEnvironment": true,
