@@ -16,17 +16,12 @@
 // #include <string.h>
 
 // Include shared library headers (compiler uses -I../../shared_libs)
-// Note: Main.c uses minimal local init for educational clarity
-// #include "_init.h"    // Not needed for Main.c - using local simple_init()
-
-// Lab.c uses full integration - includes all libraries
-#include "_init.h"    // System initialization
-#include "_uart.h"    // Serial communication
-#include "_glcd.h"    // Graphics LCD
-#include "_port.h"    // Button handling
+// Note: Timer_Programming uses minimal local init for educational clarity
+// #include "_init.h"    // Not needed - using local simple_init()
+// #include "_uart.h"    // Removed - causes SimulIDE crashes
 
 // Forward declarations for demo functions (defined in Main.c)
-void simple_init(void); // Local minimal initialization (Main.c only)
+void simple_init(void); // Local minimal initialization
 void demo0_led_test(void);
 void demo1_normal_polling(void);
 void demo2_normal_interrupt(void);
