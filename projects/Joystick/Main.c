@@ -1,11 +1,15 @@
 ﻿/*
  * ==============================================================================
- * JOYSTICK - DEMO CODE
+ * JOYSTICK - DEMO CODE (REFINED)
  * ==============================================================================
  * PROJECT: Joystick
  * See Slide.md for complete theory and technical details
  *
  * DEMOS: Analog joystick reading, ADC sampling, position detection
+ *
+ * EDUCATIONAL NOTE: This version uses enhanced _adc.h library features
+ * OLD APPROACH: Simple ADC_read() for each axis
+ * NEW APPROACH: ADC_read_averaged() for stable, noise-free readings
  * ==============================================================================
  */
 
@@ -58,7 +62,7 @@ void init_joystick_control()
     puts_USART1("Initializing Joystick Control System...\r\n");
 
     // Initialize ADC for joystick reading
-    ADC_init();
+    Adc_init();
 
     // Configure direction LEDs
     DDRB = 0xFF;  // PORTB as output
@@ -83,11 +87,13 @@ void init_joystick_control()
 }
 
 // Function to read joystick position
+// EDUCATIONAL NOTE: Using ADC averaging for stable readings
 void read_joystick_position()
 {
-    // Read X and Y channels
-    joystick_pos.x_raw = ADC_read(JOYSTICK_X_CHANNEL);
-    joystick_pos.y_raw = ADC_read(JOYSTICK_Y_CHANNEL);
+    // Read X and Y channels with averaging for noise reduction
+    // Read_Adc_Averaged() takes multiple samples and averages them
+    joystick_pos.x_raw = Read_Adc_Averaged(JOYSTICK_X_CHANNEL, 16);
+    joystick_pos.y_raw = Read_Adc_Averaged(JOYSTICK_Y_CHANNEL, 16);
 
     // Read button state (active low)
     joystick_pos.button_pressed = !(JOYSTICK_BUTTON_PORT & (1 << JOYSTICK_BUTTON_PIN));
@@ -175,7 +181,7 @@ void demonstrate_joystick()
     puts_USART1("Press joystick button to activate center LED\r\n");
     puts_USART1("Press any key to exit demo...\r\n");
 
-    while (!is_USART1_received())
+    while (!USART1_data_available())
     {
         read_joystick_position();
         update_direction_leds();
@@ -195,17 +201,17 @@ void demonstrate_joystick()
         _delay_ms(50);
     }
 
-    get_USART1(); // Clear received character
-    PORTB = 0x00; // Turn off all LEDs
+    getch_USART1(); // Clear received character
+    PORTB = 0x00;   // Turn off all LEDs
     puts_USART1("Demo complete\r\n");
 }
 
 // Function to handle user commands
 void handle_joystick_commands()
 {
-    if (is_USART1_received())
+    if (USART1_data_available())
     {
-        char command = get_USART1();
+        char command = getch_USART1();
 
         switch (command)
         {
@@ -252,7 +258,7 @@ int main(void)
     // Initialize system components
     init_devices();
     Uart1_init();
-    ADC_init();
+    Adc_init();
 
     puts_USART1("Joystick Control System Starting...\r\n");
     puts_USART1("Educational analog joystick interface demo\r\n");

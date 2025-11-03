@@ -11,8 +11,11 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <avr/interrupt.h>
 #include "../../shared_libs/_uart.h"
+#include "../../shared_libs/_adc.h"
+#include "../../shared_libs/_init.h"
 
 #endif
