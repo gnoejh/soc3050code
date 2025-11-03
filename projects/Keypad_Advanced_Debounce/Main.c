@@ -1,52 +1,12 @@
-/*
- * =============================================================================
- * KEYPAD ADVANCED DEBOUNCING - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * KEYPAD DEBOUNCING - DEMO CODE
+ * ==============================================================================
  * PROJECT: Keypad_Advanced_Debounce
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of advanced keypad programming with robust debouncing.
- * Students learn software debouncing algorithms and input validation techniques.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master software debouncing algorithms and state machines
- * 2. Learn robust input validation and error handling
- * 3. Practice key repeat and long-press detection
- * 4. Implement secure PIN/password entry systems
- * 5. Understand real-time input processing
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 4x4 matrix keypad with standard layout
- * - Rows (PA0-PA3) configured as outputs
- * - Columns (PA4-PA7) configured as inputs with pull-ups
- * - LCD display for user interface
- * - LEDs for status indication
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Pull-up resistors (page 64)
- * - Timer/Counter for debouncing (pages 77-107)
- *
- * DEBOUNCING TECHNIQUES:
- * - Time-based delay debouncing
- * - State machine debouncing
- * - Counter-based validation
- * - Hysteresis filtering
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Debouncing Implementation
- * - Demo 2: State Machine Approach
- * - Demo 3: Advanced Key Detection
- * - Demo 4: Secure PIN Entry System
- *
- * =============================================================================
+ * DEMOS: Software debouncing, key scanning, stable input detection
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -695,9 +655,9 @@ void demo4_input_validation(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Keypad Advanced - ATmega128          ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Keypad Advanced - ATmega128          ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Debouncing Test\r\n");

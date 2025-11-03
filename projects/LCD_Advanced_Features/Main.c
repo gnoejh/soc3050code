@@ -1,98 +1,12 @@
-/*
- * =============================================================================
- * LCD ADVANCED FEATURES - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * LCD ADVANCED FEATURES - DEMO CODE
+ * ==============================================================================
  * PROJECT: LCD_Advanced_Features
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of advanced LCD programming techniques and animations.
- * Students learn sophisticated display control and interactive interface design.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master advanced LCD control techniques
- * 2. Learn scrolling text and animation programming
- * 3. Practice custom character creation and graphics
- * 4. Implement interactive menu systems
- * 5. Design professional user interfaces
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 16x2 Character LCD (HD44780 compatible)
- * - LCD connections: RS (PG0), E (PG1), D4-D7 (PG2-PG5)
- * - Contrast adjustment potentiometer
- * - Push buttons for menu navigation
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Timing requirements (pages 301-320)
- *
- * =============================================================================
- * LCD PORT REGISTERS - REFERENCE (See LCD_Character_Basic for full details)
- * =============================================================================
- *
- * DDRx: Data Direction (1=output for LCD control pins)
- * PORTx: Output control (RS, E, D4-D7 signals)
- *
- * LCD 4-bit mode uses 6 pins:
- *   RS (PG0): Command(0) or Data(1)
- *   E (PG1):  Enable pulse to latch data
- *   D4-D7 (PG2-PG5): 4-bit data bus
- *
- * ADVANCED LCD COMMANDS:
- *
- * Display Shift: 0x18-0x1F
- *   0x18: Shift display left
- *   0x1C: Shift display right
- *   0x10: Shift cursor left
- *   0x14: Shift cursor right
- *
- * CGRAM Address Set: 0x40-0x7F
- *   Custom character creation (8 slots × 8 bytes each)
- *
- * ADVANCED TECHNIQUES:
- *
- * Scrolling Text:
- *   - Use display shift commands (0x18/0x1C)
- *   - Update DDRAM and shift display for marquee effect
- *   - Timing: 200-500ms per scroll step
- *
- * Progress Bar:
- *   - Create custom chars: [empty], [partial fills], [full]
- *   - Update display based on percentage
- *   - Example: 50% = "████████░░░░░░░░"
- *
- * Animated Characters:
- *   - Create sequence of custom chars in CGRAM
- *   - Rapidly switch displayed character
- *   - Example: Spinner animation using 4 chars
- *
- * Multi-Level Menus:
- *   - Use array of menu items
- *   - Track current position and depth
- *   - Handle button input for navigation
- *
- * =============================================================================
- *
- * ADVANCED FEATURES:
- * - Horizontal scrolling marquee text
- * - Vertical scrolling displays
- * - Animated progress bars and meters
- * - Custom character animations
- * - Multi-level menu navigation
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Scrolling Text Effects
- * - Demo 2: Progress Bar Animations
- * - Demo 3: Custom Graphics
- * - Demo 4: Interactive Menu Systems
- *
- * =============================================================================
+ * DEMOS: Custom characters, scrolling, special effects
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -546,9 +460,9 @@ void demo4_menu_system(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  LCD Advanced Features - ATmega128    ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? LCD Advanced Features - ATmega128    ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Scrolling Text\r\n");

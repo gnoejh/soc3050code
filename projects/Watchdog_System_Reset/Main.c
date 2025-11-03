@@ -1,120 +1,13 @@
-/*
- * =============================================================================
- * WATCHDOG TIMER SYSTEM RESET - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * WATCHDOG SYSTEM RESET - DEMO CODE
+ * ==============================================================================
  * PROJECT: Watchdog_System_Reset
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of watchdog timer for system reset and recovery.
- * Students learn fail-safe programming and system reliability techniques.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master watchdog timer (WDT) operation and configuration
- * 2. Learn system reset mechanisms and recovery strategies
- * 3. Practice fail-safe programming techniques
- * 4. Implement crash detection and automatic recovery
- * 5. Understand system reliability and fault tolerance
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - LEDs for system status indication
- * - Push buttons for manual reset testing
- * - Status indicators for watchdog operations
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Watchdog Timer (pages 43-47)
- * - Reset sources (pages 33-35)
- * - WDTCR register (page 47)
- *
- * =============================================================================
- * WATCHDOG TIMER REGISTERS - DETAILED REFERENCE (See Watchdog_Fail_Safe)
- * =============================================================================
- *
- * REGISTER 1: WDTCR (Watchdog Timer Control Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  -      -      -     WDCE   WDE    WDP2   WDP1   WDP0
- *
- * WDCE (bit 4): Watchdog Change Enable (timing-critical bit)
- * WDE (bit 3): Watchdog Enable (1=enabled, 0=disabled)
- * WDP2:0: Prescaler for timeout period (see table below)
- *
- * REGISTER 2: MCUCSR (MCU Control and Status Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  -      -      -      -     WDRF   BORF  EXTRF  PORF
- *
- * WDRF (bit 3): Watchdog Reset Flag (detects WDT-caused reset)
- *
- * QUICK ENABLE/DISABLE:
- *
- *   Enable (1 second timeout):
- *     cli();
- *     WDTCR = (1<<WDCE)|(1<<WDE);
- *     WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1);
- *     sei();
- *
- *   Disable:
- *     cli();
- *     wdt_reset();
- *     MCUCSR &= ~(1<<WDRF);
- *     WDTCR = (1<<WDCE)|(1<<WDE);
- *     WDTCR = 0x00;
- *     sei();
- *
- *   Reset Watchdog:
- *     wdt_reset();  // Call before timeout
- *
- * SYSTEM RESET RECOVERY:
- *
- *   void main(void) {
- *       if(MCUCSR & (1<<WDRF)) {
- *           // Watchdog caused this reset
- *           log_error("WDT Reset");
- *           MCUCSR &= ~(1<<WDRF);
- *       }
- *       wdt_enable_1s();
- *       while(1) {
- *           do_work();
- *           wdt_reset();
- *       }
- *   }
- *
- * =============================================================================
- *
- * WATCHDOG TIMER OVERVIEW:
- * - Independent RC oscillator (~1MHz)
- * - Timeout periods: 16ms to 2048ms
- * - Generates system reset if not cleared
- * - Useful for detecting software crashes and hangs
- *
- * TIMEOUT PERIODS:
- * WDP2 WDP1 WDP0 | Timeout
- * ---------------+---------
- *  0    0    0   | 16.3 ms
- *  0    0    1   | 32.5 ms
- *  0    1    0   | 65 ms
- *  0    1    1   | 0.13 s
- *  1    0    0   | 0.26 s
- *  1    0    1   | 0.52 s
- *  1    1    0   | 1.0 s
- *  1    1    1   | 2.1 s
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Watchdog Configuration
- * - Demo 2: System Reset Testing
- * - Demo 3: Automatic Recovery Implementation
- * - Demo 4: Fail-Safe System Design
- *
- * =============================================================================
+ * DEMOS: Watchdog timer setup, reset scenarios, recovery mechanisms
+ * ==============================================================================
  */
-*0 0 1 | 32.5 ms * 0 1 0 | 65 ms * 0 1 1 | 0.13 s * 1 0 0 | 0.26 s * 1 0 1 | 0.52 s * 1 1 0 | 1.0 s * 1 1 1 | 2.1 s * /
 
 #include "config.h"
 #include <avr/wdt.h>
@@ -494,9 +387,9 @@ void demo4_reset_recovery(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Watchdog Timer Demo - ATmega128      ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Watchdog Timer Demo - ATmega128      ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Watchdog Reset\r\n");

@@ -1,45 +1,12 @@
-/*
- * =============================================================================
- * ASSEMBLY INSTRUCTION PROGRAMMING - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * PORT ASSEMBLY - DEMO CODE
+ * ==============================================================================
  * PROJECT: Port_Assembly
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of essential AVR assembly instructions for port programming.
- * Students learn direct register manipulation and hardware control fundamentals.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master essential AVR assembly instructions (IN, OUT, SBI, CBI, SBIC, SBIS)
- * 2. Learn direct register manipulation techniques
- * 3. Practice inline assembly programming in C
- * 4. Understand low-level hardware control principles
- * 5. Compare assembly vs C programming approaches
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - LEDs connected to PORTB (PB0-PB7) with current-limiting resistors
- * - Push buttons connected to PORTD for input testing
- * - Status indicators for instruction demonstration
- * - Serial connection for educational feedback (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - AVR Instruction Set Manual (separate document)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: OUT instruction for output control
- * - Demo 2: IN instruction for input reading
- * - Demo 3: SBI instruction for single bit set
- * - Demo 4: CBI instruction for single bit clear
- * - Demo 5: SBIC instruction for skip if bit clear
- * - Demo 6: SBIS instruction for skip if bit set
- *
- * =============================================================================
+ * DEMOS: Assembly language port operations, bit manipulation
+ * ==============================================================================
  */
 
 #include "config.h"

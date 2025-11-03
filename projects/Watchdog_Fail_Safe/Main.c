@@ -1,214 +1,12 @@
-/*
- * =============================================================================
- * WATCHDOG FAIL-SAFE OPERATION - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * WATCHDOG FAIL-SAFE SYSTEM - DEMO CODE
+ * ==============================================================================
  * PROJECT: Watchdog_Fail_Safe
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of robust fail-safe systems using watchdog timer.
- * Students learn fault-tolerant programming and critical system monitoring.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master fail-safe system design principles
- * 2. Learn critical task monitoring and heartbeat systems
- * 3. Practice error recovery and graceful degradation
- * 4. Implement fault-tolerant embedded applications
- * 5. Understand safety-critical system requirements
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - Critical system components (sensors, actuators)
- * - Status indication LEDs (system health, error states)
- * - Manual intervention switches
- * - Backup power monitoring circuits
- * - Serial connection for system monitoring (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Watchdog Timer (pages 43-47)
- * - Reset sources (pages 33-35)
- * - WDTCR register (page 47)
- * - System monitoring (pages 36-42)
- *
- * =============================================================================
- * WATCHDOG TIMER REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: WDTCR (Watchdog Timer Control Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  -      -      -     WDCE   WDE    WDP2   WDP1   WDP0
- *
- * WDCE (bit 4): Watchdog Change Enable
- *               Must be set to 1 simultaneously with WDE to change settings
- *               Automatically cleared after 4 clock cycles
- *               Critical timing requirement!
- *
- * WDE (bit 3): Watchdog Enable
- *              1 = Enable watchdog timer (starts counting)
- *              0 = Disable watchdog timer
- *              Can only be cleared if WDCE=1 (safety feature)
- *
- * WDP2:0 (bits 2-0): Watchdog Prescaler Select - TIMEOUT PERIOD
- *
- *                WDP2 WDP1 WDP0 | Timeout @ 5V | Typical Cycles
- *                ---------------|--------------|----------------
- *                  0    0    0  |   16.3 ms    | 16K cycles
- *                  0    0    1  |   32.5 ms    | 32K cycles
- *                  0    1    0  |   65 ms      | 64K cycles
- *                  0    1    1  |  0.13 s      | 128K cycles
- *                  1    0    0  |  0.26 s      | 256K cycles
- *                  1    0    1  |  0.52 s      | 512K cycles
- *                  1    1    0  |  1.0 s       | 1M cycles
- *                  1    1    1  |  2.1 s       | 2M cycles
- *
- * WATCHDOG ENABLE SEQUENCE (CRITICAL TIMING):
- *
- *   void wdt_enable_1s(void) {
- *       cli();  // Disable interrupts during config
- *
- *       // Timed sequence (MUST complete within 4 cycles)
- *       WDTCR = (1<<WDCE) | (1<<WDE);  // Enable change mode
- *       WDTCR = (1<<WDE) | (1<<WDP2) | (1<<WDP1);  // 1 second timeout
- *
- *       sei();  // Re-enable interrupts
- *   }
- *
- * WATCHDOG DISABLE SEQUENCE (SAFETY-CRITICAL):
- *
- *   void wdt_disable(void) {
- *       cli();
- *
- *       // Reset watchdog
- *       wdt_reset();
- *
- *       // Clear WDRF in MCUCSR (MUST do this first!)
- *       MCUCSR &= ~(1<<WDRF);
- *
- *       // Timed sequence
- *       WDTCR = (1<<WDCE) | (1<<WDE);
- *       WDTCR = 0x00;  // Clear WDE and prescaler
- *
- *       sei();
- *   }
- *
- * WATCHDOG RESET COMMAND:
- *
- *   wdt_reset();  // Built-in AVR macro
- *   // Or manually: __asm__ __volatile__ ("wdr");
- *
- * Must call BEFORE timeout period expires to prevent system reset
- *
- * REGISTER 2: MCUCSR (MCU Control and Status Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  -      -      -      -     WDRF   BORF  EXTRF  PORF
- *
- * WDRF (bit 3): Watchdog Reset Flag
- *               Set by hardware after watchdog timeout reset
- *               Must be manually cleared before disabling WDT
- *               Check to detect if reset was caused by watchdog
- *
- * BORF (bit 2): Brown-out Reset Flag (power supply fault)
- * EXTRF (bit 1): External Reset Flag (reset pin)
- * PORF (bit 0): Power-On Reset Flag
- *
- * DETECT RESET SOURCE:
- *
- *   void check_reset_source(void) {
- *       if(MCUCSR & (1<<WDRF)) {
- *           // System recovered from watchdog timeout
- *           error_recovery();
- *       }
- *       if(MCUCSR & (1<<BORF)) {
- *           // Power supply fault
- *       }
- *       // Clear flags after reading
- *       MCUCSR = 0x00;
- *   }
- *
- * FAIL-SAFE APPLICATION PATTERNS:
- *
- * 1. Heartbeat Monitor:
- *
- *   void main(void) {
- *       wdt_enable_1s();
- *       while(1) {
- *           critical_task();
- *           wdt_reset();  // Heartbeat
- *       }
- *   }
- *
- * 2. Multi-Task Monitoring:
- *
- *   volatile uint8_t task1_alive = 0;
- *   volatile uint8_t task2_alive = 0;
- *
- *   void main(void) {
- *       wdt_enable_1s();
- *       while(1) {
- *           if(task1_alive && task2_alive) {
- *               wdt_reset();
- *               task1_alive = 0;
- *               task2_alive = 0;
- *           }
- *           task1(); task1_alive = 1;
- *           task2(); task2_alive = 1;
- *       }
- *   }
- *
- * 3. Graceful Degradation:
- *
- *   void main(void) {
- *       if(MCUCSR & (1<<WDRF)) {
- *           enter_safe_mode();  // Reduced functionality
- *       }
- *       MCUCSR &= ~(1<<WDRF);
- *       wdt_enable_1s();
- *       // Normal operation
- *   }
- *
- * CRITICAL WATCHDOG CONSIDERATIONS:
- * 1. Choose timeout > worst-case task execution time
- * 2. NEVER disable watchdog in production code
- * 3. Always clear WDRF before disabling WDT
- * 4. wdt_reset() only in known-good code paths
- * 5. Avoid wdt_reset() in loops (defeats purpose)
- * 6. Test recovery paths thoroughly
- * 7. Log watchdog resets for debugging
- *
- * COMMON WATCHDOG TIMEOUTS:
- * - Real-time control: 100-500ms
- * - Sensor reading loops: 0.5-2s
- * - Communication protocols: 1-2s
- * - Long calculations: 2s max
- *
- * =============================================================================
- *
- * FAIL-SAFE CONCEPTS:
- * - Watchdog as last line of defense
- * - Critical section protection and monitoring
- * - Graceful degradation strategies
- * - Recovery from known bad states
- * - Heartbeat monitoring systems
- *
- * APPLICATION SCENARIOS:
- * - Critical control systems (medical devices)
- * - Unattended operations (remote monitoring)
- * - Safety-critical applications (automotive, aerospace)
- * - Long-running embedded systems (IoT devices)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Critical Task Monitoring
- * - Demo 2: Error Detection and Recovery
- * - Demo 3: Graceful Degradation
- * - Demo 4: Fault-Tolerant System Design
- *
- * =============================================================================
+ * DEMOS: Watchdog timer configuration, system reset scenarios, fail-safe programming
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -705,7 +503,7 @@ void demo4_recovery_strategy(void)
             wdt_reset();
         }
 
-        puts_USART1("\r\n✓ System recovered successfully!\r\n");
+        puts_USART1("\r\n??System recovered successfully!\r\n");
 
         // Clear error state
         eeprom_write_byte((uint8_t *)EEPROM_LAST_ERROR, ERROR_NONE);
@@ -737,9 +535,9 @@ void demo4_recovery_strategy(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Watchdog Fail-Safe - ATmega128       ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Watchdog Fail-Safe - ATmega128       ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Heartbeat Monitoring\r\n");
@@ -771,7 +569,7 @@ int main(void)
     // Check reset source
     if (MCUCSR & (1 << WDRF))
     {
-        puts_USART1("⚠ RECOVERED FROM WATCHDOG RESET!\r\n");
+        puts_USART1("??RECOVERED FROM WATCHDOG RESET!\r\n");
         health.recovery_attempts++;
 
         PORTC = 0xFF;

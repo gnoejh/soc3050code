@@ -1,172 +1,12 @@
-/*
- * ============================================================================
- * ATMEGA128 INLINE ASSEMBLY - COMPREHENSIVE TEACHING MODULE
- * ============================================================================
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * TOPIC: Inline Assembly Programming in C
- * TARGET: ATmega128 @ 16MHz
+﻿/*
+ * ==============================================================================
+ * INLINE ASSEMBLY - DEMO CODE
+ * ==============================================================================
+ * PROJECT: Inline_Assembly
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * This module teaches inline assembly language integration within C programs.
- * Students learn AVR assembly instructions, register usage, constraints, and
- * how to write efficient low-level code while maintaining C structure.
- *
- * ============================================================================
- * EDUCATIONAL OBJECTIVES
- * ============================================================================
- * 1. Understand inline assembly syntax: __asm__ volatile ("code" : outputs : inputs : clobbers)
- * 2. Learn AVR instruction set (load, store, arithmetic, logic, branch, I/O)
- * 3. Master register constraints (r, d, a, b, w, x, y, z, I, M)
- * 4. Practice direct hardware manipulation (PORT, DDR, PIN registers)
- * 5. Understand when to use assembly vs C (performance, control, size)
- * 6. Implement interrupt service routines with assembly
- * 7. Optimize critical code sections
- * 8. Debug assembly code using disassembly and register inspection
- *
- * ============================================================================
- * DOCUMENTATION REFERENCE
- * ============================================================================
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Instruction set summary (pages 321-334)
- * - Register descriptions (pages 6-12)
- *
- * ============================================================================
- * INLINE ASSEMBLY SYNTAX OVERVIEW
- * ============================================================================
- * Basic Template:
- *   __asm__ volatile (
- *       "instruction operands"    // Assembly code
- *       : "=r" (output_var)       // Output operands (optional)
- *       : "r" (input_var)         // Input operands (optional)
- *       : "r16", "r17"            // Clobber list (optional)
- *   );
- *
- * Constraint Characters:
- *   =   Write-only output
- *   +   Read-write output
- *   r   Any general register (r0-r31)
- *   d   Upper registers (r16-r31) - can use immediate operations
- *   a   Specific register pairs (r24:r25, r26:r27, r28:r29, r30:r31)
- *   b   Base pointer register pair (Y: r28:r29, Z: r30:r31)
- *   w   Special register pair (r24:r25)
- *   x   X pointer (r26:r27)
- *   y   Y pointer (r28:r29)
- *   z   Z pointer (r30:r31)
- *   I   6-bit immediate constant (0-63)
- *   M   8-bit immediate constant (0-255)
- *
- * Modifiers:
- *   %0, %1  Refers to operands in order
- *   %%      Escapes % character
- *
- * Clobber List:
- *   List registers modified by assembly code
- *   Tells compiler not to use these registers
- *
- * ============================================================================
- * AVR INSTRUCTION SET - MOST COMMONLY USED
- * ============================================================================
- *
- * DATA TRANSFER:
- *   LDI  Rd, K      Load immediate (Rd ← K)
- *   MOV  Rd, Rr     Move register (Rd ← Rr)
- *   IN   Rd, P      Input from port (Rd ← I/O[P])
- *   OUT  P, Rr      Output to port (I/O[P] ← Rr)
- *   LDS  Rd, k      Load direct from SRAM (Rd ← SRAM[k])
- *   STS  k, Rr      Store direct to SRAM (SRAM[k] ← Rr)
- *   LD   Rd, X/Y/Z  Load indirect (Rd ← [X/Y/Z])
- *   ST   X/Y/Z, Rr  Store indirect ([X/Y/Z] ← Rr)
- *
- * ARITHMETIC:
- *   ADD  Rd, Rr     Add (Rd ← Rd + Rr)
- *   ADC  Rd, Rr     Add with carry
- *   SUBI Rd, K      Subtract immediate (Rd ← Rd - K)
- *   SUB  Rd, Rr     Subtract (Rd ← Rd - Rr)
- *   SBC  Rd, Rr     Subtract with carry
- *   INC  Rd         Increment (Rd ← Rd + 1)
- *   DEC  Rd         Decrement (Rd ← Rd - 1)
- *   NEG  Rd         Negate (Rd ← -Rd)
- *
- * LOGIC:
- *   AND  Rd, Rr     Logical AND (Rd ← Rd & Rr)
- *   ANDI Rd, K      AND with immediate
- *   OR   Rd, Rr     Logical OR (Rd ← Rd | Rr)
- *   ORI  Rd, K      OR with immediate
- *   EOR  Rd, Rr     Exclusive OR (Rd ← Rd ^ Rr)
- *   COM  Rd         One's complement (Rd ← ~Rd)
- *
- * BIT OPERATIONS:
- *   SBI  P, b       Set bit in I/O (I/O[P].b ← 1)
- *   CBI  P, b       Clear bit in I/O (I/O[P].b ← 0)
- *   LSL  Rd         Logical shift left (Rd ← Rd << 1)
- *   LSR  Rd         Logical shift right (Rd ← Rd >> 1)
- *   ROL  Rd         Rotate left through carry
- *   ROR  Rd         Rotate right through carry
- *   SWAP Rd         Swap nibbles (high ↔ low 4 bits)
- *
- * BRANCH:
- *   RJMP k          Relative jump
- *   RCALL k         Relative call
- *   RET             Return from subroutine
- *   RETI            Return from interrupt
- *   BREQ label      Branch if equal (Z=1)
- *   BRNE label      Branch if not equal (Z=0)
- *   BRLT label      Branch if less than (S=1)
- *   BRGE label      Branch if greater or equal (S=0)
- *
- * CONTROL:
- *   NOP             No operation (1 cycle delay)
- *   SEI             Set global interrupt enable
- *   CLI             Clear global interrupt enable
- *   SLEEP           Enter sleep mode
- *   WDR             Watchdog reset
- *
- * ============================================================================
- * MODULE STRUCTURE - 12 PROGRESSIVE DEMOS
- * ============================================================================
- * Demo 1:  Basic Inline Assembly       - NOP delays, simple instructions
- * Demo 2:  GPIO with Assembly           - Port manipulation (SBI, CBI, OUT)
- * Demo 3:  Arithmetic Operations        - ADD, SUB, INC, DEC with variables
- * Demo 4:  Bitwise Logic                - AND, OR, XOR, shifts
- * Demo 5:  Register Constraints         - Using different constraint types
- * Demo 6:  Pointer Operations           - X, Y, Z pointer registers
- * Demo 7:  Interrupt with Assembly      - ISR using inline assembly
- * Demo 8:  UART with Assembly           - Serial communication low-level
- * Demo 9:  Timer Configuration          - Timer registers via assembly
- * Demo 10: ADC Reading                  - Analog input with assembly
- * Demo 11: Optimization Comparison      - C vs Assembly performance
- * Demo 12: Advanced Techniques          - Macro assembly, naked functions
- *
- * TEACHING PROGRESSION (4 weeks):
- * Week 1: Demos 1-3 (Basic syntax, GPIO, arithmetic)
- * Week 2: Demos 4-6 (Logic, constraints, pointers)
- * Week 3: Demos 7-9 (Interrupts, UART, timers)
- * Week 4: Demos 10-12 (ADC, optimization, advanced)
- *
- * ============================================================================
- * USAGE INSTRUCTIONS FOR INSTRUCTORS
- * ============================================================================
- * 1. Build project: Use "Build Current Project" task
- * 2. Demo selection: Uncomment ONE demo_XX() call in main() function
- * 3. Hardware setup: LEDs on PORTB, Buttons on PORTD (optional UART)
- * 4. Student exercises: Modify assembly code, add instructions, measure cycles
- * 5. Assessment: See DOCUMENTATION_SUMMARY.md for rubrics
- *
- * FILES IN THIS PROJECT:
- * - Main.c: This file - 12 teaching demos
- * - config.h: Hardware configuration and includes
- * - ASSEMBLY_QUICK_REFERENCE.md: Student reference (instruction set, constraints)
- * - ASSEMBLY_FLOW_DIAGRAMS.md: Visual aids (register usage, inline asm flow)
- * - DOCUMENTATION_SUMMARY.md: Instructor guide with lesson plans
- *
- * ============================================================================
- * MEMORY OPTIMIZATION: PROGMEM USAGE
- * ============================================================================
- * All constant strings stored in PROGMEM (flash memory) to save SRAM.
- * ATmega128: 128KB flash, 4KB SRAM - SRAM is precious!
- *
- * ============================================================================
+ * DEMOS: AVR assembly language examples, inline assembly syntax, register operations
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -270,8 +110,8 @@ static void demo_01_basic_inline_assembly(void)
         // This demonstrates OUT instruction for direct port access
 
         __asm__ volatile(
-            "ldi r16, 0xFE \n\t"       // Load immediate: r16 ← 0xFE
-            "out %0, r16   \n\t"       // Output to PORTB: PORTB ← r16
+            "ldi r16, 0xFE \n\t"       // Load immediate: r16 ??0xFE
+            "out %0, r16   \n\t"       // Output to PORTB: PORTB ??r16
             :                          // No outputs
             : "I"(_SFR_IO_ADDR(PORTB)) // Input: PORTB address
             : "r16"                    // Clobber: r16 is modified
@@ -280,7 +120,7 @@ static void demo_01_basic_inline_assembly(void)
         _delay_ms(500); // Visible delay (C function for comparison)
 
         __asm__ volatile(
-            "ldi r16, 0xFF \n\t" // Load immediate: r16 ← 0xFF
+            "ldi r16, 0xFF \n\t" // Load immediate: r16 ??0xFF
             "out %0, r16   \n\t" // Output to PORTB
             :
             : "I"(_SFR_IO_ADDR(PORTB))
@@ -314,7 +154,7 @@ static void demo_01_basic_inline_assembly(void)
 // - Understand I/O register addressing
 //
 // STUDENT EXPERIMENTS:
-// 1. Modify bit positions (LED0 → LED7)
+// 1. Modify bit positions (LED0 ??LED7)
 // 2. Add button input reading with IN instruction
 // 3. Measure execution time difference: C vs assembly
 //
@@ -347,10 +187,10 @@ static void demo_02_gpio_with_assembly(void)
         puts_USART1(" ");
 
         __asm__ volatile(
-            "cbi %0, %1 \n\t" // Clear Bit in I/O: PORTB.PB1 ← 0
+            "cbi %0, %1 \n\t" // Clear Bit in I/O: PORTB.PB1 ??0
             "nop        \n\t" // Small delay for visibility
             "nop        \n\t"
-            "sbi %0, %1 \n\t" // Set Bit in I/O: PORTB.PB1 ← 1
+            "sbi %0, %1 \n\t" // Set Bit in I/O: PORTB.PB1 ??1
             :
             : "I"(_SFR_IO_ADDR(PORTB)), // Port address
               "I"(PB1)                  // Bit number
@@ -800,7 +640,7 @@ int main(void)
     // ========================================================================
     /*
      * EXERCISE 1: NOP Timing
-     * - Calculate how many NOP instructions needed for 1µs, 10µs, 100µs @ 16MHz
+     * - Calculate how many NOP instructions needed for 1쨉s, 10쨉s, 100쨉s @ 16MHz
      * - Implement precise delays using only NOP
      * - Verify with oscilloscope
      *
@@ -816,7 +656,7 @@ int main(void)
      *
      * EXERCISE 4: Bit Manipulation
      * - Count set bits in byte (popcount)
-     * - Reverse bit order (0b10110010 → 0b01001101)
+     * - Reverse bit order (0b10110010 ??0b01001101)
      * - Find first set bit (FFS)
      *
      * EXERCISE 5: Optimization Challenge

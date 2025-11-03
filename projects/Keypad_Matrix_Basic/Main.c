@@ -1,62 +1,12 @@
-/*
- * =============================================================================
- * MATRIX KEYPAD INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * KEYPAD MATRIX - DEMO CODE
+ * ==============================================================================
  * PROJECT: Keypad_Matrix_Basic
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of matrix keypad scanning and input processing.
- * Students learn efficient input methods and debouncing techniques.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master matrix scanning algorithms and timing
- * 2. Learn row/column scanning techniques
- * 3. Practice key debouncing and state management
- * 4. Implement multiple key detection systems
- * 5. Compare polling vs interrupt-based input methods
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 4x4 matrix keypad with standard layout
- * - Row and column connections to GPIO ports
- * - LCD display for key feedback
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Pull-up resistors (page 64)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Matrix Scanning
- * - Demo 2: Key Debouncing Implementation
- * - Demo 3: Multiple Key Detection
- * - Demo 4: Key Combination Processing
- * - Demo 5: Advanced Input Validation
- *
- * =============================================================================
- */
-*[*][0][#][D] *
-    *Connections : *Rows(outputs with pull - up) : *-Row 0 → PA0
-    * -Row 1 → PA1
-    * -Row 2 → PA2
-    * -Row 3 → PA3
-    *
-    *Columns(inputs with pull - up) : *-Col 0 → PA4
-    * -Col 1 → PA5
-    * -Col 2 → PA6
-    * -Col 3 → PA7
-    *
-    *SCANNING PRINCIPLE : *1. Set one row LOW,
-    others HIGH
-        * 2. Read all columns
-        * 3. If column is LOW,
-    key at(row, col) is pressed
- * 4. Repeat for all rows
+ * DEMOS: Matrix scanning, key detection, input processing
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -339,7 +289,7 @@ void demo2_test_pattern(void)
         if (key == test_sequence[seq_index])
         {
             // Correct key!
-            puts_USART1("  ✓ Correct!\r\n");
+            puts_USART1("  ??Correct!\r\n");
             seq_index++;
 
             // Progress LEDs
@@ -354,7 +304,7 @@ void demo2_test_pattern(void)
         else
         {
             // Wrong key
-            puts_USART1("  ✗ Wrong key!\r\n");
+            puts_USART1("  ??Wrong key!\r\n");
             lcd_clear();
             lcd_puts_at(0, 0, "Wrong! Try:");
             sprintf(buf, "%c", test_sequence[seq_index]);
@@ -381,7 +331,7 @@ void demo2_test_pattern(void)
     lcd_puts_at(0, 0, "Test Complete!");
     lcd_puts_at(1, 0, "All keys OK");
 
-    puts_USART1("\r\n✓ Keypad test PASSED!\r\n");
+    puts_USART1("\r\n??Keypad test PASSED!\r\n");
     PORTC = 0xFF;
     _delay_ms(2000);
 
@@ -550,9 +500,9 @@ void demo4_frequency_test(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Keypad Matrix Scanning - ATmega128  ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Keypad Matrix Scanning - ATmega128  ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Key Detection\r\n");

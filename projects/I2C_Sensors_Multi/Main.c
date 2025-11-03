@@ -1,131 +1,12 @@
-/*
- * =============================================================================
- * I2C MULTI-SENSOR INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * I2C MULTI-SENSOR - DEMO CODE
+ * ==============================================================================
  * PROJECT: I2C_Sensors_Multi
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of interfacing multiple I2C sensors simultaneously.
- * Students learn sensor integration, data fusion, and multi-device I2C communication.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master multi-device I2C communication protocols
- * 2. Learn sensor data fusion and processing techniques
- * 3. Practice different data format handling (raw, scaled, multi-byte)
- * 4. Implement sensor calibration and validation
- * 5. Understand I2C addressing and arbitration
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - Multiple I2C sensors: MPU6050, BMP180/280, HMC5883L, DS18B20
- * - I2C connections: PD0 (SCL), PD1 (SDA) with 4.7K pull-ups
- * - LCD display for sensor data visualization
- * - LEDs for sensor status indication
- * - Serial connection for data logging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - TWI/I2C section (pages 195-205)
- * - TWI registers (pages 202-205)
- * - Multi-master I2C (page 197)
- *
- * =============================================================================
- * TWI/I2C CONTROL REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: TWCR (TWI Control Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: TWINT  TWEA  TWSTA  TWSTO  TWWC   TWEN   -     TWIE
- *
- * TWINT (bit 7): TWI Interrupt Flag - Must be 1 before next operation
- * TWEA (bit 6): Enable ACK (1=ACK, 0=NACK for received data)
- * TWSTA (bit 5): Send START condition
- * TWSTO (bit 4): Send STOP condition
- * TWEN (bit 2): Enable TWI interface
- * TWIE (bit 0): Enable TWI interrupt
- *
- * REGISTER 2: TWSR (TWI Status Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  TWS7   TWS6   TWS5   TWS4   TWS3   -     TWPS1  TWPS0
- *
- * TWS7:3: Status codes (mask with 0xF8)
- *         0x08=START, 0x18=SLA+W ACK, 0x40=SLA+R ACK, 0x28=Data ACK
- * TWPS1:0: Prescaler (00=1, 01=4, 10=16, 11=64)
- *
- * REGISTER 3: TWDR (TWI Data Register)
- * - Data byte to transmit or last received byte
- * - Device address format: (7bit_addr << 1) | R/W_bit
- *
- * REGISTER 4: TWBR (TWI Bit Rate Register)
- * SCL_freq = F_CPU / (16 + 2*TWBR*Prescaler)
- * For 100kHz @ 16MHz: TWBR=72, Prescaler=1
- *
- * REGISTER 5: TWAR (TWI Address Register)
- * Slave address (not needed for master-only applications)
- *
- * MULTI-SENSOR I2C ADDRESSING:
- * Each sensor has unique 7-bit address:
- *   MPU6050:     0x68 (AD0=0) or 0x69 (AD0=1)
- *   BMP180/280:  0x77 (SDO=1) or 0x76 (SDO=0)
- *   HMC5883L:    0x1E (fixed)
- *   DS18B20:     0x48-0x4F (configurable via address pins)
- *
- * I2C BUS SHARING:
- * - All sensors share same SCL/SDA lines
- * - Master selects device by unique address
- * - Only addressed device responds (others ignore)
- * - Pull-up resistors (4.7K) on both SCL and SDA
- * - Bus capacitance limits number of devices (~400pF max)
- *
- * TYPICAL MULTI-SENSOR READ SEQUENCE:
- *
- *   Read MPU6050 Accelerometer (0x68):
- *     START → SLA+W(0xD0) → Reg(0x3B) → START → SLA+R(0xD1) →
- *     Read 6 bytes (AccX_H, AccX_L, AccY_H, AccY_L, AccZ_H, AccZ_L) → STOP
- *
- *   Read BMP280 Temperature (0x76):
- *     START → SLA+W(0xEC) → Reg(0xFA) → START → SLA+R(0xED) →
- *     Read 3 bytes (Temp_MSB, Temp_LSB, Temp_XLSB) → STOP
- *
- *   Read HMC5883L Magnetometer (0x1E):
- *     START → SLA+W(0x3C) → Reg(0x03) → START → SLA+R(0x3D) →
- *     Read 6 bytes (X_H, X_L, Z_H, Z_L, Y_H, Y_L) → STOP
- *
- * INITIALIZATION SEQUENCE FOR MULTI-SENSOR SYSTEM:
- *
- *   void sensors_init(void) {
- *       // Initialize I2C bus
- *       TWBR = 72;           // 100kHz @ 16MHz
- *       TWSR = 0x00;         // Prescaler = 1
- *       TWCR = (1<<TWEN);    // Enable TWI
- *
- *       // Initialize each sensor
- *       mpu6050_init();      // Configure gyro/accel ranges
- *       bmp280_init();       // Configure oversampling
- *       hmc5883l_init();     // Configure gain settings
- *   }
- *
- * =============================================================================
- *
- * SUPPORTED SENSORS:
- * - MPU6050: 6-axis Gyro/Accelerometer (0x68/0x69)
- * - BMP180/BMP280: Temperature/Pressure (0x77/0x76)
- * - HMC5883L: 3-axis Magnetometer (0x1E)
- * - DS18B20: Temperature Sensor (0x48-0x4F)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Individual Sensor Interface
- * - Demo 2: Multi-Sensor Data Acquisition
- * - Demo 3: Sensor Data Fusion
- * - Demo 4: Environmental Monitoring System
- *
- * =============================================================================
+ * DEMOS: Multiple I2C devices, sensor reading, data aggregation
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -165,7 +46,7 @@ typedef struct
 
 typedef struct
 {
-    int32_t temperature; // 0.1°C resolution
+    int32_t temperature; // 0.1째C resolution
     int32_t pressure;    // Pa
     uint8_t present;
 } bmp180_data_t;
@@ -541,7 +422,7 @@ void demo2_realtime_display(void)
         {
             mpu6050_read_all();
 
-            // Convert to g (±2g range, 16384 LSB/g)
+            // Convert to g (짹2g range, 16384 LSB/g)
             float ax = mpu6050.accel_x / 16384.0;
             float ay = mpu6050.accel_y / 16384.0;
             float az = mpu6050.accel_z / 16384.0;
@@ -549,9 +430,9 @@ void demo2_realtime_display(void)
             sprintf(buf, "\rAccel: X=%+.2fg Y=%+.2fg Z=%+.2fg  ", ax, ay, az);
             puts_USART1(buf);
 
-            // Temperature (340 LSB/°C, 0 at 36.53°C)
+            // Temperature (340 LSB/째C, 0 at 36.53째C)
             float temp = (mpu6050.temperature / 340.0) + 36.53;
-            sprintf(buf, "Temp: %.1f°C  ", temp);
+            sprintf(buf, "Temp: %.1f째C  ", temp);
             puts_USART1(buf);
         }
 
@@ -559,7 +440,7 @@ void demo2_realtime_display(void)
         if (bmp180.present)
         {
             bmp180_read_temperature();
-            sprintf(buf, "BMP: %.1f°C  ", bmp180.temperature / 10.0);
+            sprintf(buf, "BMP: %.1f째C  ", bmp180.temperature / 10.0);
             puts_USART1(buf);
         }
 
@@ -715,9 +596,9 @@ void demo4_data_logging(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   I2C Multi-Sensor - ATmega128        ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  I2C Multi-Sensor - ATmega128        ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Sensor Discovery\r\n");

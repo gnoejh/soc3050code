@@ -1,43 +1,12 @@
-/*
- * Wake-up Sources and Power Optimization
- * ATmega128 Educational Framework
+﻿/*
+ * ==============================================================================
+ * POWER WAKEUP OPTIMIZATION - DEMO CODE
+ * ==============================================================================
+ * PROJECT: Power_Wakeup_Optimization
+ * See Slide.md for complete theory and technical details
  *
- * LEARNING OBJECTIVES:
- * - Master all wake-up sources
- * - Optimize power consumption
- * - Implement event-driven architecture
- * - Practice advanced power techniques
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Sleep modes (pages 36-40)
- * - Wake-up sources (pages 36-40, 76-81)
- * - Power consumption (page 321-324)
- * - External Interrupts (pages 76-81)
- *
- * WAKE-UP SOURCES (ATmega128):
- * - External Interrupts (INT0-INT7)
- * - Pin Change Interrupts
- * - Timer Interrupts (Timer0/1/2/3)
- * - UART RX Complete
- * - SPI Transfer Complete
- * - TWI Address Match
- * - ADC Conversion Complete
- * - Watchdog Timer
- *
- * OPTIMIZATION STRATEGIES:
- * - Use appropriate sleep mode per scenario
- * - Minimize active time
- * - Disable unused peripherals
- * - Use internal pull-ups
- * - Optimize clock prescaler
- * - BOD (Brown-Out Detection) settings
- *
- * POWER BUDGET EXAMPLE:
- * - Active 1ms every 1s: ~15 mA × 0.001 = 15 µA avg
- * - Sleep 999ms: ~2 µA × 0.999 = 2 µA avg
- * - Total average: ~17 µA
- * - Battery life (CR2032 220mAh): ~1.4 years
+ * DEMOS: Sleep modes, wakeup sources, power consumption optimization
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -569,7 +538,7 @@ void demo4_power_budget(void)
 
     // Current consumption estimates (mA)
     float active_current = 15.0; // ~15 mA active
-    float sleep_current = 0.002; // ~2 µA in power-down
+    float sleep_current = 0.002; // ~2 쨉A in power-down
 
     float avg_current = (active_current * duty_cycle) +
                         (sleep_current * (1.0 - duty_cycle));
@@ -579,9 +548,9 @@ void demo4_power_budget(void)
     float battery_life_days = battery_life_hours / 24.0;
 
     // Display results
-    puts_USART1("\r\n╔════════════════════════════════════╗\r\n");
-    puts_USART1("║     Power Budget Analysis         ║\r\n");
-    puts_USART1("╚════════════════════════════════════╝\r\n\r\n");
+    puts_USART1("\r\n?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??    Power Budget Analysis         ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n\r\n");
 
     char buf[80];
     sprintf(buf, "Cycle Time:     %u ms\r\n", cycle_ms);
@@ -644,9 +613,9 @@ void demo4_power_budget(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Wake-up & Optimization - ATmega128   ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Wake-up & Optimization - ATmega128   ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] External Interrupt Wake-up\r\n");

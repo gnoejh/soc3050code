@@ -1,82 +1,11 @@
 /*
- * =============================================================================
- * GRAPHICS LCD (GLCD) PROGRAMMING - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
- * PROJECT: Graphics_Display
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
- *
- * PURPOSE:
- * Educational demonstration of KS0108-based Graphic LCD (128x64) programming.
- * Students learn coordinate systems, dual-controller architecture, drawing
- * primitives, text rendering, and page-based memory addressing.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Understand GLCD coordinate system (x=0..63 rows, y=0..127 columns)
- * 2. Learn dual-controller architecture (CS1: left half, CS2: right half)
- * 3. Master page-based memory organization (8 pages of 128 columns)
- * 4. Practice drawing primitives (pixels, lines, rectangles, circles)
- * 5. Implement text rendering with 5x7 font (20 chars × 8 rows grid)
- * 6. Compare hardware timing vs simulator behavior
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - KS0108 128x64 Graphic LCD (dual-controller)
- * - Contrast potentiometer for display adjustment
- * - 5V power supply
- *
+ * Graphics_Display - KS0108 Graphic LCD (128x64) Programming
+ * 
+ * Demonstrates: Dual-controller GLCD, pixel/line/rectangle/circle drawing,
+ * text rendering with 5x7 font, page-based memory addressing.
+ * 
  * DOCUMENTATION REFERENCE:
  * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Timing specifications (pages 301-320)
- *
- * COORDINATE SYSTEM (CRITICAL FOR STUDENTS):
- * - Screen: 128 columns (y-axis) × 64 rows (x-axis)
- * - Origin: Top-left corner (x=0, y=0)
- * - X-axis (rows): 0..63 (vertical, top to bottom)
- * - Y-axis (cols): 0..127 (horizontal, left to right)
- * - Dual controllers: CS1 controls y=0..63 (left), CS2 controls y=64..127 (right)
- *
- * PAGE-BASED MEMORY:
- * - 8 pages (0..7), each page = 8 pixels tall
- * - Page 0: rows 0-7,   Page 1: rows 8-15,  ...,  Page 7: rows 56-63
- * - Each page has 128 columns (bytes)
- * - Writing 0xFF to page 0, column 10 → lights up 8 vertical pixels
- *
- * TEXT GRID:
- * - 20 characters wide (each char = 6 pixels including spacing)
- * - 8 rows tall (each row = 8 pixels, 5x7 font + 1 pixel spacing)
- * - lcd_xy(row, col): row 0..7, col 0..19
- *
- * LEARNING PROGRESSION (10 Demos):
- * - Demo 1: Text Header (basic text output)
- * - Demo 2: Single Pixel Drawing (GLCD_Dot)
- * - Demo 3: Page Addressing (understand memory layout)
- * - Demo 4: Line Drawing (Bresenham's algorithm)
- * - Demo 5: Rectangle Drawing (filled and outline)
- * - Demo 6: Circle Drawing (midpoint circle algorithm)
- * - Demo 7: Text Pages (left/right controller split)
- * - Demo 8: Radiating Lines (center-out patterns)
- * - Demo 9: Nested Shapes (concentric patterns)
- * - Demo 10: Grid Pattern (spacing and alignment)
- *
- * HOW TO USE IN CLASS:
- * 1. Uncomment ONE demo in main() to focus lesson
- * 2. Build with: cli-build-project.ps1 -ProjectDir Graphics_Display
- * 3. Run in SimulIDE 0.4.15: tools/simulide/Simulator0415.simu
- * 4. Observe dual-controller split and coordinate mapping
- * 5. Modify coordinates/parameters to see effects
- * 6. Use serial debug output (if enabled) to trace execution
- *
- * SIMULATOR NOTES:
- * - SimulIDE 0.4.15 required (newer versions have display issues)
- * - Timing delays may differ from hardware
- * - Use for visual verification and teaching
- * - Test on real hardware for production code
- *
- * =============================================================================
  */
 
 #include <avr/io.h>

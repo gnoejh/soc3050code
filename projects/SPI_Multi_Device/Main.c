@@ -1,142 +1,12 @@
-/*
- * SPI Multi-Device Bus
- * ATmega128 Educational Framework
+﻿/*
+ * ==============================================================================
+ * SPI MULTI-DEVICE - DEMO CODE
+ * ==============================================================================
+ * PROJECT: SPI_Multi_Device
+ * See Slide.md for complete theory and technical details
  *
- * LEARNING OBJECTIVES:
- * - Manage multiple SPI devices on shared bus
- * - Implement proper chip select sequencing
- * - Handle devices with different SPI modes/speeds
- * - Practice bus arbitration and device addressing
- *
- * HARDWARE SETUP:
- * - Shared SPI bus: SCK (PB1), MOSI (PB2), MISO (PB3)
- * - Device 1 CS: PB0 (e.g., EEPROM 25LC256)
- * - Device 2 CS: PB4 (e.g., SD Card or second EEPROM)
- * - Device 3 CS: PB5 (e.g., SPI DAC or ADC)
- * - UART for monitoring and control
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - SPI section (pages 150-161)
- * - SPI registers (pages 158-161)
- * - I/O Ports (pages 62-75)
- *
- * =============================================================================
- * SPI CONTROL REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: SPCR (SPI Control Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  SPIE   SPE   DORD   MSTR  CPOL   CPHA   SPR1   SPR0
- *
- * Key bits for multi-device operation:
- * SPE (bit 6): Enable SPI (must be 1)
- * MSTR (bit 4): Master mode (must be 1)
- * CPOL/CPHA (bits 3-2): Configure for each device's requirements
- * SPR1:0 (bits 1-0): Speed selection (device-dependent)
- *
- * REGISTER 2: SPSR (SPI Status Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  SPIF  WCOL   -      -      -      -      -     SPI2X
- *
- * SPIF (bit 7): Transfer complete - Check before reading SPDR
- * SPI2X (bit 0): Speed doubler
- *
- * REGISTER 3: SPDR (SPI Data Register)
- * Bidirectional buffer for SPI data transfer
- *
- * MULTI-DEVICE MODE CONFIGURATIONS:
- *
- *   Device 1 (EEPROM 25LC256):
- *     Mode 0: CPOL=0, CPHA=0
- *     Speed: F_CPU/4 (4MHz @ 16MHz)
- *     SPCR = (1<<SPE)|(1<<MSTR);
- *     SPSR |= (1<<SPI2X);
- *
- *   Device 2 (SD Card):
- *     Mode 0: CPOL=0, CPHA=0
- *     Init Speed: F_CPU/128 (125kHz @ 16MHz) - Required for initialization
- *     Full Speed: F_CPU/2 (8MHz @ 16MHz) - After initialization
- *     Init: SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR1)|(1<<SPR0);
- *     Fast: SPCR = (1<<SPE)|(1<<MSTR); SPSR |= (1<<SPI2X);
- *
- *   Device 3 (MCP4821 DAC):
- *     Mode 0 or 1: CPOL=0, CPHA=0/1
- *     Speed: F_CPU/2 (8MHz max)
- *     SPCR = (1<<SPE)|(1<<MSTR);
- *     SPSR |= (1<<SPI2X);
- *
- * DEVICE SWITCHING SEQUENCE:
- *
- *   void select_device(uint8_t device, uint8_t mode, uint8_t speed) {
- *       // Deselect all devices first
- *       PORTB |= (1<<CS1_PIN)|(1<<CS2_PIN)|(1<<CS3_PIN);
- *
- *       // Reconfigure SPI for this device
- *       SPCR = (1<<SPE)|(1<<MSTR) | mode | speed;
- *
- *       // Select target device
- *       switch(device) {
- *           case 1: PORTB &= ~(1<<CS1_PIN); break;
- *           case 2: PORTB &= ~(1<<CS2_PIN); break;
- *           case 3: PORTB &= ~(1<<CS3_PIN); break;
- *       }
- *   }
- *
- * CRITICAL MULTI-DEVICE RULES:
- * 1. Only ONE CS low at a time (prevents bus contention)
- * 2. Deselect device BEFORE reconfiguring SPI mode
- * 3. Small delay after CS transition before data transfer
- * 4. Check each device's max SPI speed specification
- * 5. Use slowest common speed if devices share config
- *
- * BUS SHARING ARCHITECTURE:
- *
- *        ATmega128 Master
- *        ┌─────────────┐
- *    SCK─┤PB1      CS1─┼─PB0─┐
- *   MOSI─┤PB2      CS2─┼─PB4─┼─┐
- *   MISO─┤PB3      CS3─┼─PB5─┼─┼─┐
- *        └─────────────┘     │ │ │
- *                            │ │ │
- *        ┌───────────────────┘ │ │
- *        │   ┌─────────────────┘ │
- *        │   │   ┌───────────────┘
- *        ▼   ▼   ▼
- *       ┌─┐ ┌─┐ ┌─┐
- *       │D│ │D│ │D│  (Devices share SCK, MOSI, MISO)
- *       │1│ │2│ │3│  (Each has unique CS)
- *       └─┘ └─┘ └─┘
- *
- * TIMING CONSIDERATIONS:
- * - CS setup time: 50-100ns (usually negligible)
- * - CS hold time: 50-100ns after last clock
- * - Inter-byte gap: Device-dependent (check datasheet)
- * - Device switching: Allow 1µs between deselect/select
- *
- * INITIALIZATION FOR 3-DEVICE BUS:
- *
- *   void spi_multi_init(void) {
- *       // Configure pins
- *       DDRB |= (1<<PB1)|(1<<PB2)|(1<<CS1_PIN)|(1<<CS2_PIN)|(1<<CS3_PIN);
- *       DDRB &= ~(1<<PB3);  // MISO input
- *
- *       // All CS high (deselected)
- *       PORTB |= (1<<CS1_PIN)|(1<<CS2_PIN)|(1<<CS3_PIN);
- *
- *       // Default SPI config (will change per device)
- *       SPCR = (1<<SPE)|(1<<MSTR);
- *   }
- *
- * =============================================================================
- *
- * SPI BUS CONCEPTS:
- * - Shared Bus: Multiple devices share MOSI, MISO, SCK
- * - Individual CS: Each device has unique chip select
- * - Bus Contention: Only one device active at a time
- * - Mode Switching: Reconfigure SPI for device requirements
+ * DEMOS: Multiple SPI slaves, chip select management, device coordination
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -489,7 +359,7 @@ void demo4_interactive_control(void)
 
                             uint8_t received = spi_transfer(value);
                             char msg[80];
-                            sprintf(msg, "→ Sent: 0x%02X  ← Received: 0x%02X\r\n",
+                            sprintf(msg, "??Sent: 0x%02X  ??Received: 0x%02X\r\n",
                                     value, received);
                             puts_USART1(msg);
                         }
@@ -548,9 +418,9 @@ void demo4_interactive_control(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   SPI MULTI-DEVICE BUS - ATmega128    ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  SPI MULTI-DEVICE BUS - ATmega128    ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Device Information\r\n");

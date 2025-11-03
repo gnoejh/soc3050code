@@ -1,57 +1,12 @@
-/*
- * =============================================================================
- * KEYPAD CALCULATOR APPLICATION - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * KEYPAD CALCULATOR - DEMO CODE
+ * ==============================================================================
  * PROJECT: Keypad_Calculator_App
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of interactive calculator system using matrix keypad.
- * Students learn state machine programming and practical user interface design.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master state machine design for user interfaces
- * 2. Learn multi-digit number entry and validation
- * 3. Practice arithmetic operations and display formatting
- * 4. Implement error handling and user feedback
- * 5. Build practical embedded applications
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 4x4 matrix keypad with calculator layout
- * - Rows (PA0-PA3) configured as outputs
- * - Columns (PA4-PA7) configured as inputs with pull-ups
- * - LCD display for calculator interface
- * - LEDs for operation status
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Pull-up resistors (page 64)
- *
- * CALCULATOR KEYPAD LAYOUT:
- *   [1] [2] [3] [+]  (A = Add)
- *   [4] [5] [6] [-]  (B = Subtract)
- *   [7] [8] [9] [×]  (C = Multiply)
- *   [C] [0] [=] [÷]  (* = Clear, # = Equals, D = Divide)
- *
- * FEATURES:
- * - Basic arithmetic operations (+, -, ×, ÷)
- * - Multi-digit number entry with validation
- * - Error handling (division by zero, overflow)
- * - Clear and reset functions
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Calculator Functions
- * - Demo 2: Advanced Operations
- * - Demo 3: Error Handling
- * - Demo 4: User Interface Enhancement
- *
- * =============================================================================
+ * DEMOS: Key input processing, calculation logic, LCD display output
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -682,9 +637,9 @@ void demo4_stopwatch(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Keypad Calculator - ATmega128        ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Keypad Calculator - ATmega128        ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Calculator\r\n");

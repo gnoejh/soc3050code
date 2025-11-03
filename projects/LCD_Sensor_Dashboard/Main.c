@@ -1,68 +1,12 @@
-/*
- * LCD Sensor Dashboard - Real-Time Display System
- * ATmega128 Educational Framework
+﻿/*
+ * ==============================================================================
+ * LCD SENSOR DASHBOARD - DEMO CODE
+ * ==============================================================================
+ * PROJECT: LCD_Sensor_Dashboard
+ * See Slide.md for complete theory and technical details
  *
- * LEARNING OBJECTIVES:
- * - Integrate multiple sensors with LCD display
- * - Design efficient data presentation layouts
- * - Update display without flickering
- * - Create professional dashboard interfaces
- *
- * HARDWARE SETUP:
- * LCD: Same connections as previous LCD projects (4-bit mode on PORTG)
- * Sensors:
- * - ADC0 (PF0): Temperature sensor (LM35 or similar)
- * - ADC1 (PF1): Light sensor (CDS photocell)
- * - ADC2 (PF2): Potentiometer (general purpose input)
- * - Optional I2C sensors on PD0/PD1
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - ADC section (pages 206-230)
- * - I/O Ports (pages 62-75)
- *
- * =============================================================================
- * COMBINED REGISTER REFERENCE - LCD + ADC FOR SENSOR DASHBOARD
- * =============================================================================
- *
- * LCD PORT REGISTERS (PORTG):
- *   DDRG: Configure PG0-PG5 as outputs for LCD control
- *   PORTG: Control RS, E, D4-D7 signals
- *   (See LCD_Character_Basic for complete LCD register details)
- *
- * ADC REGISTERS (For sensor inputs):
- *   ADMUX: Select ADC channel (MUX4:0) and reference voltage (REFS1:0)
- *   ADCSRA: Enable ADC, start conversion, set prescaler
- *   ADCL/ADCH: 10-bit conversion result
- *   (See ADC_Basic for complete ADC register details)
- *
- * SENSOR DASHBOARD INTEGRATION:
- *
- * Read ADC and Display:
- *   1. Select sensor channel: ADMUX = (1<<REFS0) | channel;
- *   2. Start conversion: ADCSRA |= (1<<ADSC);
- *   3. Wait for completion: while(ADCSRA & (1<<ADSC));
- *   4. Read result: value = ADC;
- *   5. Convert to units (temp, lux, etc.)
- *   6. Position LCD cursor: lcd_goto(row, col);
- *   7. Display value: lcd_print_num(value);
- *
- * Efficient Display Update:
- *   - Only update changed values (avoid full refresh)
- *   - Use fixed positions for each sensor reading
- *   - Clear only necessary characters before update
- *
- * Example Dashboard Layout:
- *   Line 1: "Temp:25C Lt:512"
- *   Line 2: "Pot:###░░░░ OK"
- *
- * =============================================================================
- *
- * DASHBOARD FEATURES:
- * - Multi-sensor real-time display
- * - Graphical indicators and bargraphs
- * - Alert thresholds and warnings
- * - Data logging mode
+ * DEMOS: Multi-sensor display, LCD formatting, real-time updates
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -258,9 +202,9 @@ void read_sensors(void)
     sensors.light = adc_read(1);
     sensors.analog_input = adc_read(2);
 
-    // Convert temperature (LM35: 10mV/°C, 5V ref, 10-bit ADC)
+    // Convert temperature (LM35: 10mV/째C, 5V ref, 10-bit ADC)
     // ADC = (Vin * 1024) / 5V
-    // LM35: Vout = Temp(°C) * 10mV
+    // LM35: Vout = Temp(째C) * 10mV
     sensors.temp_celsius = (sensors.temperature * 5.0 * 100.0) / 1024.0;
 
     // Convert light to percentage
@@ -344,7 +288,7 @@ void demo2_graphical_dashboard(void)
         lcd_goto(0, 0);
         lcd_data('T');
 
-        uint8_t temp_bars = (uint8_t)(sensors.temp_celsius * 14 / 50); // 0-50°C range
+        uint8_t temp_bars = (uint8_t)(sensors.temp_celsius * 14 / 50); // 0-50째C range
         for (uint8_t i = 0; i < 14; i++)
         {
             if (i < temp_bars)
@@ -572,9 +516,9 @@ void demo4_data_logger(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  LCD Sensor Dashboard - ATmega128     ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? LCD Sensor Dashboard - ATmega128     ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Dashboard\r\n");

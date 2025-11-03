@@ -1,148 +1,13 @@
-/*
- * =============================================================================
- * SPI EEPROM MEMORY INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * SPI EEPROM MEMORY - DEMO CODE
+ * ==============================================================================
  * PROJECT: SPI_EEPROM_Memory
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of external SPI EEPROM memory interfacing.
- * Students learn SPI communication protocols and non-volatile memory systems.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master SPI communication with external EEPROM (25LC256)
- * 2. Learn memory addressing and page-based operations
- * 3. Practice command sequences and status register handling
- * 4. Implement data persistence and storage systems
- * 5. Understand non-volatile memory characteristics
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 25LC256 SPI EEPROM (32KB, 64-byte pages)
- * - SPI connections: PB0 (SS/CS), PB1 (SCK), PB2 (MOSI), PB3 (MISO)
- * - Pull-up resistors on WP and HOLD pins
- * - Status LEDs for operation indication
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - SPI section (pages 150-161)
- * - SPI registers (pages 158-161)
- *
- * =============================================================================
- * SPI CONTROL REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: SPCR (SPI Control Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  SPIE   SPE   DORD   MSTR  CPOL   CPHA   SPR1   SPR0
- *
- * SPIE (bit 7): SPI Interrupt Enable (0=polling, 1=interrupt)
- * SPE (bit 6): SPI Enable (MUST be 1 for SPI operations)
- * DORD (bit 5): Data Order (0=MSB first, 1=LSB first) - Use 0 for EEPROM
- * MSTR (bit 4): Master mode (1=Master, 0=Slave) - Use 1 for microcontroller
- * CPOL (bit 3): Clock Polarity (0=idle low, 1=idle high)
- * CPHA (bit 2): Clock Phase (0=sample leading, 1=sample trailing)
- * SPR1:0 (bits 1-0): Clock rate select (with SPI2X)
- *
- * REGISTER 2: SPSR (SPI Status Register)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  SPIF  WCOL   -      -      -      -      -     SPI2X
- *
- * SPIF (bit 7): Transfer complete flag - Poll: while(!(SPSR & (1<<SPIF)));
- * WCOL (bit 6): Write collision (indicates error if set)
- * SPI2X (bit 0): Double speed bit
- *
- * REGISTER 3: SPDR (SPI Data Register)
- * - Write to SPDR: Start transmission
- * - Read from SPDR: Get received byte
- * - Full-duplex: Sends and receives simultaneously
- *
- * SPI CLOCK RATES @ 16MHz:
- *   SPI2X=0, SPR1:0=00: F_CPU/4  = 4MHz
- *   SPI2X=0, SPR1:0=01: F_CPU/16 = 1MHz
- *   SPI2X=1, SPR1:0=00: F_CPU/2  = 8MHz (Fastest)
- *
- * EEPROM INITIALIZATION (Mode 0: CPOL=0, CPHA=0):
- *
- *   void spi_init(void) {
- *       DDRB |= (1<<PB0)|(1<<PB1)|(1<<PB2);  // SS, SCK, MOSI outputs
- *       DDRB &= ~(1<<PB3);                   // MISO input
- *       PORTB |= (1<<PB0);                   // SS high (deselect)
- *       SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0); // Master, F_CPU/16
- *   }
- *
- * 25LC256 EEPROM COMMAND SEQUENCES:
- *
- *   Write Enable (Required before WRITE):
- *     CS_LOW();
- *     spi_transfer(0x06);  // WREN command
- *     CS_HIGH();
- *
- *   Write Byte:
- *     CS_LOW();
- *     spi_transfer(0x02);      // WRITE command
- *     spi_transfer(addr_high); // Address high byte
- *     spi_transfer(addr_low);  // Address low byte
- *     spi_transfer(data);      // Data byte
- *     CS_HIGH();
- *     wait_for_write_complete();
- *
- *   Read Byte:
- *     CS_LOW();
- *     spi_transfer(0x03);      // READ command
- *     spi_transfer(addr_high);
- *     spi_transfer(addr_low);
- *     data = spi_transfer(0xFF); // Clock in data
- *     CS_HIGH();
- *
- *   Check Status (WIP = Write In Progress bit):
- *     CS_LOW();
- *     spi_transfer(0x05);      // RDSR command
- *     status = spi_transfer(0xFF);
- *     CS_HIGH();
- *     // Wait while (status & 0x01) != 0
- *
- * PAGE WRITE (64-byte pages):
- * - Can write up to 64 bytes in single command
- * - Must not cross page boundary
- * - Takes ~5ms to complete after CS goes high
- *
- * CRITICAL TIMING:
- * - Write cycle time: 5ms maximum
- * - Must poll status register or delay before next write
- * - No delay needed between reads
- *
- * =============================================================================
- *
- * 25LC256 SPECIFICATIONS:
- * - Memory size: 32KB (256K bits)
- * - Page size: 64 bytes
- * - Address range: 0x0000 to 0x7FFF
- * - Endurance: 1,000,000 write/erase cycles
- * - Data retention: 200+ years
- *
- * SPI COMMAND SET:
- * - 0x06: WREN (Write Enable)
- * - 0x04: WRDI (Write Disable)
- * - 0x05: RDSR (Read Status Register)
- * - 0x02: WRITE (Page Write)
- * - 0x03: READ (Sequential Read)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic SPI Communication
- * - Demo 2: Memory Read/Write Operations
- * - Demo 3: Page-Based Data Management
- * - Demo 4: Data Logging Applications
- *
- * =============================================================================
+ * DEMOS: EEPROM read/write, SPI protocol, data persistence
+ * ==============================================================================
  */
-*-0x01 : WRSR(Write Status Register) * -0x03 : READ(Read Data) * -0x02 : WRITE(Write Data) * /
 
 #include "config.h"
 
@@ -356,12 +221,12 @@ void demo1_basic_readwrite(void)
         char buf[70];
         if (actual == expected)
         {
-            sprintf(buf, "  Address 0x%04X = 0x%02X ✓\r\n",
+            sprintf(buf, "  Address 0x%04X = 0x%02X ??r\n",
                     test_address + i, actual);
         }
         else
         {
-            sprintf(buf, "  Address 0x%04X = 0x%02X (expected 0x%02X) ✗\r\n",
+            sprintf(buf, "  Address 0x%04X = 0x%02X (expected 0x%02X) ??r\n",
                     test_address + i, actual, expected);
             errors++;
         }
@@ -370,13 +235,13 @@ void demo1_basic_readwrite(void)
 
     if (errors == 0)
     {
-        puts_USART1("\r\n✓ All tests passed!\r\n");
+        puts_USART1("\r\n??All tests passed!\r\n");
         PORTC = 0x0F; // Success indicator
     }
     else
     {
         char msg[40];
-        sprintf(msg, "\r\n✗ %u errors detected!\r\n", errors);
+        sprintf(msg, "\r\n??%u errors detected!\r\n", errors);
         puts_USART1(msg);
         PORTC = 0xF0; // Error indicator
     }
@@ -432,11 +297,11 @@ void demo2_page_write(void)
 
     if (errors == 0)
     {
-        puts_USART1("✓ Page write successful! All 64 bytes verified.\r\n");
+        puts_USART1("??Page write successful! All 64 bytes verified.\r\n");
     }
     else
     {
-        sprintf(buf, "✗ Page write failed! %u byte errors.\r\n", errors);
+        sprintf(buf, "??Page write failed! %u byte errors.\r\n", errors);
         puts_USART1(buf);
     }
 
@@ -567,9 +432,9 @@ void demo4_memory_dump(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   SPI EEPROM (25LC256) - ATmega128    ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  SPI EEPROM (25LC256) - ATmega128    ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Read/Write Test\r\n");

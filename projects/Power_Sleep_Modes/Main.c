@@ -1,58 +1,13 @@
-/*
- * =============================================================================
- * POWER MANAGEMENT AND SLEEP MODES - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * POWER SLEEP MODES - DEMO CODE
+ * ==============================================================================
  * PROJECT: Power_Sleep_Modes
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of power management techniques and sleep modes.
- * Students learn low-power programming and energy-efficient system design.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master different ATmega128 sleep modes and their applications
- * 2. Learn power consumption reduction techniques
- * 3. Practice wake-up source configuration and management
- * 4. Implement battery-efficient embedded applications
- * 5. Understand real-time clock and timer wake-up systems
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - Current measurement capability (multimeter or oscilloscope)
- * - Wake-up sources: buttons, timers, external interrupts
- * - LEDs for power state indication
- * - Battery power supply for testing
- * - Serial connection for monitoring (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Sleep modes (pages 36-40)
- * - Power management (page 41-42)
- * - Wake-up sources (pages 36-40, 76-81)
- *
- * SLEEP MODES (ATmega128):
- * - Idle: CPU stopped, peripherals running (~5 mA)
- * - ADC Noise Reduction: CPU + I/O stopped, ADC running
- * - Power-down: Only asynchronous peripherals active (~1-2 µA)
- * - Power-save: Timer2 + watchdog active (~5-10 µA)
- * - Standby: Oscillator running (fast wake-up)
- * - Extended Standby: Timer2 + oscillator active
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Sleep Mode Configuration
- * - Demo 2: Wake-up Source Implementation
- * - Demo 3: Power Consumption Measurement
- * - Demo 4: Battery-Powered Applications
- *
- * =============================================================================
+ * DEMOS: Sleep mode configuration, wakeup methods, power savings
+ * ==============================================================================
  */
-*-External interrupts(INT0 - 7) * -Pin change interrupts
-    * -Timer interrupts
-    * -UART,
-    SPI, I2C interrupts * -Watchdog timer * /
 
 #include "config.h"
 #include <avr/sleep.h>
@@ -209,7 +164,7 @@ void demo1_sleep_modes(void)
         enter_sleep_mode(modes[i]);
         uint16_t sleep_duration = timer_ticks - sleep_start;
 
-        puts_USART1("  ✓ Wake-up!\r\n");
+        puts_USART1("  ??Wake-up!\r\n");
         PORTC = 0xFF;
         _delay_ms(200);
         PORTC = 0x00;
@@ -500,9 +455,9 @@ void demo4_smart_sleep(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Sleep Modes - ATmega128              ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Sleep Modes - ATmega128              ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Sleep Mode Comparison\r\n");

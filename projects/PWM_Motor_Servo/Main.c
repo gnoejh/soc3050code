@@ -1,187 +1,12 @@
-/*
- * =============================================================================
- * PWM SERVO MOTOR CONTROL - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * PWM SERVO MOTOR - DEMO CODE
+ * ==============================================================================
  * PROJECT: PWM_Motor_Servo
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of servo motor control using PWM signals.
- * Students learn precision timing control and servo positioning systems.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master servo motor PWM requirements and timing
- * 2. Learn 16-bit Timer1 configuration for precise pulse generation
- * 3. Practice servo position control (0-180 degrees)
- * 4. Implement multi-servo coordination systems
- * 5. Understand feedback control and positioning accuracy
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - Servo motors connected to PB5 (OC1A), PB6 (OC1B)
- * - External 5-6V power supply for servos (shared ground)
- * - Position feedback potentiometers (optional)
- * - Control interface via UART
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Timer/Counter1 (pages 86-107)
- * - PWM modes (pages 94-99)
- *
- * =============================================================================
- * TIMER1 SERVO PWM REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: TCCR1A (Timer/Counter1 Control Register A)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: COM1A1 COM1A0 COM1B1 COM1B0 COM1C1 COM1C0 WGM11  WGM10
- *
- * COM1A1:0: Non-inverting PWM on OC1A (PB5)
- *           Set to 10 for servo control
- * COM1B1:0: Non-inverting PWM on OC1B (PB6)
- *           Set to 10 for second servo
- * WGM11:10: Waveform mode (use with TCCR1B)
- *
- * REGISTER 2: TCCR1B (Timer/Counter1 Control Register B)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: ICNC1  ICES1   -    WGM13  WGM12   CS12   CS11   CS10
- *
- * WGM13:10 = 1110: Fast PWM Mode 14 with ICR1 as TOP (CRITICAL FOR SERVOS)
- * CS12:10: Prescaler selection (010 = clk/8)
- *
- * REGISTER 3: ICR1 (Input Capture Register - 16-bit)
- *
- * Defines 20ms period for 50Hz servo PWM:
- *   F_PWM = F_CPU / (Prescaler × (1 + ICR1))
- *   50Hz = 16MHz / (8 × (1 + ICR1))
- *   ICR1 = 39999
- *
- * Alternative @ 7.3728MHz:
- *   ICR1 = 18431
- *
- * REGISTER 4: OCR1A/OCR1B (Output Compare Registers - 16-bit)
- *
- * Pulse width control for servo position:
- *
- * SERVO PULSE WIDTH TIMING @ 16MHz, Prescaler 8:
- * Timer tick period = 8 / 16MHz = 0.5µs
- *
- * Position   | Pulse Width | Timer Ticks (OCR1A)
- * -----------+-------------+--------------------
- * 0° (min)   | 1.0ms       | 2000 (1.0ms/0.5µs)
- * 90° (mid)  | 1.5ms       | 3000 (1.5ms/0.5µs)
- * 180° (max) | 2.0ms       | 4000 (2.0ms/0.5µs)
- *
- * SERVO PULSE WIDTH TIMING @ 7.3728MHz, Prescaler 8:
- * Timer tick period = 8 / 7.3728MHz ≈ 1.085µs
- *
- * Position   | Pulse Width | Timer Ticks (OCR1A)
- * -----------+-------------+--------------------
- * 0° (min)   | 1.0ms       | 922  (1.0ms/1.085µs)
- * 90° (mid)  | 1.5ms       | 1383 (1.5ms/1.085µs)
- * 180° (max) | 2.0ms       | 1843 (2.0ms/1.085µs)
- *
- * ANGLE TO OCR CONVERSION:
- *
- *   @ 16MHz, Prescaler 8:
- *     OCR1A = 2000 + (angle * 2000 / 180);
- *     // angle: 0-180°, OCR1A: 2000-4000
- *
- *   @ 7.3728MHz, Prescaler 8:
- *     OCR1A = 922 + (angle * 921 / 180);
- *     // angle: 0-180°, OCR1A: 922-1843
- *
- * SERVO INITIALIZATION @ 16MHz:
- *
- *   void servo_init(void) {
- *       // PB5 (OC1A), PB6 (OC1B) as outputs
- *       DDRB |= (1<<PB5) | (1<<PB6);
- *
- *       // Fast PWM Mode 14, Non-inverting
- *       TCCR1A = (1<<COM1A1) | (1<<COM1B1) | (1<<WGM11);
- *       TCCR1B = (1<<WGM13) | (1<<WGM12) | (1<<CS11);  // Prescaler 8
- *
- *       // 50Hz: ICR1 = 16MHz/8/50 - 1 = 39999
- *       ICR1 = 39999;
- *
- *       // Start at 90° (neutral)
- *       OCR1A = 3000;  // Servo 1
- *       OCR1B = 3000;  // Servo 2
- *   }
- *
- * SET SERVO POSITION:
- *
- *   void set_servo_angle(uint8_t servo, uint8_t angle) {
- *       // Limit angle to 0-180
- *       if(angle > 180) angle = 180;
- *
- *       // Calculate pulse width @ 16MHz
- *       uint16_t pulse = 2000 + ((uint32_t)angle * 2000 / 180);
- *
- *       // Update appropriate channel
- *       if(servo == 1) OCR1A = pulse;
- *       else OCR1B = pulse;
- *   }
- *
- * SMOOTH MOVEMENT (SWEEP):
- *
- *   void servo_sweep(uint8_t servo, uint8_t from, uint8_t to, uint16_t delay_ms) {
- *       if(from < to) {
- *           for(uint8_t angle = from; angle <= to; angle++) {
- *               set_servo_angle(servo, angle);
- *               _delay_ms(delay_ms);
- *           }
- *       } else {
- *           for(uint8_t angle = from; angle >= to; angle--) {
- *               set_servo_angle(servo, angle);
- *               _delay_ms(delay_ms);
- *           }
- *       }
- *   }
- *
- * MULTI-SERVO COORDINATION:
- *
- *   void servos_move_together(uint8_t angle1, uint8_t angle2) {
- *       set_servo_angle(1, angle1);
- *       set_servo_angle(2, angle2);
- *       // Both servos update simultaneously
- *   }
- *
- * CRITICAL SERVO CONSIDERATIONS:
- * 1. 50Hz frequency is MANDATORY (20ms period)
- * 2. Pulse width range: Typically 1-2ms (some servos: 0.5-2.5ms)
- * 3. Servos draw current spikes - use external power supply
- * 4. Shared ground between ATmega128 and servo power
- * 5. Update rate: ~50Hz max (don't change angle every cycle)
- * 6. Allow settling time: 20-200ms after position change
- *
- * TROUBLESHOOTING:
- * - Jitter: Check power supply stability, add decoupling caps
- * - Won't move: Verify pulse width in spec (use oscilloscope)
- * - Incorrect range: Calibrate min/max pulse widths per servo
- * - MCU resets: Servo current too high, use external power
- *
- * =============================================================================
- *
- * SERVO PWM SPECIFICATIONS:
- * - Frequency: 50 Hz (20ms period)
- * - Pulse width: 1.0ms (0°) to 2.0ms (180°)
- * - Neutral position: 1.5ms (90°)
- * - Dead band: Typically ±5° for standard servos
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Servo Control
- * - Demo 2: Position Feedback
- * - Demo 3: Multi-Servo Coordination
- * - Demo 4: Advanced Control Applications
- *
- * =============================================================================
+ * DEMOS: Servo position control, PWM timing, angle positioning
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -229,7 +54,7 @@ void timer1_servo_init(void)
     // Set TOP for 50Hz frequency
     ICR1 = SERVO_TOP;
 
-    // Initialize both servos to neutral position (90°)
+    // Initialize both servos to neutral position (90째)
     OCR1A = SERVO_MID_PULSE;
     OCR1B = SERVO_MID_PULSE;
 }
@@ -322,9 +147,9 @@ void demo1_basic_positioning(void)
 {
     puts_USART1("\r\n=== DEMO 1: Basic Servo Positioning ===\r\n");
     puts_USART1("Commands:\r\n");
-    puts_USART1("  a[angle]: Set Servo A (e.g., 'a90' for 90°)\r\n");
-    puts_USART1("  b[angle]: Set Servo B (e.g., 'b180' for 180°)\r\n");
-    puts_USART1("  0-9: Quick angles (0=0°, 5=90°, 9=180°)\r\n");
+    puts_USART1("  a[angle]: Set Servo A (e.g., 'a90' for 90째)\r\n");
+    puts_USART1("  b[angle]: Set Servo B (e.g., 'b180' for 180째)\r\n");
+    puts_USART1("  0-9: Quick angles (0=0째, 5=90째, 9=180째)\r\n");
     puts_USART1("  q: Return to menu\r\n\r\n");
 
     char input_buffer[10];
@@ -350,7 +175,7 @@ void demo1_basic_positioning(void)
                         uint8_t angle = atoi(&input_buffer[1]);
                         servo_set_angle(SERVO_A, angle);
                         char msg[50];
-                        sprintf(msg, "Servo A → %d°\r\n", angle);
+                        sprintf(msg, "Servo A ??%d째\r\n", angle);
                         puts_USART1(msg);
                     }
                     else if (input_buffer[0] == 'b' || input_buffer[0] == 'B')
@@ -358,16 +183,16 @@ void demo1_basic_positioning(void)
                         uint8_t angle = atoi(&input_buffer[1]);
                         servo_set_angle(SERVO_B, angle);
                         char msg[50];
-                        sprintf(msg, "Servo B → %d°\r\n", angle);
+                        sprintf(msg, "Servo B ??%d째\r\n", angle);
                         puts_USART1(msg);
                     }
                     else if (input_buffer[0] >= '0' && input_buffer[0] <= '9')
                     {
-                        uint8_t angle = (input_buffer[0] - '0') * 20; // 0→0°, 5→100°, 9→180°
+                        uint8_t angle = (input_buffer[0] - '0') * 20; // 0??째, 5??00째, 9??80째
                         servo_set_angle(SERVO_A, angle);
                         servo_set_angle(SERVO_B, angle);
                         char msg[50];
-                        sprintf(msg, "Both servos → %d°\r\n", angle);
+                        sprintf(msg, "Both servos ??%d째\r\n", angle);
                         puts_USART1(msg);
                     }
                     else if (input_buffer[0] == 'q' || input_buffer[0] == 'Q')
@@ -404,15 +229,15 @@ void demo2_sweep_test(void)
 
     while (1)
     {
-        // Sweep forward (0° to 180°)
-        puts_USART1("Sweeping forward (0° → 180°)...\r\n");
+        // Sweep forward (0째 to 180째)
+        puts_USART1("Sweeping forward (0째 ??180째)...\r\n");
         for (uint8_t angle = 0; angle <= 180; angle += 5)
         {
             servo_set_angle(SERVO_A, angle);
             servo_set_angle(SERVO_B, 180 - angle); // Mirror movement
 
             char buf[40];
-            sprintf(buf, "  A: %3d°  B: %3d°\r\n", angle, 180 - angle);
+            sprintf(buf, "  A: %3d째  B: %3d째\r\n", angle, 180 - angle);
             puts_USART1(buf);
 
             _delay_ms(100);
@@ -426,8 +251,8 @@ void demo2_sweep_test(void)
 
         _delay_ms(500);
 
-        // Sweep backward (180° to 0°)
-        puts_USART1("Sweeping backward (180° → 0°)...\r\n");
+        // Sweep backward (180째 to 0째)
+        puts_USART1("Sweeping backward (180째 ??0째)...\r\n");
         for (int16_t angle = 180; angle >= 0; angle -= 5)
         {
             servo_set_angle(SERVO_A, angle);
@@ -463,7 +288,7 @@ void demo3_smooth_movement(void)
         for (uint8_t i = 0; i < num_positions; i++)
         {
             char buf[50];
-            sprintf(buf, "Moving to %d° (smooth)...\r\n", positions[i]);
+            sprintf(buf, "Moving to %d째 (smooth)...\r\n", positions[i]);
             puts_USART1(buf);
 
             servo_move_smooth(SERVO_A, positions[i], 1000); // 1 second transition
@@ -498,7 +323,7 @@ void demo4_joystick_control(void)
         uint16_t adc_x = Read_Adc_Data(0);
         uint16_t adc_y = Read_Adc_Data(1);
 
-        // Convert ADC values (0-1023) to servo angles (0-180°)
+        // Convert ADC values (0-1023) to servo angles (0-180째)
         uint8_t angle_a = (uint32_t)adc_x * 180 / 1023;
         uint8_t angle_b = (uint32_t)adc_y * 180 / 1023;
 
@@ -511,7 +336,7 @@ void demo4_joystick_control(void)
         if (++display_counter >= 10)
         {
             char buf[70];
-            sprintf(buf, "ADC: X=%4u Y=%4u  |  Servos: A=%3d° B=%3d°\r\n",
+            sprintf(buf, "ADC: X=%4u Y=%4u  |  Servos: A=%3d째 B=%3d째\r\n",
                     adc_x, adc_y, angle_a, angle_b);
             puts_USART1(buf);
             display_counter = 0;
@@ -537,9 +362,9 @@ void demo4_joystick_control(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   SERVO MOTOR CONTROL - ATmega128     ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  SERVO MOTOR CONTROL - ATmega128     ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Positioning (UART Commands)\r\n");
@@ -573,7 +398,7 @@ int main(void)
     // Initialize servos to center position
     servo_set_angle(SERVO_A, 90);
     servo_set_angle(SERVO_B, 90);
-    puts_USART1("Servos initialized to 90° (neutral)\r\n");
+    puts_USART1("Servos initialized to 90째 (neutral)\r\n");
 
     while (1)
     {

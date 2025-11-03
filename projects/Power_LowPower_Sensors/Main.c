@@ -1,38 +1,12 @@
-/*
- * Low-Power Sensor Monitoring
- * ATmega128 Educational Framework
+﻿/*
+ * ==============================================================================
+ * LOW POWER SENSORS - DEMO CODE
+ * ==============================================================================
+ * PROJECT: Power_LowPower_Sensors
+ * See Slide.md for complete theory and technical details
  *
- * LEARNING OBJECTIVES:
- * - Minimize power in sensor applications
- * - Use ADC Noise Reduction sleep mode
- * - Implement sensor wake-up strategies
- * - Practice efficient ADC conversion
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Sleep modes (pages 36-40)
- * - Power management (page 41-42)
- * - ADC Noise Reduction mode (page 37)
- * - ADC section (pages 206-230)
- *
- * LOW-POWER TECHNIQUES:
- * - ADC Noise Reduction mode (best for ADC)
- * - Power-down between readings
- * - Disable unused peripherals
- * - Use internal pull-ups (no external resistors)
- * - Brown-out detection optimization
- *
- * ADC POWER CONSIDERATIONS:
- * - ADC consumes ~230 µA when active
- * - Conversion time: 13-260 µs
- * - Sleep during conversion reduces noise
- * - Auto-trigger from timer for regularity
- *
- * APPLICATION SCENARIOS:
- * - Weather station
- * - Environmental monitoring
- * - Battery-powered data logger
- * - Remote sensor node
+ * DEMOS: Power-optimized sensor reading, sleep between readings
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -189,7 +163,7 @@ void demo1_single_sensor(void)
         }
 
         // Calculate power saving
-        sprintf(buf, "ADC: %u µA\r\n", 230); // Active ADC power
+        sprintf(buf, "ADC: %u 쨉A\r\n", 230); // Active ADC power
         puts_USART1(buf);
 
         reading_count++;
@@ -408,7 +382,7 @@ exit_demo3:
 
     if (battery <= BATTERY_LOW_THRESHOLD)
     {
-        puts_USART1("\r\n⚠ BATTERY LOW - Logging stopped!\r\n");
+        puts_USART1("\r\n??BATTERY LOW - Logging stopped!\r\n");
     }
     else
     {
@@ -474,7 +448,7 @@ void demo4_adaptive_sampling(void)
         int16_t delta = abs(temp - prev_temp);
 
         char buf[80];
-        sprintf(buf, "[%u] Temp:%4u  Δ:%3d  ",
+        sprintf(buf, "[%u] Temp:%4u  ?:%3d  ",
                 sample_count + 1, temp, delta);
         puts_USART1(buf);
 
@@ -532,9 +506,9 @@ exit_demo4:
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  Low-Power Sensors - ATmega128        ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? Low-Power Sensors - ATmega128        ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Low-Power Single Sensor\r\n");

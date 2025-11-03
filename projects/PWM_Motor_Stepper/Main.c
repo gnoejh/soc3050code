@@ -1,194 +1,12 @@
-/*
- * PWM Stepper Motor Control
- * ATmega128 Educational Framework
+﻿/*
+ * ==============================================================================
+ * PWM STEPPER MOTOR - DEMO CODE
+ * ==============================================================================
+ * PROJECT: PWM_Motor_Stepper
+ * See Slide.md for complete theory and technical details
  *
- * LEARNING OBJECTIVES:
- * - Understand stepper motor operation (full-step, half-step, microstepping)
- * - Generate precise step sequences using port manipulation
- * - Control speed through step delay timing
- * - Practice position tracking and homing
- *
- * HARDWARE SETUP:
- * - Bipolar stepper motor (4-wire) with ULN2003/L298N driver
- * - Coil connections: PA0-PA3 (4-wire stepper)
- * - Alternative: Unipolar 28BYJ-48 with ULN2003 driver
- * - UART for control interface
- * - LEDs on PORTC for phase visualization
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Timer/Counter (pages 77-107)
- *
- * =============================================================================
- * PORT AND TIMER REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: DDRx (Data Direction Register) - PORT CONFIGURATION
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  DD7    DD6    DD5    DD4    DD3    DD2    DD1    DD0
- *
- * Each bit configures corresponding pin:
- *   0 = Input
- *   1 = Output (required for stepper coil control)
- *
- * For stepper on PORTA (PA0-PA3):
- *   DDRA = 0b00001111;  // PA0-PA3 outputs, PA4-PA7 inputs
- *   or: DDRA |= (1<<PA0)|(1<<PA1)|(1<<PA2)|(1<<PA3);
- *
- * REGISTER 2: PORTx (Port Data Register) - OUTPUT CONTROL
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  P7     P6     P5     P4     P3     P2     P1     P0
- *
- * Controls output state:
- *   0 = Low (0V)
- *   1 = High (VCC)
- *
- * Stepper Phase Pattern Examples:
- *   PORTA = 0b00000011;  // Coils A1, A2 ON
- *   PORTA = 0b00000110;  // Coils A2, B1 ON
- *   PORTA = 0b00001100;  // Coils B1, B2 ON
- *   PORTA = 0b00001001;  // Coils B2, A1 ON
- *
- * TIMER REGISTERS FOR STEP TIMING:
- *
- * REGISTER 3: TCCR1B (Timer1 Control Register B) - SPEED CONTROL
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: ICNC1  ICES1   -    WGM13  WGM12   CS12   CS11   CS10
- *
- * CS12:10: Prescaler for step delay timing
- *          Use CTC mode (WGM12=1) with OCR1A for precise step intervals
- *
- * REGISTER 4: OCR1A (Output Compare Register A) - STEP RATE
- *
- * CTC mode step timing:
- *   Step_Rate = F_CPU / (Prescaler × (1 + OCR1A))
- *
- * Examples @ 16MHz, Prescaler 64:
- *   OCR1A = 249:  Step rate = 16MHz/(64×250) = 1kHz (1ms per step)
- *   OCR1A = 999:  Step rate = 250Hz (4ms per step, smoother)
- *   OCR1A = 3999: Step rate = 62.5Hz (16ms per step, very slow)
- *
- * RPM Calculation:
- *   RPM = (Step_Rate × 60) / Steps_Per_Revolution
- *   Example: 250Hz step rate, 200 steps/rev
- *   RPM = (250 × 60) / 200 = 75 RPM
- *
- * STEPPER CONTROL SEQUENCES:
- *
- * FULL-STEP (4 steps, high torque):
- *   const uint8_t full_step[4] = {
- *       0b0011,  // Phase 1: A1+A2
- *       0b0110,  // Phase 2: A2+B1
- *       0b1100,  // Phase 3: B1+B2
- *       0b1001   // Phase 4: B2+A1
- *   };
- *
- * HALF-STEP (8 steps, smoother):
- *   const uint8_t half_step[8] = {
- *       0b0001,  // A1
- *       0b0011,  // A1+A2
- *       0b0010,  // A2
- *       0b0110,  // A2+B1
- *       0b0100,  // B1
- *       0b1100,  // B1+B2
- *       0b1000,  // B2
- *       0b1001   // B2+A1
- *   };
- *
- * STEPPER CONTROL FUNCTIONS:
- *
- *   Initialize:
- *     void stepper_init(void) {
- *         DDRA |= 0x0F;       // PA0-PA3 outputs
- *         PORTA = 0x00;       // All coils off
- *
- *         // Timer1 CTC for step timing
- *         TCCR1B = (1<<WGM12) | (1<<CS11) | (1<<CS10);  // CTC, prescaler 64
- *         OCR1A = 999;        // 4ms per step
- *     }
- *
- *   Single Step (Full-Step):
- *     void step_once(int8_t direction) {
- *         static uint8_t phase = 0;
- *
- *         PORTA = (PORTA & 0xF0) | full_step[phase];
- *
- *         if(direction > 0) phase = (phase + 1) % 4;  // CW
- *         else phase = (phase + 3) % 4;  // CCW (phase - 1)
- *     }
- *
- *   Move N Steps:
- *     void move_steps(int16_t steps) {
- *         int8_t dir = (steps > 0) ? 1 : -1;
- *         uint16_t count = (steps > 0) ? steps : -steps;
- *
- *         for(uint16_t i = 0; i < count; i++) {
- *             step_once(dir);
- *             _delay_ms(4);  // 4ms per step
- *         }
- *     }
- *
- *   Rotate Angle:
- *     void rotate_angle(int16_t degrees) {
- *         int32_t steps = (int32_t)degrees * STEPS_PER_REV / 360;
- *         move_steps(steps);
- *     }
- *
- * MICROSTEPPING (Advanced, requires PWM):
- *
- * Instead of binary ON/OFF, use PWM for current control:
- *   Phase A current = Imax × sin(θ)
- *   Phase B current = Imax × cos(θ)
- *
- * This requires:
- *   - Timer1 PWM on OC1A, OC1B for current control
- *   - Lookup table or real-time sine calculation
- *   - H-bridge drivers supporting PWM input
- *
- *   Example @ 16 microsteps:
- *     for(uint8_t i = 0; i < 16; i++) {
- *         OCR1A = sin_table[i];       // Phase A
- *         OCR1B = cos_table[i];       // Phase B
- *         _delay_ms(1);
- *     }
- *
- * ACCELERATION PROFILE (S-Curve):
- *
- *   void move_with_accel(int16_t target_steps) {
- *       uint16_t accel_steps = 50;  // Acceleration zone
- *       for(int16_t i = 0; i < target_steps; i++) {
- *           step_once(1);
- *
- *           // Variable delay for acceleration
- *           if(i < accel_steps) {
- *               _delay_ms(10 - i/5);  // Accelerate
- *           } else if(i > target_steps - accel_steps) {
- *               _delay_ms(10 - (target_steps-i)/5);  // Decelerate
- *           } else {
- *               _delay_ms(2);  // Constant speed
- *           }
- *       }
- *   }
- *
- * CRITICAL STEPPER NOTES:
- * 1. Never leave coils energized too long (overheating)
- * 2. Use current-limiting resistors or chopper drivers
- * 3. Maximum step rate limited by motor inductance (~1kHz typical)
- * 4. Half-stepping reduces torque but increases smoothness
- * 5. Acceleration needed for high-speed moves to prevent skipping
- *
- * =============================================================================
- *
- * STEPPER MOTOR CONCEPTS:
- * - Steps per Revolution: Typically 200 (1.8°) or 48 (7.5°)
- * - Full-Step: 4 steps per cycle, maximum torque
- * - Half-Step: 8 steps per cycle, smoother motion
- * - Microstepping: Finer resolution, requires PWM
- * - Holding Torque: Torque when stationary
+ * DEMOS: Stepper motor control, step sequencing, speed control
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -202,7 +20,7 @@
 #define COIL_B2 (1 << PA3)
 
 // Stepper motor specifications
-#define STEPS_PER_REV 200  // Standard 1.8° stepper
+#define STEPS_PER_REV 200  // Standard 1.8째 stepper
 #define GEAR_RATIO 1       // No gearbox
 #define STEPS_FULL_CYCLE 4 // Full-step sequence length
 #define STEPS_HALF_CYCLE 8 // Half-step sequence length
@@ -411,13 +229,13 @@ void demo1_basic_stepping(void)
             {
             case '+':
                 stepper_step_forward();
-                sprintf(buf, "→ Step forward  Pos: %ld\r\n", current_position);
+                sprintf(buf, "??Step forward  Pos: %ld\r\n", current_position);
                 puts_USART1(buf);
                 break;
 
             case '-':
                 stepper_step_backward();
-                sprintf(buf, "← Step backward  Pos: %ld\r\n", current_position);
+                sprintf(buf, "??Step backward  Pos: %ld\r\n", current_position);
                 puts_USART1(buf);
                 break;
 
@@ -532,12 +350,12 @@ void demo3_position_control(void)
     for (uint8_t i = 0; i < num_positions; i++)
     {
         char buf[60];
-        sprintf(buf, "Moving to %d°...\r\n", target_angles[i]);
+        sprintf(buf, "Moving to %d째...\r\n", target_angles[i]);
         puts_USART1(buf);
 
         stepper_rotate_degrees(target_angles[i], 5);
 
-        sprintf(buf, "Position: %ld steps (%d°)\r\n",
+        sprintf(buf, "Position: %ld steps (%d째)\r\n",
                 current_position,
                 (int16_t)((current_position * 360L) / STEPS_PER_REV));
         puts_USART1(buf);
@@ -634,9 +452,9 @@ void demo4_mode_comparison(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║  STEPPER MOTOR CONTROL - ATmega128    ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("?? STEPPER MOTOR CONTROL - ATmega128    ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Stepping Control\r\n");

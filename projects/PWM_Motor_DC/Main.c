@@ -1,198 +1,13 @@
-/*
- * =============================================================================
- * PWM DC MOTOR CONTROL - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * PWM DC MOTOR - DEMO CODE
+ * ==============================================================================
  * PROJECT: PWM_Motor_DC
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of PWM-based DC motor control systems.
- * Students learn motor control concepts and power electronics interfacing.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master PWM signal generation for motor control
- * 2. Learn H-bridge driver interfacing
- * 3. Practice speed and direction control algorithms
- * 4. Understand motor dynamics and feedback
- * 5. Implement closed-loop control systems
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - DC motor with H-bridge driver circuit
- * - PWM output on Timer1 (OC1A/OC1B)
- * - Potentiometer for speed control input
- * - Serial connection for monitoring (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - Timer/Counter1 (pages 86-107)
- * - PWM modes (pages 94-99)
- * - Output Compare pins (page 89)
- *
- * =============================================================================
- * TIMER1 PWM CONTROL REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: TCCR1A (Timer/Counter1 Control Register A)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: COM1A1 COM1A0 COM1B1 COM1B0 COM1C1 COM1C0 WGM11  WGM10
- *
- * COM1A1:0 (bits 7-6): Compare Output Mode for Channel A (OC1A = PB5)
- *                      00 = Normal port operation, OC1A disconnected
- *                      10 = Non-inverting PWM: Clear OC1A on compare match
- *                           (High duty = high voltage, standard for motors)
- *                      11 = Inverting PWM: Set OC1A on compare match
- *                      Usage: TCCR1A |= (1<<COM1A1);  // Non-inverting
- *
- * COM1B1:0 (bits 5-4): Compare Output Mode for Channel B (OC1B = PB6)
- *                      Same modes as COM1A, for second PWM output
- *                      Useful for dual motor control or H-bridge control
- *
- * WGM11:10 (bits 1-0): Waveform Generation Mode (lower 2 bits)
- *                      Combined with WGM13:12 in TCCR1B to select PWM mode
- *
- * REGISTER 2: TCCR1B (Timer/Counter1 Control Register B)
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: ICNC1  ICES1   -    WGM13  WGM12   CS12   CS11   CS10
- *
- * WGM13:10 (bits 4-3 + TCCR1A bits 1-0): Waveform Generation Mode
- *          MOTOR CONTROL MODES:
- *
- *          Mode 14: Fast PWM with ICR1 as TOP (MOST FLEXIBLE)
- *                   WGM13:10 = 1110
- *                   TCCR1A = (1<<WGM11)
- *                   TCCR1B = (1<<WGM13)|(1<<WGM12)
- *                   Frequency: F_CPU / (Prescaler * (1 + ICR1))
- *                   Duty cycle: OCR1A / ICR1
- *
- *          Mode 5: Fast PWM, 8-bit (SIMPLE, LOW RESOLUTION)
- *                  WGM13:10 = 0101
- *                  TOP = 0xFF (255)
- *                  Frequency: F_CPU / (Prescaler * 256)
- *                  Duty cycle: OCR1A / 255
- *
- *          Mode 1: Phase Correct PWM, 8-bit (SMOOTH, LOW FREQ)
- *                  WGM13:10 = 0001
- *                  Counts up and down (0→255→0)
- *                  Frequency: F_CPU / (Prescaler * 510)
- *
- * CS12:10 (bits 2-0): Clock Select (Prescaler) - CONTROLS PWM FREQUENCY
- *                     000 = No clock (timer stopped)
- *                     001 = clk/1 (no prescaling) - 16MHz
- *                     010 = clk/8 - 2MHz
- *                     011 = clk/64 - 250kHz
- *                     100 = clk/256 - 62.5kHz
- *                     101 = clk/1024 - 15.625kHz
- *
- * REGISTER 3: OCR1AH/OCR1AL (Output Compare Register 1A - 16-bit)
- *
- * Duty Cycle Control Register:
- * - Sets PWM pulse width
- * - Range: 0 to TOP (ICR1 or mode-dependent maximum)
- * - Duty cycle % = (OCR1A / TOP) × 100%
- *
- * Examples with ICR1=999 (Mode 14):
- *   OCR1A = 0:    0% duty (motor stopped)
- *   OCR1A = 250:  25% duty (slow speed)
- *   OCR1A = 500:  50% duty (medium speed)
- *   OCR1A = 750:  75% duty (fast speed)
- *   OCR1A = 999:  100% duty (maximum speed)
- *
- * CRITICAL: Must write high byte first, then low byte:
- *   OCR1AH = (duty >> 8);
- *   OCR1AL = (duty & 0xFF);
- * Or use 16-bit write: OCR1A = duty;
- *
- * REGISTER 4: ICR1H/ICR1L (Input Capture Register 1 - 16-bit)
- *
- * TOP Value for Mode 14 Fast PWM:
- * - Defines PWM frequency
- * - Higher value = lower frequency, higher resolution
- * - Lower value = higher frequency, lower resolution
- *
- * PWM Frequency Calculation:
- *   F_PWM = F_CPU / (Prescaler × (1 + ICR1))
- *
- * Examples @ 16MHz, Prescaler = 8:
- *   ICR1 = 999:   F_PWM = 16MHz/(8×1000) = 2kHz (good for motors)
- *   ICR1 = 1999:  F_PWM = 16MHz/(8×2000) = 1kHz (smoother, lower freq)
- *   ICR1 = 19999: F_PWM = 16MHz/(8×20000) = 100Hz (audible whine)
- *
- * MOTOR CONTROL RECOMMENDATIONS:
- * - PWM frequency: 1-20kHz (above human hearing ~16kHz preferred)
- * - Small motors: 10-20kHz
- * - Large motors: 1-5kHz
- * - Too high: Switching losses in H-bridge
- * - Too low: Audible noise, rough operation
- *
- * TYPICAL INITIALIZATION FOR DC MOTOR @ 2kHz:
- *
- *   void pwm_motor_init(void) {
- *       // Configure PB5 (OC1A) as output
- *       DDRB |= (1<<PB5);
- *
- *       // Mode 14: Fast PWM, ICR1=TOP, Non-inverting on OC1A
- *       TCCR1A = (1<<COM1A1) | (1<<WGM11);
- *       TCCR1B = (1<<WGM13) | (1<<WGM12) | (1<<CS11);  // Prescaler 8
- *
- *       // Set TOP for 2kHz PWM @ 16MHz
- *       ICR1 = 999;   // F_PWM = 16MHz/(8×1000) = 2000Hz
- *
- *       // Initial duty cycle (stopped)
- *       OCR1A = 0;
- *   }
- *
- * SPEED CONTROL FUNCTION:
- *
- *   void set_motor_speed(uint8_t percent) {
- *       // percent: 0-100
- *       uint16_t duty = (uint32_t)percent * ICR1 / 100;
- *       OCR1A = duty;
- *   }
- *
- * H-BRIDGE CONTROL (L298N typical):
- * - OC1A (PB5): PWM signal to Enable pin
- * - IN1, IN2: Direction control
- *
- *   Forward:  IN1=1, IN2=0, PWM on Enable
- *   Reverse:  IN1=0, IN2=1, PWM on Enable
- *   Brake:    IN1=0, IN2=0 (or both 1)
- *
- * DUAL MOTOR CONTROL:
- * - Use OC1A (PB5) for Motor 1
- * - Use OC1B (PB6) for Motor 2
- * - Independent duty cycles: OCR1A, OCR1B
- * - Same frequency (shared ICR1)
- *
- * ACCELERATION/DECELERATION:
- *
- *   void ramp_speed(uint16_t target_duty, uint8_t step) {
- *       uint16_t current = OCR1A;
- *       while(current != target_duty) {
- *           if(current < target_duty) current += step;
- *           else current -= step;
- *           OCR1A = current;
- *           _delay_ms(10);  // 10ms per step
- *       }
- *   }
- *
- * =============================================================================
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic PWM Generation
- * - Demo 2: Motor Speed Control
- * - Demo 3: Direction Control
- * - Demo 4: Acceleration/Deceleration
- * - Demo 5: Closed-Loop Control
- *
- * =============================================================================
+ * DEMOS: DC motor speed control, PWM generation, direction control
+ * ==============================================================================
  */
-*-Resolution : Number of steps in duty cycle(Timer1 = 16 - bit = 65536 steps) * /
 
 #include "config.h"
 
@@ -509,7 +324,7 @@ void demo4_adc_speed_control(void)
 {
     puts_USART1("\r\n=== DEMO 4: Potentiometer Speed Control ===\r\n");
     puts_USART1("Using ADC to read potentiometer for speed control\r\n");
-    puts_USART1("ADC0: Speed control (0-1023 → 0-100%)\r\n");
+    puts_USART1("ADC0: Speed control (0-1023 ??0-100%)\r\n");
     puts_USART1("Press 'd' to toggle direction, 'q' to quit\r\n\r\n");
 
     Adc_init();
@@ -570,9 +385,9 @@ void demo4_adc_speed_control(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   DC MOTOR PWM CONTROL - ATmega128    ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  DC MOTOR PWM CONTROL - ATmega128    ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Basic Speed Control (UART)\r\n");

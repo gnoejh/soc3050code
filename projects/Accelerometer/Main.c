@@ -1,46 +1,12 @@
-/*
- * =============================================================================
- * ACCELEROMETER SENSOR INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * ACCELEROMETER - DEMO CODE
+ * ==============================================================================
  * PROJECT: Accelerometer
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of 3-axis accelerometer interfacing and motion detection.
- * Students learn multi-channel sensor processing and motion analysis algorithms.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master 3-axis accelerometer operation and calibration
- * 2. Learn multi-channel ADC reading techniques
- * 3. Practice motion detection and threshold algorithms
- * 4. Implement real-time sensor data processing
- * 5. Analyze acceleration vectors and orientation
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 3-axis analog accelerometer (ADXL335 or similar)
- * - X-axis connected to ADC2, Y-axis to ADC3, Z-axis to ADC4
- * - LEDs on PORTB for motion indication
- * - Serial connection for data analysis (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - ADC section (pages 206-230)
- * - Multi-channel ADC reading (page 215)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Single Axis Acceleration Reading
- * - Demo 2: 3-Axis Vector Calculation
- * - Demo 3: Motion Detection and Thresholds
- * - Demo 4: Orientation Determination
- * - Demo 5: Real-Time Motion Analysis
- *
- * =============================================================================
- */
- * - UART for data logging
+ * DEMOS: Accelerometer interfacing, axis reading, motion detection
+ * ==============================================================================
  */
 
 #include "config.h"

@@ -1,46 +1,13 @@
-/*
- * =============================================================================
- * LIGHT SENSOR INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * CDS LIGHT SENSOR - DEMO CODE
+ * ==============================================================================
  * PROJECT: CDS_Light_Sensor
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of photoresistor-based light sensing systems.
- * Students learn analog sensor interfacing and environmental monitoring.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master photoresistor operation and characteristics
- * 2. Learn voltage divider circuits for sensors
- * 3. Practice threshold-based control systems
- * 4. Implement sensor calibration techniques
- * 5. Process and filter analog sensor data
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - CDS photoresistor with voltage divider circuit
- * - 10kΩ reference resistor for voltage division
- * - LEDs on PORTB for light level indication
- * - Serial connection for data logging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - ADC section (pages 206-230)
- * - ADC reference voltage (page 211)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Light Level Reading
- * - Demo 2: Threshold-Based LED Control
- * - Demo 3: Multi-Level Light Classification
- * - Demo 4: Sensor Calibration and Scaling
- * - Demo 5: Environmental Monitoring System
- *
- * =============================================================================
+ * DEMOS: Light sensor reading, ADC conversion, ambient light detection
+ * ==============================================================================
  */
-*/
 
 #include "config.h"
 

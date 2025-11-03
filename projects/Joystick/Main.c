@@ -1,44 +1,12 @@
-/*
- * =============================================================================
- * JOYSTICK CONTROL INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * JOYSTICK - DEMO CODE
+ * ==============================================================================
  * PROJECT: Joystick
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of analog joystick interfacing and coordinate mapping.
- * Students learn multi-channel ADC usage and analog-to-digital control systems.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master analog joystick interface and multi-channel ADC
- * 2. Learn coordinate system mapping and calibration
- * 3. Practice threshold-based digital control from analog input
- * 4. Implement directional control and position monitoring
- * 5. Understand analog signal processing fundamentals
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - Analog joystick with X-axis (ADC0) and Y-axis (ADC1)
- * - Optional joystick button connected to digital input
- * - LEDs on PORTB for direction indication (Up, Down, Left, Right)
- * - LCD display for position visualization
- * - Serial connection for calibration (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - ADC section (pages 206-230)
- * - Multi-channel ADC (page 215)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic Joystick Reading
- * - Demo 2: Coordinate Mapping and Calibration
- * - Demo 3: Digital Direction Control
- * - Demo 4: Advanced Control Applications
- *
- * =============================================================================
+ * DEMOS: Analog joystick reading, ADC sampling, position detection
+ * ==============================================================================
  */
 
 #include "config.h"

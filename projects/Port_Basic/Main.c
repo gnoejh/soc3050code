@@ -1,44 +1,12 @@
-/*
- * =============================================================================
- * PORT I/O PROGRAMMING - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * PORT I/O BASIC - DEMO CODE
+ * ==============================================================================
  * PROJECT: Port_Basic
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of ATmega128 port I/O operations in C language.
- * Students learn fundamental concepts of digital I/O programming and bit manipulation.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master port direction configuration (DDR registers)
- * 2. Learn output operations (PORT registers)
- * 3. Understand input operations (PIN registers)
- * 4. Practice bit manipulation techniques
- * 5. Compare C vs Assembly port operations
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - 8 LEDs connected to PORTB (PB0-PB7)
- * - Push button on PORTD.7 (active LOW with pull-up)
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - I/O Ports (pages 62-75)
- * - Digital I/O configurations (page 63)
- * - Pull-up resistors (page 64)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: Basic LED Control
- * - Demo 2: LED Patterns and Animation
- * - Demo 3: Button Input Processing
- * - Demo 4: Combined Input/Output Operations
- * - Demo 5: Advanced Bit Manipulation
- *
- * =============================================================================
+ * DEMOS: Port configuration, digital I/O, LED/button control
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -390,7 +358,7 @@ void demo_07_combined(void)
  */
 int main(void)
 {
-    demo_01_write_port(); // ← START HERE: Learn writing to ports
+    demo_01_write_port(); // ??START HERE: Learn writing to ports
     // demo_02_read_port(); // Learn reading from ports
     // demo_03_set_bits();      // Learn setting bits
     // demo_04_clear_bits();    // Learn clearing bits

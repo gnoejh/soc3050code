@@ -1,161 +1,12 @@
-/*
- * =============================================================================
- * I2C REAL-TIME CLOCK INTERFACE - EDUCATIONAL DEMONSTRATION
- * =============================================================================
- *
+﻿/*
+ * ==============================================================================
+ * I2C RTC DS1307 - DEMO CODE
+ * ==============================================================================
  * PROJECT: I2C_RTC_DS1307
- * COURSE: SOC 3050 - Embedded Systems and Applications
- * YEAR: 2025
- * AUTHOR: Professor Hong Jeong
+ * See Slide.md for complete theory and technical details
  *
- * PURPOSE:
- * Educational demonstration of I2C real-time clock (DS1307) interfacing and timekeeping.
- * Students learn I2C communication protocols and real-time system concepts.
- *
- * EDUCATIONAL OBJECTIVES:
- * 1. Master I2C communication protocol with DS1307 RTC
- * 2. Learn BCD (Binary-Coded Decimal) encoding and decoding
- * 3. Practice time/date read/write operations
- * 4. Implement real-time clock applications
- * 5. Understand battery-backed memory systems
- *
- * HARDWARE REQUIREMENTS:
- * - ATmega128 microcontroller @ 16MHz
- * - DS1307 Real-Time Clock IC with 32.768kHz crystal
- * - I2C connections: PD0 (SCL), PD1 (SDA) with 4.7K pull-ups
- * - 3V battery backup for timekeeping
- * - LCD display for time/date visualization
- * - Serial connection for debugging (9600 baud)
- *
- * DOCUMENTATION REFERENCE:
- * ATmega128 Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf
- * - TWI/I2C section (pages 195-205)
- * - TWI registers (pages 202-205)
- *
- * =============================================================================
- * TWI/I2C CONTROL REGISTERS - DETAILED REFERENCE FOR STUDENTS
- * =============================================================================
- *
- * REGISTER 1: TWCR (TWI Control Register) - PRIMARY CONTROL REGISTER
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name: TWINT  TWEA  TWSTA  TWSTO  TWWC   TWEN   -     TWIE
- *
- * TWINT (bit 7): TWI Interrupt Flag - OPERATION COMPLETE INDICATOR
- *                Set by hardware when TWI operation finishes
- *                Clear by writing 1 to start next operation
- *                CRITICAL: Must wait for TWINT=1 before reading status
- *                Polling: while(!(TWCR & (1<<TWINT)));
- *
- * TWEA (bit 6): TWI Enable Acknowledge
- *               1 = Send ACK after receiving byte (more data expected)
- *               0 = Send NACK after receiving byte (last byte)
- *
- * TWSTA (bit 5): TWI START Condition - Begin I2C transaction
- *                Write 1 to send START (or repeated START) condition
- *                Usage: TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
- *
- * TWSTO (bit 4): TWI STOP Condition - End I2C transaction
- *                Write 1 to send STOP condition
- *                Usage: TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN);
- *
- * TWEN (bit 2): TWI Enable - Must be set for all TWI operations
- *
- * TWIE (bit 0): TWI Interrupt Enable (0=polling, 1=interrupt)
- *
- * REGISTER 2: TWSR (TWI Status Register) - STATUS AND PRESCALER
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  TWS7   TWS6   TWS5   TWS4   TWS3   -     TWPS1  TWPS0
- *
- * TWS7:3 (bits 7-3): TWI Status Code
- *                    Read after TWINT=1: status = TWSR & 0xF8;
- *
- *                    Common Status Codes:
- *                    0x08 = START transmitted
- *                    0x10 = Repeated START transmitted
- *                    0x18 = SLA+W transmitted, ACK received
- *                    0x28 = Data transmitted, ACK received
- *                    0x40 = SLA+R transmitted, ACK received
- *                    0x50 = Data received, ACK returned
- *                    0x58 = Data received, NACK returned
- *
- * TWPS1:0 (bits 1-0): TWI Prescaler (usually 00 for prescaler=1)
- *
- * REGISTER 3: TWDR (TWI Data Register) - DATA TRANSFER
- *
- * Contains:
- * - Byte to transmit (when writing)
- * - Byte received (when reading)
- * - Device address + R/W bit during addressing
- *
- * DS1307 Addressing:
- *   Write to RTC: TWDR = (0x68<<1)|0 = 0xD0
- *   Read from RTC: TWDR = (0x68<<1)|1 = 0xD1
- *
- * REGISTER 4: TWBR (TWI Bit Rate Register) - SCL FREQUENCY
- *
- * SCL_frequency = F_CPU / (16 + 2 * TWBR * Prescaler)
- *
- * For 100kHz @ 16MHz:
- *   TWBR = 72, Prescaler = 1
- *   SCL = 16MHz / (16 + 2*72*1) = 100kHz
- *
- * For 100kHz @ 7.3728MHz:
- *   TWBR = 32, Prescaler = 1
- *   SCL = 7.3728MHz / (16 + 2*32*1) = 92.16kHz
- *
- * REGISTER 5: TWAR (TWI Address Register) - SLAVE MODE
- *
- *    Bit:   7      6      5      4      3      2      1      0
- *    Name:  TWA6   TWA5   TWA4   TWA3   TWA2   TWA1   TWA0  TWGCE
- *
- * TWA6:0: Slave address (not used in master-only mode)
- * TWGCE: General call enable (usually 0)
- *
- * TYPICAL I2C TRANSACTION WITH DS1307:
- *
- *   Write Time to DS1307:
- *     1. Send START
- *     2. Send SLA+W (0xD0)
- *     3. Send register address (0x00 for seconds)
- *     4. Send BCD-encoded time bytes
- *     5. Send STOP
- *
- *   Read Time from DS1307:
- *     1. Send START
- *     2. Send SLA+W (0xD0)
- *     3. Send register address (0x00)
- *     4. Send Repeated START
- *     5. Send SLA+R (0xD1)
- *     6. Read BCD bytes with ACK (except last)
- *     7. Read last byte with NACK
- *     8. Send STOP
- *
- * BCD (Binary-Coded Decimal) FORMAT:
- * Each byte stores two decimal digits:
- *   59 seconds = 0x59 (5 in upper nibble, 9 in lower nibble)
- *   23 hours = 0x23 (2 in upper nibble, 3 in lower nibble)
- *
- * Conversion:
- *   BCD to Decimal: dec = (bcd >> 4)*10 + (bcd & 0x0F);
- *   Decimal to BCD: bcd = ((dec/10) << 4) | (dec%10);
- *
- * =============================================================================
- *
- * DS1307 SPECIFICATIONS:
- * - I2C Address: 0x68 (7-bit)
- * - BCD Format: Hours, minutes, seconds, date, month, year
- * - 56 bytes of battery-backed RAM (0x08-0x3F)
- * - Square wave output options (1Hz, 4kHz, 8kHz, 32kHz)
- *
- * LEARNING PROGRESSION:
- * - Demo 1: I2C Communication Setup
- * - Demo 2: Time Reading and Display
- * - Demo 3: Time Setting and Configuration
- * - Demo 4: Battery-Backed Memory Usage
- *
- * =============================================================================
+ * DEMOS: Real-time clock interfacing, time/date reading, I2C communication
+ * ==============================================================================
  */
 
 #include "config.h"
@@ -681,9 +532,9 @@ void demo4_ram_storage(void)
 void display_main_menu(void)
 {
     puts_USART1("\r\n\r\n");
-    puts_USART1("╔════════════════════════════════════════╗\r\n");
-    puts_USART1("║   I2C RTC (DS1307) - ATmega128        ║\r\n");
-    puts_USART1("╚════════════════════════════════════════╝\r\n");
+    puts_USART1("?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븮\r\n");
+    puts_USART1("??  I2C RTC (DS1307) - ATmega128        ??r\n");
+    puts_USART1("?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븴\r\n");
     puts_USART1("\r\n");
     puts_USART1("Select Demo:\r\n");
     puts_USART1("  [1] Set RTC Time\r\n");
