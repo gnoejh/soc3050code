@@ -3,6 +3,8 @@
 
 **Reference**: [ATmega128 Datasheet](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf)
 
+**Project**: `Motor_Stepper/` - Stepper motor control with PORTB (coils + LEDs)
+
 ---
 
 ## Slide 1: Introduction to Stepper Motors
@@ -31,15 +33,14 @@ graph TD
 
 ### Stepper Motor Characteristics
 ```
-Typical 28BYJ-48 Specifications:
-- Type: Unipolar, 5-wire
-- Rated Voltage: 5V DC
-- Step Angle: 5.625° (internal)
-- Gear Ratio: 64:1
-- Steps per Revolution: 2048 (with gear)
-- Phase: 4
-- Holding Torque: ~300 g·cm
-- Detent Torque: ~600 g·cm
+Standard Stepper Motor Specifications:
+- Type: Bipolar, 4-wire (2-phase)
+- Step Angle: 1.8° per step
+- Steps per Revolution: 200 (full-step mode)
+- Steps per Revolution: 400 (half-step mode)
+- Phase: 2 (A and B coils)
+- Holding Torque: Varies by motor model
+- Typical Voltage: 5-12V DC
 ```
 
 ### How It Works
@@ -63,46 +64,43 @@ Electromagnet coils energized in sequence
 
 ## Slide 2: Hardware Connection
 
-### Unipolar Stepper (28BYJ-48) Pinout
+### PORTB Pin Assignment
 ```
-28BYJ-48 with ULN2003 Driver
+ATmega128 PORTB Configuration:
 
-Stepper Wire Colors:
-┌──────────────┐
-│ Red    (COM) │ ← Common (+5V)
-│ Orange (A)   │ ← Coil A
-│ Yellow (B)   │ ← Coil B
-│ Pink   (C)   │ ← Coil C
-│ Blue   (D)   │ ← Coil D
-└──────────────┘
-```
-
-### ULN2003 Darlington Driver
-```
-ATmega128         ULN2003        28BYJ-48
----------         -------        --------
-PA0       ────→   IN1    OUT1 ──→ Orange (A)
-PA1       ────→   IN2    OUT2 ──→ Yellow (B)
-PA2       ────→   IN3    OUT3 ──→ Pink   (C)
-PA3       ────→   IN4    OUT4 ──→ Blue   (D)
-GND       ────→   GND    COM  ──→ +5V
-
-+5V       ────────────────────→ Red (COM)
+PB7 ────→ LED7 (active low) ┐
+PB6 ────→ LED6 (active low) │ Upper nibble: LEDs
+PB5 ────→ LED5 (active low) │ (Status indicators)
+PB4 ────→ LED4 (active low) ┘
+─────────────────────────────
+PB3 ────→ Coil B2 (Stepper) ┐
+PB2 ────→ Coil B1 (Stepper) │ Lower nibble: Stepper coils
+PB1 ────→ Coil A2 (Stepper) │ (Motor control)
+PB0 ────→ Coil A1 (Stepper) ┘
 ```
 
-### Bipolar Stepper (4-wire) with L298N
+### Bipolar Stepper (4-wire) Connection
 ```
-ATmega128         L298N         Bipolar Stepper
----------         -----         ---------------
-PA0       ────→   IN1           
-PA1       ────→   IN2    OUT1 ──→ Coil A+
-PA2       ────→   IN3    OUT2 ──→ Coil A-
-PA3       ────→   IN4    OUT3 ──→ Coil B+
-                         OUT4 ──→ Coil B-
+ATmega128 PORTB    Driver IC      Stepper Motor
+------------       ---------      -------------
+PB0 (A1) ────→     IN1    OUT1 ──→ Coil A1
+PB1 (A2) ────→     IN2    OUT2 ──→ Coil A2
+PB2 (B1) ────→     IN3    OUT3 ──→ Coil B1
+PB3 (B2) ────→     IN4    OUT4 ──→ Coil B2
 
-External 5-12V ──→ +12V  (motor power)
-GND ──────────────→ GND   (common ground)
+PB4-PB7 ────→      LEDs (active low)
+
+External 5-12V ──→ Motor Power Supply
+GND ──────────────→ Common Ground
 ```
+
+### Important Notes
+- **PORTB lower nibble (PB0-PB3)**: Stepper motor coils
+- **PORTB upper nibble (PB4-PB7)**: Status LEDs (active low)
+- **Bit masking**: Coil updates preserve LED states
+- **LEDs active low**: LOW (0) = ON, HIGH (1) = OFF
+- **SimulIDE Configuration**: Set "Steps per Rotation" to 200 in stepper motor component
+- **F_CPU**: 16MHz (consistent across all projects)
 
 ---
 
@@ -112,31 +110,32 @@ GND ──────────────→ GND   (common ground)
 ```c
 // One coil energized at a time
 // 4 steps per sequence, lower torque
+// Used in Demo 5 for comparison
 
-const uint8_t wave_drive[4] = {
-    0b0001,  // Step 0: D
-    0b0010,  // Step 1: C
-    0b0100,  // Step 2: B
-    0b1000   // Step 3: A
+const uint8_t full_step_sequence_wave[4] = {
+    0b0001,  // Step 0: A1
+    0b0010,  // Step 1: A2
+    0b0100,  // Step 2: B1
+    0b1000   // Step 3: B2
 };
 
-// Example for 28BYJ-48:
-// 2048 steps per revolution (with 64:1 gear)
+// Standard stepper: 200 steps per revolution
 ```
 
 ### Full-Step Mode (Full Drive)
 ```c
 // Two coils energized, maximum torque
-// 4 steps per sequence
+// 4 steps per sequence (default mode)
 
-const uint8_t full_step[4] = {
-    0b0011,  // Step 0: D+C
-    0b0110,  // Step 1: C+B
-    0b1100,  // Step 2: B+A
-    0b1001   // Step 3: A+D
+const uint8_t full_step_sequence[4] = {
+    0b0011,  // Step 0: A1 + A2
+    0b0110,  // Step 1: A2 + B1
+    0b1100,  // Step 2: B1 + B2
+    0b1001   // Step 3: B2 + A1
 };
 
 // Double the holding torque of wave drive
+// Standard stepper: 200 steps per revolution
 ```
 
 ### Half-Step Mode
@@ -144,103 +143,104 @@ const uint8_t full_step[4] = {
 // Alternates between 1 and 2 coils
 // 8 steps per sequence, smoother rotation
 
-const uint8_t half_step[8] = {
-    0b0001,  // Step 0: D
-    0b0011,  // Step 1: D+C
-    0b0010,  // Step 2: C
-    0b0110,  // Step 3: C+B
-    0b0100,  // Step 4: B
-    0b1100,  // Step 5: B+A
-    0b1000,  // Step 6: A
-    0b1001   // Step 7: A+D
+const uint8_t half_step_sequence[8] = {
+    0b0001,  // Step 0: A1
+    0b0011,  // Step 1: A1 + A2
+    0b0010,  // Step 2: A2
+    0b0110,  // Step 3: A2 + B1
+    0b0100,  // Step 4: B1
+    0b1100,  // Step 5: B1 + B2
+    0b1000,  // Step 6: B2
+    0b1001   // Step 7: B2 + A1
 };
 
-// 4096 steps per revolution (28BYJ-48)
+// Standard stepper: 400 steps per revolution (double resolution)
 // Smoother, but lower torque on single-coil steps
 ```
 
 ### Stepping Sequence Diagram
 ```mermaid
 sequenceDiagram
-    participant A as Coil A
-    participant B as Coil B
-    participant C as Coil C
-    participant D as Coil D
+    participant A1 as Coil A1
+    participant A2 as Coil A2
+    participant B1 as Coil B1
+    participant B2 as Coil B2
     
-    Note over A,D: Full-Step Sequence
-    D->>D: ON
-    C->>C: ON
-    Note right of D: Step 0
+    Note over A1,B2: Full-Step Sequence (Two-Phase)
+    A1->>A1: ON
+    A2->>A2: ON
+    Note right of A1: Step 0: A1+A2
     
-    C->>C: ON
-    B->>B: ON
-    D->>D: OFF
-    Note right of C: Step 1
+    A2->>A2: ON
+    B1->>B1: ON
+    A1->>A1: OFF
+    Note right of A2: Step 1: A2+B1
     
-    B->>B: ON
-    A->>A: ON
-    C->>C: OFF
-    Note right of B: Step 2
+    B1->>B1: ON
+    B2->>B2: ON
+    A2->>A2: OFF
+    Note right of B1: Step 2: B1+B2
     
-    A->>A: ON
-    D->>D: ON
-    B->>B: OFF
-    Note right of A: Step 3
-    
-    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
-    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
-    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
-    style D fill:#fff3e1,stroke:#333,stroke-width:2px,color:#000
+    B2->>B2: ON
+    A1->>A1: ON
+    B1->>B1: OFF
+    Note right of B2: Step 3: B2+A1
 ```
 
 ---
 
 ## Slide 4: Basic Stepper Control
 
-### Initialize GPIO for Stepper
+### Initialize GPIO for Stepper (PORTB)
 ```c
 #include <avr/io.h>
 #include <util/delay.h>
 
-// Motor connected to PORTA lower 4 bits
-#define STEPPER_PORT PORTA
-#define STEPPER_DDR  DDRA
-#define STEPPER_MASK 0x0F  // PA3:PA0
+// Motor connected to PORTB lower 4 bits
+// LEDs on PORTB upper 4 bits (active low)
+#define STEPPER_PORT PORTB
+#define STEPPER_DDR  DDRB
+#define COIL_A1 (1 << PB0)
+#define COIL_A2 (1 << PB1)
+#define COIL_B1 (1 << PB2)
+#define COIL_B2 (1 << PB3)
 
-// Full-step sequence
-const uint8_t full_step[4] = {
-    0b0011,  // D+C
-    0b0110,  // C+B
-    0b1100,  // B+A
-    0b1001   // A+D
+// Full-step sequence (two-phase on, higher torque)
+const uint8_t full_step_sequence[4] = {
+    0b0011,  // A1 + A2
+    0b0110,  // A2 + B1
+    0b1100,  // B1 + B2
+    0b1001   // B2 + A1
 };
 
-uint8_t step_index = 0;
+uint8_t current_step_index = 0;
 
 void stepper_init(void) {
-    // Set PA3:PA0 as outputs
-    STEPPER_DDR |= STEPPER_MASK;
-    
-    // Initialize to first step
-    STEPPER_PORT = (STEPPER_PORT & ~STEPPER_MASK) | (full_step[0] & STEPPER_MASK);
+    // Set PORTB as output (coils + LEDs)
+    STEPPER_DDR = 0xFF;
+    // Initialize: coils OFF, LEDs OFF (active low: HIGH = OFF)
+    STEPPER_PORT = 0xF0;  // Upper nibble HIGH = LEDs OFF
 }
 
-void stepper_step_cw(void) {
-    // Clockwise: increment step index
-    step_index++;
-    if (step_index >= 4) step_index = 0;
-    
-    // Output step pattern
-    STEPPER_PORT = (STEPPER_PORT & ~STEPPER_MASK) | (full_step[step_index] & STEPPER_MASK);
+void stepper_set_coils(uint8_t coil_pattern) {
+    // Update only lower nibble (coils), preserve upper nibble (LEDs)
+    STEPPER_PORT = (STEPPER_PORT & 0xF0) | (coil_pattern & 0x0F);
 }
 
-void stepper_step_ccw(void) {
-    // Counter-clockwise: decrement step index
-    if (step_index == 0) step_index = 3;
-    else step_index--;
-    
-    // Output step pattern
-    STEPPER_PORT = (STEPPER_PORT & ~STEPPER_MASK) | (full_step[step_index] & STEPPER_MASK);
+void stepper_step_forward(void) {
+    // Forward: increment step index
+    current_step_index = (current_step_index + 1) % 4;
+    stepper_set_coils(full_step_sequence[current_step_index]);
+}
+
+void stepper_step_backward(void) {
+    // Backward: decrement step index
+    if (current_step_index == 0) {
+        current_step_index = 3;
+    } else {
+        current_step_index--;
+    }
+    stepper_set_coils(full_step_sequence[current_step_index]);
 }
 ```
 
@@ -252,28 +252,36 @@ void stepper_step_ccw(void) {
 ```c
 // Delay between steps determines rotation speed
 // Shorter delay = faster rotation
+// NOTE: _delay_ms() requires compile-time constants
+// Use loop for variable delays
 
 #define SPEED_SLOW    10   // 10ms per step
 #define SPEED_MEDIUM  5    // 5ms per step
 #define SPEED_FAST    2    // 2ms per step
 
-void stepper_rotate_cw(uint16_t steps, uint8_t speed_ms) {
+void stepper_rotate_cw(uint16_t steps, uint16_t speed_ms) {
     for (uint16_t i = 0; i < steps; i++) {
         stepper_step_cw();
-        _delay_ms(speed_ms);
+        // Variable delay using busy wait loop
+        for (uint16_t d = 0; d < speed_ms; d++) {
+            _delay_ms(1);
+        }
     }
 }
 
-void stepper_rotate_ccw(uint16_t steps, uint8_t speed_ms) {
+void stepper_rotate_ccw(uint16_t steps, uint16_t speed_ms) {
     for (uint16_t i = 0; i < steps; i++) {
         stepper_step_ccw();
-        _delay_ms(speed_ms);
+        // Variable delay using busy wait loop
+        for (uint16_t d = 0; d < speed_ms; d++) {
+            _delay_ms(1);
+        }
     }
 }
 
 // Example: Rotate 1 full revolution
-// 28BYJ-48: 2048 steps/rev in full-step mode
-stepper_rotate_cw(2048, SPEED_MEDIUM);
+// Standard stepper: 200 steps/rev in full-step mode
+stepper_rotate_cw(200, SPEED_MEDIUM);
 ```
 
 ### RPM Calculation
@@ -293,8 +301,8 @@ uint8_t rpm_to_delay_ms(uint8_t rpm, uint16_t steps_per_rev) {
 }
 
 // Example: 10 RPM
-uint8_t delay = rpm_to_delay_ms(10, 2048);
-stepper_rotate_cw(2048, delay);
+uint8_t delay = rpm_to_delay_ms(10, 200);
+stepper_rotate_cw(200, delay);
 ```
 
 ---
@@ -330,7 +338,7 @@ void stepper_rotate_accel(uint16_t steps, uint8_t start_delay, uint8_t end_delay
 }
 
 // Example: Accelerate from 20ms to 2ms per step
-stepper_rotate_accel(2048, 20, 2);
+stepper_rotate_accel(200, 20, 2);
 ```
 
 ---
@@ -371,8 +379,8 @@ void stepper_home(void) {
 
 // Example: Move to specific positions
 stepper_set_position(0);       // Initialize at home
-stepper_move_to(1024, 5);      // Move to 1024 steps (180°)
-stepper_move_to(2048, 5);      // Move to 2048 steps (360°)
+stepper_move_to(100, 5);       // Move to 100 steps (180°)
+stepper_move_to(200, 5);       // Move to 200 steps (360°)
 stepper_home();                // Return to home
 ```
 
@@ -399,19 +407,21 @@ void stepper_half_step_cw(void) {
     half_step_index++;
     if (half_step_index >= 8) half_step_index = 0;
     
-    STEPPER_PORT = (STEPPER_PORT & ~STEPPER_MASK) | (half_step[half_step_index] & STEPPER_MASK);
+    // Update coils, preserve LEDs
+    STEPPER_PORT = (STEPPER_PORT & 0xF0) | (half_step_sequence[half_step_index] & 0x0F);
 }
 
 void stepper_half_step_ccw(void) {
     if (half_step_index == 0) half_step_index = 7;
     else half_step_index--;
     
-    STEPPER_PORT = (STEPPER_PORT & ~STEPPER_MASK) | (half_step[half_step_index] & STEPPER_MASK);
+    // Update coils, preserve LEDs
+    STEPPER_PORT = (STEPPER_PORT & 0xF0) | (half_step_sequence[half_step_index] & 0x0F);
 }
 
-// 28BYJ-48: 4096 steps per revolution in half-step mode
+// Standard stepper: 400 steps per revolution in half-step mode
 void rotate_one_revolution_smooth(void) {
-    for (uint16_t i = 0; i < 4096; i++) {
+    for (uint16_t i = 0; i < 400; i++) {
         stepper_half_step_cw();
         _delay_ms(2);
     }
@@ -420,18 +430,58 @@ void rotate_one_revolution_smooth(void) {
 
 ---
 
-## Slide 9: Application - CNC X-Y Plotter
+## Slide 9: Project Demos
+
+### Demo Functions Available
+
+**Demo 1: Basic Forward/Backward Stepping**
+- Forward 50 steps, backward 50 steps
+- Forward 100 steps, backward 100 steps
+- Demonstrates basic step control
+
+**Demo 2: Continuous Rotation at Different Speeds**
+- Tests 5 different speeds (20ms, 10ms, 5ms, 2ms, 1ms per step)
+- One full revolution at each speed
+- Shows speed vs smoothness trade-off
+
+**Demo 3: Position Control - Move to Specific Angles**
+- Moves to angles: 0°, 90°, 180°, 270°, 360°, etc.
+- Demonstrates precise angular positioning
+- Uses degree-to-step conversion
+
+**Demo 4: Full-Step vs Half-Step Comparison**
+- Full-step mode: 200 steps per revolution
+- Half-step mode: 400 steps per revolution
+- Compares smoothness and resolution
+
+**Demo 5: Wave Drive vs Two-Phase Drive**
+- Wave drive: one coil at a time (lower torque)
+- Two-phase drive: two coils at a time (higher torque)
+- Demonstrates torque differences
+
+**Demo 6: Random Rotation**
+- Random movements in random directions
+- Random speeds (5-30ms per step)
+- 10 random movements, then return home
+
+**Demo 7: Sinusoidal Motion**
+- Smooth sine wave motion pattern
+- Variable speed following cosine profile
+- Oscillates ±50 steps (≈±90°)
+- 3 complete sine wave cycles
+
+### Application - CNC X-Y Plotter
 
 ### Two-Axis Stepper Control
 ```c
-// X-axis on PORTA
+// X-axis on PORTB
 // Y-axis on PORTC
 
 int32_t x_position = 0;
 int32_t y_position = 0;
 
 void cnc_init(void) {
-    DDRA |= 0x0F;  // X-axis steppers
+    DDRB |= 0x0F;  // X-axis steppers (lower nibble)
     DDRC |= 0x0F;  // Y-axis steppers
 }
 
@@ -448,7 +498,7 @@ void cnc_step_x(int8_t direction) {
         x_position--;
     }
     
-    PORTA = (PORTA & 0xF0) | (full_step[step_index_x] & 0x0F);
+    PORTB = (PORTB & 0xF0) | (full_step[step_index_x] & 0x0F);
 }
 
 void cnc_step_y(int8_t direction) {
@@ -498,7 +548,7 @@ void cnc_draw_square(uint16_t size) {
 
 ### Stepper-Controlled Curtain Opener
 ```c
-#define CURTAIN_OPEN_STEPS   4096   // Fully open
+#define CURTAIN_OPEN_STEPS   200    // Fully open (1 revolution)
 #define CURTAIN_CLOSED_STEPS 0      // Fully closed
 
 typedef enum {
@@ -549,7 +599,7 @@ void auto_curtain(void) {
 // Rotate platform with LED display
 // Persistence of vision creates image
 
-#define STEPS_PER_REV 2048
+#define STEPS_PER_REV 200
 
 void display_init(void) {
     stepper_init();
@@ -606,7 +656,8 @@ int main(void) {
 int16_t pan_angle = 0;   // -180° to +180°
 int16_t tilt_angle = 0;  // -90° to +90°
 
-#define STEPS_PER_DEGREE 11  // 2048 steps / 180° ≈ 11
+#define STEPS_PER_DEGREE 1   // 200 steps / 360° ≈ 0.56 steps/degree
+// For 180°: 200 steps / 360° × 180° = 100 steps
 
 void pantilt_init(void) {
     stepper_init();
@@ -734,15 +785,25 @@ void stepper_test(void) {
 
 ✓ **Match driver to motor type**
 ```c
-// Unipolar (5/6-wire) → ULN2003, ULN2803
 // Bipolar (4-wire) → L298N, A4988, DRV8825
+// Use PORTB lower nibble for coil control
 ```
 
 ✓ **Limit speed**
 ```c
 // Don't exceed motor's max step rate
 // Typical: 500-1000 steps/sec max
-if (delay_ms < 2) delay_ms = 2;  // Min 2ms
+// Minimum delay: 1ms per step
+if (delay_ms < 1) delay_ms = 1;
+```
+
+✓ **Use variable delay loops**
+```c
+// _delay_ms() requires compile-time constants
+// Use loop for variable delays:
+for (uint16_t d = 0; d < delay_ms; d++) {
+    _delay_ms(1);
+}
 ```
 
 ✓ **Add acceleration**
@@ -761,15 +822,14 @@ position += steps;  // Update on each step
 ✓ **Disable when idle**
 ```c
 // Turn off coils to reduce power and heat
-STEPPER_PORT &= ~STEPPER_MASK;
+// Preserve LED states
+STEPPER_PORT = STEPPER_PORT & 0xF0;  // Clear coils, keep LEDs
 ```
 
-✓ **Add limit switches**
+✓ **Preserve LED states**
 ```c
-// Detect mechanical limits and home position
-if (limit_switch_hit()) {
-    stepper_set_position(0);  // Reset home
-}
+// When updating coils, preserve LEDs:
+STEPPER_PORT = (STEPPER_PORT & 0xF0) | (coil_pattern & 0x0F);
 ```
 
 ---
@@ -796,16 +856,26 @@ if (limit_switch_hit()) {
 
 ### Stepper Comparison
 ```
-Unipolar (28BYJ-48):
-+ Simple driver (ULN2003)
-+ 5-wire connection
-- Lower torque
+Full-Step Mode:
++ Higher torque (two coils on)
++ Faster operation
++ 200 steps per revolution
+- Audible stepping noise
 
-Bipolar (NEMA 17):
-+ Higher torque
-+ Better efficiency
-- More complex driver (H-bridge)
+Half-Step Mode:
++ Smoother motion
++ Finer resolution (400 steps/rev)
++ Quieter operation
+- Lower torque on single-coil steps
+- Slower maximum speed
 ```
+
+### Project Implementation
+- **Port**: PORTB (lower nibble: coils, upper nibble: LEDs)
+- **LEDs**: Active low (PB4-PB7)
+- **Steps per Revolution**: 200 (full-step), 400 (half-step)
+- **Clock Frequency**: 16MHz
+- **7 Demo Functions**: Cover all stepping modes and applications
 
 ---
 
@@ -813,38 +883,42 @@ Bipolar (NEMA 17):
 
 ### Exercise 1: Basic Stepping
 **Goal**: Implement full-step control
-- Initialize GPIO for 4 coils
-- Create CW and CCW step functions
-- Rotate 1 full revolution
-- Add speed control
+- Initialize GPIO for 4 coils on PORTB
+- Create forward and backward step functions
+- Rotate 1 full revolution (200 steps)
+- Add speed control with variable delays
+- Use LED indicators for status
 
 ### Exercise 2: Position Control
 **Goal**: Track absolute position
-- Implement position counter
+- Implement position counter (int32_t)
 - Create `move_to()` function
-- Add home position
-- Display position on LCD
+- Add home position (position = 0)
+- Convert degrees to steps
+- Use LEDs to show position index
 
 ### Exercise 3: Half-Step Mode
 **Goal**: Smoother rotation
 - Implement 8-step sequence
 - Compare smoothness vs full-step
-- Measure steps per revolution
+- Verify 400 steps per revolution (vs 200 full-step)
 - Test with different speeds
+- Observe torque differences
 
-### Exercise 4: CNC Plotter
-**Goal**: Control 2-axis stepper system
-- Implement X and Y steppers
-- Create `move_to(x, y)` function
-- Draw geometric shapes (square, circle)
-- Add pen lift servo
+### Exercise 4: Advanced Motion Patterns
+**Goal**: Implement complex motion patterns
+- Random rotation (Demo 6)
+- Sinusoidal motion (Demo 7)
+- Create custom motion profiles
+- Implement acceleration/deceleration curves
 
-### Exercise 5: Automatic Curtain
-**Goal**: Light-activated curtain control
-- Read light sensor (CdS)
-- Open curtain when dark
-- Close curtain when bright
-- Add manual override buttons
+### Exercise 5: LED Integration
+**Goal**: Combine stepper control with LED feedback
+- Use PORTB upper nibble for LEDs
+- Implement active-low LED control
+- Show demo status on LEDs
+- Display step patterns visually
+- Preserve LED states during coil updates
 
 ---
 
@@ -852,8 +926,9 @@ Bipolar (NEMA 17):
 
 ### ATmega128 Documentation
 - **[Official Datasheet (PDF)](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf)**
-  - GPIO configuration (PORTA, PORTC)
+  - GPIO configuration (PORTB)
   - Timing considerations
+  - Bit manipulation techniques
 
 ### Stepper Motor Resources
 - Motor datasheets (28BYJ-48, NEMA 17, etc.)
@@ -881,5 +956,25 @@ Bipolar (NEMA 17):
 
 For more information, see:
 - [ATmega128 Datasheet](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf)
-- Project source code in `PWM_Motor_Stepper/`
-- Shared libraries: `_stepper.h`, `_stepper.c`
+- Project source code in `Motor_Stepper/`
+- **Main.c**: Contains 7 demo functions
+- **config.h**: Project configuration (F_CPU = 16MHz)
+- **build.bat**: Build script using tools folder
+
+### Code Structure
+```
+Motor_Stepper/
+├── Main.c          # Main code with 7 demos
+├── config.h        # Configuration header
+├── build.bat       # Build script
+└── Slide.md        # This documentation
+```
+
+### Key Features
+- ✅ PORTB integration (coils + LEDs)
+- ✅ Active-low LED control
+- ✅ Full-step and half-step modes
+- ✅ Position tracking
+- ✅ Speed control
+- ✅ Multiple demo applications
+- ✅ SimulIDE compatible (200 steps/rev)
