@@ -1,20 +1,20 @@
 ﻿<circuit version="1.1.0-SR1" rev="2005" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" >
 
-<item itemtype="Potentiometer" CircId="Potentiometer-1420" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="236,-656" rotation="0" hflip="1" vflip="1" label="Potentiometer-1420" idLabPos="-16,-40" labelrot="0" valLabPos="10,-20" valLabRot="0" Resistance="1 k兩? Value_Ohm="0 兩? Slider="false" Scale="1" />
+<item itemtype="Potentiometer" CircId="Potentiometer-1420" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="236,-656" rotation="0" hflip="1" vflip="1" label="Potentiometer-1420" idLabPos="-16,-40" labelrot="0" valLabPos="10,-20" valLabRot="0" Resistance="1 k廓" Value_Ohm="0 廓" Slider="false" Scale="1" />
 
-<item itemtype="Servo" CircId="Servo-1025" mainComp="false" Show_id="true" Show_Val="false" Pos="-692,-236" rotation="0" hflip="1" vflip="1" label="Servo-1025" idLabPos="-16,-40" labelrot="0" valLabPos="0,0" valLabRot="0" Speed="0.2 _s/60쨘" MinPulse="1000 _쨉s" MaxPulse="2000 _쨉s" Input_High_V="2.5 V" Input_Low_V="2.5 V" Input_Imped="1000 M兩? />
+<item itemtype="Servo" CircId="Servo-1025" mainComp="false" Show_id="true" Show_Val="false" Pos="-692,-236" rotation="0" hflip="1" vflip="1" label="Servo-1025" idLabPos="-16,-40" labelrot="0" valLabPos="0,0" valLabRot="0" Speed="0.2 _s/60쨘" MinPulse="1000 _쨉s" MaxPulse="2000 _쨉s" Input_High_V="2.5 V" Input_Low_V="2.5 V" Input_Imped="1000 M廓" />
 
 <item itemtype="Fixed Voltage" CircId="Fixed Voltage-770" mainComp="false" Show_id="false" Show_Val="true" Pos="-764,-388" rotation="0" hflip="1" vflip="1" label="Fixed Voltage-770" idLabPos="-64,-24" labelrot="0" valLabPos="-16,8" valLabRot="0" Voltage="5 V" Out="true" />
 
-<item itemtype="DcMotor" CircId="DcMotor-766" mainComp="false" Show_id="true" Show_Val="false" Pos="-688,-388" rotation="0" hflip="-1" vflip="1" label="DcMotor-766" idLabPos="-22,-48" labelrot="0" valLabPos="0,0" valLabRot="0" RPM_Nominal="60 _RPM" Volt_Nominal="5 V" Resistance="100 兩? />
+<item itemtype="DcMotor" CircId="DcMotor-766" mainComp="false" Show_id="true" Show_Val="false" Pos="-688,-388" rotation="0" hflip="-1" vflip="1" label="DcMotor-766" idLabPos="-22,-48" labelrot="0" valLabPos="0,0" valLabRot="0" RPM_Nominal="60 _RPM" Volt_Nominal="5 V" Resistance="100 廓" />
 
-<item itemtype="Oscope" CircId="Oscope-604" mainComp="false" Show_id="false" Show_Val="false" Pos="-704,-628" rotation="0" hflip="1" vflip="1" label="Oscope-604" idLabPos="-90,-100" labelrot="0" valLabPos="0,0" valLabRot="0" Basic_X="135 _px" Basic_Y="135 _px" BufferSize="600000" connectGnd="true" InputImped="10 M兩? TimDiv="662412000" TimPos="0,0,0,0," VolDiv="1,1,1,1," Tunnels=",,Trigg,," Trigger="0" Filter="0 V" AutoSC="4" Tracks="1" HideCh="false,false,false,false," VolPos="0,0,0,0," />
+<item itemtype="Oscope" CircId="Oscope-604" mainComp="false" Show_id="false" Show_Val="false" Pos="-704,-628" rotation="0" hflip="1" vflip="1" label="Oscope-604" idLabPos="-90,-100" labelrot="0" valLabPos="0,0" valLabRot="0" Basic_X="135 _px" Basic_Y="135 _px" BufferSize="600000" connectGnd="true" InputImped="10 M廓" TimDiv="662412000" TimPos="0,0,0,0," VolDiv="1,1,1,1," Tunnels=",,Trigg,," Trigger="0" Filter="0 V" AutoSC="4" Tracks="1" HideCh="false,false,false,false," VolPos="0,0,0,0," />
 
 <item itemtype="TextComponent" CircId="TextComponent-545" mainComp="false" Show_id="false" Show_Val="false" Pos="-792,-796" rotation="0" hflip="1" vflip="1" label="TextComponent-545" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Margin="5 _px" Border="1 _px" Color="#ffffdc" Opacity="1" Font="Helvetica [Cronyx]" Font_Color="#000080" Font_Size="10 _px" Fixed_Width="false" Text="HONG JEONG&#xa;123456" />
 
 <item itemtype="Rail" CircId="Rail-262" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-68,-704" rotation="90" hflip="1" vflip="1" label="Rail-262" idLabPos="-16,-24" labelrot="0" valLabPos="-16,8" valLabRot="0" Voltage="5 V" />
 
-<item itemtype="Resistor" CircId="Resistor-261" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-68,-656" rotation="90" hflip="1" vflip="1" label="Resistor-261" idLabPos="-12,-20" labelrot="0" valLabPos="-16,6" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-261" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-68,-656" rotation="90" hflip="1" vflip="1" label="Resistor-261" idLabPos="-12,-20" labelrot="0" valLabPos="-16,6" valLabRot="0" Resistance="100 廓" />
 
 <item itemtype="Ks0108" CircId="Ks0108-237" mainComp="false" Show_id="true" Show_Val="false" Pos="32,-656" rotation="0" hflip="1" vflip="1" label="Ks0108-237" idLabPos="-32,-68" labelrot="0" valLabPos="0,0" valLabRot="0" CS_Active_Low="false" />
 
@@ -22,7 +22,7 @@
 
 <item itemtype="Rail" CircId="Rail-77" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-304,-640" rotation="90" hflip="1" vflip="1" label="Rail-186" idLabPos="-16,-24" labelrot="0" valLabPos="-21,6" valLabRot="-90" Voltage="5 V" />
 
-<item itemtype="Potentiometer" CircId="Potentiometer-76" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-272,-612" rotation="0" hflip="1" vflip="1" label="Potentiometer-259" idLabPos="-16,-40" labelrot="0" valLabPos="19,-16" valLabRot="0" Resistance="1 k兩? Value_Ohm="0 兩? Slider="false" Scale="1" />
+<item itemtype="Potentiometer" CircId="Potentiometer-76" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-272,-612" rotation="0" hflip="1" vflip="1" label="Potentiometer-259" idLabPos="-16,-40" labelrot="0" valLabPos="19,-16" valLabRot="0" Resistance="1 k廓" Value_Ohm="0 廓" Slider="false" Scale="1" />
 
 <item itemtype="Switch" CircId="Switch-75" mainComp="false" Show_id="false" Show_Val="false" Pos="-276,-84" rotation="0" hflip="1" vflip="1" label="Switch-231" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" DT="false" Poles="1" />
 
@@ -32,23 +32,23 @@
 
 <item itemtype="Rail" CircId="Rail-70" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-244,-260" rotation="90" hflip="1" vflip="1" label="Rail-186" idLabPos="-16,-24" labelrot="0" valLabPos="-23,4" valLabRot="-90" Voltage="5 V" />
 
-<item itemtype="Resistor" CircId="Resistor-69" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-244,-212" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-69" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-244,-212" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
 <item itemtype="Push" CircId="Push-68" mainComp="false" Show_id="false" Show_Val="false" Pos="-220,-148" rotation="0" hflip="1" vflip="1" label="Push-196" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
-<item itemtype="Resistor" CircId="Resistor-48" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-164,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-48" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-164,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-47" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-124,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-47" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-124,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-46" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-84,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-46" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-84,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-45" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-44,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-45" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-44,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-44" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-4,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-44" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-4,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-43" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="36,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-43" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="36,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-42" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="76,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-42" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="76,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
 <item itemtype="Push" CircId="Push-41" mainComp="false" Show_id="false" Show_Val="false" Pos="116,-148" rotation="0" hflip="1" vflip="1" label="Push-89" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
@@ -60,65 +60,65 @@
 
 <item itemtype="Rail" CircId="Rail-37" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="116,-236" rotation="90" hflip="1" vflip="1" label="Rail-16" idLabPos="-16,-24" labelrot="0" valLabPos="-24,7" valLabRot="-90" Voltage="5 V" />
 
-<item itemtype="Resistor" CircId="Resistor-36" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="116,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-36" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="116,-188" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
 <item itemtype="Push" CircId="Push-35" mainComp="false" Show_id="false" Show_Val="false" Pos="-164,-148" rotation="0" hflip="1" vflip="1" label="Push-99" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
-<item itemtype="Led" CircId="Led-34" mainComp="false" Show_id="false" Show_Val="false" Pos="-356,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-34" mainComp="false" Show_id="false" Show_Val="false" Pos="-356,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Led" CircId="Led-33" mainComp="false" Show_id="false" Show_Val="false" Pos="-428,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-33" mainComp="false" Show_id="false" Show_Val="false" Pos="-428,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-32" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-356,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-32" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-356,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Led" CircId="Led-31" mainComp="false" Show_id="false" Show_Val="false" Pos="-380,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-31" mainComp="false" Show_id="false" Show_Val="false" Pos="-380,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-30" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-428,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-30" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-428,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-29" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-404,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-29" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-404,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-28" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-380,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-28" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-380,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Led" CircId="Led-27" mainComp="false" Show_id="false" Show_Val="false" Pos="-404,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-27" mainComp="false" Show_id="false" Show_Val="false" Pos="-404,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Led" CircId="Led-26" mainComp="false" Show_id="false" Show_Val="false" Pos="-452,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-26" mainComp="false" Show_id="false" Show_Val="false" Pos="-452,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-25" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-452,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-25" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-452,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Led" CircId="Led-24" mainComp="false" Show_id="false" Show_Val="false" Pos="-476,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-24" mainComp="false" Show_id="false" Show_Val="false" Pos="-476,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-23" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-476,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-23" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-476,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Resistor" CircId="Resistor-22" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-500,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-22" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-500,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Led" CircId="Led-21" mainComp="false" Show_id="false" Show_Val="false" Pos="-500,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-21" mainComp="false" Show_id="false" Show_Val="false" Pos="-500,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
 <item itemtype="MCU" CircId="mega128-20" mainComp="false" Show_id="true" Show_Val="false" Pos="-268,-504" rotation="0" hflip="1" vflip="1" label="atmega128-1" idLabPos="-68,-11" labelrot="0" valLabPos="0,0" valLabRot="0" Frequency="16 MHz" Program="W:/soc3050code/projects/Motor_Stepper/Main.hex" Auto_Load="true" saveEepr="true" Logic_Symbol="false" Wdt_enabled="false" MainMcu="true" SerialMon="-1" />
 
 <item itemtype="Rail" CircId="Rail-19" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-556,-100" rotation="90" hflip="1" vflip="1" label="Rail-16" idLabPos="-16,-24" labelrot="0" valLabPos="-24,7" valLabRot="-90" Voltage="5 V" />
 
-<item itemtype="Resistor" CircId="Resistor-18" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-524,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-18" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-524,-132" rotation="-90" hflip="1" vflip="1" label="Resistor-18" idLabPos="-12,-20" labelrot="0" valLabPos="-11,7" valLabRot="0" Resistance="100 廓" />
 
-<item itemtype="Led" CircId="Led-17" mainComp="false" Show_id="false" Show_Val="false" Pos="-524,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 兩? />
+<item itemtype="Led" CircId="Led-17" mainComp="false" Show_id="false" Show_Val="false" Pos="-524,-180" rotation="-90" hflip="1" vflip="1" label="Led-24" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Color="Red" Grounded="false" Threshold="2.4 V" MaxCurrent="0.03 mA" Resistance="0.6 廓" />
 
 <item itemtype="Push" CircId="Push-16" mainComp="false" Show_id="false" Show_Val="false" Pos="-84,-148" rotation="0" hflip="1" vflip="1" label="Push-99" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
 <item itemtype="Push" CircId="Push-15" mainComp="false" Show_id="false" Show_Val="false" Pos="-44,-148" rotation="0" hflip="1" vflip="1" label="Push-99" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
-<item itemtype="AudioOut" CircId="AudioOut-13" mainComp="false" Show_id="false" Show_Val="false" Pos="-308,-140" rotation="0" hflip="-1" vflip="1" label="AudioOut-185" idLabPos="-20,-36" labelrot="0" valLabPos="0,0" valLabRot="0" Buzzer="false" Impedance="8 兩? Frequency="1 kHz" />
+<item itemtype="AudioOut" CircId="AudioOut-13" mainComp="false" Show_id="false" Show_Val="false" Pos="-308,-140" rotation="0" hflip="-1" vflip="1" label="AudioOut-185" idLabPos="-20,-36" labelrot="0" valLabPos="0,0" valLabRot="0" Buzzer="false" Impedance="8 廓" Frequency="1 kHz" />
 
 <item itemtype="Rail" CircId="Rail-12" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-292,-260" rotation="90" hflip="1" vflip="1" label="Rail-186" idLabPos="-16,-24" labelrot="0" valLabPos="-21,6" valLabRot="-90" Voltage="5 V" />
 
-<item itemtype="Resistor" CircId="Resistor-11" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-292,-212" rotation="270" hflip="1" vflip="1" label="Resistor-187" idLabPos="-12,-20" labelrot="0" valLabPos="-82,4" valLabRot="0" Resistance="100 兩? />
+<item itemtype="Resistor" CircId="Resistor-11" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-292,-212" rotation="270" hflip="1" vflip="1" label="Resistor-187" idLabPos="-12,-20" labelrot="0" valLabPos="-82,4" valLabRot="0" Resistance="100 廓" />
 
 <item itemtype="Push" CircId="Push-3" mainComp="false" Show_id="false" Show_Val="false" Pos="-124,-148" rotation="0" hflip="1" vflip="1" label="Push-237" idLabPos="-16,-24" labelrot="0" valLabPos="0,0" valLabRot="0" Norm_Close="false" Poles="1" />
 
-<item itemtype="Stepper" CircId="Stepper-323" mainComp="false" Show_id="true" Show_Val="false" Pos="-480,-656" rotation="-90" hflip="1" vflip="1" label="Stepper-323" idLabPos="-32,-62" labelrot="0" valLabPos="0,0" valLabRot="0" Bipolar="false" Steps="4" Resistance="100 兩? />
+<item itemtype="Stepper" CircId="Stepper-323" mainComp="false" Show_id="true" Show_Val="false" Pos="-480,-656" rotation="-90" hflip="1" vflip="1" label="Stepper-323" idLabPos="-32,-62" labelrot="0" valLabPos="0,0" valLabRot="0" Bipolar="false" Steps="4" Resistance="100 廓" />
 
 <item itemtype="Rail" CircId="Rail-492" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="-480,-572" rotation="-90" hflip="1" vflip="1" label="Rail-262" idLabPos="-16,-24" labelrot="0" valLabPos="-16,8" valLabRot="0" Voltage="5 V" />
 
 <item itemtype="Ground" CircId="Ground-831" mainComp="false" Show_id="false" Show_Val="false" Pos="-812,-512" rotation="0" hflip="1" vflip="1" label="Ground-831" idLabPos="-16,8" labelrot="0" valLabPos="0,0" valLabRot="0" />
 
-<item itemtype="LAnalizer" CircId="LAnalizer-891" mainComp="false" Show_id="false" Show_Val="false" Pos="-256,-816" rotation="0" hflip="1" vflip="1" label="LAnalizer-891" idLabPos="-90,-100" labelrot="0" valLabPos="0,0" valLabRot="0" Basic_X="135 _px" Basic_Y="135 _px" BufferSize="100000" connectGnd="true" InputImped="10 M兩? TimDiv="453639523000" TimPos="0" VolDiv="0.15" Tunnels=",,,,,,,," Trigger="0" TimeStep="1000 _ps" AutoExport="false" TresholdR="2.5 V" Bus="false,false,false,false,false,false,false,false," TresholdF="2.5 V" />
+<item itemtype="LAnalizer" CircId="LAnalizer-891" mainComp="false" Show_id="false" Show_Val="false" Pos="-256,-816" rotation="0" hflip="1" vflip="1" label="LAnalizer-891" idLabPos="-90,-100" labelrot="0" valLabPos="0,0" valLabRot="0" Basic_X="135 _px" Basic_Y="135 _px" BufferSize="100000" connectGnd="true" InputImped="10 M廓" TimDiv="453639523000" TimPos="0" VolDiv="0.15" Tunnels=",,,,,,,," Trigger="0" TimeStep="1000 _ps" AutoExport="false" TresholdR="2.5 V" Bus="false,false,false,false,false,false,false,false," TresholdF="2.5 V" />
 
 <item itemtype="Fixed Voltage" CircId="Fixed Voltage-1080" mainComp="false" Show_id="false" Show_Val="true" Pos="-832,-252" rotation="0" hflip="1" vflip="1" label="Fixed Voltage-1080" idLabPos="-64,-24" labelrot="0" valLabPos="-16,8" valLabRot="0" Voltage="5 V" Out="true" />
 
@@ -132,7 +132,7 @@
 
 <item itemtype="Rail" CircId="Rail-1353" mainComp="false" ShowProp="Voltage" Show_id="false" Show_Val="true" Pos="172,-672" rotation="90" hflip="1" vflip="1" label="Rail-1353" idLabPos="-16,-24" labelrot="0" valLabPos="-16,8" valLabRot="0" Voltage="5 V" />
 
-<item itemtype="SerialPort" CircId="SerialPort-1706" mainComp="false" Show_id="false" Show_Val="false" Pos="-8,-320" rotation="0" hflip="1" vflip="1" label="SerialPort-1706" idLabPos="-20,-32" labelrot="0" valLabPos="-16,20" valLabRot="0" Auto="false" Port="COM10" Baudrate="9600 _Bd" DataBits="8 _bits" StopBits="1 _bits" SerialMon="false" />
+<item itemtype="SerialPort" CircId="SerialPort-1706" mainComp="false" Show_id="false" Show_Val="false" Pos="-8,-320" rotation="0" hflip="1" vflip="1" label="SerialPort-1706" idLabPos="-20,-32" labelrot="0" valLabPos="-16,20" valLabRot="0" Auto="false" Port="COM10" Baudrate="9600 _Bd" DataBits="8 _bits" StopBits="1 _bits" SerialMon="true" />
 
 <item itemtype="Node" CircId="Node-1558" mainComp="false" Pos="-188,-292" />
 
@@ -537,3 +537,113 @@
 <item itemtype="Connector" uid="Connector-1712" startpinid="mega128-20-PORTD3" endpinid="SerialPort-1706-pin1" pointList="-164,-344,-164,-312,-48,-312" />
 
 </circuit>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
