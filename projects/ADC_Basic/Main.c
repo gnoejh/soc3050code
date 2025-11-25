@@ -490,8 +490,54 @@ void demo5_joystick_interactive(void)
 }
 
 /* ========================================================================
- * Main Program
+ * DEMO 6: Resistive Touchpad with GLCD
  * ======================================================================== */
+void demo6_touchpad_display(void)
+{
+  ks0108_clear_screen();
+  ScreenBuffer_clear();
+
+  // Title
+  ks0108_puts_at(0, 0, "== TouchPad ==");
+
+  // Labels with alignment
+  ks0108_puts_at(2, 0, "X Pos   :");
+  ks0108_puts_at(3, 0, "Y Pos   :");
+  ks0108_puts_at(5, 0, "Note: Click on");
+  ks0108_puts_at(6, 0, "touchpad in");
+  ks0108_puts_at(7, 0, "SimulIDE");
+
+  while (1)
+  {
+    // Method 1: Read X position
+    // Set F1(XR) as output HIGH, F2(XL) as output LOW
+    // Read Y-axis pins as ADC to get X position
+    DDRF |= (1 << PF1) | (1 << PF2);    // F1,F2 as output
+    DDRF &= ~((1 << PF5) | (1 << PF6)); // F5,F6 as input
+    PORTF |= (1 << PF1);                // F1 HIGH
+    PORTF &= ~(1 << PF2);               // F2 LOW
+    _delay_us(10);
+    uint16_t x_pos = Read_Adc_Data(5); // Read F5 for X position
+
+    // Method 2: Read Y position
+    // Set F5(YL) as output LOW, F6(YR) as output HIGH
+    // Read X-axis pins as ADC to get Y position
+    DDRF |= (1 << PF5) | (1 << PF6);    // F5,F6 as output
+    DDRF &= ~((1 << PF1) | (1 << PF2)); // F1,F2 as input
+    PORTF &= ~(1 << PF5);               // F5 LOW
+    PORTF |= (1 << PF6);                // F6 HIGH
+    _delay_us(10);
+    uint16_t y_pos = Read_Adc_Data(1); // Read F1 for Y position
+
+    // Display positions
+    display_number(2, 11, x_pos);
+    display_number(3, 11, y_pos);
+
+    _delay_ms(100);
+  }
+} /* ========================================================================
+   * Main Program
+   * ======================================================================== */
 int main(void)
 {
   // Initialize system
@@ -505,8 +551,8 @@ int main(void)
   while (1)
   {
     // Demo 1: Basic Potentiometer Reading with GLCD
-    demo1_potentiometer_basic();
-    _delay_ms(2000);
+    // demo1_potentiometer_basic();
+    // _delay_ms(2000);
 
     // Demo 2: Joystick Position Reading with GLCD
     // demo2_joystick_reading();
@@ -523,6 +569,10 @@ int main(void)
     // Demo 5: Interactive Joystick Control with GLCD
     // demo5_joystick_interactive();
     // _delay_ms(2000);
+
+    // Demo 6: Resistive Touchpad with GLCD
+    demo6_touchpad_display();
+    _delay_ms(2000);
   }
 
   return 0;
