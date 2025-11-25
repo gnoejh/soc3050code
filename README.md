@@ -1,5 +1,7 @@
 # SOC3050 ATmega128 Educational Framework
 
+# test
+
 **🎯 Self-Sufficient Embedded Systems Learning Environment**
 
 **35 Progressive Projects • Complete Toolchain Included • No Setup Required**
