@@ -1,0 +1,18 @@
+# Activity Recognition Python Project Requirements
+
+# Core requirements
+pyserial>=3.5
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Machine Learning (AI)
+tensorflow>=2.12.0
+scikit-learn>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Optional for advanced features
+# keras-tuner>=1.3.0  # Hyperparameter tuning
+

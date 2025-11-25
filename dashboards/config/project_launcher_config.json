@@ -1,0 +1,40 @@
+{
+    "name": "Project Launcher Dashboard",
+    "version": "1.0.0",
+    "description": "Educational project launcher for ATmega128 programming",
+    "port": 5001,
+    "host": "0.0.0.0",
+    "serial": {
+        "baudrate": 9600,
+        "timeout": 1.0,
+        "auto_reconnect": true,
+        "preferred_ports": [
+            "COM3",
+            "COM4",
+            "COM5"
+        ]
+    },
+    "simulide": {
+        "auto_launch": true,
+        "wait_for_port": 3,
+        "circuit_file": "simulators/SimulIDE_1.1.0-SR1_Win64/Simulator110.simu"
+    },
+    "build": {
+        "timeout": 60,
+        "auto_clean": false,
+        "verbose": true
+    },
+    "features": {
+        "led_monitoring": true,
+        "adc_monitoring": true,
+        "serial_terminal": true,
+        "project_browser": true,
+        "demo_selection": true
+    },
+    "ui": {
+        "theme": "default",
+        "show_build_output": true,
+        "auto_scroll_console": true,
+        "max_console_lines": 1000
+    }
+}
