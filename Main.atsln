@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Atmel Studio Solution File, Format Version 11.00
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Main", "Main\Main.cproj", "{318FD707-4EC4-44D7-984B-18FCDB3002DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{31E07DB8-C23B-493B-B22D-C0E3413BB992}"
+	ProjectSection(SolutionItems) = preProject
+		main_game_pong_uart_control.c = main_game_pong_uart_control.c
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{318FD707-4EC4-44D7-984B-18FCDB3002DA}.Debug|AVR.ActiveCfg = Debug|AVR
+		{318FD707-4EC4-44D7-984B-18FCDB3002DA}.Debug|AVR.Build.0 = Debug|AVR
+		{318FD707-4EC4-44D7-984B-18FCDB3002DA}.Release|AVR.ActiveCfg = Release|AVR
+		{318FD707-4EC4-44D7-984B-18FCDB3002DA}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

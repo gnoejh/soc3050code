@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Build ATmega128",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/Main/build.ps1",
+            "preLaunchTask": "Build ATmega128 Project",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/Main"
+        }
+    ]
+}

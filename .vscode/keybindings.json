@@ -1,0 +1,21 @@
+[
+    {
+        "key": "f7",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Build Current Project"
+    },
+    {
+        "key": "ctrl+alt+f5",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Program Current Project"
+    },
+    {
+        "key": "ctrl+alt+shift+p",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Build and Program Current Project"
+    },
+    {
+        "key": "ctrl+shift+m",
+        "command": "serial-monitor.start"
+    }
+]

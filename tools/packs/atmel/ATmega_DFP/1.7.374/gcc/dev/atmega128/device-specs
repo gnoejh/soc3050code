@@ -1,0 +1,10 @@
+/* ATmega128 device specs for GCC linker */
+MEMORY{
+    text(rx) : ORIGIN = 0,
+    LENGTH = 128K data(rw !x) : ORIGIN = 0x800060,
+    LENGTH = 4K eeprom(rw !x) : ORIGIN = 0x810000,
+    LENGTH = 4K fuse(rw !x) : ORIGIN = 0x820000,
+    LENGTH = 3 lock(rw !x) : ORIGIN = 0x830000,
+    LENGTH = 1 signature(rw !x) : ORIGIN = 0x840000,
+    LENGTH = 3
+}

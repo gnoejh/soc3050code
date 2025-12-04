@@ -1,0 +1,58 @@
+# ATmega128 Educational Framework - Python Requirements  
+# Install with: pip install -r requirements.txt
+# For students: pip install -r requirements.txt --user
+
+# === CORE REQUIREMENTS (Essential for all students) ===
+
+# Serial Communication with ATmega128
+pyserial>=3.5
+
+# Data Analysis and Visualization  
+matplotlib>=3.7.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Web Interface for IoT Projects
+flask>=2.3.0
+flask-socketio>=5.3.0
+requests>=2.31.0
+
+# === EDUCATIONAL TOOLS (Recommended for learning) ===
+
+# Jupyter Notebooks for Interactive Learning
+jupyter>=1.0.0
+jupyterlab>=3.6.0
+
+# Scientific Computing for Advanced Projects
+scipy>=1.10.0
+
+# HEX File Manipulation and Analysis
+intelhex>=2.3.0
+
+# === OPTIONAL ADVANCED FEATURES ===
+
+# Interactive Plotting for Data Visualization
+# plotly>=5.15.0        
+
+# Web Dashboards for IoT Applications  
+# dash>=2.12.0          
+
+# MQTT IoT Communication Protocol
+# paho-mqtt>=1.6.0      
+
+# AWS Cloud Integration
+# boto3>=1.28.0         
+
+# Hardware Instrument Control
+# pyvisa>=1.11.0        
+
+# === DEVELOPMENT TOOLS (Optional for instructors) ===
+
+# Code Quality and Testing
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0
+
+# Documentation Generation
+# sphinx>=6.0.0
+# sphinx-rtd-theme>=1.2.0

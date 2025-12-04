@@ -1,0 +1,269 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "SimulIDE: Configure TCP",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-configure-simulide-tcp.ps1"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "SimulIDE: Start TCP Bridge",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-start-tcp-bridge.ps1"
+            ],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Serial: Run PowerShell TCP Client",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoExit",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-run-serial-tcp-client.ps1"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "SimulIDE: Connect and Test (TCP)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "SimulIDE: Configure TCP",
+                "SimulIDE: Start TCP Bridge",
+                "Serial: Run PowerShell TCP Client"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Current Project",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-build-project.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-SourceFile",
+                "${fileBasename}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Program Hardware",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-program-project.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-Programmer",
+                "arduino",
+                "-Port",
+                "COM3"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Program Simulator",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-build-simulide.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-SourceFile",
+                "${fileBasename}"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build and Program Current Project",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Current Project",
+                "Program Hardware"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Build and Simulate Current Project",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Program Simulator",
+                "Simulate in SimulIDE (Current Project)"
+            ],
+            "group": "test"
+        },
+        {
+            "label": "Start TCP Serial Bridge",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\simulide\\tcp-serial-bridge.ps1"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^=== TCP to Serial Bridge ===",
+                    "endsPattern": "^=== Bridge Running ==="
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            },
+            "group": "test"
+        },
+        {
+            "label": "Simulate in SimulIDE (Current Project)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\simulide\\cli-simulide.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Simulate in SimulIDE 0.4.15 (Legacy)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\simulide\\cli-simulide-0415.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Build and Simulate 0415 (Legacy Test)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Current Project",
+                "Simulate in SimulIDE 0.4.15 (Legacy)"
+            ],
+            "group": "test"
+        },
+        {
+            "label": "Show Memory Usage",
+            "type": "shell",
+            "command": "${workspaceFolder}\\tools\\avr-toolchain\\bin\\avr-size.exe",
+            "args": [
+                "--format=berkeley",
+                "${fileBasenameNoExtension}.elf"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "dependsOn": "Build Current Project"
+        },
+        {
+            "label": "Clean Project",
+            "type": "shell",
+            "command": "Remove-Item",
+            "args": [
+                "-Path",
+                "*.o,*.elf,*.hex,*.map",
+                "-Force",
+                "-ErrorAction",
+                "SilentlyContinue"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}",
+                "shell": {
+                    "executable": "pwsh.exe"
+                }
+            }
+        }
+    ]
+}

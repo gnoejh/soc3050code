@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/shared_libs",
+                "${workspaceFolder}/tools/avr-toolchain/avr/include",
+                "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include"
+            ],
+            "defines": [
+                "F_CPU=16000000UL",
+                "__AVR_ATmega128__",
+                "BAUD=9600",
+                "DEBUG"
+            ],
+            "compilerPath": "${workspaceFolder}/tools/avr-toolchain/bin/avr-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x86",
+            "compilerArgs": [
+                "-mmcu=atmega128",
+                "-DF_CPU=16000000UL"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/shared_libs",
+                    "${workspaceFolder}/tools/avr-toolchain/avr/include",
+                    "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            }
+        }
+    ],
+    "version": 4
+}
