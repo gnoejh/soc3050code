@@ -57,7 +57,8 @@ typedef struct {
 static TCB task_list[MAX_TASKS];
 static uint8_t current_task = 0;
 static uint8_t task_count = 0;
-static volatile uint32_t system_ticks = 0;
+volatile uint32_t system_ticks =
+    0; // Made non-static for TASK_TEMPLATE.c access
 static bool scheduler_running = false;
 
 // LED shadow registers to avoid race conditions
@@ -234,6 +235,18 @@ uint8_t rtos_scheduler(void) {
   return next_task;
 }
 
+// Priority-based scheduling
+uint8_t rtos_priority_scheduler(void) {
+  uint8_t highest_priority = PRIORITY_IDLE;
+  for (uint8_t i = 0; i < task_count; i++) {
+    if (task_list[i].state == TASK_READY &&
+        task_list[i].priority > highest_priority) {
+      highest_priority = task_list[i].priority;
+    }
+  }
+  return highest_priority;
+}
+
 // Timer0 Overflow ISR (TOV mode works, CTC doesn't)
 ISR(TIMER0_OVF_vect) {
   TCNT0 = 6; // Reload for 1ms tick (256-250=6)
@@ -317,6 +330,7 @@ void rtos_start(void) {
 
     // Find next ready task using scheduler
     current_task = rtos_scheduler();
+    // current_task = rtos_priority_scheduler();
 
     if (current_task < task_count &&
         task_list[current_task].state == TASK_READY) {
@@ -566,6 +580,10 @@ void task_glcd_display(void) {
   }
 }
 
+// Task 10: Template Task (for student testing)
+// Declared in TASK_TEMPLATE.c
+void task_template(void);
+
 // ============================================================================
 // MAIN FUNCTION
 // ============================================================================
@@ -628,6 +646,9 @@ int main(void) {
 
   rtos_create_task(task_glcd_display, "GLCD Display", PRIORITY_NORMAL, true);
   uart_puts("[OK] Task 9: GLCD Display\r\n");
+
+  rtos_create_task(task_template, "Template", PRIORITY_NORMAL, true);
+  uart_puts("[OK] Task 10: Template (Student Test)\r\n");
 
   uart_puts("\r\nAll tasks initialized!\r\n");
   _delay_ms(1000);

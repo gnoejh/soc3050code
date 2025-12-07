@@ -5,6 +5,22 @@
  * Copy this code and modify it for your needs.
  */
 
+#include "config.h"
+
+// External RTOS variables (defined in Main.c)
+extern volatile uint32_t system_ticks;
+
+// External function declarations (defined in Main.c)
+extern void uart_puts(const char *str);
+extern void uart_print_num(uint32_t num);
+extern uint16_t adc_read(uint8_t channel);
+extern void buzzer_beep(uint16_t duration_ms);
+
+// GLCD functions (from shared library)
+extern void ks0108_set_cursor(uint8_t line, uint8_t col);
+extern void ks0108_puts(const char *str);
+extern void ks0108_putchar(char c);
+
 // =============================================================================
 // TASK TEMPLATE - Copy and modify this
 // =============================================================================
@@ -13,55 +29,50 @@
 // Description: [What does this task do?]
 // Hardware: [Which pins/peripherals used?]
 // Update Rate: [How often does it run? e.g., 100ms]
-void task_template(void)
-{
-    // Static variables keep their values between task executions
-    static uint32_t last_update = 0; // Timing control
-    static uint8_t counter = 0;      // Example state variable
-    static bool led_state = false;   // Example flag
+void task_template(void) {
+  // Static variables keep their values between task executions
+  static uint32_t last_update = 0; // Timing control
+  static uint8_t counter = 0;      // Example state variable
+  static bool led_state = false;   // Example flag
 
-    // Timing check - run this code every 100ms (100 ticks)
-    if ((system_ticks - last_update) >= 100)
-    {
-        // ===== YOUR CODE HERE =====
+  // Timing check - run this code every 100ms (100 ticks)
+  if ((system_ticks - last_update) >= 100) {
+    // ===== YOUR CODE HERE =====
 
-        // Example 1: Toggle an LED
-        if (led_state)
-        {
-            PORTB |= (1 << PB0); // LED OFF (active-LOW)
-        }
-        else
-        {
-            PORTB &= ~(1 << PB0); // LED ON (active-LOW)
-        }
-        led_state = !led_state;
-
-        // Example 2: Read a sensor
-        uint16_t sensor_value = adc_read(0); // Read ADC channel 0
-
-        // Example 3: Send data via UART
-        uart_puts("[MyTask] Count: ");
-        uart_print_num(counter);
-        uart_puts(" | Sensor: ");
-        uart_print_num(sensor_value);
-        uart_puts("\r\n");
-
-        // Example 4: Update GLCD
-        ks0108_set_cursor(6, 0);
-        ks0108_puts("MyTask:");
-        ks0108_putchar('0' + (counter / 10));
-        ks0108_putchar('0' + (counter % 10));
-
-        // Increment counter
-        counter++;
-        if (counter > 99)
-            counter = 0;
-
-        // ===== END YOUR CODE =====
-
-        // Update timing - IMPORTANT: Don't forget this!
-        last_update = system_ticks;
+    // Example 1: Toggle an LED
+    if (led_state) {
+      PORTB |= (1 << PB0); // LED OFF (active-LOW)
+    } else {
+      PORTB &= ~(1 << PB0); // LED ON (active-LOW)
     }
+    led_state = !led_state;
+
+    // Example 2: Read a sensor
+    uint16_t sensor_value = adc_read(0); // Read ADC channel 0
+
+    // Example 3: Send data via UART
+    uart_puts("[MyTask] Count: ");
+    uart_print_num(counter);
+    uart_puts(" | Sensor: ");
+    uart_print_num(sensor_value);
+    uart_puts("\r\n");
+
+    // Example 4: Update GLCD
+    ks0108_set_cursor(6, 0);
+    ks0108_puts("MyTask:");
+    ks0108_putchar('0' + (counter / 10));
+    ks0108_putchar('0' + (counter % 10));
+
+    // Increment counter
+    counter++;
+    if (counter > 99)
+      counter = 0;
+
+    // ===== END YOUR CODE =====
+
+    // Update timing - IMPORTANT: Don't forget this!
+    last_update = system_ticks;
+  }
 }
 
 // =============================================================================
@@ -84,176 +95,159 @@ void task_template(void)
 // =============================================================================
 
 // Pattern 1: Button Input with Debouncing
-void task_button_example(void)
-{
-    static uint8_t last_button_state = 0xFF;
-    static uint32_t last_debounce = 0;
+void task_button_example(void) {
+  static uint8_t last_button_state = 0xFF;
+  static uint32_t last_debounce = 0;
 
-    uint8_t current_state = PIND;
+  uint8_t current_state = PIND;
 
-    if ((system_ticks - last_debounce) >= 50) // 50ms debounce
-    {
-        // Check if button 0 was pressed (falling edge)
-        if ((last_button_state & (1 << PD0)) && !(current_state & (1 << PD0)))
-        {
-            uart_puts("Button 0 pressed!\r\n");
-            buzzer_beep(50);
-        }
-
-        last_button_state = current_state;
-        last_debounce = system_ticks;
+  if ((system_ticks - last_debounce) >= 50) // 50ms debounce
+  {
+    // Check if button 0 was pressed (falling edge)
+    if ((last_button_state & (1 << PD0)) && !(current_state & (1 << PD0))) {
+      uart_puts("Button 0 pressed!\r\n");
+      buzzer_beep(50);
     }
+
+    last_button_state = current_state;
+    last_debounce = system_ticks;
+  }
 }
 
 // Pattern 2: ADC Reading and Processing
-void task_adc_example(void)
-{
-    static uint32_t last_read = 0;
+void task_adc_example(void) {
+  static uint32_t last_read = 0;
 
-    if ((system_ticks - last_read) >= 500) // Every 500ms
-    {
-        uint16_t raw = adc_read(0);            // Read ADC (0-1023)
-        uint16_t percent = (raw * 100) / 1023; // Convert to percentage
-        uint16_t voltage = (raw * 500) / 1023; // Convert to mV (0-5000mV)
+  if ((system_ticks - last_read) >= 500) // Every 500ms
+  {
+    uint16_t raw = adc_read(0);            // Read ADC (0-1023)
+    uint16_t percent = (raw * 100) / 1023; // Convert to percentage
+    uint16_t voltage = (raw * 500) / 1023; // Convert to mV (0-5000mV)
 
-        uart_puts("ADC: ");
-        uart_print_num(raw);
-        uart_puts(" (");
-        uart_print_num(percent);
-        uart_puts("%)\r\n");
+    uart_puts("ADC: ");
+    uart_print_num(raw);
+    uart_puts(" (");
+    uart_print_num(percent);
+    uart_puts("%)\r\n");
 
-        last_read = system_ticks;
-    }
+    last_read = system_ticks;
+  }
 }
 
 // Pattern 3: LED Pattern Generator
-void task_led_pattern_example(void)
-{
-    static uint32_t last_update = 0;
-    static uint8_t step = 0;
+void task_led_pattern_example(void) {
+  static uint32_t last_update = 0;
+  static uint8_t step = 0;
 
-    if ((system_ticks - last_update) >= 100) // Every 100ms
-    {
-        // Create different patterns based on step
-        switch (step)
-        {
-        case 0:
-            PORTC = 0xFE;
-            break; // 11111110
-        case 1:
-            PORTC = 0xFD;
-            break; // 11111101
-        case 2:
-            PORTC = 0xFB;
-            break; // 11111011
-        case 3:
-            PORTC = 0xF7;
-            break; // 11110111
-        case 4:
-            PORTC = 0xEF;
-            break; // 11101111
-        case 5:
-            PORTC = 0xDF;
-            break; // 11011111
-        case 6:
-            PORTC = 0xBF;
-            break; // 10111111
-        case 7:
-            PORTC = 0x7F;
-            break; // 01111111
-        }
-
-        step = (step + 1) % 8;
-        last_update = system_ticks;
+  if ((system_ticks - last_update) >= 100) // Every 100ms
+  {
+    // Create different patterns based on step
+    switch (step) {
+    case 0:
+      PORTC = 0xFE;
+      break; // 11111110
+    case 1:
+      PORTC = 0xFD;
+      break; // 11111101
+    case 2:
+      PORTC = 0xFB;
+      break; // 11111011
+    case 3:
+      PORTC = 0xF7;
+      break; // 11110111
+    case 4:
+      PORTC = 0xEF;
+      break; // 11101111
+    case 5:
+      PORTC = 0xDF;
+      break; // 11011111
+    case 6:
+      PORTC = 0xBF;
+      break; // 10111111
+    case 7:
+      PORTC = 0x7F;
+      break; // 01111111
     }
+
+    step = (step + 1) % 8;
+    last_update = system_ticks;
+  }
 }
 
 // Pattern 4: State Machine
-void task_state_machine_example(void)
-{
-    typedef enum
+void task_state_machine_example(void) {
+  typedef enum { STATE_IDLE, STATE_ACTIVE, STATE_ALARM, STATE_COOLDOWN } State;
+
+  static State current_state = STATE_IDLE;
+  static uint32_t state_timer = 0;
+
+  switch (current_state) {
+  case STATE_IDLE:
+    // Wait for trigger
+    if (!(PIND & (1 << PD0))) // Button pressed
     {
-        STATE_IDLE,
-        STATE_ACTIVE,
-        STATE_ALARM,
-        STATE_COOLDOWN
-    } State;
-
-    static State current_state = STATE_IDLE;
-    static uint32_t state_timer = 0;
-
-    switch (current_state)
-    {
-    case STATE_IDLE:
-        // Wait for trigger
-        if (!(PIND & (1 << PD0))) // Button pressed
-        {
-            current_state = STATE_ACTIVE;
-            state_timer = system_ticks;
-            uart_puts("State: ACTIVE\r\n");
-        }
-        break;
-
-    case STATE_ACTIVE:
-        // Blink LED for 3 seconds
-        if ((system_ticks % 200) < 100)
-            PORTB &= ~(1 << PB0); // LED ON
-        else
-            PORTB |= (1 << PB0); // LED OFF
-
-        if ((system_ticks - state_timer) >= 3000)
-        {
-            current_state = STATE_ALARM;
-            state_timer = system_ticks;
-            uart_puts("State: ALARM\r\n");
-        }
-        break;
-
-    case STATE_ALARM:
-        // Sound buzzer and flash LED
-        buzzer_beep(100);
-        current_state = STATE_COOLDOWN;
-        state_timer = system_ticks;
-        break;
-
-    case STATE_COOLDOWN:
-        // Wait 2 seconds
-        if ((system_ticks - state_timer) >= 2000)
-        {
-            current_state = STATE_IDLE;
-            uart_puts("State: IDLE\r\n");
-        }
-        break;
+      current_state = STATE_ACTIVE;
+      state_timer = system_ticks;
+      uart_puts("State: ACTIVE\r\n");
     }
+    break;
+
+  case STATE_ACTIVE:
+    // Blink LED for 3 seconds
+    if ((system_ticks % 200) < 100)
+      PORTB &= ~(1 << PB0); // LED ON
+    else
+      PORTB |= (1 << PB0); // LED OFF
+
+    if ((system_ticks - state_timer) >= 3000) {
+      current_state = STATE_ALARM;
+      state_timer = system_ticks;
+      uart_puts("State: ALARM\r\n");
+    }
+    break;
+
+  case STATE_ALARM:
+    // Sound buzzer and flash LED
+    buzzer_beep(100);
+    current_state = STATE_COOLDOWN;
+    state_timer = system_ticks;
+    break;
+
+  case STATE_COOLDOWN:
+    // Wait 2 seconds
+    if ((system_ticks - state_timer) >= 2000) {
+      current_state = STATE_IDLE;
+      uart_puts("State: IDLE\r\n");
+    }
+    break;
+  }
 }
 
 // Pattern 5: Moving Average Filter
-void task_filter_example(void)
-{
-    static uint32_t last_read = 0;
-    static uint16_t samples[10] = {0};
-    static uint8_t sample_index = 0;
+void task_filter_example(void) {
+  static uint32_t last_read = 0;
+  static uint16_t samples[10] = {0};
+  static uint8_t sample_index = 0;
 
-    if ((system_ticks - last_read) >= 100) // Every 100ms
-    {
-        // Read new sample
-        samples[sample_index] = adc_read(0);
-        sample_index = (sample_index + 1) % 10;
+  if ((system_ticks - last_read) >= 100) // Every 100ms
+  {
+    // Read new sample
+    samples[sample_index] = adc_read(0);
+    sample_index = (sample_index + 1) % 10;
 
-        // Calculate average
-        uint32_t sum = 0;
-        for (uint8_t i = 0; i < 10; i++)
-        {
-            sum += samples[i];
-        }
-        uint16_t average = sum / 10;
-
-        uart_puts("Filtered: ");
-        uart_print_num(average);
-        uart_puts("\r\n");
-
-        last_read = system_ticks;
+    // Calculate average
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i < 10; i++) {
+      sum += samples[i];
     }
+    uint16_t average = sum / 10;
+
+    uart_puts("Filtered: ");
+    uart_print_num(average);
+    uart_puts("\r\n");
+
+    last_read = system_ticks;
+  }
 }
 
 // =============================================================================
