@@ -1,16 +1,12 @@
 /*
+ * Author: Prof. Hong Jeong
+ * Date: 2025-12-07
  * Enhanced RTOS v2.0 for ATmega128
  * Self-contained implementation compatible with Simulator110.simu
  * Features: 8 concurrent tasks, priority scheduling, system statistics
  */
 
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <util/delay.h>
-#include "../../shared_libs/_glcd.h"
+#include "config.h"
 
 // ============================================================================
 // RTOS Configuration
@@ -23,8 +19,7 @@
 // ============================================================================
 // Task States & Priorities
 // ============================================================================
-typedef enum
-{
+typedef enum {
   TASK_READY,
   TASK_RUNNING,
   TASK_BLOCKED,
@@ -32,8 +27,7 @@ typedef enum
   TASK_TERMINATED
 } TaskState;
 
-typedef enum
-{
+typedef enum {
   PRIORITY_IDLE = 0,
   PRIORITY_LOW = 1,
   PRIORITY_NORMAL = 2,
@@ -44,8 +38,7 @@ typedef enum
 // ============================================================================
 // Task Control Block (TCB)
 // ============================================================================
-typedef struct
-{
+typedef struct {
   uint8_t task_id;
   char task_name[20];
   uint16_t stack_pointer;
@@ -69,14 +62,14 @@ static bool scheduler_running = false;
 
 // LED shadow registers to avoid race conditions
 static volatile uint8_t led_sequence_bits =
-    0xFF;                                         // PB0-PB6 (active-LOW, all OFF)
-static volatile uint8_t led_heartbeat_bit = 0xFF; // PB7 (active-LOW, OFF) - AND mask
+    0xFF; // PB0-PB6 (active-LOW, all OFF)
+static volatile uint8_t led_heartbeat_bit =
+    0xFF; // PB7 (active-LOW, OFF) - AND mask
 
 // ============================================================================
 // System Statistics
 // ============================================================================
-typedef struct
-{
+typedef struct {
   uint32_t context_switches;
   uint16_t free_ram_bytes;
 } SystemStats;
@@ -86,48 +79,40 @@ static SystemStats sys_stats = {0, 0};
 // ============================================================================
 // UART Functions (Standalone Implementation)
 // ============================================================================
-void uart_init(void)
-{
+void uart_init(void) {
   UBRR1H = 0;
   UBRR1L = 103; // 9600 baud at 16MHz
   UCSR1B = (1 << RXEN1) | (1 << TXEN1);
   UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);
 }
 
-void uart_putchar(char c)
-{
+void uart_putchar(char c) {
   while (!(UCSR1A & (1 << UDRE1)))
     ;
   UDR1 = c;
 }
 
-void uart_puts(const char *str)
-{
-  while (*str)
-  {
+void uart_puts(const char *str) {
+  while (*str) {
     uart_putchar(*str++);
   }
 }
 
-void uart_print_num(uint32_t num)
-{
+void uart_print_num(uint32_t num) {
   char buffer[12];
   uint8_t i = 0;
 
-  if (num == 0)
-  {
+  if (num == 0) {
     uart_putchar('0');
     return;
   }
 
-  while (num > 0)
-  {
+  while (num > 0) {
     buffer[i++] = (num % 10) + '0';
     num /= 10;
   }
 
-  while (i > 0)
-  {
+  while (i > 0) {
     uart_putchar(buffer[--i]);
   }
 }
@@ -135,16 +120,14 @@ void uart_print_num(uint32_t num)
 // ============================================================================
 // ADC Functions (Standalone Implementation)
 // ============================================================================
-void adc_init(void)
-{
+void adc_init(void) {
   // AVcc with external capacitor at AREF
   ADMUX = (1 << REFS0);
   // Enable ADC, prescaler = 128 (125kHz at 16MHz)
   ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 }
 
-uint16_t adc_read(uint8_t channel)
-{
+uint16_t adc_read(uint8_t channel) {
   // Select ADC channel
   ADMUX = (ADMUX & 0xE0) | (channel & 0x07);
   // Start conversion
@@ -158,17 +141,14 @@ uint16_t adc_read(uint8_t channel)
 // ============================================================================
 // Buzzer Functions (Standalone Implementation)
 // ============================================================================
-void buzzer_init(void)
-{
+void buzzer_init(void) {
   DDRG |= (1 << PG4); // Buzzer on PG4
   PORTG &= ~(1 << PG4);
 }
 
-void buzzer_beep(uint16_t duration_ms)
-{
+void buzzer_beep(uint16_t duration_ms) {
   uint16_t cycles = duration_ms * 2; // Approx 1kHz
-  for (uint16_t i = 0; i < cycles; i++)
-  {
+  for (uint16_t i = 0; i < cycles; i++) {
     PORTG ^= (1 << PG4);
     _delay_us(500);
   }
@@ -178,8 +158,7 @@ void buzzer_beep(uint16_t duration_ms)
 // ============================================================================
 // RTOS Core Functions
 // ============================================================================
-void rtos_init(void)
-{
+void rtos_init(void) {
   memset(task_list, 0, sizeof(task_list));
   memset(&sys_stats, 0, sizeof(sys_stats));
   task_count = 0;
@@ -188,8 +167,7 @@ void rtos_init(void)
   scheduler_running = false;
 }
 
-void rtos_timer_init(void)
-{
+void rtos_timer_init(void) {
   // Timer0: Overflow mode, 1ms tick (TOV mode works, CTC doesn't)
   TCCR0 = (1 << CS01) | (1 << CS00); // Normal mode, prescaler 64
   TCNT0 = 6;                         // Preload for 1ms (256-250=6)
@@ -197,8 +175,7 @@ void rtos_timer_init(void)
 }
 
 uint8_t rtos_create_task(void (*task_func)(void), const char *name,
-                         TaskPriority priority, bool auto_restart)
-{
+                         TaskPriority priority, bool auto_restart) {
   if (task_count >= MAX_TASKS)
     return 0xFF;
 
@@ -218,10 +195,8 @@ uint8_t rtos_create_task(void (*task_func)(void), const char *name,
   return task->task_id;
 }
 
-void task_delay(uint32_t ticks)
-{
-  if (current_task < task_count)
-  {
+void task_delay(uint32_t ticks) {
+  if (current_task < task_count) {
     task_list[current_task].delay_ticks = ticks;
     task_list[current_task].state = TASK_BLOCKED;
   }
@@ -229,8 +204,7 @@ void task_delay(uint32_t ticks)
 
 uint32_t rtos_get_ticks(void) { return system_ticks; }
 
-uint8_t rtos_scheduler(void)
-{
+uint8_t rtos_scheduler(void) {
   uint8_t next_task = current_task;
   uint8_t start = current_task;
   bool found = false;
@@ -238,10 +212,8 @@ uint8_t rtos_scheduler(void)
   // Simple round-robin: find next ready task after current
   next_task = (current_task + 1) % task_count;
 
-  do
-  {
-    if (task_list[next_task].state == TASK_READY)
-    {
+  do {
+    if (task_list[next_task].state == TASK_READY) {
       found = true;
       break;
     }
@@ -249,15 +221,13 @@ uint8_t rtos_scheduler(void)
   } while (next_task != start);
 
   // If no other task is ready, check if current task is still ready
-  if (!found && task_list[current_task].state == TASK_READY)
-  {
+  if (!found && task_list[current_task].state == TASK_READY) {
     next_task = current_task;
     found = true;
   }
 
   // If still no ready task, just return first task
-  if (!found)
-  {
+  if (!found) {
     next_task = 0;
   }
 
@@ -265,21 +235,16 @@ uint8_t rtos_scheduler(void)
 }
 
 // Timer0 Overflow ISR (TOV mode works, CTC doesn't)
-ISR(TIMER0_OVF_vect)
-{
+ISR(TIMER0_OVF_vect) {
   TCNT0 = 6; // Reload for 1ms tick (256-250=6)
   system_ticks++;
 
   // Update delay counters for blocked tasks
-  if (scheduler_running)
-  {
-    for (uint8_t i = 0; i < task_count; i++)
-    {
-      if (task_list[i].state == TASK_BLOCKED && task_list[i].delay_ticks > 0)
-      {
+  if (scheduler_running) {
+    for (uint8_t i = 0; i < task_count; i++) {
+      if (task_list[i].state == TASK_BLOCKED && task_list[i].delay_ticks > 0) {
         task_list[i].delay_ticks--;
-        if (task_list[i].delay_ticks == 0)
-        {
+        if (task_list[i].delay_ticks == 0) {
           task_list[i].state = TASK_READY;
         }
       }
@@ -287,8 +252,7 @@ ISR(TIMER0_OVF_vect)
   }
 }
 
-void rtos_print_stats(void)
-{
+void rtos_print_stats(void) {
   uart_puts("\r\n=== RTOS Statistics ===\r\n");
   uart_puts("System Ticks: ");
   uart_print_num(system_ticks);
@@ -298,16 +262,14 @@ void rtos_print_stats(void)
   uart_print_num(task_count);
   uart_puts("\r\n\r\nTask Status:\r\n");
 
-  for (uint8_t i = 0; i < task_count; i++)
-  {
+  for (uint8_t i = 0; i < task_count; i++) {
     uart_puts("  [");
     uart_print_num(i);
     uart_puts("] ");
     uart_puts(task_list[i].task_name);
     uart_puts(" - ");
 
-    switch (task_list[i].state)
-    {
+    switch (task_list[i].state) {
     case TASK_READY:
       uart_puts("READY");
       break;
@@ -331,8 +293,7 @@ void rtos_print_stats(void)
   }
 }
 
-void rtos_start(void)
-{
+void rtos_start(void) {
   uart_puts("\r\n========================================\r\n");
   uart_puts("  Enhanced RTOS v");
   uart_puts(RTOS_VERSION);
@@ -348,10 +309,8 @@ void rtos_start(void)
   scheduler_running = true;
 
   // Main scheduler loop
-  while (1)
-  {
-    if (task_count == 0)
-    {
+  while (1) {
+    if (task_count == 0) {
       _delay_ms(10);
       continue;
     }
@@ -360,26 +319,20 @@ void rtos_start(void)
     current_task = rtos_scheduler();
 
     if (current_task < task_count &&
-        task_list[current_task].state == TASK_READY)
-    {
+        task_list[current_task].state == TASK_READY) {
 
       task_list[current_task].state = TASK_RUNNING;
       task_list[current_task].execution_count++;
       sys_stats.context_switches++;
 
-      if (task_list[current_task].task_function != NULL)
-      {
+      if (task_list[current_task].task_function != NULL) {
         task_list[current_task].task_function();
       }
 
-      if (task_list[current_task].state == TASK_RUNNING)
-      {
-        if (task_list[current_task].auto_restart)
-        {
+      if (task_list[current_task].state == TASK_RUNNING) {
+        if (task_list[current_task].auto_restart) {
           task_list[current_task].state = TASK_READY;
-        }
-        else
-        {
+        } else {
           task_list[current_task].state = TASK_TERMINATED;
         }
       }
@@ -395,17 +348,17 @@ void rtos_start(void)
 // ============================================================================
 
 // Task 1: LED Sequencer
-void task_led_sequence(void)
-{
+void task_led_sequence(void) {
   static uint8_t led_pattern = 0;
   static uint32_t last_update = 0;
 
-  if ((system_ticks - last_update) >= 50)
-  {
+  if ((system_ticks - last_update) >= 50) {
     // Active-LOW LEDs: Create pattern for PB0-PB6
     // Turn ON only the current LED (0), keep others OFF (1)
-    uint8_t pattern = ~(1 << led_pattern); // Invert: selected bit=0 (ON), others=1 (OFF)
-    led_sequence_bits = pattern | 0x80;    // Keep PB7=1 (OFF for heartbeat control)
+    uint8_t pattern =
+        ~(1 << led_pattern); // Invert: selected bit=0 (ON), others=1 (OFF)
+    led_sequence_bits =
+        pattern | 0x80; // Keep PB7=1 (OFF for heartbeat control)
 
     // Combine with heartbeat and update PORTB atomically
     cli();
@@ -418,13 +371,11 @@ void task_led_sequence(void)
 }
 
 // Task 2: UART Status Reporter
-void task_uart_status(void)
-{
+void task_uart_status(void) {
   static uint32_t counter = 0;
   static uint32_t last_report = 0;
 
-  if ((system_ticks - last_report) >= 200)
-  {
+  if ((system_ticks - last_report) >= 200) {
     uart_puts("\r\n[Status] Report #");
     uart_print_num(counter++);
     uart_puts(" | Ticks: ");
@@ -437,12 +388,10 @@ void task_uart_status(void)
 }
 
 // Task 3: ADC Monitor
-void task_adc_monitor(void)
-{
+void task_adc_monitor(void) {
   static uint32_t last_read = 0;
 
-  if ((system_ticks - last_read) >= 150)
-  {
+  if ((system_ticks - last_read) >= 150) {
     uint16_t adc_value = adc_read(0);
     uart_puts("[ADC] Ch0: ");
     uart_print_num(adc_value);
@@ -454,17 +403,14 @@ void task_adc_monitor(void)
 }
 
 // Task 4: Button Monitor
-void task_button_monitor(void)
-{
+void task_button_monitor(void) {
   static uint8_t button_state = 0xFF;
   static uint16_t button_count[8] = {0};
 
   uint8_t current_state = PIND;
 
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    if ((button_state & (1 << i)) && !(current_state & (1 << i)))
-    {
+  for (uint8_t i = 0; i < 8; i++) {
+    if ((button_state & (1 << i)) && !(current_state & (1 << i))) {
       button_count[i]++;
       uart_puts("[Button] PD");
       uart_print_num(i);
@@ -479,15 +425,13 @@ void task_button_monitor(void)
 }
 
 // Task 5: PWM Motor Controller
-void task_motor_control(void)
-{
+void task_motor_control(void) {
   static uint32_t last_update = 0;
   static uint8_t duty_cycle = 128;
   static int8_t direction = 1;
   static bool initialized = false;
 
-  if (!initialized)
-  {
+  if (!initialized) {
     // Configure Timer1 for Fast PWM on OC1A (PB5)
     DDRB |= (1 << PB5);                                   // OC1A as output
     TCCR1A = (1 << COM1A1) | (1 << WGM11) | (1 << WGM10); // Fast PWM 10-bit
@@ -495,16 +439,12 @@ void task_motor_control(void)
     initialized = true;
   }
 
-  if ((system_ticks - last_update) >= 30)
-  {
+  if ((system_ticks - last_update) >= 30) {
     duty_cycle += (direction * 25);
 
-    if (duty_cycle >= 250)
-    {
+    if (duty_cycle >= 250) {
       direction = -1;
-    }
-    else if (duty_cycle <= 25)
-    {
+    } else if (duty_cycle <= 25) {
       direction = 1;
     }
 
@@ -519,22 +459,17 @@ void task_motor_control(void)
 }
 
 // Task 6: System Watchdog
-void task_watchdog(void)
-{
+void task_watchdog(void) {
   static uint32_t last_check = 0;
 
-  if ((system_ticks - last_check) >= 500)
-  {
+  if ((system_ticks - last_check) >= 500) {
     extern uint8_t __heap_start;
     extern uint8_t *__brkval;
     uint16_t free_ram;
 
-    if ((uint16_t)__brkval == 0)
-    {
+    if ((uint16_t)__brkval == 0) {
       free_ram = (uint16_t)&free_ram - (uint16_t)&__heap_start;
-    }
-    else
-    {
+    } else {
       free_ram = (uint16_t)&free_ram - (uint16_t)__brkval;
     }
 
@@ -549,22 +484,17 @@ void task_watchdog(void)
 }
 
 // Task 7: Heartbeat LED
-void task_heartbeat(void)
-{
+void task_heartbeat(void) {
   static bool state = false;
   static uint32_t last_beat = 0;
 
-  if ((system_ticks - last_beat) >= 100)
-  {
+  if ((system_ticks - last_beat) >= 100) {
     state = !state;
     // Update shadow register for PB7 (active-LOW)
     // Use AND mask: 0x7F clears bit 7 (LED ON), 0xFF keeps bit 7 (LED OFF)
-    if (state)
-    {
+    if (state) {
       led_heartbeat_bit = 0x7F; // Active-LOW: Clear bit 7 to turn ON
-    }
-    else
-    {
+    } else {
       led_heartbeat_bit = 0xFF; // Active-LOW: Keep bit 7 to turn OFF
     }
     // Combine with LED sequence and update PORTB atomically
@@ -576,26 +506,22 @@ void task_heartbeat(void)
 }
 
 // Task 8: Statistics Reporter
-void task_statistics(void)
-{
+void task_statistics(void) {
   static uint32_t last_report = 0;
 
-  if ((system_ticks - last_report) >= 1000)
-  {
+  if ((system_ticks - last_report) >= 1000) {
     rtos_print_stats();
     last_report = system_ticks;
   }
 }
 
 // Task 9: GLCD System Display
-void task_glcd_display(void)
-{
+void task_glcd_display(void) {
   static uint32_t last_update = 0;
   static bool initialized = false;
 
   // Initialize GLCD once
-  if (!initialized)
-  {
+  if (!initialized) {
     ks0108_init();
     ks0108_clear_screen();
     ks0108_display_on_off(1);
@@ -603,8 +529,7 @@ void task_glcd_display(void)
   }
 
   // Update display every 500ms
-  if ((system_ticks - last_update) >= 500)
-  {
+  if ((system_ticks - last_update) >= 500) {
     // Title
     ks0108_set_cursor(0, 0);
     ks0108_puts("RTOS v2.0");
@@ -629,9 +554,9 @@ void task_glcd_display(void)
     ks0108_set_cursor(4, 0);
     ks0108_puts("Status:");
     ks0108_set_cursor(5, 0);
-    for (uint8_t i = 0; i < task_count && i < 9; i++)
-    {
-      if (task_list[i].state == TASK_READY || task_list[i].state == TASK_RUNNING)
+    for (uint8_t i = 0; i < task_count && i < 9; i++) {
+      if (task_list[i].state == TASK_READY ||
+          task_list[i].state == TASK_RUNNING)
         ks0108_putchar('*');
       else
         ks0108_putchar('-');
@@ -645,8 +570,7 @@ void task_glcd_display(void)
 // MAIN FUNCTION
 // ============================================================================
 
-int main(void)
-{
+int main(void) {
   // Initialize hardware
   uart_init();
   adc_init();

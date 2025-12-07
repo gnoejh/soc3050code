@@ -6,7 +6,9 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/shared_libs",
                 "${workspaceFolder}/tools/avr-toolchain/avr/include",
-                "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include"
+                "${workspaceFolder}/tools/avr-toolchain/avr/include/avr",
+                "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include",
+                "${workspaceFolder}/tools/packs/atmel/ATmega_DFP/1.7.374/include/avr"
             ],
             "defines": [
                 "F_CPU=16000000UL",
@@ -17,10 +19,11 @@
             "compilerPath": "${workspaceFolder}/tools/avr-toolchain/bin/avr-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x86",
+            "intelliSenseMode": "gcc-arm",
             "compilerArgs": [
                 "-mmcu=atmega128",
-                "-DF_CPU=16000000UL"
+                "-DF_CPU=16000000UL",
+                "-D__AVR_ATmega128__"
             ],
             "browse": {
                 "path": [

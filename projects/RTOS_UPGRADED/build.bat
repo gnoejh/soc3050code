@@ -28,7 +28,9 @@ echo.
     -Wno-unused-parameter ^
     -std=gnu99 ^
     -I. ^
+    -I%PROJECT_ROOT%\shared_libs ^
     Main.c ^
+    %PROJECT_ROOT%\shared_libs\_glcd.c ^
     -o Main.elf
 
 if %errorlevel% neq 0 (
