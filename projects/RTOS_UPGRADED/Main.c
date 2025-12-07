@@ -579,6 +579,10 @@ void task_glcd_display(void) {
   }
 }
 
+// Task 10: Template Task (for student testing)
+// Declared in TASK_TEMPLATE.c
+void task_template(void);
+
 // ============================================================================
 // MAIN FUNCTION
 // ============================================================================
@@ -642,6 +646,9 @@ int main(void) {
   rtos_create_task(task_glcd_display, "GLCD Display", PRIORITY_NORMAL, true);
   uart_puts("[OK] Task 9: GLCD Display\r\n");
 
+  rtos_create_task(task_template, "Template", PRIORITY_NORMAL, true);
+  uart_puts("[OK] Task 10: Template (Student Test)\r\n");
+
   uart_puts("\r\nAll tasks initialized!\r\n");
   _delay_ms(1000);
 
@@ -649,4 +656,38 @@ int main(void) {
   rtos_start();
 
   return 0;
+}
+
+void task_template(void) {
+  static uint32_t last_update = 0;
+  static uint8_t counter = 0;
+
+  // Run every 200ms (200 ticks at 1ms/tick)
+  if ((system_ticks - last_update) >= 200) {
+    counter++;
+
+    // Example: Print counter to UART
+    uart_puts("[Template] Counter: ");
+    uart_print_num(counter);
+    uart_puts("\r\n");
+
+    // Example: Display on GLCD (line 7)
+    ks0108_set_cursor(7, 0);
+    ks0108_puts("Template:");
+    // Display 3-digit counter
+    if (counter >= 100) {
+      ks0108_putchar('0' + (counter / 100) % 10);
+    }
+    if (counter >= 10) {
+      ks0108_putchar('0' + (counter / 10) % 10);
+    }
+    ks0108_putchar('0' + counter % 10);
+
+    last_update = system_ticks;
+
+    // Reset counter after 255
+    if (counter >= 255) {
+      counter = 0;
+    }
+  }
 }

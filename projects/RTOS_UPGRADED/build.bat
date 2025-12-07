@@ -1,5 +1,6 @@
 @echo off
 REM Enhanced RTOS Build Script - Standalone Implementation
+REM Follows cli-build-project.ps1 pattern to avoid ELPM errors in SimulIDE
 
 echo ========================================
 echo Building Enhanced RTOS v2.0
@@ -15,9 +16,26 @@ set MCU=atmega128
 set F_CPU=16000000UL
 set BAUD=9600
 
+REM Verify tools exist
+if not exist "%AVR_GCC%" (
+    echo [ERROR] AVR-GCC not found at: %AVR_GCC%
+    pause
+    exit /b 1
+)
+
+if not exist "%AVR_OBJCOPY%" (
+    echo [ERROR] AVR-OBJCOPY not found at: %AVR_OBJCOPY%
+    echo [ERROR] avr-objcopy.exe is REQUIRED to avoid ELPM errors in SimulIDE
+    pause
+    exit /b 1
+)
+
 echo Compiling Main.c...
+echo [INFO] Using -mshort-calls to avoid ELPM errors in SimulIDE
 echo.
 
+REM Compile with -mshort-calls flag (forces LPM instead of ELPM)
+REM This avoids "ELPM with no RAMPZ" errors in SimulIDE
 "%AVR_GCC%" ^
     -mmcu=%MCU% ^
     -DF_CPU=%F_CPU% ^
@@ -36,7 +54,7 @@ echo.
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Build failed!
+    echo [ERROR] Compilation failed!
     pause
     exit /b %errorlevel%
 )
@@ -44,8 +62,10 @@ if %errorlevel% neq 0 (
 echo.
 echo [SUCCESS] Compilation complete!
 echo.
-echo Generating HEX file...
+echo Generating HEX file with avr-objcopy.exe...
+echo [INFO] This step is REQUIRED to avoid ELPM errors in SimulIDE
 
+REM Use avr-objcopy to convert ELF to HEX (required for SimulIDE compatibility)
 "%AVR_OBJCOPY%" ^
     -O ihex ^
     -R .eeprom ^
@@ -54,6 +74,7 @@ echo Generating HEX file...
 
 if %errorlevel% neq 0 (
     echo [ERROR] HEX generation failed!
+    echo [ERROR] avr-objcopy.exe is required to generate SimulIDE-compatible HEX files
     pause
     exit /b %errorlevel%
 )
