@@ -57,8 +57,7 @@ typedef struct {
 static TCB task_list[MAX_TASKS];
 static uint8_t current_task = 0;
 static uint8_t task_count = 0;
-volatile uint32_t system_ticks =
-    0; // Made non-static for TASK_TEMPLATE.c access
+static volatile uint32_t system_ticks = 0;
 static bool scheduler_running = false;
 
 // LED shadow registers to avoid race conditions
@@ -580,10 +579,6 @@ void task_glcd_display(void) {
   }
 }
 
-// Task 10: Template Task (for student testing)
-// Declared in TASK_TEMPLATE.c
-void task_template(void);
-
 // ============================================================================
 // MAIN FUNCTION
 // ============================================================================
@@ -646,9 +641,6 @@ int main(void) {
 
   rtos_create_task(task_glcd_display, "GLCD Display", PRIORITY_NORMAL, true);
   uart_puts("[OK] Task 9: GLCD Display\r\n");
-
-  rtos_create_task(task_template, "Template", PRIORITY_NORMAL, true);
-  uart_puts("[OK] Task 10: Template (Student Test)\r\n");
 
   uart_puts("\r\nAll tasks initialized!\r\n");
   _delay_ms(1000);

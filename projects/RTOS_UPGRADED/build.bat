@@ -15,7 +15,7 @@ set MCU=atmega128
 set F_CPU=16000000UL
 set BAUD=9600
 
-echo Compiling source files...
+echo Compiling Main.c...
 echo.
 
 "%AVR_GCC%" ^
@@ -30,42 +30,7 @@ echo.
     -std=gnu99 ^
     -I. ^
     -I%PROJECT_ROOT%\shared_libs ^
-    -c Main.c ^
-    -o Main.o
-
-if %errorlevel% neq 0 (
-    echo [ERROR] Main.c compilation failed!
-    pause
-    exit /b %errorlevel%
-)
-
-"%AVR_GCC%" ^
-    -mmcu=%MCU% ^
-    -DF_CPU=%F_CPU% ^
-    -DBAUD=%BAUD% ^
-    -mshort-calls ^
-    -Os ^
-    -Wall ^
-    -Wextra ^
-    -Wno-unused-parameter ^
-    -std=gnu99 ^
-    -I. ^
-    -I%PROJECT_ROOT%\shared_libs ^
-    -c TASK_TEMPLATE.c ^
-    -o TASK_TEMPLATE.o
-
-if %errorlevel% neq 0 (
-    echo [ERROR] TASK_TEMPLATE.c compilation failed!
-    pause
-    exit /b %errorlevel%
-)
-
-echo Linking...
-"%AVR_GCC%" ^
-    -mmcu=%MCU% ^
-    -mshort-calls ^
-    Main.o ^
-    TASK_TEMPLATE.o ^
+    Main.c ^
     %PROJECT_ROOT%\shared_libs\_glcd.c ^
     -o Main.elf
 
