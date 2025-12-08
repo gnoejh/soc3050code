@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Operating Systems (RTOS) - ATmega128</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/monokai.css">
+    
+    <style>
+        .reveal .slides section {
+            text-align: left;
+        }
+        .reveal h1, .reveal h2, .reveal h3 {
+            text-align: center;
+        }
+        .reveal code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .reveal pre code {
+            background-color: #272822;
+            padding: 15px;
+        }
+        .reveal table {
+            margin: 0 auto;
+        }
+        .reveal table th,
+        .reveal table td {
+            border: 1px solid #333;
+            padding: 8px 12px;
+        }
+        .reveal table th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <!-- Title Slide -->
+            <section>
+                <h1>Real-Time Operating Systems (RTOS)</h1>
+                <h2>ATmega128 Educational Project</h2>
+            </section>
+
+            <!-- Course Overview -->
+            <section>
+                <h2>Course Overview</h2>
+                <h3>What You Will Learn</h3>
+                <ul>
+                    <li>Real-Time Operating System concepts</li>
+                    <li>Cooperative multitasking</li>
+                    <li>Task scheduling and management</li>
+                    <li>Concurrent programming on embedded systems</li>
+                    <li>ATmega128 hardware integration</li>
+                </ul>
+            </section>
+
+            <!-- Slide 1 -->
+            <section>
+                <h2>Slide 1: What is an Operating System?</h2>
+                <h3>Traditional OS Functions</h3>
+                <ul>
+                    <li><strong>Resource Management</strong>: CPU, Memory, I/O</li>
+                    <li><strong>Process Scheduling</strong>: Run multiple programs</li>
+                    <li><strong>Abstraction</strong>: Hide hardware complexity</li>
+                    <li><strong>Services</strong>: File system, networking, UI</li>
+                </ul>
+                <h3>Examples</h3>
+                <ul>
+                    <li>Windows, Linux, macOS (Desktop)</li>
+                    <li>Android, iOS (Mobile)</li>
+                    <li>Embedded Linux (Raspberry Pi)</li>
+                </ul>
+            </section>
+
+            <!-- Slide 2 -->
+            <section>
+                <h2>Slide 2: What is Real-Time?</h2>
+                <h3>Real-Time Definition</h3>
+                <p><strong>"A system that must respond to events within a specific time constraint"</strong></p>
+                <h3>Examples of Real-Time Systems</h3>
+                <ul>
+                    <li>✈️ <strong>Aircraft control</strong>: Must respond in milliseconds</li>
+                    <li>🚗 <strong>Airbag deployment</strong>: Must trigger in microseconds</li>
+                    <li>🏥 <strong>Heart monitor</strong>: Must detect within heartbeat cycle</li>
+                    <li>🏭 <strong>Industrial robots</strong>: Must move with precision timing</li>
+                </ul>
+                <h3>Not Real-Time</h3>
+                <p>Web browsing, Word processing, Gaming (some delay is OK)</p>
+            </section>
+
+            <!-- Slide 3 -->
+            <section>
+                <h2>Slide 3: Types of Real-Time Systems</h2>
+                <h3>Hard Real-Time</h3>
+                <ul>
+                    <li>Missing deadline = <strong>SYSTEM FAILURE</strong></li>
+                    <li>Examples: Airbags, pacemakers, anti-lock brakes</li>
+                    <li>Consequences: Injury, death, damage</li>
+                </ul>
+                <h3>Soft Real-Time</h3>
+                <ul>
+                    <li>Missing deadline = <strong>DEGRADED PERFORMANCE</strong></li>
+                    <li>Examples: Video streaming, audio playback</li>
+                    <li>Consequences: Glitches, but system continues</li>
+                </ul>
+                <h3>Our RTOS</h3>
+                <ul>
+                    <li><strong>Soft real-time</strong> system</li>
+                    <li>Educational focus on concepts</li>
+                    <li>Tolerates some timing variations</li>
+                </ul>
+            </section>
+
+            <!-- Slide 4 -->
+            <section>
+                <h2>Slide 4: Why RTOS on Microcontrollers?</h2>
+                <h3>Without RTOS (Super Loop)</h3>
+                <pre><code class="language-c">void main() {
+    while(1) {
+        read_sensors();
+        update_display();
+        check_buttons();
+        control_motor();
+        // All tasks run sequentially
+        // Hard to manage timing!
+    }
+}</code></pre>
+                <h3>Problems</h3>
+                <ul>
+                    <li>❌ Hard to add new features</li>
+                    <li>❌ Difficult timing coordination</li>
+                    <li>❌ No priority management</li>
+                    <li>❌ Code becomes messy</li>
+                </ul>
+            </section>
+
+            <!-- Slide 5 -->
+            <section>
+                <h2>Slide 5: With RTOS - Clean Structure</h2>
+                <h3>RTOS Approach</h3>
+                <pre><code class="language-c">void task_sensors() {
+    if (time_to_run) {
+        read_sensors();
+    }
+}
+
+void task_display() {
+    if (time_to_run) {
+        update_display();
+    }
+}
+
+// Each task is independent!
+// Scheduler manages execution</code></pre>
+                <h3>Benefits</h3>
+                <ul>
+                    <li>✅ Modular and organized</li>
+                    <li>✅ Easy to add new tasks</li>
+                    <li>✅ Clear timing for each task</li>
+                    <li>✅ Independent development</li>
+                </ul>
+            </section>
+
+            <!-- Slide 6 -->
+            <section>
+                <h2>Slide 6: RTOS Key Concepts</h2>
+                <h3>1. Tasks (Threads)</h3>
+                <ul>
+                    <li>Independent units of work</li>
+                    <li>Each has its own execution flow</li>
+                    <li>Like mini-programs</li>
+                </ul>
+                <h3>2. Scheduler</h3>
+                <ul>
+                    <li>Decides which task runs when</li>
+                    <li>Manages task priorities</li>
+                    <li>Ensures fair execution</li>
+                </ul>
+                <h3>3. Timing</h3>
+                <ul>
+                    <li>Tasks run at specific intervals</li>
+                    <li>Coordinated by system tick (1ms)</li>
+                </ul>
+                <h3>4. Shared Resources</h3>
+                <ul>
+                    <li>Multiple tasks access same hardware</li>
+                    <li>Must coordinate access (LEDs, UART, etc.)</li>
+                </ul>
+            </section>
+
+            <!-- Slide 7 -->
+            <section>
+                <h2>Slide 7: Our RTOS Architecture</h2>
+                <pre><code>┌─────────────────────────────────────┐
+│         Application Tasks           │
+│  (LED, UART, ADC, Buttons, etc.)   │
+├─────────────────────────────────────┤
+│         RTOS Scheduler              │
+│    (Round-Robin Task Selection)     │
+├─────────────────────────────────────┤
+│      Hardware Abstraction           │
+│   (UART, ADC, GPIO, Timer, GLCD)   │
+├─────────────────────────────────────┤
+│         ATmega128 Hardware          │
+│  (CPU, Memory, Peripherals, I/O)   │
+└─────────────────────────────────────┘</code></pre>
+            </section>
+
+            <!-- Slide 8 -->
+            <section>
+                <h2>Slide 8: Task States</h2>
+                <h3>Task State Diagram</h3>
+                <pre><code>    ┌─────────────┐
+    │   READY     │ ◄──┐
+    └──────┬──────┘    │
+           │           │
+     [Scheduler        │
+      selects]         │
+           │           │
+           ▼           │
+    ┌─────────────┐    │
+    │   RUNNING   │────┤
+    └──────┬──────┘    │
+           │           │
+     [Task            │
+      completes]      │
+           │           │
+           └───────────┘</code></pre>
+                <h3>States in Our RTOS</h3>
+                <ul>
+                    <li><strong>READY</strong>: Task waiting to run</li>
+                    <li><strong>RUNNING</strong>: Task currently executing</li>
+                    <li><strong>BLOCKED</strong>: Task waiting (not used in current system)</li>
+                    <li><strong>TERMINATED</strong>: Task finished</li>
+                </ul>
+            </section>
+
+            <!-- Slide 9 -->
+            <section>
+                <h2>Slide 9: Cooperative vs Preemptive</h2>
+                <h3>Preemptive Multitasking</h3>
+                <ul>
+                    <li>Scheduler <strong>interrupts</strong> running task</li>
+                    <li>Forces task switch</li>
+                    <li>Used in Windows, Linux</li>
+                    <li>More complex, needs context saving</li>
+                </ul>
+                <h3>Cooperative Multitasking (Our System)</h3>
+                <ul>
+                    <li>Tasks <strong>voluntarily</strong> give up control</li>
+                    <li>Task runs until it returns</li>
+                    <li>Simpler to implement</li>
+                    <li>Less overhead</li>
+                </ul>
+                <h3>Why Cooperative for Learning?</h3>
+                <ul>
+                    <li>✅ Easier to understand</li>
+                    <li>✅ Simpler debugging</li>
+                    <li>✅ No complex context switching</li>
+                    <li>✅ Sufficient for many embedded systems</li>
+                </ul>
+            </section>
+
+            <!-- Slide 10 -->
+            <section>
+                <h2>Slide 10: System Tick - The Heartbeat</h2>
+                <h3>Timer0 Configuration</h3>
+                <pre><code class="language-c">// Timer0 generates interrupt every 1ms
+TCCR0 = (1 << CS01) | (1 << CS00);  // Prescaler 64
+TCNT0 = 6;                          // Preload value
+TIMSK |= (1 << TOIE0);              // Enable interrupt
+
+// In ISR:
+ISR(TIMER0_OVF_vect) {
+    TCNT0 = 6;
+    system_ticks++;  // Global time keeper
+}</code></pre>
+                <h3>System Ticks</h3>
+                <ul>
+                    <li>Increments every <strong>1 millisecond</strong></li>
+                    <li>Used by all tasks for timing</li>
+                    <li>Foundation of RTOS timing</li>
+                </ul>
+            </section>
+
+            <!-- Slide 11 -->
+            <section>
+                <h2>Slide 11: Task Structure</h2>
+                <h3>Anatomy of a Task</h3>
+                <pre><code class="language-c">void task_example(void)
+{
+  // 1. Static variables (keep state)
+  static uint32_t last_time = 0;
+  static uint8_t counter = 0;
+  
+  // 2. Timing check
+  if ((system_ticks - last_time) >= 100) {
+    
+    // 3. Do work
+    uart_puts("Count: ");
+    uart_print_num(counter++);
+    
+    // 4. Update timing
+    last_time = system_ticks;
+  }
+  
+  // 5. Return (give control back)
+}</code></pre>
+                <h3>Key Points</h3>
+                <ol>
+                    <li>Fast execution (no delays!)</li>
+                    <li>Static variables preserve state</li>
+                    <li>Time-based triggering</li>
+                    <li>Clean exit</li>
+                </ol>
+            </section>
+
+            <!-- Slide 12 -->
+            <section>
+                <h2>Slide 12: The Scheduler</h2>
+                <h3>Round-Robin Scheduling</h3>
+                <pre><code class="language-c">uint8_t rtos_scheduler(void) {
+  // Find next ready task
+  next_task = (current_task + 1) % task_count;
+  
+  while (next_task != start) {
+    if (task_list[next_task].state == TASK_READY)
+      return next_task;
+    next_task = (next_task + 1) % task_count;
+  }
+}</code></pre>
+                <h3>How It Works</h3>
+                <ol>
+                    <li>Starts after current task</li>
+                    <li>Finds next READY task</li>
+                    <li>Wraps around (circular)</li>
+                    <li>Fair distribution of CPU time</li>
+                </ol>
+            </section>
+
+            <!-- Slide 13 -->
+            <section>
+                <h2>Slide 13: Main Scheduler Loop</h2>
+                <h3>The Control Loop</h3>
+                <pre><code class="language-c">while (1) {
+  // 1. Find next ready task
+  current_task = rtos_scheduler();
+  
+  // 2. Check if task is ready
+  if (task_list[current_task].state == TASK_READY) {
+    
+    // 3. Mark as running
+    task_list[current_task].state = TASK_RUNNING;
+    
+    // 4. Execute task
+    task_list[current_task].task_function();
+    
+    // 5. Mark as ready again (auto-restart)
+    task_list[current_task].state = TASK_READY;
+  }
+  
+  _delay_us(100);  // Small delay
+}</code></pre>
+            </section>
+
+            <!-- Slide 14 -->
+            <section>
+                <h2>Slide 14: Task Control Block (TCB)</h2>
+                <h3>What is a TCB?</h3>
+                <p><strong>Data structure storing task information</strong></p>
+                <pre><code class="language-c">typedef struct {
+  uint8_t task_id;              // Unique ID
+  char task_name[20];           // Name for debugging
+  uint16_t stack_pointer;       // (Not used in simple system)
+  uint8_t stack[STACK_SIZE];    // Reserved memory
+  TaskState state;              // Current state
+  TaskPriority priority;        // Importance level
+  uint32_t delay_ticks;         // For blocking
+  uint32_t execution_count;     // Statistics
+  void (*task_function)(void);  // Function pointer
+  bool auto_restart;            // Restart after completion
+} TCB;</code></pre>
+            </section>
+
+            <!-- Slide 15 -->
+            <section>
+                <h2>Slide 15: Memory Organization</h2>
+                <h3>Memory Layout</h3>
+                <pre><code>┌─────────────────────┐ 0x0000
+│   Code (Flash)      │ Program memory
+│   - RTOS code       │ (64KB - 128KB)
+│   - Task functions  │
+│   - Libraries       │
+├─────────────────────┤
+│   Data (RAM)        │ 
+│   - Global vars     │ (4KB)
+│   - Task stacks     │ 10 × 128 = 1280 bytes
+│   - TCB array       │ 
+│   - Heap            │
+└─────────────────────┘ 0x10FF (4KB end)</code></pre>
+                <h3>Resource Limits</h3>
+                <ul>
+                    <li><strong>RAM</strong>: 4KB total</li>
+                    <li><strong>Stack per task</strong>: 128 bytes</li>
+                    <li><strong>Max tasks</strong>: 10</li>
+                    <li>Must manage carefully!</li>
+                </ul>
+            </section>
+
+            <!-- Slide 16 -->
+            <section>
+                <h2>Slide 16: Example - LED Sequence Task</h2>
+                <h3>Task Implementation</h3>
+                <pre><code class="language-c">void task_led_sequence(void) {
+  static uint8_t led_pattern = 0;
+  static uint32_t last_update = 0;
+
+  if ((system_ticks - last_update) >= 50) {
+    // Create pattern (active-LOW)
+    uint8_t pattern = ~(1 << led_pattern);
+    led_sequence_bits = pattern | 0x80;
+    
+    // Update hardware
+    cli();
+    PORTB = led_sequence_bits & led_heartbeat_bit;
+    sei();
+    
+    // Next LED
+    led_pattern = (led_pattern + 1) % 7;
+    last_update = system_ticks;
+  }
+}</code></pre>
+                <h3>Features</h3>
+                <ul>
+                    <li>Runs every 50ms</li>
+                    <li>Cycles through 7 LEDs</li>
+                    <li>Coordinates with heartbeat task</li>
+                </ul>
+            </section>
+
+            <!-- Slide 17 -->
+            <section>
+                <h2>Slide 17: Synchronization - Shared Resources</h2>
+                <h3>Problem: Multiple Tasks Access PORTB</h3>
+                <pre><code class="language-c">// Task 1: LED Sequence
+PORTB = led_sequence_bits;
+
+// Task 2: Heartbeat
+PORTB = heartbeat_value;
+
+// CONFLICT! They overwrite each other!</code></pre>
+                <h3>Solution: Shadow Registers</h3>
+                <pre><code class="language-c">// Each task updates its shadow
+led_sequence_bits = pattern;
+led_heartbeat_bit = mask;
+
+// Combine atomically
+cli();  // Disable interrupts
+PORTB = led_sequence_bits & led_heartbeat_bit;
+sei();  // Enable interrupts</code></pre>
+            </section>
+
+            <!-- Slide 18 -->
+            <section>
+                <h2>Slide 18: Critical Sections</h2>
+                <h3>What is a Critical Section?</h3>
+                <p><strong>Code that must execute without interruption</strong></p>
+                <h3>Example</h3>
+                <pre><code class="language-c">// UNSAFE - Can be interrupted
+uint32_t value = system_ticks;  // May change mid-read!
+
+// SAFE - Protected
+cli();                          // Disable interrupts
+uint32_t value = system_ticks;  // Atomic read
+sei();                          // Enable interrupts</code></pre>
+                <h3>When to Use</h3>
+                <ul>
+                    <li>Accessing shared variables</li>
+                    <li>Multi-byte operations</li>
+                    <li>Hardware register updates</li>
+                    <li><strong>Keep SHORT</strong> - blocks all interrupts!</li>
+                </ul>
+            </section>
+
+            <!-- Slide 19 -->
+            <section>
+                <h2>Slide 19: Real-World RTOS Example</h2>
+                <h3>Industrial Control System</h3>
+                <pre><code class="language-c">// High Priority - Safety
+task_emergency_stop()      // 1ms   - Monitor E-stop
+task_limit_switches()      // 5ms   - Check boundaries
+
+// Normal Priority - Control
+task_motor_control()       // 10ms  - Update motors
+task_sensor_reading()      // 50ms  - Read sensors
+
+// Low Priority - Interface
+task_display_update()      // 100ms - Update screen
+task_log_data()           // 1000ms - Save logs</code></pre>
+                <h3>Why RTOS?</h3>
+                <ul>
+                    <li>Clear separation of concerns</li>
+                    <li>Guaranteed response times</li>
+                    <li>Easy to add features</li>
+                    <li>Maintainable code</li>
+                </ul>
+            </section>
+
+            <!-- Slide 20 -->
+            <section>
+                <h2>Slide 20: Current System - 9 Tasks</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Priority</th>
+                            <th>Rate</th>
+                            <th>Function</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>LED Sequence</td>
+                            <td>Normal</td>
+                            <td>50ms</td>
+                            <td>Visual feedback</td>
+                        </tr>
+                        <tr>
+                            <td>UART Status</td>
+                            <td>Normal</td>
+                            <td>200ms</td>
+                            <td>System reports</td>
+                        </tr>
+                        <tr>
+                            <td>ADC Monitor</td>
+                            <td>Normal</td>
+                            <td>150ms</td>
+                            <td>Sensor reading</td>
+                        </tr>
+                        <tr>
+                            <td>Button Handler</td>
+                            <td>High</td>
+                            <td>Continuous</td>
+                            <td>User input</td>
+                        </tr>
+                        <tr>
+                            <td>Motor Control</td>
+                            <td>Normal</td>
+                            <td>30ms</td>
+                            <td>PWM output</td>
+                        </tr>
+                        <tr>
+                            <td>Watchdog</td>
+                            <td>Low</td>
+                            <td>500ms</td>
+                            <td>Health check</td>
+                        </tr>
+                        <tr>
+                            <td>Heartbeat</td>
+                            <td>High</td>
+                            <td>100ms</td>
+                            <td>Status LED</td>
+                        </tr>
+                        <tr>
+                            <td>Statistics</td>
+                            <td>Low</td>
+                            <td>1000ms</td>
+                            <td>RTOS stats</td>
+                        </tr>
+                        <tr>
+                            <td>GLCD Display</td>
+                            <td>Normal</td>
+                            <td>500ms</td>
+                            <td>Visual dashboard</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Slide 21 -->
+            <section>
+                <h2>Slide 21: Task Timing Diagram</h2>
+                <pre><code>Time (ms) →
+0    50   100  150  200  250  300  350  400  450  500
+|----|----|----|----|----|----|----|----|----|----|
+LED  *         *         *         *         *      
+UART      *              *              *           
+ADC       *         *         *         *           
+BTN  **********************************************  
+PWM  **********************************************  
+WDG                                            *    
+HB        *         *         *         *         *
+STAT                                           *    
+GLCD                                           *</code></pre>
+                <h3>Observations</h3>
+                <ul>
+                    <li>Some tasks run frequently (Buttons, PWM)</li>
+                    <li>Some run periodically (LED, UART)</li>
+                    <li>Some run rarely (Watchdog, Stats)</li>
+                    <li>Scheduler coordinates all!</li>
+                </ul>
+            </section>
+
+            <!-- Slide 22 -->
+            <section>
+                <h2>Slide 22: Performance Metrics</h2>
+                <h3>What to Monitor</h3>
+                <ol>
+                    <li><strong>CPU Utilization</strong>: % of time tasks are running</li>
+                    <li><strong>Context Switches</strong>: How often tasks change</li>
+                    <li><strong>Task Execution Count</strong>: Verify all tasks run</li>
+                    <li><strong>Free RAM</strong>: Memory available</li>
+                    <li><strong>Response Time</strong>: Time from event to reaction</li>
+                </ol>
+                <h3>In Our System</h3>
+                <pre><code class="language-c">typedef struct {
+  uint32_t context_switches;  // Total switches
+  uint16_t free_ram_bytes;    // Available RAM
+} SystemStats;
+
+// View in Statistics task output
+// Or on GLCD display</code></pre>
+            </section>
+
+            <!-- Slide 23 -->
+            <section>
+                <h2>Slide 23: Common RTOS Mistakes</h2>
+                <h3>❌ Mistake 1: Using Delays in Tasks</h3>
+                <pre><code class="language-c">void task_bad(void) {
+  _delay_ms(1000);  // BLOCKS EVERYTHING!
+  do_something();
+}</code></pre>
+                <h3>✅ Correct: Time-Based Execution</h3>
+                <pre><code class="language-c">void task_good(void) {
+  static uint32_t last = 0;
+  if ((system_ticks - last) >= 1000) {
+    do_something();
+    last = system_ticks;
+  }
+}</code></pre>
+            </section>
+
+            <!-- Slide 24 -->
+            <section>
+                <h2>Slide 24: Common Mistakes (cont'd)</h2>
+                <h3>❌ Mistake 2: Infinite Loop in Task</h3>
+                <pre><code class="language-c">void task_bad(void) {
+  while (1) {  // NEVER DO THIS!
+    check_sensor();
+  }
+}</code></pre>
+                <h3>❌ Mistake 3: Forgetting to Update Time</h3>
+                <pre><code class="language-c">void task_bad(void) {
+  static uint32_t last = 0;
+  if ((system_ticks - last) >= 100) {
+    do_work();
+    // FORGOT: last = system_ticks;
+    // Will run every cycle!
+  }
+}</code></pre>
+            </section>
+
+            <!-- Slide 25 -->
+            <section>
+                <h2>Slide 25: Debugging RTOS Applications</h2>
+                <h3>Debugging Techniques</h3>
+                <h4>1. UART Output</h4>
+                <pre><code class="language-c">uart_puts("[DEBUG] Task started\r\n");
+uart_puts("Value: ");
+uart_print_num(sensor_value);</code></pre>
+                <h4>2. Task Statistics</h4>
+                <ul>
+                    <li>Check execution counts (should increase)</li>
+                    <li>Watch context switches (should be active)</li>
+                    <li>Monitor free RAM (shouldn't decrease)</li>
+                </ul>
+                <h4>3. GLCD Status Display</h4>
+                <ul>
+                    <li>Visual feedback (task indicators)</li>
+                    <li>Real-time system state</li>
+                </ul>
+                <h4>4. LED Indicators</h4>
+                <ul>
+                    <li>Heartbeat shows system alive</li>
+                    <li>Task-specific LEDs show activity</li>
+                </ul>
+            </section>
+
+            <!-- Slide 26 -->
+            <section>
+                <h2>Slide 26: Design Patterns for Tasks</h2>
+                <h3>Pattern 1: Sensor Reading</h3>
+                <pre><code class="language-c">void task_sensor(void) {
+  static uint32_t last = 0;
+  if ((system_ticks - last) >= sample_rate) {
+    raw_value = adc_read(channel);
+    filtered_value = filter(raw_value);
+    last = system_ticks;
+  }
+}</code></pre>
+                <h3>Pattern 2: State Machine</h3>
+                <pre><code class="language-c">void task_control(void) {
+  switch (state) {
+    case IDLE:   /* wait for trigger */; break;
+    case ACTIVE: /* do work */; break;
+    case ERROR:  /* handle error */; break;
+  }
+}</code></pre>
+            </section>
+
+            <!-- Slide 27 -->
+            <section>
+                <h2>Slide 27: Adding Your Own Task</h2>
+                <h3>Step-by-Step Process</h3>
+                <h4>Step 1: Write Task Function</h4>
+                <pre><code class="language-c">void task_myled(void) {
+  static uint32_t last = 0;
+  if ((system_ticks - last) >= 500) {
+    PORTC ^= (1 << PC0);  // Toggle LED
+    last = system_ticks;
+  }
+}</code></pre>
+                <h4>Step 2: Register Task</h4>
+                <pre><code class="language-c">rtos_create_task(task_myled, "MyLED", PRIORITY_NORMAL, true);</code></pre>
+                <h4>Step 3: Test</h4>
+                <ul>
+                    <li>Build project</li>
+                    <li>Run in simulator</li>
+                    <li>Check UART output</li>
+                    <li>Verify GLCD shows active task</li>
+                </ul>
+            </section>
+
+            <!-- Slide 28 -->
+            <section>
+                <h2>Slide 28: Exercise Ideas</h2>
+                <h3>Beginner Level</h3>
+                <ol>
+                    <li><strong>Blinking Pattern</strong>: Create custom LED pattern</li>
+                    <li><strong>Button Counter</strong>: Count button presses</li>
+                    <li><strong>Sensor Display</strong>: Show ADC value on GLCD</li>
+                </ol>
+                <h3>Intermediate Level</h3>
+                <ol start="4">
+                    <li><strong>Temperature Monitor</strong>: Read sensor, alarm if too high</li>
+                    <li><strong>Menu System</strong>: Button-driven menu on GLCD</li>
+                    <li><strong>PWM Controller</strong>: Adjust motor speed with buttons</li>
+                </ol>
+                <h3>Advanced Level</h3>
+                <ol start="7">
+                    <li><strong>Data Logger</strong>: Store sensor readings over time</li>
+                    <li><strong>Communication Protocol</strong>: Send/receive commands</li>
+                    <li><strong>PID Controller</strong>: Closed-loop control system</li>
+                </ol>
+            </section>
+
+            <!-- Slide 29 -->
+            <section>
+                <h2>Slide 29: RTOS vs Bare Metal</h2>
+                <h3>Bare Metal (Super Loop)</h3>
+                <p><strong>Pros:</strong></p>
+                <ul>
+                    <li>Simple, direct control</li>
+                    <li>Low overhead</li>
+                    <li>Full predictability</li>
+                </ul>
+                <p><strong>Cons:</strong></p>
+                <ul>
+                    <li>Hard to manage complexity</li>
+                    <li>Difficult timing coordination</li>
+                    <li>Messy code as project grows</li>
+                </ul>
+                <h3>RTOS</h3>
+                <p><strong>Pros:</strong></p>
+                <ul>
+                    <li>Modular, organized</li>
+                    <li>Easy to add features</li>
+                    <li>Clear task responsibilities</li>
+                    <li>Better maintainability</li>
+                </ul>
+                <p><strong>Cons:</strong></p>
+                <ul>
+                    <li>Learning curve</li>
+                    <li>Slight overhead</li>
+                    <li>Need to understand concepts</li>
+                </ul>
+            </section>
+
+            <!-- Slide 30 -->
+            <section>
+                <h2>Slide 30: Real RTOS Systems</h2>
+                <h3>Commercial RTOS Examples</h3>
+                <h4>FreeRTOS</h4>
+                <ul>
+                    <li>Most popular embedded RTOS</li>
+                    <li>Open source, free</li>
+                    <li>Used in millions of devices</li>
+                    <li>Preemptive scheduler</li>
+                </ul>
+                <h4>RTX (Keil)</h4>
+                <ul>
+                    <li>ARM Cortex-M optimized</li>
+                    <li>Commercial support</li>
+                    <li>Automotive qualified</li>
+                </ul>
+                <h4>VxWorks</h4>
+                <ul>
+                    <li>Used in Mars rovers!</li>
+                    <li>Industrial, aerospace</li>
+                    <li>Hard real-time capable</li>
+                </ul>
+                <h3>Our Educational RTOS</h3>
+                <ul>
+                    <li>Simplified for learning</li>
+                    <li>Core concepts remain same</li>
+                    <li>Foundation for understanding advanced RTOS</li>
+                </ul>
+            </section>
+
+            <!-- Slide 31 -->
+            <section>
+                <h2>Slide 31: Career Applications</h2>
+                <h3>Industries Using RTOS</h3>
+                <p>🚗 <strong>Automotive</strong></p>
+                <ul>
+                    <li>Engine control, ABS, airbags</li>
+                    <li>Infotainment systems</li>
+                </ul>
+                <p>✈️ <strong>Aerospace</strong></p>
+                <ul>
+                    <li>Flight control systems</li>
+                    <li>Avionics, navigation</li>
+                </ul>
+                <p>🏥 <strong>Medical</strong></p>
+                <ul>
+                    <li>Patient monitors</li>
+                    <li>Infusion pumps, ventilators</li>
+                </ul>
+                <p>🏭 <strong>Industrial</strong></p>
+                <ul>
+                    <li>PLCs, factory automation</li>
+                    <li>Robotics</li>
+                </ul>
+                <p>📱 <strong>Consumer</strong></p>
+                <ul>
+                    <li>IoT devices, smart home</li>
+                    <li>Wearables, drones</li>
+                </ul>
+            </section>
+
+            <!-- Slide 32 -->
+            <section>
+                <h2>Slide 32: Learning Outcomes</h2>
+                <h3>After This Course, You Can</h3>
+                <p>✅ <strong>Understand:</strong></p>
+                <ul>
+                    <li>RTOS concepts and terminology</li>
+                    <li>Task scheduling and states</li>
+                    <li>Cooperative vs preemptive multitasking</li>
+                </ul>
+                <p>✅ <strong>Implement:</strong></p>
+                <ul>
+                    <li>Custom tasks for any function</li>
+                    <li>Timing-based task execution</li>
+                    <li>Multi-task applications</li>
+                </ul>
+                <p>✅ <strong>Debug:</strong></p>
+                <ul>
+                    <li>RTOS timing issues</li>
+                    <li>Resource conflicts</li>
+                    <li>Task synchronization</li>
+                </ul>
+                <p>✅ <strong>Design:</strong></p>
+                <ul>
+                    <li>Modular embedded systems</li>
+                    <li>Real-time control applications</li>
+                    <li>Complex multi-function devices</li>
+                </ul>
+            </section>
+
+            <!-- Slide 33 -->
+            <section>
+                <h2>Slide 33: Next Steps</h2>
+                <h3>Continue Learning</h3>
+                <ol>
+                    <li><strong>Practice</strong>: Add 3-5 custom tasks</li>
+                    <li><strong>Experiment</strong>: Try different timing intervals</li>
+                    <li><strong>Challenge</strong>: Build a complete application</li>
+                    <li><strong>Study</strong>: Read FreeRTOS documentation</li>
+                    <li><strong>Explore</strong>: Other RTOS features (queues, semaphores, mutexes)</li>
+                </ol>
+                <h3>Resources</h3>
+                <ul>
+                    <li><code>STUDENT_GUIDE.md</code> - Detailed tutorials</li>
+                    <li><code>TASK_TEMPLATE.c</code> - Code examples</li>
+                    <li><code>QUICK_REFERENCE.md</code> - Quick lookup</li>
+                    <li>ATmega128 Datasheet - Hardware details</li>
+                </ul>
+            </section>
+
+            <!-- Slide 34 -->
+            <section>
+                <h2>Slide 34: Summary</h2>
+                <h3>Key Takeaways</h3>
+                <p>🎯 <strong>RTOS = Organized Multitasking</strong></p>
+                <ul>
+                    <li>Multiple tasks run "simultaneously"</li>
+                    <li>Scheduler coordinates execution</li>
+                </ul>
+                <p>⏰ <strong>Timing is Everything</strong></p>
+                <ul>
+                    <li>System tick provides time base</li>
+                    <li>Tasks use timing checks</li>
+                </ul>
+                <p>🔧 <strong>Cooperative = Simple</strong></p>
+                <ul>
+                    <li>Tasks must return quickly</li>
+                    <li>No blocking code allowed</li>
+                </ul>
+                <p>📊 <strong>Monitor and Debug</strong></p>
+                <ul>
+                    <li>Use UART for debugging</li>
+                    <li>GLCD shows system state</li>
+                    <li>Statistics show health</li>
+                </ul>
+                <p>🚀 <strong>Foundation for Career</strong></p>
+                <ul>
+                    <li>Real-world systems use RTOS</li>
+                    <li>Concepts apply to all RTOS</li>
+                </ul>
+            </section>
+
+            <!-- Slide 35 -->
+            <section>
+                <h2>Slide 35: Questions & Discussion</h2>
+                <h3>Common Questions</h3>
+                <p><strong>Q: Why not just use Arduino?</strong><br>
+                A: Arduino hides complexity. You learn more by building from scratch!</p>
+                <p><strong>Q: When do I need an RTOS?</strong><br>
+                A: When you have 3+ concurrent activities with different timing requirements.</p>
+                <p><strong>Q: Is this a "real" RTOS?</strong><br>
+                A: It's simplified but teaches core concepts used in commercial RTOS.</p>
+                <p><strong>Q: Can I use this in production?</strong><br>
+                A: It's educational. For production, use FreeRTOS or commercial RTOS.</p>
+                <p><strong>Q: How do I learn more?</strong><br>
+                A: Build projects! Add tasks, experiment, break things, fix them!</p>
+            </section>
+
+            <!-- Slide 36 -->
+            <section>
+                <h2>Slide 36: Lab Time</h2>
+                <h3>Hands-On Exercise</h3>
+                <p><strong>Task: Create a Traffic Light Controller</strong></p>
+                <p>Requirements:</p>
+                <ol>
+                    <li>3 LEDs (Red, Yellow, Green)</li>
+                    <li>Sequence: Green(5s) → Yellow(2s) → Red(5s) → repeat</li>
+                    <li>Button to force Red (emergency)</li>
+                    <li>Display current state on GLCD</li>
+                    <li>Log state changes to UART</li>
+                </ol>
+                <p><strong>Challenge:</strong> Add pedestrian crossing button!</p>
+                <h3>Get Started</h3>
+                <ol>
+                    <li>Open <code>TASK_TEMPLATE.c</code></li>
+                    <li>Copy state machine example</li>
+                    <li>Modify for traffic light logic</li>
+                    <li>Build and test!</li>
+                </ol>
+            </section>
+
+            <!-- End of Lecture -->
+            <section>
+                <h2>End of Lecture</h2>
+                <h3>Thank You</h3>
+                <p><strong>Remember:</strong></p>
+                <ul>
+                    <li>Start simple</li>
+                    <li>Test frequently</li>
+                    <li>Use debugging tools</li>
+                    <li>Read the guides</li>
+                    <li>Ask questions</li>
+                    <li>Have fun coding! 🚀</li>
+                </ul>
+                <h3>Good Luck with Your RTOS Projects</h3>
+            </section>
+
+            <!-- Additional Resources -->
+            <section>
+                <h2>Additional Resources</h2>
+                <h3>Files in This Project</h3>
+                <ul>
+                    <li><code>Main.c</code> - RTOS implementation</li>
+                    <li><code>STUDENT_GUIDE.md</code> - Learning guide</li>
+                    <li><code>TASK_TEMPLATE.c</code> - Code examples</li>
+                    <li><code>QUICK_REFERENCE.md</code> - Cheat sheet</li>
+                    <li><code>README.md</code> - Project overview</li>
+                </ul>
+                <h3>External Resources</h3>
+                <ul>
+                    <li>FreeRTOS: www.freertos.org</li>
+                    <li>ATmega128 Datasheet: microchip.com</li>
+                    <li>AVR Libc Documentation</li>
+                    <li>Embedded Systems Textbooks</li>
+                </ul>
+                <p><strong>Questions? Check the documentation or ask instructor!</strong></p>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/highlight/highlight.js"></script>
+    
+    <script>
+        Reveal.initialize({
+            hash: true,
+            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+            transition: 'slide',
+            controls: true,
+            progress: true,
+            center: false,
+            touch: true,
+            keyboard: true
+        });
+    </script>
+</body>
+</html>
