@@ -703,3 +703,34 @@ For more information, see:
 - [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf) (Sleep Modes: pages 36-40)
 - Project source code in `Power_Sleep_Modes/`
 - Shared libraries: `_uart.h`
+
+---
+
+## References and Resources
+
+### Documentation
+- ATmega128 Datasheet, Section 6 "Power Management and Sleep Modes" — the mode table
+- ATmega128 Datasheet, Section 6.2 — which wake-up sources survive which mode
+- ATmega128 Datasheet, "Electrical Characteristics" — the actual current figures
+- avr-libc manual, `<avr/sleep.h>` and `<avr/power.h>`
+
+### Which interrupts wake which mode
+| Sleep mode | Woken by |
+|------------|----------|
+| Idle | any interrupt |
+| ADC Noise Reduction | ADC complete, external, TWI address match, watchdog |
+| Power-save | Timer2 async, external, TWI address match, watchdog |
+| Power-down | **level-triggered** external, TWI address match, watchdog only |
+| Standby | as Power-down, with a faster wake |
+
+Note the trap: in Power-down, INT0–INT3 wake the chip only on a **level**, not an
+edge. INT4–INT7 have asynchronous edge detection and do work.
+
+### Related Lessons
+- `05_INT_External_Pins` — the asymmetry between INT0–INT3 and INT4–INT7
+- `21_Watchdog_Reset` — the watchdog as a wake-up source rather than a reset
+- `19_EEPROM_ReadWrite` — brown-out detection and a supply that is failing
+
+### Further Reading
+- AVR Application Note AVR4013 — picoPower basics
+- AVR Application Note AVR1010 — minimising power consumption

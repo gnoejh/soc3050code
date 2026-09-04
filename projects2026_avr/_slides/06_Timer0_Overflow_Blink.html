@@ -360,6 +360,19 @@ uint8_t overflow_count = 0;
 volatile uint8_t overflow_count = 0;</code></pre>
 </section>
 <section class="slide">
+<h2>Slide 10: Exercises</h2>
+<h3>Exercise 1 table — complete it</h3>
+<p>Timer0 is 8 bits and the board runs at 16 MHz. Fill this in from<br><code>f_ovf = F_CPU / (N * 256)</code>, then verify each row by toggling a pin and<br>measuring it on the board&#x27;s logic analyser (PB6/PB7).</p>
+<table><thead><tr><th>Prescaler N</th><th>Tick rate</th><th>Overflow rate</th><th>Overflow period</th></tr></thead><tbody><tr><td>64</td><td>250 kHz</td><td>976.6 Hz</td><td>1.024 ms</td></tr><tr><td>256</td><td>?</td><td>?</td><td>?</td></tr><tr><td>1024</td><td>?</td><td>?</td><td>?</td></tr></tbody></table>
+<h3>The exercises</h3>
+<ol><li><strong>Work out the rates.</strong> Complete the table above and check every row on the logic analyser.</li></ol>
+<ol><li><strong>Exactly one second.</strong> With N = 1024 an overflow arrives every 16.384 ms, so no whole number of overflows makes a second. Count 61 (0.99942 s) and measure the drift over five minutes. Then fix it by preloading <code>TCNT0</code> after each overflow and show the drift is gone.</li></ol>
+<ol><li><strong>Polling versus interrupt.</strong> Run <code>demo1_polling</code> and <code>demo2_interrupt</code> and set a spare pin high while the CPU is inside the wait. Compare the two on the oscilloscope. Which one leaves the CPU free, and by how much?</li></ol>
+<ol><li><strong>Break it on purpose.</strong> Remove <code>volatile</code> from the counter shared between <code>TIMER0_OVF_vect</code> and <code>main</code>, rebuild with <code>-Os</code>, and describe what happens. Then look at the generated assembly (<code>avr-objdump -d Main.elf</code>) and point to the instruction that explains it.</li></ol>
+<ol><li><strong>Two speeds at once.</strong> Extend <code>demo4_multitasking</code> so one LED blinks at 2 Hz and another at 5 Hz from the <em>same</em> overflow interrupt. Do it without any <code>_delay_ms</code> anywhere in the program.</li></ol>
+<ol><li><strong>Clear the flag by hand.</strong> In the polling demo, <code>TOV0</code> is cleared by writing a <strong>one</strong> to it. Change it to write a zero instead and explain the result.</li></ol>
+</section>
+<section class="slide">
 <h2>Slide 10: Summary and Key Takeaways</h2>
 <h3>Timer0 Overflow Key Concepts</h3>
 <p>✓ <strong>8-bit counter</strong> counts from 0 to 255<br>✓ <strong>Overflow</strong> occurs at 256, resets to 0<br>✓ <strong>Prescaler</strong> divides system clock (/1, /8, /64, /256, /1024)<br>✓ <strong>Overflow frequency</strong> = F_CPU / (Prescaler × 256)<br>✓ <strong>Two methods</strong>: Polling (simple) vs Interrupt (efficient)</p>

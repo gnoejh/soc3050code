@@ -196,25 +196,36 @@ Specifications:
 
 ## Slide 6: Hardware Setup - L298N
 
-### Connections
+### Connections — one motor, as this lesson drives it
 ```
 ATmega128          L298N Module           DC Motor
 ---------          ------------           --------
 OC1A (PB5) ────→   ENA (PWM Enable A)
-OC1B (PB6) ────→   ENB (PWM Enable B)
-PD0        ────→   IN1 (Direction)        Motor A (+)
-PD1        ────→   IN2 (Direction)            │
-PD2        ────→   IN3 (Direction)        Motor A (-)
-PD3        ────→   IN4 (Direction)            │
-                                      Motor B (+)
-                                          │
-                                      Motor B (-)
+PB6        ────→   IN1 (Direction)        Motor A (+)
+PB7        ────→   IN2 (Direction)        Motor A (-)
+
 GND        ────────┬─ GND
                    │
 +12V       ────→   +12V (Motor supply, 5-35V)
 
 Note: Keep motor power and logic ground connected but use separate supplies
 ```
+
+**PWM and both direction pins are on PORT B.** That is what `Main.c` uses and
+what the simulator board wires. Do not move them to PORT D: **PD2 and PD3 are
+RXD1 and TXD1**, the serial link this lesson prints to, and PD0/PD1/PD4-PD7
+carry the push buttons.
+
+PORT B is also the LED bank, so PB5-PB7 driving a motor means the top three
+LEDs mirror the motor signals. That is a useful accident — you can see the
+direction bits and the PWM without a scope.
+
+### Extension: a second motor on real hardware
+The L298N drives two motors. Adding motor B needs two more direction pins plus
+OC1B, which this board has no room for. On a bare ATmega128 you would use
+`OC1B (PB6)` for ENB and pick free pins for IN3/IN4 — but then PB6 can no longer
+be motor A's IN1, so the mapping above has to change too. Work the pin budget
+out before wiring anything.
 
 ### Schematic Concept
 ```
@@ -239,38 +250,35 @@ IN4  ────┤ IN4      OUT4├───┘
 ```c
 #include <avr/io.h>
 
-// Motor A: OC1A (PB5)
-// Motor B: OC1B (PB6)
+// Motor A speed: OC1A (PB5).  PB6 and PB7 are this motor's direction
+// pins, so OC1B is not used here - see Slide 6.
 
 void timer1_pwm_init(void) {
-    // Set OC1A and OC1B as outputs
-    DDRB |= (1 << PB5) | (1 << PB6);
-    
+    // Set OC1A as output
+    DDRB |= (1 << PB5);
+
     // Fast PWM, 10-bit (WGM13:0 = 0111, TOP = 0x03FF = 1023)
     TCCR1A = (1 << WGM11) | (1 << WGM10);
     TCCR1B = (1 << WGM12);
-    
-    // Non-inverting mode for both channels
-    // Clear OC1A/OC1B on compare match, set at BOTTOM
-    TCCR1A |= (1 << COM1A1) | (1 << COM1B1);
-    
+
+    // Non-inverting mode: clear OC1A on compare match, set at BOTTOM
+    TCCR1A |= (1 << COM1A1);
+
     // Prescaler = 8 (CS12:0 = 010)
     // PWM frequency = F_CPU / (prescaler * (1 + TOP))
     // = 16MHz / (8 * 1024) ≈ 1.953 kHz
     TCCR1B |= (1 << CS11);
-    
+
     // Start with 0% duty cycle
     OCR1A = 0;
-    OCR1B = 0;
 }
 
 void motor_set_speed(uint16_t speed) {
     // speed: 0-1023 (0% - 100% duty cycle)
     // Note: Clamping prevents overflow in 10-bit PWM
     if (speed > 1023) speed = 1023;
-    
+
     OCR1A = speed;  // Motor A duty cycle
-    OCR1B = speed;  // Motor B duty cycle
 }
 
 // Example usage:
@@ -284,20 +292,17 @@ void motor_set_speed(uint16_t speed) {
 
 ### Direction Pin Setup
 ```c
-// Direction control pins
-#define MOTOR_A_IN1  PD0
-#define MOTOR_A_IN2  PD1
-#define MOTOR_B_IN1  PD2
-#define MOTOR_B_IN2  PD3
+// Direction control pins - PORT B, alongside the OC1A PWM output on PB5.
+// Not PORT D: PD2/PD3 are RXD1/TXD1 and the rest of PORT D is buttons.
+#define MOTOR_A_IN1  PB6
+#define MOTOR_A_IN2  PB7
 
 void motor_pins_init(void) {
     // Set direction pins as outputs
-    DDRD |= (1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2) |
-            (1 << MOTOR_B_IN1) | (1 << MOTOR_B_IN2);
-    
-    // Initialize all LOW
-    PORTD &= ~((1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2) |
-               (1 << MOTOR_B_IN1) | (1 << MOTOR_B_IN2));
+    DDRB |= (1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2);
+
+    // Initialize both LOW - the motor coasts
+    PORTB &= ~((1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2));
 }
 
 typedef enum {
@@ -311,51 +316,31 @@ void motor_a_direction(motor_dir_t dir) {
     switch (dir) {
         case MOTOR_FORWARD:
             // IN1=1, IN2=0 → Current flows +→-
-            PORTD |= (1 << MOTOR_A_IN1);
-            PORTD &= ~(1 << MOTOR_A_IN2);
+            PORTB |= (1 << MOTOR_A_IN1);
+            PORTB &= ~(1 << MOTOR_A_IN2);
             break;
-            
+
         case MOTOR_REVERSE:
             // IN1=0, IN2=1 → Current flows -→+
-            PORTD &= ~(1 << MOTOR_A_IN1);
-            PORTD |= (1 << MOTOR_A_IN2);
+            PORTB &= ~(1 << MOTOR_A_IN1);
+            PORTB |= (1 << MOTOR_A_IN2);
             break;
-            
+
         case MOTOR_BRAKE:
             // IN1=1, IN2=1 → Active brake (short circuit)
-            PORTD |= (1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2);
+            PORTB |= (1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2);
             break;
-            
+
         case MOTOR_STOP:
         default:
             // IN1=0, IN2=0 → Coast (high impedance)
-            PORTD &= ~((1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2));
+            PORTB &= ~((1 << MOTOR_A_IN1) | (1 << MOTOR_A_IN2));
             break;
     }
 }
 
-void motor_b_direction(motor_dir_t dir) {
-    switch (dir) {
-        case MOTOR_FORWARD:
-            PORTD |= (1 << MOTOR_B_IN1);
-            PORTD &= ~(1 << MOTOR_B_IN2);
-            break;
-            
-        case MOTOR_REVERSE:
-            PORTD &= ~(1 << MOTOR_B_IN1);
-            PORTD |= (1 << MOTOR_B_IN2);
-            break;
-            
-        case MOTOR_BRAKE:
-            PORTD |= (1 << MOTOR_B_IN1) | (1 << MOTOR_B_IN2);
-            break;
-            
-        case MOTOR_STOP:
-        default:
-            PORTD &= ~((1 << MOTOR_B_IN1) | (1 << MOTOR_B_IN2));
-            break;
-    }
-}
+/* motor_b_direction() is omitted: the second channel needs pins
+ * this board does not have free. See the extension note on Slide 6. */
 ```
 
 ---

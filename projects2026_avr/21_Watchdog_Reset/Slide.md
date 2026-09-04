@@ -279,9 +279,9 @@ void demo_intentional_hang(void) {
     // Intentionally hang (no wdt_reset!)
     while (1) {
         // Simulated crash/hang
-        PORTC = 0xFF;  // All LEDs on
+        LED_WRITE(0xFF);  // All LEDs on
         _delay_ms(100);
-        PORTC = 0x00;
+        LED_WRITE(0x00);
         _delay_ms(100);
         
         // NOTE: wdt_reset() is NOT called!
@@ -495,3 +495,40 @@ For more information, see:
 - [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf) (Watchdog: pages 43-47)
 - Project source code in `Watchdog_System_Reset/`
 - Shared libraries: `_uart.h`
+
+---
+
+## References and Resources
+
+### Documentation
+- ATmega128 Datasheet, Section 2.6 "Watchdog Timer" — WDTCR and the timing table
+- ATmega128 Datasheet, "System Control and Reset" — `MCUCSR` and the reset flags
+- avr-libc manual, `<avr/wdt.h>` — `wdt_enable`, `wdt_reset`, `wdt_disable`
+
+### Time-out periods at 5 V
+| WDP2:0 | Time-out | Constant |
+|--------|----------|----------|
+| 000 | 16 ms | `WDTO_15MS` |
+| 001 | 32 ms | `WDTO_30MS` |
+| 010 | 65 ms | `WDTO_60MS` |
+| 011 | 130 ms | `WDTO_120MS` |
+| 100 | 260 ms | `WDTO_250MS` |
+| 101 | 520 ms | `WDTO_500MS` |
+| 110 | 1.0 s | `WDTO_1S` |
+| 111 | 2.1 s | `WDTO_2S` |
+
+The watchdog runs from its own on-chip oscillator, not the system clock, so
+these periods drift with supply and temperature. Leave margin.
+
+### Reading why you reset
+`MCUCSR` holds the cause — `PORF`, `EXTRF`, `BORF`, `WDRF`, `JTRF`. Read it early
+in `main`, report it, then clear it; otherwise the flags accumulate across resets
+and you cannot tell which one just happened.
+
+### Related Lessons
+- `20_Power_Sleep_Modes` — the watchdog as a periodic wake-up
+- `19_EEPROM_ReadWrite` — keeping state safely across an unexpected reset
+
+### Further Reading
+- AVR Application Note AVR132 — using the watchdog timer
+- Jack Ganssle, "Watchdogs" — why a watchdog kicked from a timer ISR is useless

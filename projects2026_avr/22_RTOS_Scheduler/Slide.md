@@ -702,7 +702,7 @@ void task_control(void) {
 void task_myled(void) {
   static uint32_t last = 0;
   if ((system_ticks - last) >= 500) {
-    PORTC ^= (1 << PC0);  // Toggle LED
+    PORTB ^= (1 << PB0);  // Toggle LED (PORT B is the LED bank)
     last = system_ticks;
   }
 }

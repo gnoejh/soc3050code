@@ -486,6 +486,47 @@ if (TIFR & (1 << OCF1A)) {
 
 ---
 
+## Slide 12: Exercises
+
+### Exercise 1 table — complete it
+
+In CTC with the output toggling, the pin frequency is
+`f = F_CPU / (2 * N * (1 + OCR1A))`. At 16 MHz, work out `OCR1A` for each row.
+
+| Target | Prescaler N | OCR1A | Actual frequency | Error |
+|---|---|---|---|---|
+| 1 kHz | 8 | 999 | 1000.000 Hz | 0.00 % |
+| 440 Hz (concert A) | 8 | ? | ? | ? |
+| 1 Hz | 1024 | ? | ? | ? |
+
+### The exercises
+
+1. **Derive the divisor.** Complete the table above, showing your arithmetic
+   for each row.
+
+2. **Where the error comes from.** `OCR1A` is an integer, so most target
+   frequencies are not reachable exactly. For 440 Hz, compute the error for
+   every prescaler and say which gives the best result. Explain why a smaller
+   prescaler generally wins.
+
+3. **Hardware toggle versus ISR.** Drive OC1A directly with `COM1A0`, then do
+   the same job by toggling the pin inside `TIMER1_COMPA_vect`. Measure both
+   with the logic analyser. Which one jitters, and why?
+
+4. **Make it audible.** Use the board's buzzer to play a scale — 262, 294, 330,
+   349, 392, 440, 494, 523 Hz — half a second each, recalculating `OCR1A` for
+   every note. A wrong prescaler is very easy to hear.
+
+5. **Against Timer0.** Timer0 is 8-bit, Timer1 is 16-bit. What is the lowest
+   frequency each can produce at 16 MHz with the largest prescaler? Show the
+   arithmetic, then confirm it on the board.
+
+6. **Read it back.** `demo4_precision_test` measures the achieved rate. Extend
+   it to report the error in parts per million, and compare that with the
+   crystal's own tolerance. Which dominates?
+
+---
+
 ## Slide 11: Summary and Key Takeaways
 
 ### CTC Mode Advantages

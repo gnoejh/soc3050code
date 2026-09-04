@@ -387,6 +387,48 @@ volatile uint8_t overflow_count = 0;
 
 ---
 
+## Slide 10: Exercises
+
+### Exercise 1 table — complete it
+
+Timer0 is 8 bits and the board runs at 16 MHz. Fill this in from
+`f_ovf = F_CPU / (N * 256)`, then verify each row by toggling a pin and
+measuring it on the board's logic analyser (PB6/PB7).
+
+| Prescaler N | Tick rate | Overflow rate | Overflow period |
+|---|---|---|---|
+| 64 | 250 kHz | 976.6 Hz | 1.024 ms |
+| 256 | ? | ? | ? |
+| 1024 | ? | ? | ? |
+
+### The exercises
+
+1. **Work out the rates.** Complete the table above and check every row on the
+   logic analyser.
+
+2. **Exactly one second.** With N = 1024 an overflow arrives every 16.384 ms, so
+   no whole number of overflows makes a second. Count 61 (0.99942 s) and measure
+   the drift over five minutes. Then fix it by preloading `TCNT0` after each
+   overflow and show the drift is gone.
+
+3. **Polling versus interrupt.** Run `demo1_polling` and `demo2_interrupt` and
+   set a spare pin high while the CPU is inside the wait. Compare the two on the
+   oscilloscope. Which one leaves the CPU free, and by how much?
+
+4. **Break it on purpose.** Remove `volatile` from the counter shared between
+   `TIMER0_OVF_vect` and `main`, rebuild with `-Os`, and describe what happens.
+   Then look at the generated assembly (`avr-objdump -d Main.elf`) and point to
+   the instruction that explains it.
+
+5. **Two speeds at once.** Extend `demo4_multitasking` so one LED blinks at
+   2 Hz and another at 5 Hz from the *same* overflow interrupt. Do it without
+   any `_delay_ms` anywhere in the program.
+
+6. **Clear the flag by hand.** In the polling demo, `TOV0` is cleared by writing
+   a **one** to it. Change it to write a zero instead and explain the result.
+
+---
+
 ## Slide 10: Summary and Key Takeaways
 
 ### Timer0 Overflow Key Concepts

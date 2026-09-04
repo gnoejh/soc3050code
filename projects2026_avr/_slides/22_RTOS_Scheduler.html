@@ -511,7 +511,7 @@ uart_print_num(sensor_value);</code></pre>
 <pre class="lang-c"><code>void task_myled(void) {
   static uint32_t last = 0;
   if ((system_ticks - last) &gt;= 500) {
-    PORTC ^= (1 &lt;&lt; PC0);  // Toggle LED
+    PORTB ^= (1 &lt;&lt; PB0);  // Toggle LED (PORT B is the LED bank)
     last = system_ticks;
   }
 }</code></pre>

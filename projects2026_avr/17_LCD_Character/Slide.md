@@ -161,24 +161,27 @@ gantt
 #include <util/delay.h>
 
 // LCD connections
-#define LCD_RS  PA0
-#define LCD_RW  PA1
-#define LCD_E   PA2
-#define LCD_D4  PA4
-#define LCD_D5  PA5
-#define LCD_D6  PA6
-#define LCD_D7  PA7
+// This lesson puts the whole 4-bit interface on PORT G, which is what
+// Main.c does.  PORT A is the graphic LCD's data bus on this board, so it
+// is not available here.  In 4-bit mode there is no R/W line - the driver
+// never reads back, it just waits out the datasheet delays.
+#define LCD_RS  0   // PG0
+#define LCD_E   1   // PG1
+#define LCD_D4  2   // PG2
+#define LCD_D5  3   // PG3
+#define LCD_D6  4   // PG4
+#define LCD_D7  5   // PG5
 
-#define LCD_DATA_PORT  PORTA
-#define LCD_CTRL_PORT  PORTA
-#define LCD_DATA_DDR   DDRA
-#define LCD_CTRL_DDR   DDRA
+#define LCD_DATA_PORT  PORTG
+#define LCD_CTRL_PORT  PORTG
+#define LCD_DATA_DDR   DDRG
+#define LCD_CTRL_DDR   DDRG
 
 void lcd_init(void) {
     // Configure pins as outputs
     LCD_DATA_DDR |= (1 << LCD_D4) | (1 << LCD_D5) | 
                     (1 << LCD_D6) | (1 << LCD_D7);
-    LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_E);
+    LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_E);
     
     // Wait for LCD to power up
     _delay_ms(50);
@@ -245,14 +248,12 @@ void lcd_write_byte(uint8_t byte) {
 ```c
 void lcd_command(uint8_t cmd) {
     LCD_CTRL_PORT &= ~(1 << LCD_RS);  // RS = 0 (command)
-    LCD_CTRL_PORT &= ~(1 << LCD_RW);  // RW = 0 (write)
     
     lcd_write_byte(cmd);
 }
 
 void lcd_data(uint8_t data) {
     LCD_CTRL_PORT |= (1 << LCD_RS);   // RS = 1 (data)
-    LCD_CTRL_PORT &= ~(1 << LCD_RW);  // RW = 0 (write)
     
     lcd_write_byte(data);
 }
@@ -810,6 +811,11 @@ int main(void) {
 
 ### Reading Busy Flag (Optional)
 ```c
+/* NOTE: reading the busy flag needs the LCD's R/W line wired to a pin.
+ * This lesson does not have one - R/W is tied to ground, so the display is
+ * write-only and the driver waits out the datasheet delays instead. The
+ * routine below is here to show what the alternative looks like on hardware
+ * that does wire R/W; it will not work as-is on this board. */
 uint8_t lcd_read_busy_flag(void) {
     uint8_t busy;
     
@@ -1131,13 +1137,13 @@ void lcd_i2c_data(uint8_t data) {
 #define LCD_COLS  16
 #define LCD_ROWS  2
 
-// Pin definitions
-#define LCD_RS    PA0
-#define LCD_E     PA2
-#define LCD_D4    PA4
-#define LCD_D5    PA5
-#define LCD_D6    PA6
-#define LCD_D7    PA7
+// Pin definitions - PORT G, 4-bit, no R/W (write-only)
+#define LCD_RS    0   // PG0
+#define LCD_E     1   // PG1
+#define LCD_D4    2   // PG2
+#define LCD_D5    3   // PG3
+#define LCD_D6    4   // PG4
+#define LCD_D7    5   // PG5
 
 // Function prototypes
 void lcd_init(void);
@@ -1398,7 +1404,47 @@ if (x < LCD_COLS && y < LCD_ROWS) {
 
 ---
 
-## Slide 28: Additional Resources
+## Slide 28: Summary and Key Takeaways
+
+### Key Points
+✓ **The HD44780 is a parallel character display** — you send bytes, it renders glyphs
+✓ **4-bit mode halves the pin cost** — each byte goes as two nibbles, high first
+✓ **RS selects command or data**; E latches on its falling edge
+✓ **This board ties R/W to ground** — the panel is write-only, so you wait out the
+  datasheet delays instead of polling the busy flag
+✓ **The whole interface is on PORT G** here — PG0 = RS, PG1 = E, PG2–PG5 = D4–D7
+✓ **DDRAM is not linear** — row 0 starts at 0x00 and row 1 at 0x40, which is why
+  `lcd_goto()` exists
+✓ **Clear and Home take 1.5 ms**; every other command takes about 40 µs
+
+### Register and Command Summary
+| Command | Code | Time |
+|---------|------|------|
+| Clear display | 0x01 | 1.52 ms |
+| Return home | 0x02 | 1.52 ms |
+| Entry mode set | 0x04–0x07 | 37 µs |
+| Display on/off | 0x08–0x0F | 37 µs |
+| Function set (4-bit, 2 line) | 0x28 | 37 µs |
+| Set CGRAM address | 0x40 \| addr | 37 µs |
+| Set DDRAM address | 0x80 \| addr | 37 µs |
+
+### Best Practices
+1. **Respect the power-on delay** — the controller needs 40 ms before it listens
+2. **Send the 4-bit init sequence exactly** — three 0x03 nibbles, then 0x02
+3. **Never assume the cursor position** — set DDRAM before every write
+4. **Keep a RAM copy of the screen** if you need to know what is displayed;
+   without R/W you cannot read it back
+5. **Write whole lines, padded with spaces**, rather than clearing and redrawing —
+   it removes the flicker
+
+### Next Steps
+- **Custom characters** — eight CGRAM slots for bar graphs and symbols
+- **The graphic LCD** — lesson 18, where you control individual pixels
+- **Sensor dashboards** — combining ADC readings with formatted output
+
+---
+
+## Slide 29: Additional Resources
 
 ### ATmega128 Documentation
 - **[Official Datasheet (PDF)](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf)**

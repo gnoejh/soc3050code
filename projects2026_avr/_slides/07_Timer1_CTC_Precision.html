@@ -382,6 +382,19 @@ if (TIFR &amp; (1 &lt;&lt; OCF1A)) {
 <p>✓ <strong>Use formula</strong> to calculate OCR1A<br>✓ <strong>Verify</strong> actual frequency with calculation<br>✓ <strong>Choose prescaler</strong> for best resolution<br>✓ <strong>Protect 16-bit</strong> register writes<br>✓ <strong>Keep ISRs short</strong> - set flags, do work in main</p>
 </section>
 <section class="slide">
+<h2>Slide 12: Exercises</h2>
+<h3>Exercise 1 table — complete it</h3>
+<p>In CTC with the output toggling, the pin frequency is<br><code>f = F_CPU / (2 * N * (1 + OCR1A))</code>. At 16 MHz, work out <code>OCR1A</code> for each row.</p>
+<table><thead><tr><th>Target</th><th>Prescaler N</th><th>OCR1A</th><th>Actual frequency</th><th>Error</th></tr></thead><tbody><tr><td>1 kHz</td><td>8</td><td>999</td><td>1000.000 Hz</td><td>0.00 %</td></tr><tr><td>440 Hz (concert A)</td><td>8</td><td>?</td><td>?</td><td>?</td></tr><tr><td>1 Hz</td><td>1024</td><td>?</td><td>?</td><td>?</td></tr></tbody></table>
+<h3>The exercises</h3>
+<ol><li><strong>Derive the divisor.</strong> Complete the table above, showing your arithmetic for each row.</li></ol>
+<ol><li><strong>Where the error comes from.</strong> <code>OCR1A</code> is an integer, so most target frequencies are not reachable exactly. For 440 Hz, compute the error for every prescaler and say which gives the best result. Explain why a smaller prescaler generally wins.</li></ol>
+<ol><li><strong>Hardware toggle versus ISR.</strong> Drive OC1A directly with <code>COM1A0</code>, then do the same job by toggling the pin inside <code>TIMER1_COMPA_vect</code>. Measure both with the logic analyser. Which one jitters, and why?</li></ol>
+<ol><li><strong>Make it audible.</strong> Use the board&#x27;s buzzer to play a scale — 262, 294, 330, 349, 392, 440, 494, 523 Hz — half a second each, recalculating <code>OCR1A</code> for every note. A wrong prescaler is very easy to hear.</li></ol>
+<ol><li><strong>Against Timer0.</strong> Timer0 is 8-bit, Timer1 is 16-bit. What is the lowest frequency each can produce at 16 MHz with the largest prescaler? Show the arithmetic, then confirm it on the board.</li></ol>
+<ol><li><strong>Read it back.</strong> <code>demo4_precision_test</code> measures the achieved rate. Extend it to report the error in parts per million, and compare that with the crystal&#x27;s own tolerance. Which dominates?</li></ol>
+</section>
+<section class="slide">
 <h2>Slide 11: Summary and Key Takeaways</h2>
 <h3>CTC Mode Advantages</h3>
 <p>✓ <strong>Exact frequencies</strong> without counting<br>✓ <strong>Simple programming</strong> - one register<br>✓ <strong>Wide range</strong> - 0.24 Hz to 8 MHz<br>✓ <strong>No error accumulation</strong><br>✓ <strong>Hardware precision</strong></p>

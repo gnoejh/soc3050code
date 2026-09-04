@@ -568,6 +568,38 @@ ISR(TIMER1_CAPT_vect) {
 
 ---
 
+## Slide 13: Exercises
+
+1. **Capture the PWM from lesson 09.** Build `09_PWM_Motor_DC`, run it, and wire
+   its OC1A output round to ICP1. Measure the frequency and confirm it matches
+   the 1.953 kHz that lesson's prescaler and TOP predict.
+
+2. **Both edges.** `demo4_pulse_width` toggles `ICES1` to catch the rising then
+   the falling edge. Use it to report the **duty cycle** as a percentage, not
+   just the high time. Check it against a known 25 %, 50 % and 75 % signal.
+
+3. **Longer than one period.** Timer1 overflows every `65536 * N / F_CPU`
+   seconds — at N = 8 and 16 MHz, 32.8 ms. Any pulse longer than that is
+   measured wrongly. Reproduce the failure, then fix it by counting overflows in
+   `TIMER1_OVF_vect` and combining the count with the capture value.
+
+4. **The noise canceller.** Set `ICNC1` in `TCCR1B` and describe, from the
+   datasheet, exactly what it does to the input. Measure the delay it adds. When
+   is four clock cycles of latency worth paying?
+
+5. **Resolution.** With N = 8 at 16 MHz each tick is 0.5 µs. What is the
+   shortest pulse you can measure to within 1 %? Work it out, then verify with
+   the shortest pulse you can generate.
+
+6. **Two things at once.** Timer1 has one capture unit. Sketch how you would
+   measure two independent signals — and say what you would have to give up.
+
+7. **A real instrument.** Turn `demo3_frequency_meter` into something usable:
+   show the frequency on the graphic LCD, average over 16 readings, and display
+   "no signal" when nothing has been captured for a second.
+
+---
+
 ## Slide 12: Summary and Key Takeaways
 
 ### Input Capture Key Concepts

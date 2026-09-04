@@ -181,16 +181,21 @@ PC7 (input)  ←───  Col 3
 ```c
 #include <avr/io.h>
 
-// Row pins (outputs)
-#define ROW_PORT  PORTC
-#define ROW_DDR   DDRC
-#define ROW_MASK  0x0F  // PC0-PC3
+// The keypad shares one port: low nibble drives, high nibble reads.
+// PORT A on this board - PORT C is not connected to anything.
+#define KEYPAD_PORT PORTA
+#define KEYPAD_DDR  DDRA
+#define KEYPAD_PIN  PINA
 
-// Column pins (inputs)
-#define COL_PORT  PORTC
-#define COL_DDR   DDRC
-#define COL_PIN   PINC
-#define COL_MASK  0xF0  // PC4-PC7
+#define ROW_MASK  0x0F  // PA0-PA3 (rows, outputs)
+#define COL_MASK  0xF0  // PA4-PA7 (columns, inputs with pull-ups)
+
+// Aliases so the scanning code below reads clearly
+#define ROW_PORT  KEYPAD_PORT
+#define ROW_DDR   KEYPAD_DDR
+#define COL_PORT  KEYPAD_PORT
+#define COL_DDR   KEYPAD_DDR
+#define COL_PIN   KEYPAD_PIN
 
 void keypad_init(void) {
     // Set rows as outputs

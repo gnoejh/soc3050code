@@ -671,3 +671,32 @@ For more information, see:
 - GCC Inline Assembly Documentation
 - Project source code in `Inline_Assembly/`
 - `ASSEMBLY_FLOW_DIAGRAMS.md` for visual guides
+
+---
+
+## References and Resources
+
+### Documentation
+- ATmega128 Datasheet, "Instruction Set Summary" — cycle counts for every opcode
+- [AVR Instruction Set Manual](https://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf) — the authoritative opcode reference
+- avr-libc manual, "Inline Assembler Cookbook" — constraints, clobbers, `%0` numbering
+- GCC manual, "How to Use Inline Assembly Language in C Code"
+
+### Constraint quick reference
+| Letter | Means |
+|--------|-------|
+| `r` | any register r0–r31 |
+| `d` | upper register r16–r31 (needed by `ldi`, `subi`, `andi`) |
+| `e` | pointer register pair X, Y or Z |
+| `z` | the Z pair specifically, for `lpm` and `elpm` |
+| `I` | 6-bit positive constant 0–63 (I/O addresses) |
+| `M` | 8-bit constant 0–255 |
+
+### Related Lessons
+- `01_Port_Basic` — the C operations these instructions implement
+- `06_Timer0_Overflow_Blink` — where cycle-exact timing starts to matter
+- `22_RTOS_Scheduler` — context switching, which cannot be written in C alone
+
+### Further Reading
+- AVR Application Note AVR035 — efficient C coding for AVR
+- AVR Application Note AVR186 — best practices for the AVR instruction set

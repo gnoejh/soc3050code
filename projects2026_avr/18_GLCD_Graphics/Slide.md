@@ -81,8 +81,8 @@ CS2 (Controller 2):
   - Controls columns 64-127 (right half)
   - Activated when y >= 64
 
-#define GLCD_CS1  PB0  // Left half chip select
-#define GLCD_CS2  PB1  // Right half chip select
+#define GLCD_CS1  7   // PE7 - left half chip select
+#define GLCD_CS2  6   // PE6 - right half chip select
 ```
 
 ### Page-Based Memory
@@ -151,29 +151,29 @@ VEE      ─      Contrast (variable)
 #include <avr/io.h>
 #include <util/delay.h>
 
-// Pin definitions
-#define GLCD_RS   PC0
-#define GLCD_RW   PC1
-#define GLCD_E    PC2
-#define GLCD_CS1  PB0
-#define GLCD_CS2  PB1
-#define GLCD_RST  PB2
+// Pin definitions - these match shared_libs/_glcd.h, which is what the
+// lesson actually links against.
+//   data    : PORT A, all 8 bits
+//   control : PORT E, upper nibble
+// There is no R/W pin and no reset pin: R/W is tied to ground, so the
+// display is write-only (this is why ks0108_get_pixel() cannot work), and
+// the module resets with the board.
+#define GLCD_RS   4   // PE4 - register select
+#define GLCD_E    5   // PE5 - enable
+#define GLCD_CS2  6   // PE6 - right half chip select
+#define GLCD_CS1  7   // PE7 - left half chip select
 
 void glcd_init(void) {
     // Configure data port as output
     DDRA = 0xFF;
     PORTA = 0x00;
-    
+
     // Configure control pins as outputs
-    DDRC |= (1 << GLCD_RS) | (1 << GLCD_RW) | (1 << GLCD_E);
-    DDRB |= (1 << GLCD_CS1) | (1 << GLCD_CS2) | (1 << GLCD_RST);
-    
-    // Reset GLCD (pulse LOW)
-    PORTB &= ~(1 << GLCD_RST);
+    DDRE |= (1 << GLCD_RS) | (1 << GLCD_E) |
+            (1 << GLCD_CS1) | (1 << GLCD_CS2);
+
     _delay_ms(10);
-    PORTB |= (1 << GLCD_RST);
-    _delay_ms(10);
-    
+
     // Initialize both controllers
     glcd_select_chip(GLCD_CS1);
     glcd_command(0x3F);  // Display ON
@@ -189,11 +189,11 @@ void glcd_init(void) {
 
 void glcd_select_chip(uint8_t chip) {
     if (chip == GLCD_CS1) {
-        PORTB |= (1 << GLCD_CS1);
-        PORTB &= ~(1 << GLCD_CS2);
+        PORTE |= (1 << GLCD_CS1);
+        PORTE &= ~(1 << GLCD_CS2);
     } else {
-        PORTB &= ~(1 << GLCD_CS1);
-        PORTB |= (1 << GLCD_CS2);
+        PORTE &= ~(1 << GLCD_CS1);
+        PORTE |= (1 << GLCD_CS2);
     }
 }
 ```
@@ -205,46 +205,49 @@ void glcd_select_chip(uint8_t chip) {
 ### Send Command to GLCD
 ```c
 void glcd_command(uint8_t cmd) {
-    PORTC &= ~(1 << GLCD_RS);  // RS = 0 (command mode)
-    PORTC &= ~(1 << GLCD_RW);  // R/W = 0 (write)
+    PORTE &= ~(1 << GLCD_RS);  // RS = 0 (command mode)
     
     PORTA = cmd;               // Put command on data bus
     
     // Pulse enable
-    PORTC |= (1 << GLCD_E);
+    PORTE |= (1 << GLCD_E);
     _delay_us(1);
-    PORTC &= ~(1 << GLCD_E);
+    PORTE &= ~(1 << GLCD_E);
     
     _delay_us(5);  // Command execution time
 }
 
 void glcd_data(uint8_t data) {
-    PORTC |= (1 << GLCD_RS);   // RS = 1 (data mode)
-    PORTC &= ~(1 << GLCD_RW);  // R/W = 0 (write)
+    PORTE |= (1 << GLCD_RS);   // RS = 1 (data mode)
     
     PORTA = data;              // Put data on data bus
     
     // Pulse enable
-    PORTC |= (1 << GLCD_E);
+    PORTE |= (1 << GLCD_E);
     _delay_us(1);
-    PORTC &= ~(1 << GLCD_E);
+    PORTE &= ~(1 << GLCD_E);
     
     _delay_us(5);  // Data write time
 }
 
+/* NOTE: reading back from the display needs the R/W line on a pin. On this
+ * board R/W is tied to ground, so the panel is write-only and this routine
+ * cannot run - it is shown for hardware that does wire R/W. It is also why
+ * ks0108_get_pixel() in shared_libs/_glcd.c always returns 0: to know what
+ * is on the screen you must keep your own copy in RAM. */
 uint8_t glcd_read_data(void) {
     DDRA = 0x00;               // Data port as input
-    
-    PORTC |= (1 << GLCD_RS);   // RS = 1 (data mode)
-    PORTC |= (1 << GLCD_RW);   // R/W = 1 (read)
+
+    PORTE |= (1 << GLCD_RS);   // RS = 1 (data mode)
+    PORTE |= (1 << GLCD_RW);   // R/W = 1 (read) - needs R/W wired
     
     // Pulse enable
-    PORTC |= (1 << GLCD_E);
+    PORTE |= (1 << GLCD_E);
     _delay_us(1);
     
     uint8_t data = PINA;       // Read data bus
     
-    PORTC &= ~(1 << GLCD_E);
+    PORTE &= ~(1 << GLCD_E);
     
     DDRA = 0xFF;               // Data port back to output
     

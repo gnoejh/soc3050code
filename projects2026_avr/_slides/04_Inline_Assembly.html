@@ -620,6 +620,17 @@ ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 <p>For more information, see:</p>
 <ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> (Instruction Set: pages 321-334)</li><li>GCC Inline Assembly Documentation</li><li>Project source code in <code>Inline_Assembly/</code></li><li><code>ASSEMBLY_FLOW_DIAGRAMS.md</code> for visual guides</li></ul>
 </section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, &quot;Instruction Set Summary&quot; — cycle counts for every opcode</li><li><a href="https://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf" target="_blank" rel="noopener">AVR Instruction Set Manual</a> — the authoritative opcode reference</li><li>avr-libc manual, &quot;Inline Assembler Cookbook&quot; — constraints, clobbers, <code>%0</code> numbering</li><li>GCC manual, &quot;How to Use Inline Assembly Language in C Code&quot;</li></ul>
+<h3>Constraint quick reference</h3>
+<table><thead><tr><th>Letter</th><th>Means</th></tr></thead><tbody><tr><td><code>r</code></td><td>any register r0–r31</td></tr><tr><td><code>d</code></td><td>upper register r16–r31 (needed by <code>ldi</code>, <code>subi</code>, <code>andi</code>)</td></tr><tr><td><code>e</code></td><td>pointer register pair X, Y or Z</td></tr><tr><td><code>z</code></td><td>the Z pair specifically, for <code>lpm</code> and <code>elpm</code></td></tr><tr><td><code>I</code></td><td>6-bit positive constant 0–63 (I/O addresses)</td></tr><tr><td><code>M</code></td><td>8-bit constant 0–255</td></tr></tbody></table>
+<h3>Related Lessons</h3>
+<ul><li><code>01_Port_Basic</code> — the C operations these instructions implement</li><li><code>06_Timer0_Overflow_Blink</code> — where cycle-exact timing starts to matter</li><li><code>22_RTOS_Scheduler</code> — context switching, which cannot be written in C alone</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR035 — efficient C coding for AVR</li><li>AVR Application Note AVR186 — best practices for the AVR instruction set</li></ul>
+</section>
 </div>
 
 <div class="bar">

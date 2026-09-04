@@ -312,9 +312,9 @@ void main(void) {
     // Intentionally hang (no wdt_reset!)
     while (1) {
         // Simulated crash/hang
-        PORTC = 0xFF;  // All LEDs on
+        LED_WRITE(0xFF);  // All LEDs on
         _delay_ms(100);
-        PORTC = 0x00;
+        LED_WRITE(0x00);
         _delay_ms(100);
         
         // NOTE: wdt_reset() is NOT called!
@@ -463,6 +463,20 @@ void delay_with_wdt(uint16_t ms) {
 <p><strong>Questions?</strong></p>
 <p>For more information, see:</p>
 <ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> (Watchdog: pages 43-47)</li><li>Project source code in <code>Watchdog_System_Reset/</code></li><li>Shared libraries: <code>_uart.h</code></li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, Section 2.6 &quot;Watchdog Timer&quot; — WDTCR and the timing table</li><li>ATmega128 Datasheet, &quot;System Control and Reset&quot; — <code>MCUCSR</code> and the reset flags</li><li>avr-libc manual, <code>&lt;avr/wdt.h&gt;</code> — <code>wdt_enable</code>, <code>wdt_reset</code>, <code>wdt_disable</code></li></ul>
+<h3>Time-out periods at 5 V</h3>
+<table><thead><tr><th>WDP2:0</th><th>Time-out</th><th>Constant</th></tr></thead><tbody><tr><td>000</td><td>16 ms</td><td><code>WDTO_15MS</code></td></tr><tr><td>001</td><td>32 ms</td><td><code>WDTO_30MS</code></td></tr><tr><td>010</td><td>65 ms</td><td><code>WDTO_60MS</code></td></tr><tr><td>011</td><td>130 ms</td><td><code>WDTO_120MS</code></td></tr><tr><td>100</td><td>260 ms</td><td><code>WDTO_250MS</code></td></tr><tr><td>101</td><td>520 ms</td><td><code>WDTO_500MS</code></td></tr><tr><td>110</td><td>1.0 s</td><td><code>WDTO_1S</code></td></tr><tr><td>111</td><td>2.1 s</td><td><code>WDTO_2S</code></td></tr></tbody></table>
+<p>The watchdog runs from its own on-chip oscillator, not the system clock, so<br>these periods drift with supply and temperature. Leave margin.</p>
+<h3>Reading why you reset</h3>
+<p><code>MCUCSR</code> holds the cause — <code>PORF</code>, <code>EXTRF</code>, <code>BORF</code>, <code>WDRF</code>, <code>JTRF</code>. Read it early<br>in <code>main</code>, report it, then clear it; otherwise the flags accumulate across resets<br>and you cannot tell which one just happened.</p>
+<h3>Related Lessons</h3>
+<ul><li><code>20_Power_Sleep_Modes</code> — the watchdog as a periodic wake-up</li><li><code>19_EEPROM_ReadWrite</code> — keeping state safely across an unexpected reset</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR132 — using the watchdog timer</li><li>Jack Ganssle, &quot;Watchdogs&quot; — why a watchdog kicked from a timer ISR is useless</li></ul>
 </section>
 </div>
 

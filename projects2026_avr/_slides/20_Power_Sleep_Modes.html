@@ -589,6 +589,18 @@ sleep_disable();</code></pre>
 <p>For more information, see:</p>
 <ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> (Sleep Modes: pages 36-40)</li><li>Project source code in <code>Power_Sleep_Modes/</code></li><li>Shared libraries: <code>_uart.h</code></li></ul>
 </section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, Section 6 &quot;Power Management and Sleep Modes&quot; — the mode table</li><li>ATmega128 Datasheet, Section 6.2 — which wake-up sources survive which mode</li><li>ATmega128 Datasheet, &quot;Electrical Characteristics&quot; — the actual current figures</li><li>avr-libc manual, <code>&lt;avr/sleep.h&gt;</code> and <code>&lt;avr/power.h&gt;</code></li></ul>
+<h3>Which interrupts wake which mode</h3>
+<table><thead><tr><th>Sleep mode</th><th>Woken by</th></tr></thead><tbody><tr><td>Idle</td><td>any interrupt</td></tr><tr><td>ADC Noise Reduction</td><td>ADC complete, external, TWI address match, watchdog</td></tr><tr><td>Power-save</td><td>Timer2 async, external, TWI address match, watchdog</td></tr><tr><td>Power-down</td><td><strong>level-triggered</strong> external, TWI address match, watchdog only</td></tr><tr><td>Standby</td><td>as Power-down, with a faster wake</td></tr></tbody></table>
+<p>Note the trap: in Power-down, INT0–INT3 wake the chip only on a <strong>level</strong>, not an<br>edge. INT4–INT7 have asynchronous edge detection and do work.</p>
+<h3>Related Lessons</h3>
+<ul><li><code>05_INT_External_Pins</code> — the asymmetry between INT0–INT3 and INT4–INT7</li><li><code>21_Watchdog_Reset</code> — the watchdog as a wake-up source rather than a reset</li><li><code>19_EEPROM_ReadWrite</code> — brown-out detection and a supply that is failing</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR4013 — picoPower basics</li><li>AVR Application Note AVR1010 — minimising power consumption</li></ul>
+</section>
 </div>
 
 <div class="bar">
