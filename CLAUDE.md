@@ -158,6 +158,7 @@ unused-parameter warnings inside `shared_libs` stubs. Those stubs are honest
 | 2026-09-05 | 22 lessons imported, normalised, defects fixed, slides completed, all building and verified in SR2. |
 | 2026-09-05 | `projects2026_avr/` + this tracker committed and pushed. |
 | 2026-09-05 | System pass: VS Code tasks repaired, verifier and slide renderer added, both READMEs rewritten, `projects/` archived, SimulIDE SR2 committed. |
+| 2026-09-05 | History squashed to a single root commit on `main` and force-pushed; all prior history deleted. See section 12. |
 
 ## 9. The system pass (2026-09-05)
 
@@ -234,3 +235,40 @@ nothing in the course uses. `tools/simulide200/` (159 MB) remains untracked.
 - Board-specific facts belong in a lesson's `config.h`, not scattered in `Main.c`.
 - **Never trust a build's exit code alone** on this project. Batch redirects and
   missing artefacts have both produced green builds with no firmware.
+- Work directly on `main`. The repository has one branch and no history to
+  preserve alongside it - see section 12.
+
+## 12. Git history
+
+On 2026-09-05 the repository was deliberately flattened: every prior commit was
+replaced by a single root commit and force-pushed over `origin/main`.
+
+```
+0cc10fa  SOC3050 ATmega128 embedded systems course   (no parent)
+```
+
+What went with it, permanently:
+
+- the ten commits from the 2025-12-04 root onward,
+- the `projects2026-avr-simulide-sr2` and `copilot/upgrade-copilot-plan`
+  branches on the remote,
+- the contribution history those commits represented - the green squares for
+  that period are gone from the GitHub profile, since contributions are keyed
+  to commits that no longer exist.
+
+Local backup refs and the reflog were expired afterwards at the maintainer's
+instruction, so **nothing survives to restore from**. The squashed tree was
+verified byte-identical to the pre-squash tip before the push, and all 22
+lessons were rebuilt from the new root, so no file content was lost - only
+history.
+
+`.git` went from 112 MB to 92 MB. It will not shrink much further: the 89 MB
+pack is almost entirely the vendored AVR toolchain and SimulIDE install, which
+are meant to be there.
+
+Anyone holding a clone from before this needs a fresh one; `git pull` will
+refuse to fast-forward.
+
+**Before any future history rewrite**, weigh the same three costs: contribution
+history disappears, existing clones break, and open pull requests lose their
+base commits.

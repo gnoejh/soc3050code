@@ -90,9 +90,16 @@ inversion in one place — `LED_WRITE(0x0F)` lights the low four LEDs.
 
 ### Components placed but not wired
 The board carries a **DS1307**, **DS1621**, **DS18B20**, **DHT22**, **ESP01**,
-**KY040** and a **touch pad** that are present but have no connections. Lessons
-using them need the wiring drawn in SimulIDE first; lesson 16's README says
-which pins its DS1307 wants.
+**KY040** and a **touch pad** that are present but have no connections. Any
+lesson using one needs its wiring drawn in SimulIDE first.
+
+This affects **lesson 16**, whose RTC demos stay silent until the DS1307's SCL
+and SDA reach PD0 and PD1 — [its README](16_I2C_RTC_DS1307/README.md) has
+click-by-click instructions. It is left as a manual step on purpose: the
+junction points on PD0 and PD1 are already at their three-connection limit, so
+adding the RTC means splicing new nodes into existing wires. That is
+straightforward in the GUI and risky to do by editing the circuit file, which
+all 22 lessons share.
 
 ---
 

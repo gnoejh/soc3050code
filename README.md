@@ -170,9 +170,9 @@ powershell -ExecutionPolicy Bypass -File verify-environment.ps1 -Verbose
 **Nothing appears in the serial monitor** — check it is on 9600 baud, and that
 the board's serial component is the one wired to PD2/PD3.
 
-**The simulator will not start** — `tools/simulide110sr2/` must be present. If
-it is missing from your clone, see the note in
-[projects2026_avr/README.md](projects2026_avr/README.md).
+**The simulator will not start** — check that
+`tools/simulide110sr2/SimulIDE_1.1.0-SR2_Win64/simulide.exe` is present. It is
+committed to the repository, so a complete clone has it.
 
 ---
 
