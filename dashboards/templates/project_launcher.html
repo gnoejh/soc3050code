@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATmega128 Project Launcher - IUT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/project_launcher.css') }}">
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>🎓 ATmega128 Project Launcher</h1>
+                    <p class="subtitle">Inha University in Tashkent</p>
+                </div>
+                <div class="connection-status">
+                    <div class="status-indicator" id="wsStatus">
+                        <span class="dot offline"></span>
+                        <span class="text">Disconnected</span>
+                    </div>
+                    <div class="status-indicator" id="deviceStatus">
+                        <span class="dot offline"></span>
+                        <span class="text">No Device</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar: Project Browser -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>📚 Projects</h2>
+                    <div class="search-box">
+                        <input type="text" id="projectSearch" placeholder="Search projects...">
+                    </div>
+                </div>
+                <div class="projects-list" id="projectsList">
+                    <div class="loading">Loading projects...</div>
+                </div>
+            </aside>
+
+            <!-- Main Panel: Project Details & Controls -->
+            <main class="main-panel">
+                <!-- Device Selection -->
+                <section class="device-selection">
+                    <h3>🎯 Target Device</h3>
+                    <div class="device-buttons">
+                        <button class="device-btn active" data-device="simulator">
+                            <span class="icon">🖥️</span>
+                            <span class="label">SimulIDE</span>
+                        </button>
+                        <button class="device-btn" data-device="hardware">
+                            <span class="icon">🔌</span>
+                            <span class="label">Physical Kit</span>
+                        </button>
+                    </div>
+                    <div class="device-info">
+                        <div id="deviceInfo">Select a device to continue</div>
+                        <button class="scan-btn" id="scanDevices">🔍 Scan Devices</button>
+                    </div>
+                </section>
+
+                <!-- Project Details -->
+                <section class="project-details" id="projectDetails" style="display: none;">
+                    <!-- Project info will be dynamically inserted here -->
+                </section>
+
+                <!-- Code Editor Section -->
+                <section class="code-editor-section" id="codeEditorSection" style="display: none;">
+                    <div class="editor-header">
+                        <div class="editor-title">
+                            <h3 id="editorProjectName">📝 Code Editor</h3>
+                            <p id="editorProjectDesc" style="font-size: 0.85rem; opacity: 0.8; margin: 0;"></p>
+                        </div>
+                        <div class="editor-tabs" id="editorTabs"></div>
+                        <div class="editor-actions">
+                            <button class="editor-btn secondary" id="revertBtn" disabled title="Revert all changes">
+                                <span class="icon">↶</span> Revert
+                            </button>
+                            <button class="editor-btn primary" id="saveFileBtn" disabled title="Save file (Ctrl+S)">
+                                <span class="icon">💾</span> Save
+                            </button>
+                            <button class="editor-btn" id="closeEditorBtn" title="Close editor">
+                                <span class="icon">✖</span> Close
+                            </button>
+                        </div>
+                    </div>
+                    <div class="editor-container">
+                        <div id="monacoEditor" style="height: 500px; border: 1px solid #ddd;"></div>
+                    </div>
+                    <div class="editor-status" id="editorStatus">
+                        <span id="editorFilePath"></span>
+                        <span id="editorModified" style="display: none;">● Modified</span>
+                    </div>
+                </section>
+
+                <!-- Build & Run Controls -->
+                <section class="controls">
+                    <button class="control-btn primary" id="buildBtn" disabled>
+                        <span class="icon">🔨</span> Build
+                    </button>
+                    <button class="control-btn success" id="runBtn" disabled>
+                        <span class="icon">▶️</span> Build & Run
+                    </button>
+                    <button class="control-btn danger" id="stopBtn" disabled>
+                        <span class="icon">⏹️</span> Stop
+                    </button>
+                </section>
+
+                <!-- Build Output -->
+                <section class="output-section">
+                    <div class="output-header">
+                        <h3>📝 Build Output</h3>
+                        <button class="clear-btn" id="clearOutput">Clear</button>
+                    </div>
+                    <pre class="output-console" id="buildOutput"></pre>
+                </section>
+            </main>
+
+            <!-- Right Panel: Live Monitoring -->
+            <aside class="monitor-panel">
+                <h2>📊 Live Monitor</h2>
+
+                <!-- LED Display -->
+                <div class="monitor-section">
+                    <h3>💡 LED States (PORTB)</h3>
+                    <div class="led-display">
+                        <div class="led" data-bit="7"><span class="led-circle"></span><span class="label">7</span></div>
+                        <div class="led" data-bit="6"><span class="led-circle"></span><span class="label">6</span></div>
+                        <div class="led" data-bit="5"><span class="led-circle"></span><span class="label">5</span></div>
+                        <div class="led" data-bit="4"><span class="led-circle"></span><span class="label">4</span></div>
+                        <div class="led" data-bit="3"><span class="led-circle"></span><span class="label">3</span></div>
+                        <div class="led" data-bit="2"><span class="led-circle"></span><span class="label">2</span></div>
+                        <div class="led" data-bit="1"><span class="led-circle"></span><span class="label">1</span></div>
+                        <div class="led" data-bit="0"><span class="led-circle"></span><span class="label">0</span></div>
+                    </div>
+                </div>
+
+                <!-- ADC Values -->
+                <div class="monitor-section">
+                    <h3>📈 ADC Values</h3>
+                    <div class="adc-display" id="adcDisplay">
+                        <div class="adc-channel">
+                            <span class="channel-label">CH0:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="value">0</span>
+                        </div>
+                        <div class="adc-channel">
+                            <span class="channel-label">CH1:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Serial Console -->
+                <div class="monitor-section">
+                    <h3>📟 Serial Monitor</h3>
+                    <div class="serial-console" id="serialConsole"></div>
+                    <div class="serial-input">
+                        <input type="text" id="serialInput" placeholder="Send command...">
+                        <button id="sendBtn">Send</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.js"></script>
+    <script src="{{ url_for('static', filename='js/project_launcher.js') }}"></script>
+</body>
+
+</html>

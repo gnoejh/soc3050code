@@ -1,0 +1,1527 @@
+<title>Matrix Keypad Programming</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Matrix Keypad Programming</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Matrix Keypads</h2>
+<h3>What is a Matrix Keypad?</h3>
+<ul><li><strong>Array of buttons</strong> arranged in rows and columns</li><li><strong>Efficient scanning</strong> - fewer pins than individual buttons</li><li>Common sizes: <strong>3x4</strong> (12 keys), <strong>4x4</strong> (16 keys)</li><li>Used for <strong>numeric input</strong>, <strong>password entry</strong>, <strong>menu navigation</strong></li></ul>
+<h3>Matrix Keypad Structure</h3>
+<pre class="lang-mermaid"><code>graph TB
+    subgraph &quot;4x4 Keypad Matrix&quot;
+        A[Row 0] --&gt; K1[1]
+        A --&gt; K2[2]
+        A --&gt; K3[3]
+        A --&gt; K4[A]
+        
+        B[Row 1] --&gt; K5[4]
+        B --&gt; K6[5]
+        B --&gt; K7[6]
+        B --&gt; K8[B]
+        
+        C[Row 2] --&gt; K9[7]
+        C --&gt; K10[8]
+        C --&gt; K11[9]
+        C --&gt; K12[C]
+        
+        D[Row 3] --&gt; K13[*]
+        D --&gt; K14[0]
+        D --&gt; K15[#]
+        D --&gt; K16[D]
+        
+        K1 --&gt; E[Col 0]
+        K5 --&gt; E
+        K9 --&gt; E
+        K13 --&gt; E
+        
+        K2 --&gt; F[Col 1]
+        K6 --&gt; F
+        K10 --&gt; F
+        K14 --&gt; F
+        
+        K3 --&gt; G[Col 2]
+        K7 --&gt; G
+        K11 --&gt; G
+        K15 --&gt; G
+        
+        K4 --&gt; H[Col 3]
+        K8 --&gt; H
+        K12 --&gt; H
+        K16 --&gt; H
+    end
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style K6 fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Why Use Matrix Keypad?</h3>
+<p>✓ <strong>Pin efficient</strong>: 8 pins for 16 buttons (vs 16 pins)<br>✓ <strong>Cost effective</strong>: Standard, readily available<br>✓ <strong>Easy interface</strong>: Simple scanning algorithm<br>✓ <strong>Reliable</strong>: Tactile feedback, long lifespan</p>
+</section>
+<section class="slide">
+<h2>Slide 2: Keypad Layout</h2>
+<h3>4x4 Keypad Layout</h3>
+<pre><code>     Col0  Col1  Col2  Col3
+      │     │     │     │
+Row0──┼─────┼─────┼─────┼───
+      │  1  │  2  │  3  │ A
+      │     │     │     │
+Row1──┼─────┼─────┼─────┼───
+      │  4  │  5  │  6  │ B
+      │     │     │     │
+Row2──┼─────┼─────┼─────┼───
+      │  7  │  8  │  9  │ C
+      │     │     │     │
+Row3──┼─────┼─────┼─────┼───
+      │  *  │  0  │  #  │ D
+      │     │     │     │</code></pre>
+<h3>3x4 Keypad Layout</h3>
+<pre><code>     Col0  Col1  Col2
+      │     │     │
+Row0──┼─────┼─────┼───
+      │  1  │  2  │  3
+      │     │     │
+Row1──┼─────┼─────┼───
+      │  4  │  5  │  6
+      │     │     │
+Row2──┼─────┼─────┼───
+      │  7  │  8  │  9
+      │     │     │
+Row3──┼─────┼─────┼───
+      │  *  │  0  │  #
+      │     │     │</code></pre>
+<h3>Electrical Connection</h3>
+<pre><code>Each button connects one row to one column when pressed
+
+Example: Pressing &#x27;5&#x27; connects Row1 to Col1
+
+Row pins: Outputs (driven HIGH/LOW)
+Column pins: Inputs (with pull-ups or pull-downs)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: Scanning Principle</h2>
+<h3>How Scanning Works</h3>
+<pre><code>1. Drive one row LOW, others HIGH (or tri-state)
+2. Read all column pins
+3. If column is LOW, button at (row, col) is pressed
+4. Move to next row
+5. Repeat continuously</code></pre>
+<h3>Scanning Flow</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Start Scan] --&gt; B[Set Row 0 LOW]
+    B --&gt; C[Read Columns]
+    C --&gt; D{Button&lt;br/&gt;Pressed?}
+    D --&gt;|Yes| E[Return Key Code]
+    D --&gt;|No| F[Next Row]
+    F --&gt; G{All Rows&lt;br/&gt;Scanned?}
+    G --&gt;|No| B
+    G --&gt;|Yes| H[No Key Pressed]
+    H --&gt; A
+    E --&gt; A
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style H fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Example: Detecting &#x27;5&#x27; Press</h3>
+<pre><code>Step 1: Row0 = LOW,  Cols = 111 (no press)
+Step 2: Row1 = LOW,  Cols = 101 (Col1 is LOW!)
+        → Key at (Row1, Col1) = &#x27;5&#x27; is pressed</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: ATmega128 Pin Configuration</h2>
+<h3>Wiring Example (4x4 Keypad)</h3>
+<pre><code>ATmega128          Keypad
+---------          ------
+PC0 (output) ───→  Row 0
+PC1 (output) ───→  Row 1
+PC2 (output) ───→  Row 2
+PC3 (output) ───→  Row 3
+
+PC4 (input)  ←───  Col 0
+PC5 (input)  ←───  Col 1
+PC6 (input)  ←───  Col 2
+PC7 (input)  ←───  Col 3</code></pre>
+<h3>Pin Configuration</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+
+// Row pins (outputs)
+#define ROW_PORT  PORTC
+#define ROW_DDR   DDRC
+#define ROW_MASK  0x0F  // PC0-PC3
+
+// Column pins (inputs)
+#define COL_PORT  PORTC
+#define COL_DDR   DDRC
+#define COL_PIN   PINC
+#define COL_MASK  0xF0  // PC4-PC7
+
+void keypad_init(void) {
+    // Set rows as outputs
+    ROW_DDR |= ROW_MASK;
+    
+    // Set columns as inputs with pull-ups
+    COL_DDR &amp;= ~COL_MASK;
+    COL_PORT |= COL_MASK;  // Enable pull-ups
+    
+    // All rows HIGH initially
+    ROW_PORT |= ROW_MASK;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Basic Scanning Implementation</h2>
+<h3>Key Scanning Function</h3>
+<pre class="lang-c"><code>#include &lt;util/delay.h&gt;
+
+#define ROWS  4
+#define COLS  4
+
+// Keymap for 4x4 keypad
+const char keymap[ROWS][COLS] = {
+    {&#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;, &#x27;A&#x27;},
+    {&#x27;4&#x27;, &#x27;5&#x27;, &#x27;6&#x27;, &#x27;B&#x27;},
+    {&#x27;7&#x27;, &#x27;8&#x27;, &#x27;9&#x27;, &#x27;C&#x27;},
+    {&#x27;*&#x27;, &#x27;0&#x27;, &#x27;#&#x27;, &#x27;D&#x27;}
+};
+
+char keypad_scan(void) {
+    for (uint8_t row = 0; row &lt; ROWS; row++) {
+        // Set all rows HIGH
+        ROW_PORT |= ROW_MASK;
+        
+        // Set current row LOW
+        ROW_PORT &amp;= ~(1 &lt;&lt; row);
+        
+        // Small delay for signal to settle
+        _delay_us(5);
+        
+        // Read columns
+        uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+        
+        // Check each column
+        for (uint8_t col = 0; col &lt; COLS; col++) {
+            if (!(col_state &amp; (1 &lt;&lt; col))) {
+                // Button pressed at (row, col)
+                return keymap[row][col];
+            }
+        }
+    }
+    
+    // No key pressed
+    return &#x27;\0&#x27;;
+}
+
+// Usage example
+int main(void) {
+    keypad_init();
+    uart_init();
+    
+    while (1) {
+        char key = keypad_scan();
+        
+        if (key != &#x27;\0&#x27;) {
+            printf(&quot;Key pressed: %c\n&quot;, key);
+            _delay_ms(200);  // Simple debounce
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Debouncing</h2>
+<h3>Why Debounce?</h3>
+<pre><code>Button press creates mechanical bounce:
+
+Physical:  ┐ ┌┐┌┐  ┌────────
+           └─┘└┘└──┘
+           ↑
+         Bounces
+
+Want:      ┐  ┌──────────
+           └──┘
+           ↑
+         Clean edge</code></pre>
+<h3>Software Debounce Methods</h3>
+<pre class="lang-c"><code>// Method 1: Simple delay
+char keypad_get_key_debounced(void) {
+    char key = keypad_scan();
+    
+    if (key != &#x27;\0&#x27;) {
+        _delay_ms(50);  // Wait for bounce to settle
+        
+        // Confirm key still pressed
+        char confirm = keypad_scan();
+        if (confirm == key) {
+            return key;
+        }
+    }
+    
+    return &#x27;\0&#x27;;
+}
+
+// Method 2: Multi-sample
+char keypad_get_key_stable(void) {
+    char keys[5];
+    
+    // Read 5 times with small delays
+    for (uint8_t i = 0; i &lt; 5; i++) {
+        keys[i] = keypad_scan();
+        _delay_ms(10);
+    }
+    
+    // Check if all samples are the same
+    char first = keys[0];
+    for (uint8_t i = 1; i &lt; 5; i++) {
+        if (keys[i] != first) {
+            return &#x27;\0&#x27;;  // Inconsistent
+        }
+    }
+    
+    return first;
+}
+
+// Method 3: State machine (see next slide)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: State Machine Debounce</h2>
+<h3>Debounce State Machine</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[IDLE] --&gt;|Key Pressed| B[DEBOUNCE]
+    B --&gt;|50ms timeout| C[PRESSED]
+    C --&gt;|Key Released| D[RELEASE_DEBOUNCE]
+    D --&gt;|50ms timeout| A
+    B --&gt;|Key Released| A
+    C --&gt;|Hold| C
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>State Machine Implementation</h3>
+<pre class="lang-c"><code>typedef enum {
+    KEY_IDLE,
+    KEY_DEBOUNCE,
+    KEY_PRESSED,
+    KEY_RELEASE_DEBOUNCE
+} keypad_state_t;
+
+keypad_state_t key_state = KEY_IDLE;
+char last_key = &#x27;\0&#x27;;
+uint32_t debounce_timer = 0;
+
+#define DEBOUNCE_TIME_MS  50
+
+char keypad_get_key_sm(void) {
+    char current_key = keypad_scan();
+    char return_key = &#x27;\0&#x27;;
+    
+    switch (key_state) {
+        case KEY_IDLE:
+            if (current_key != &#x27;\0&#x27;) {
+                last_key = current_key;
+                debounce_timer = millis();
+                key_state = KEY_DEBOUNCE;
+            }
+            break;
+            
+        case KEY_DEBOUNCE:
+            if (current_key != last_key) {
+                // False trigger
+                key_state = KEY_IDLE;
+            } else if (millis() - debounce_timer &gt;= DEBOUNCE_TIME_MS) {
+                // Stable press confirmed
+                return_key = last_key;
+                key_state = KEY_PRESSED;
+            }
+            break;
+            
+        case KEY_PRESSED:
+            if (current_key != last_key) {
+                // Key released
+                debounce_timer = millis();
+                key_state = KEY_RELEASE_DEBOUNCE;
+            }
+            break;
+            
+        case KEY_RELEASE_DEBOUNCE:
+            if (current_key == last_key) {
+                // Still pressed, return to PRESSED
+                key_state = KEY_PRESSED;
+            } else if (millis() - debounce_timer &gt;= DEBOUNCE_TIME_MS) {
+                // Release confirmed
+                key_state = KEY_IDLE;
+            }
+            break;
+    }
+    
+    return return_key;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Wait for Key Press/Release</h2>
+<h3>Blocking Key Functions</h3>
+<pre class="lang-c"><code>// Wait until a key is pressed
+char keypad_wait_for_press(void) {
+    char key;
+    
+    // Wait for no key
+    while (keypad_scan() != &#x27;\0&#x27;);
+    
+    // Wait for key press
+    do {
+        key = keypad_scan();
+    } while (key == &#x27;\0&#x27;);
+    
+    _delay_ms(50);  // Debounce
+    
+    return key;
+}
+
+// Wait for key to be released
+void keypad_wait_for_release(void) {
+    while (keypad_scan() != &#x27;\0&#x27;);
+    _delay_ms(50);  // Debounce
+}
+
+// Get single key press (press and release)
+char keypad_get_single_key(void) {
+    char key = keypad_wait_for_press();
+    keypad_wait_for_release();
+    return key;
+}
+
+// Example: Simple password entry
+void enter_password(char *buffer, uint8_t max_len) {
+    uint8_t index = 0;
+    
+    lcd_puts(&quot;Enter PIN:&quot;);
+    lcd_gotoxy(0, 1);
+    
+    while (index &lt; max_len) {
+        char key = keypad_get_single_key();
+        
+        if (key &gt;= &#x27;0&#x27; &amp;&amp; key &lt;= &#x27;9&#x27;) {
+            buffer[index++] = key;
+            lcd_putc(&#x27;*&#x27;);  // Show asterisk
+        } else if (key == &#x27;#&#x27;) {
+            break;  // Enter
+        } else if (key == &#x27;*&#x27; &amp;&amp; index &gt; 0) {
+            // Backspace
+            index--;
+            lcd_gotoxy(index, 1);
+            lcd_putc(&#x27; &#x27;);
+            lcd_gotoxy(index, 1);
+        }
+    }
+    
+    buffer[index] = &#x27;\0&#x27;;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Key Repeat (Auto-Repeat)</h2>
+<h3>Auto-Repeat Implementation</h3>
+<pre class="lang-c"><code>#define REPEAT_DELAY_MS    500  // Initial delay before repeat
+#define REPEAT_RATE_MS     100  // Repeat interval
+
+typedef struct {
+    char last_key;
+    uint32_t press_time;
+    uint32_t repeat_time;
+    uint8_t is_repeating;
+} keypad_repeat_t;
+
+keypad_repeat_t repeat_state = {&#x27;\0&#x27;, 0, 0, 0};
+
+char keypad_get_key_with_repeat(void) {
+    char current_key = keypad_scan();
+    char return_key = &#x27;\0&#x27;;
+    uint32_t now = millis();
+    
+    if (current_key != &#x27;\0&#x27;) {
+        if (current_key != repeat_state.last_key) {
+            // New key pressed
+            repeat_state.last_key = current_key;
+            repeat_state.press_time = now;
+            repeat_state.repeat_time = now + REPEAT_DELAY_MS;
+            repeat_state.is_repeating = 0;
+            return_key = current_key;
+            
+        } else if (!repeat_state.is_repeating) {
+            // Check if held long enough to start repeating
+            if (now - repeat_state.press_time &gt;= REPEAT_DELAY_MS) {
+                repeat_state.is_repeating = 1;
+                repeat_state.repeat_time = now + REPEAT_RATE_MS;
+                return_key = current_key;
+            }
+            
+        } else {
+            // Already repeating
+            if (now &gt;= repeat_state.repeat_time) {
+                repeat_state.repeat_time = now + REPEAT_RATE_MS;
+                return_key = current_key;
+            }
+        }
+        
+    } else {
+        // No key pressed
+        repeat_state.last_key = &#x27;\0&#x27;;
+        repeat_state.is_repeating = 0;
+    }
+    
+    return return_key;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Multiple Key Detection</h2>
+<h3>Detecting Multiple Simultaneous Keys</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t count;
+    char keys[16];  // Max 16 keys for 4x4 keypad
+} keypad_multi_t;
+
+keypad_multi_t keypad_scan_all(void) {
+    keypad_multi_t result = {0};
+    
+    for (uint8_t row = 0; row &lt; ROWS; row++) {
+        ROW_PORT |= ROW_MASK;
+        ROW_PORT &amp;= ~(1 &lt;&lt; row);
+        _delay_us(5);
+        
+        uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+        
+        for (uint8_t col = 0; col &lt; COLS; col++) {
+            if (!(col_state &amp; (1 &lt;&lt; col))) {
+                result.keys[result.count++] = keymap[row][col];
+            }
+        }
+    }
+    
+    return result;
+}
+
+// Check for specific key combinations
+uint8_t keypad_check_combo(const char *combo, uint8_t combo_len) {
+    keypad_multi_t pressed = keypad_scan_all();
+    
+    if (pressed.count != combo_len) {
+        return 0;
+    }
+    
+    // Check if all combo keys are pressed
+    for (uint8_t i = 0; i &lt; combo_len; i++) {
+        uint8_t found = 0;
+        
+        for (uint8_t j = 0; j &lt; pressed.count; j++) {
+            if (combo[i] == pressed.keys[j]) {
+                found = 1;
+                break;
+            }
+        }
+        
+        if (!found) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+// Example: Ctrl+C equivalent
+int main(void) {
+    keypad_init();
+    
+    const char combo[] = {&#x27;A&#x27;, &#x27;D&#x27;};  // Simultaneous A+D
+    
+    while (1) {
+        if (keypad_check_combo(combo, 2)) {
+            printf(&quot;Combo detected!\n&quot;);
+            _delay_ms(500);
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Keypad Event System</h2>
+<h3>Event-Based Keypad Interface</h3>
+<pre class="lang-c"><code>typedef enum {
+    KEY_EVENT_NONE,
+    KEY_EVENT_PRESS,
+    KEY_EVENT_RELEASE,
+    KEY_EVENT_HOLD
+} keypad_event_type_t;
+
+typedef struct {
+    keypad_event_type_t type;
+    char key;
+    uint32_t duration_ms;  // For hold events
+} keypad_event_t;
+
+#define HOLD_THRESHOLD_MS  1000
+
+keypad_event_t keypad_get_event(void) {
+    static char last_key = &#x27;\0&#x27;;
+    static uint32_t press_time = 0;
+    static uint8_t hold_reported = 0;
+    
+    keypad_event_t event = {KEY_EVENT_NONE, &#x27;\0&#x27;, 0};
+    char current_key = keypad_scan();
+    uint32_t now = millis();
+    
+    if (current_key != &#x27;\0&#x27; &amp;&amp; last_key == &#x27;\0&#x27;) {
+        // Key press event
+        event.type = KEY_EVENT_PRESS;
+        event.key = current_key;
+        press_time = now;
+        hold_reported = 0;
+        
+    } else if (current_key == &#x27;\0&#x27; &amp;&amp; last_key != &#x27;\0&#x27;) {
+        // Key release event
+        event.type = KEY_EVENT_RELEASE;
+        event.key = last_key;
+        event.duration_ms = now - press_time;
+        hold_reported = 0;
+        
+    } else if (current_key != &#x27;\0&#x27; &amp;&amp; current_key == last_key) {
+        // Key held
+        uint32_t hold_time = now - press_time;
+        
+        if (hold_time &gt;= HOLD_THRESHOLD_MS &amp;&amp; !hold_reported) {
+            event.type = KEY_EVENT_HOLD;
+            event.key = current_key;
+            event.duration_ms = hold_time;
+            hold_reported = 1;
+        }
+    }
+    
+    last_key = current_key;
+    return event;
+}
+
+// Example usage
+int main(void) {
+    keypad_init();
+    lcd_init();
+    
+    while (1) {
+        keypad_event_t event = keypad_get_event();
+        
+        switch (event.type) {
+            case KEY_EVENT_PRESS:
+                lcd_clear();
+                printf(&quot;Press: %c&quot;, event.key);
+                break;
+                
+            case KEY_EVENT_RELEASE:
+                printf(&quot;Release: %c (%lums)&quot;, 
+                       event.key, event.duration_ms);
+                break;
+                
+            case KEY_EVENT_HOLD:
+                printf(&quot;Hold: %c&quot;, event.key);
+                break;
+                
+            case KEY_EVENT_NONE:
+            default:
+                break;
+        }
+        
+        _delay_ms(10);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Interrupt-Driven Keypad</h2>
+<h3>Using Pin Change Interrupts</h3>
+<pre class="lang-c"><code>#include &lt;avr/interrupt.h&gt;
+
+volatile char key_buffer[16];
+volatile uint8_t key_buffer_head = 0;
+volatile uint8_t key_buffer_tail = 0;
+
+void keypad_init_interrupt(void) {
+    keypad_init();
+    
+    // Enable pin change interrupt on column pins
+    PCICR |= (1 &lt;&lt; PCIE2);   // Enable PCINT16-23 (Port C)
+    PCMSK2 |= 0xF0;           // Enable PCINT on PC4-PC7
+    
+    sei();
+}
+
+ISR(PCINT2_vect) {
+    // Debounce delay
+    _delay_ms(50);
+    
+    char key = keypad_scan();
+    
+    if (key != &#x27;\0&#x27;) {
+        // Add to buffer
+        uint8_t next = (key_buffer_head + 1) % 16;
+        
+        if (next != key_buffer_tail) {
+            key_buffer[key_buffer_head] = key;
+            key_buffer_head = next;
+        }
+        
+        // Wait for release
+        while (keypad_scan() != &#x27;\0&#x27;);
+        _delay_ms(50);
+    }
+}
+
+char keypad_get_buffered(void) {
+    if (key_buffer_head == key_buffer_tail) {
+        return &#x27;\0&#x27;;  // Buffer empty
+    }
+    
+    char key = key_buffer[key_buffer_tail];
+    key_buffer_tail = (key_buffer_tail + 1) % 16;
+    
+    return key;
+}
+
+uint8_t keypad_available(void) {
+    return (key_buffer_head - key_buffer_tail + 16) % 16;
+}
+
+// Example usage
+int main(void) {
+    keypad_init_interrupt();
+    uart_init();
+    
+    printf(&quot;Keypad ready (interrupt mode)\n&quot;);
+    
+    while (1) {
+        if (keypad_available()) {
+            char key = keypad_get_buffered();
+            printf(&quot;Key: %c\n&quot;, key);
+        }
+        
+        // Main loop can do other tasks
+        other_tasks();
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Application - Calculator</h2>
+<h3>Simple Calculator</h3>
+<pre class="lang-c"><code>typedef struct {
+    int32_t operand1;
+    int32_t operand2;
+    char operator;
+    uint8_t state;  // 0=first num, 1=operator, 2=second num
+} calculator_t;
+
+calculator_t calc = {0, 0, &#x27;\0&#x27;, 0};
+
+void calculator_process_key(char key) {
+    if (key &gt;= &#x27;0&#x27; &amp;&amp; key &lt;= &#x27;9&#x27;) {
+        // Digit input
+        if (calc.state == 0 || calc.state == 1) {
+            calc.operand1 = calc.operand1 * 10 + (key - &#x27;0&#x27;);
+            lcd_gotoxy(0, 0);
+            printf(&quot;%ld&quot;, calc.operand1);
+        } else {
+            calc.operand2 = calc.operand2 * 10 + (key - &#x27;0&#x27;);
+            lcd_gotoxy(0, 1);
+            printf(&quot;%ld&quot;, calc.operand2);
+        }
+        
+    } else if (key == &#x27;A&#x27; || key == &#x27;B&#x27; || key == &#x27;C&#x27; || key == &#x27;D&#x27;) {
+        // Operator
+        const char ops[] = {&#x27;+&#x27;, &#x27;-&#x27;, &#x27;*&#x27;, &#x27;/&#x27;};
+        calc.operator = ops[key - &#x27;A&#x27;];
+        calc.state = 2;
+        
+        lcd_gotoxy(8, 0);
+        lcd_putc(calc.operator);
+        
+    } else if (key == &#x27;#&#x27;) {
+        // Calculate result
+        int32_t result = 0;
+        
+        switch (calc.operator) {
+            case &#x27;+&#x27;: result = calc.operand1 + calc.operand2; break;
+            case &#x27;-&#x27;: result = calc.operand1 - calc.operand2; break;
+            case &#x27;*&#x27;: result = calc.operand1 * calc.operand2; break;
+            case &#x27;/&#x27;: 
+                if (calc.operand2 != 0) {
+                    result = calc.operand1 / calc.operand2;
+                } else {
+                    lcd_clear();
+                    lcd_puts(&quot;Error: Div/0&quot;);
+                    _delay_ms(2000);
+                    result = 0;
+                }
+                break;
+        }
+        
+        lcd_clear();
+        printf(&quot;Result: %ld&quot;, result);
+        _delay_ms(3000);
+        
+        // Reset
+        calc.operand1 = 0;
+        calc.operand2 = 0;
+        calc.state = 0;
+        lcd_clear();
+        
+    } else if (key == &#x27;*&#x27;) {
+        // Clear
+        calc.operand1 = 0;
+        calc.operand2 = 0;
+        calc.operator = &#x27;\0&#x27;;
+        calc.state = 0;
+        lcd_clear();
+    }
+}
+
+int main(void) {
+    keypad_init();
+    lcd_init();
+    
+    lcd_puts(&quot;Calculator&quot;);
+    _delay_ms(1000);
+    lcd_clear();
+    
+    while (1) {
+        char key = keypad_get_single_key();
+        calculator_process_key(key);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Application - Door Lock</h2>
+<h3>Password-Protected Lock</h3>
+<pre class="lang-c"><code>#define PASSWORD &quot;1234&quot;
+#define MAX_ATTEMPTS 3
+
+typedef enum {
+    LOCK_LOCKED,
+    LOCK_ENTERING,
+    LOCK_UNLOCKED,
+    LOCK_BLOCKED
+} lock_state_t;
+
+lock_state_t lock_state = LOCK_LOCKED;
+char input_buffer[8];
+uint8_t input_index = 0;
+uint8_t failed_attempts = 0;
+
+void lock_reset_input(void) {
+    input_index = 0;
+    memset(input_buffer, 0, sizeof(input_buffer));
+}
+
+void lock_process_key(char key) {
+    switch (lock_state) {
+        case LOCK_LOCKED:
+            if (key == &#x27;#&#x27;) {
+                lock_state = LOCK_ENTERING;
+                lock_reset_input();
+                lcd_clear();
+                lcd_puts(&quot;Enter PIN:&quot;);
+                lcd_gotoxy(0, 1);
+            }
+            break;
+            
+        case LOCK_ENTERING:
+            if (key &gt;= &#x27;0&#x27; &amp;&amp; key &lt;= &#x27;9&#x27;) {
+                // Add digit
+                if (input_index &lt; 4) {
+                    input_buffer[input_index++] = key;
+                    lcd_putc(&#x27;*&#x27;);
+                }
+                
+            } else if (key == &#x27;#&#x27;) {
+                // Check password
+                input_buffer[input_index] = &#x27;\0&#x27;;
+                
+                if (strcmp(input_buffer, PASSWORD) == 0) {
+                    // Correct!
+                    lock_state = LOCK_UNLOCKED;
+                    failed_attempts = 0;
+                    
+                    lcd_clear();
+                    lcd_puts(&quot;UNLOCKED&quot;);
+                    
+                    // Unlock relay/servo
+                    PORTB |= (1 &lt;&lt; PB0);
+                    
+                    // Auto-lock after 5 seconds
+                    _delay_ms(5000);
+                    
+                    PORTB &amp;= ~(1 &lt;&lt; PB0);
+                    lock_state = LOCK_LOCKED;
+                    lcd_clear();
+                    lcd_puts(&quot;LOCKED&quot;);
+                    
+                } else {
+                    // Wrong!
+                    failed_attempts++;
+                    
+                    if (failed_attempts &gt;= MAX_ATTEMPTS) {
+                        lock_state = LOCK_BLOCKED;
+                        lcd_clear();
+                        lcd_puts(&quot;BLOCKED!&quot;);
+                        lcd_gotoxy(0, 1);
+                        lcd_puts(&quot;Wait 30s&quot;);
+                        
+                        _delay_ms(30000);
+                        
+                        failed_attempts = 0;
+                        lock_state = LOCK_LOCKED;
+                        lcd_clear();
+                        lcd_puts(&quot;LOCKED&quot;);
+                        
+                    } else {
+                        lcd_clear();
+                        printf(&quot;WRONG! %d/%d&quot;, 
+                               failed_attempts, MAX_ATTEMPTS);
+                        _delay_ms(2000);
+                        
+                        lock_state = LOCK_LOCKED;
+                        lcd_clear();
+                        lcd_puts(&quot;LOCKED&quot;);
+                    }
+                }
+                
+                lock_reset_input();
+                
+            } else if (key == &#x27;*&#x27;) {
+                // Cancel
+                lock_state = LOCK_LOCKED;
+                lock_reset_input();
+                lcd_clear();
+                lcd_puts(&quot;LOCKED&quot;);
+            }
+            break;
+            
+        default:
+            break;
+    }
+}
+
+int main(void) {
+    keypad_init();
+    lcd_init();
+    
+    DDRB |= (1 &lt;&lt; PB0);  // Relay control
+    
+    lcd_puts(&quot;LOCKED&quot;);
+    
+    while (1) {
+        char key = keypad_get_single_key();
+        lock_process_key(key);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Application - Menu Navigation</h2>
+<h3>Menu System with Keypad</h3>
+<pre class="lang-c"><code>typedef struct {
+    const char *title;
+    void (*action)(void);
+} menu_item_t;
+
+void menu_sensors(void) { lcd_puts(&quot;Sensors...&quot;); _delay_ms(1000); }
+void menu_settings(void) { lcd_puts(&quot;Settings...&quot;); _delay_ms(1000); }
+void menu_about(void) { lcd_puts(&quot;About...&quot;); _delay_ms(1000); }
+void menu_exit(void) { lcd_puts(&quot;Goodbye!&quot;); _delay_ms(1000); }
+
+const menu_item_t menu[] = {
+    {&quot;1. View Sensors&quot;, menu_sensors},
+    {&quot;2. Settings&quot;, menu_settings},
+    {&quot;3. About&quot;, menu_about},
+    {&quot;4. Exit&quot;, menu_exit}
+};
+
+#define MENU_ITEMS 4
+
+void display_menu(uint8_t index) {
+    lcd_clear();
+    
+    // Show current and next item
+    if (index &lt; MENU_ITEMS) {
+        lcd_gotoxy(0, 0);
+        lcd_putc(&#x27;&gt;&#x27;);
+        lcd_puts(menu[index].title);
+    }
+    
+    if (index + 1 &lt; MENU_ITEMS) {
+        lcd_gotoxy(0, 1);
+        lcd_putc(&#x27; &#x27;);
+        lcd_puts(menu[index + 1].title);
+    }
+}
+
+void menu_main(void) {
+    uint8_t current = 0;
+    
+    display_menu(current);
+    
+    while (1) {
+        char key = keypad_get_single_key();
+        
+        if (key == &#x27;2&#x27; || key == &#x27;8&#x27;) {
+            // Down
+            if (current &lt; MENU_ITEMS - 1) {
+                current++;
+                display_menu(current);
+            }
+            
+        } else if (key == &#x27;4&#x27; || key == &#x27;6&#x27;) {
+            // Up (using 4 as up for demo)
+            if (current &gt; 0) {
+                current--;
+                display_menu(current);
+            }
+            
+        } else if (key == &#x27;#&#x27; || key == &#x27;5&#x27;) {
+            // Select
+            lcd_clear();
+            menu[current].action();
+            display_menu(current);
+            
+        } else if (key == &#x27;*&#x27;) {
+            // Back/Exit
+            break;
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Custom Keymap</h2>
+<h3>Configurable Key Mapping</h3>
+<pre class="lang-c"><code>// Different keypad layouts
+const char keymap_standard[4][4] = {
+    {&#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;, &#x27;A&#x27;},
+    {&#x27;4&#x27;, &#x27;5&#x27;, &#x27;6&#x27;, &#x27;B&#x27;},
+    {&#x27;7&#x27;, &#x27;8&#x27;, &#x27;9&#x27;, &#x27;C&#x27;},
+    {&#x27;*&#x27;, &#x27;0&#x27;, &#x27;#&#x27;, &#x27;D&#x27;}
+};
+
+const char keymap_phone[4][3] = {
+    {&#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;},
+    {&#x27;4&#x27;, &#x27;5&#x27;, &#x27;6&#x27;},
+    {&#x27;7&#x27;, &#x27;8&#x27;, &#x27;9&#x27;},
+    {&#x27;*&#x27;, &#x27;0&#x27;, &#x27;#&#x27;}
+};
+
+const char keymap_hex[4][4] = {
+    {&#x27;0&#x27;, &#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;},
+    {&#x27;4&#x27;, &#x27;5&#x27;, &#x27;6&#x27;, &#x27;7&#x27;},
+    {&#x27;8&#x27;, &#x27;9&#x27;, &#x27;A&#x27;, &#x27;B&#x27;},
+    {&#x27;C&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;F&#x27;}
+};
+
+const char keymap_game[4][4] = {
+    {&#x27;U&#x27;, &#x27;U&#x27;, &#x27;U&#x27;, &#x27;A&#x27;},  // Up, Up, Up, Action
+    {&#x27;L&#x27;, &#x27;O&#x27;, &#x27;R&#x27;, &#x27;B&#x27;},  // Left, OK, Right, Back
+    {&#x27;D&#x27;, &#x27;D&#x27;, &#x27;D&#x27;, &#x27;C&#x27;},  // Down, Down, Down, Cancel
+    {&#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;, &#x27;4&#x27;}   // Function keys
+};
+
+// Function to get key with specific keymap
+char keypad_scan_with_map(const char (*map)[4], uint8_t rows, uint8_t cols) {
+    for (uint8_t row = 0; row &lt; rows; row++) {
+        ROW_PORT |= ROW_MASK;
+        ROW_PORT &amp;= ~(1 &lt;&lt; row);
+        _delay_us(5);
+        
+        uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+        
+        for (uint8_t col = 0; col &lt; cols; col++) {
+            if (!(col_state &amp; (1 &lt;&lt; col))) {
+                return map[row][col];
+            }
+        }
+    }
+    
+    return &#x27;\0&#x27;;
+}
+
+// Example: Game controller
+void game_controller(void) {
+    while (1) {
+        char key = keypad_scan_with_map(keymap_game, 4, 4);
+        
+        if (key == &#x27;U&#x27;) {
+            move_player_up();
+        } else if (key == &#x27;D&#x27;) {
+            move_player_down();
+        } else if (key == &#x27;L&#x27;) {
+            move_player_left();
+        } else if (key == &#x27;R&#x27;) {
+            move_player_right();
+        } else if (key == &#x27;A&#x27;) {
+            player_action();
+        }
+        
+        _delay_ms(50);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 17: Performance Optimization</h2>
+<h3>Fast Scanning Techniques</h3>
+<pre class="lang-c"><code>// Optimized scanning (no loop)
+char keypad_scan_fast(void) {
+    uint8_t col_state;
+    
+    // Row 0
+    ROW_PORT = 0xFE;
+    _delay_us(5);
+    col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+    if (col_state != 0x0F) {
+        if (!(col_state &amp; 0x01)) return &#x27;1&#x27;;
+        if (!(col_state &amp; 0x02)) return &#x27;2&#x27;;
+        if (!(col_state &amp; 0x04)) return &#x27;3&#x27;;
+        if (!(col_state &amp; 0x08)) return &#x27;A&#x27;;
+    }
+    
+    // Row 1
+    ROW_PORT = 0xFD;
+    _delay_us(5);
+    col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+    if (col_state != 0x0F) {
+        if (!(col_state &amp; 0x01)) return &#x27;4&#x27;;
+        if (!(col_state &amp; 0x02)) return &#x27;5&#x27;;
+        if (!(col_state &amp; 0x04)) return &#x27;6&#x27;;
+        if (!(col_state &amp; 0x08)) return &#x27;B&#x27;;
+    }
+    
+    // Row 2
+    ROW_PORT = 0xFB;
+    _delay_us(5);
+    col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+    if (col_state != 0x0F) {
+        if (!(col_state &amp; 0x01)) return &#x27;7&#x27;;
+        if (!(col_state &amp; 0x02)) return &#x27;8&#x27;;
+        if (!(col_state &amp; 0x04)) return &#x27;9&#x27;;
+        if (!(col_state &amp; 0x08)) return &#x27;C&#x27;;
+    }
+    
+    // Row 3
+    ROW_PORT = 0xF7;
+    _delay_us(5);
+    col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+    if (col_state != 0x0F) {
+        if (!(col_state &amp; 0x01)) return &#x27;*&#x27;;
+        if (!(col_state &amp; 0x02)) return &#x27;0&#x27;;
+        if (!(col_state &amp; 0x04)) return &#x27;#&#x27;;
+        if (!(col_state &amp; 0x08)) return &#x27;D&#x27;;
+    }
+    
+    return &#x27;\0&#x27;;
+}
+
+// Lookup table approach
+const char key_lookup[16] = {
+    &#x27;1&#x27;, &#x27;2&#x27;, &#x27;3&#x27;, &#x27;A&#x27;,
+    &#x27;4&#x27;, &#x27;5&#x27;, &#x27;6&#x27;, &#x27;B&#x27;,
+    &#x27;7&#x27;, &#x27;8&#x27;, &#x27;9&#x27;, &#x27;C&#x27;,
+    &#x27;*&#x27;, &#x27;0&#x27;, &#x27;#&#x27;, &#x27;D&#x27;
+};
+
+char keypad_scan_lut(void) {
+    for (uint8_t row = 0; row &lt; 4; row++) {
+        ROW_PORT = ~(1 &lt;&lt; row) | ~ROW_MASK;
+        _delay_us(5);
+        
+        uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+        
+        if (col_state != 0x0F) {
+            for (uint8_t col = 0; col &lt; 4; col++) {
+                if (!(col_state &amp; (1 &lt;&lt; col))) {
+                    return key_lookup[row * 4 + col];
+                }
+            }
+        }
+    }
+    
+    return &#x27;\0&#x27;;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 18: Testing and Debugging</h2>
+<h3>Keypad Test Functions</h3>
+<pre class="lang-c"><code>// Test all keys
+void keypad_test_all(void) {
+    lcd_clear();
+    lcd_puts(&quot;Keypad Test&quot;);
+    lcd_gotoxy(0, 1);
+    lcd_puts(&quot;Press keys...&quot;);
+    
+    uint8_t tested[16] = {0};
+    uint8_t total_tested = 0;
+    
+    while (total_tested &lt; 16) {
+        char key = keypad_get_single_key();
+        
+        // Find key in keymap
+        for (uint8_t r = 0; r &lt; 4; r++) {
+            for (uint8_t c = 0; c &lt; 4; c++) {
+                if (keymap[r][c] == key) {
+                    uint8_t index = r * 4 + c;
+                    
+                    if (!tested[index]) {
+                        tested[index] = 1;
+                        total_tested++;
+                        
+                        lcd_clear();
+                        printf(&quot;Key &#x27;%c&#x27; OK&quot;, key);
+                        printf(&quot; (%d/16)&quot;, total_tested);
+                        _delay_ms(500);
+                    }
+                }
+            }
+        }
+    }
+    
+    lcd_clear();
+    lcd_puts(&quot;All keys OK!&quot;);
+}
+
+// Display raw scan state
+void keypad_debug_scan(void) {
+    while (1) {
+        lcd_clear();
+        
+        for (uint8_t row = 0; row &lt; 4; row++) {
+            ROW_PORT |= ROW_MASK;
+            ROW_PORT &amp;= ~(1 &lt;&lt; row);
+            _delay_us(5);
+            
+            uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+            
+            lcd_gotoxy(0, row % 2);
+            printf(&quot;R%d:&quot;, row);
+            
+            for (uint8_t col = 0; col &lt; 4; col++) {
+                if (col_state &amp; (1 &lt;&lt; col)) {
+                    lcd_putc(&#x27;-&#x27;);
+                } else {
+                    lcd_putc(&#x27;X&#x27;);
+                }
+            }
+        }
+        
+        _delay_ms(100);
+    }
+}
+
+// UART debug output
+void keypad_debug_uart(void) {
+    printf(&quot;Keypad Debug Mode\n&quot;);
+    
+    while (1) {
+        char key = keypad_scan();
+        
+        if (key != &#x27;\0&#x27;) {
+            printf(&quot;Key: &#x27;%c&#x27; (0x%02X)\n&quot;, key, key);
+            
+            while (keypad_scan() != &#x27;\0&#x27;);  // Wait for release
+            printf(&quot;Released\n&quot;);
+        }
+        
+        _delay_ms(10);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: Common Issues and Solutions</h2>
+<h3>Troubleshooting Guide</h3>
+<table><thead><tr><th>Problem</th><th>Possible Cause</th><th>Solution</th></tr></thead><tbody><tr><td><strong>No keys detected</strong></td><td>Wrong pin config</td><td>Verify row/column assignments</td></tr><tr><td></td><td>Missing pull-ups</td><td>Enable internal pull-ups</td></tr><tr><td></td><td>Bad connections</td><td>Check wiring with multimeter</td></tr><tr><td><strong>Multiple keys at once</strong></td><td>Ghosting</td><td>Add diodes to each key</td></tr><tr><td></td><td>Noise/bouncing</td><td>Improve debouncing</td></tr><tr><td><strong>Intermittent detection</strong></td><td>Poor contacts</td><td>Clean keypad membrane</td></tr><tr><td></td><td>Timing too fast</td><td>Increase settle delay</td></tr><tr><td><strong>Wrong keys detected</strong></td><td>Incorrect keymap</td><td>Verify keymap matches layout</td></tr><tr><td></td><td>Row/col swapped</td><td>Check pin connections</td></tr><tr><td><strong>Stuck keys</strong></td><td>Mechanical issue</td><td>Replace keypad</td></tr><tr><td></td><td>Software issue</td><td>Check release detection</td></tr></tbody></table>
+<h3>Debugging Code</h3>
+<pre class="lang-c"><code>void keypad_diagnostic(void) {
+    lcd_clear();
+    lcd_puts(&quot;Diagnostics&quot;);
+    _delay_ms(1000);
+    
+    // Test 1: Check pull-ups
+    lcd_clear();
+    lcd_puts(&quot;Pull-up test&quot;);
+    ROW_PORT |= ROW_MASK;  // All rows HIGH
+    _delay_ms(10);
+    
+    if ((COL_PIN &amp; COL_MASK) == COL_MASK) {
+        lcd_gotoxy(0, 1);
+        lcd_puts(&quot;PASS&quot;);
+    } else {
+        lcd_gotoxy(0, 1);
+        printf(&quot;FAIL: 0x%02X&quot;, COL_PIN &amp; COL_MASK);
+    }
+    _delay_ms(2000);
+    
+    // Test 2: Row control
+    lcd_clear();
+    lcd_puts(&quot;Row test&quot;);
+    
+    for (uint8_t row = 0; row &lt; 4; row++) {
+        ROW_PORT = ~(1 &lt;&lt; row) | ~ROW_MASK;
+        _delay_ms(500);
+        
+        lcd_gotoxy(0, 1);
+        printf(&quot;Row %d: 0x%02X&quot;, row, ROW_PORT &amp; ROW_MASK);
+        _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 20: Best Practices</h2>
+<h3>Keypad Design Guidelines</h3>
+<p>✓ <strong>Hardware</strong></p>
+<ul><li>Use <strong>internal pull-ups</strong> or 10kΩ external resistors</li><li>Add <strong>diodes</strong> (1N4148) to prevent ghosting in n-key rollover</li><li>Keep wires <strong>short</strong> to reduce noise</li><li>Use <strong>shielded cable</strong> for long distances</li></ul>
+<p>✓ <strong>Software</strong></p>
+<ul><li>Always <strong>debounce</strong> key presses (50ms typical)</li><li>Implement <strong>timeout</strong> for long operations</li><li>Use <strong>state machines</strong> for complex input</li><li>Add <strong>visual/audio feedback</strong> for key presses</li></ul>
+<p>✓ <strong>Scanning</strong></p>
+<ul><li>Scan rate: <strong>10-50 Hz</strong> (every 20-100ms)</li><li>Settle delay: <strong>5-10 µs</strong> after row change</li><li>Don&#x27;t scan faster than necessary (wastes CPU)</li></ul>
+<p>✓ <strong>User Experience</strong></p>
+<ul><li>Provide <strong>immediate feedback</strong> (beep, LED, display)</li><li>Implement <strong>auto-repeat</strong> for navigation keys</li><li>Support <strong>long-press</strong> for alternative functions</li><li>Show <strong>masked input</strong> for passwords (*)</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 21: Advanced Features</h2>
+<h3>N-Key Rollover (Anti-Ghosting)</h3>
+<pre class="lang-c"><code>// Detect ghosting
+uint8_t keypad_detect_ghost(void) {
+    uint8_t active_rows = 0;
+    uint8_t active_cols = 0;
+    
+    for (uint8_t row = 0; row &lt; 4; row++) {
+        ROW_PORT |= ROW_MASK;
+        ROW_PORT &amp;= ~(1 &lt;&lt; row);
+        _delay_us(5);
+        
+        uint8_t col_state = (COL_PIN &amp; COL_MASK) &gt;&gt; 4;
+        
+        if (col_state != 0x0F) {
+            active_rows++;
+            active_cols |= (~col_state &amp; 0x0F);
+        }
+    }
+    
+    // If more than 1 row and more than 1 col active,
+    // potential ghosting
+    uint8_t col_count = 0;
+    for (uint8_t i = 0; i &lt; 4; i++) {
+        if (active_cols &amp; (1 &lt;&lt; i)) col_count++;
+    }
+    
+    if (active_rows &gt; 1 &amp;&amp; col_count &gt; 1) {
+        return 1;  // Ghosting possible
+    }
+    
+    return 0;
+}</code></pre>
+<h3>Touch-and-Slide Detection</h3>
+<pre class="lang-c"><code>typedef struct {
+    char last_key;
+    uint8_t last_row;
+    uint8_t last_col;
+} slide_state_t;
+
+slide_state_t slide = {&#x27;\0&#x27;, 0, 0};
+
+void detect_slide_gesture(void) {
+    char current = keypad_scan();
+    
+    if (current != &#x27;\0&#x27; &amp;&amp; slide.last_key != &#x27;\0&#x27;) {
+        // Find current position
+        for (uint8_t r = 0; r &lt; 4; r++) {
+            for (uint8_t c = 0; c &lt; 4; c++) {
+                if (keymap[r][c] == current) {
+                    // Check slide direction
+                    if (r == slide.last_row &amp;&amp; c == slide.last_col + 1) {
+                        printf(&quot;Slide RIGHT\n&quot;);
+                    } else if (r == slide.last_row &amp;&amp; c == slide.last_col - 1) {
+                        printf(&quot;Slide LEFT\n&quot;);
+                    } else if (c == slide.last_col &amp;&amp; r == slide.last_row + 1) {
+                        printf(&quot;Slide DOWN\n&quot;);
+                    } else if (c == slide.last_col &amp;&amp; r == slide.last_row - 1) {
+                        printf(&quot;Slide UP\n&quot;);
+                    }
+                    
+                    slide.last_row = r;
+                    slide.last_col = c;
+                }
+            }
+        }
+    }
+    
+    slide.last_key = current;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 22: Summary</h2>
+<h3>Key Takeaways</h3>
+<p>✓ <strong>Matrix keypad</strong> uses rows and columns for efficient scanning<br>✓ <strong>Scanning</strong> sequentially drives rows and reads columns<br>✓ <strong>Debouncing</strong> essential for reliable key detection (50ms typical)<br>✓ <strong>State machines</strong> provide robust input handling<br>✓ <strong>Event system</strong> enables press/release/hold detection<br>✓ <strong>Interrupts</strong> allow background key detection<br>✓ <strong>Custom keymaps</strong> support different layouts</p>
+<h3>Common Applications</h3>
+<ul><li>Numeric input (calculators, phones)</li><li>Password entry (door locks, safes)</li><li>Menu navigation</li><li>Game controllers</li><li>Industrial control panels</li><li>Access control systems</li></ul>
+<h3>Design Checklist</h3>
+<ul><li>✓ Proper pull-up resistors</li><li>✓ Adequate debouncing</li><li>✓ Clear visual feedback</li><li>✓ Timeout handling</li><li>✓ Diodes for anti-ghosting (if needed)</li><li>✓ Interrupt-driven for responsiveness</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 23: Practice Exercises</h2>
+<h3>Exercise 1: Basic Keypad Input</h3>
+<p><strong>Goal</strong>: Read and display key presses</p>
+<ul><li>Initialize 4x4 keypad</li><li>Scan for key presses</li><li>Display on LCD or UART</li><li>Implement debouncing</li></ul>
+<h3>Exercise 2: PIN Entry System</h3>
+<p><strong>Goal</strong>: Password-protected access</p>
+<ul><li>4-digit PIN code</li><li>Masked display (**** )</li><li>3 attempts before lockout</li><li>Success/failure indication</li></ul>
+<h3>Exercise 3: Calculator Application</h3>
+<p><strong>Goal</strong>: Simple arithmetic calculator</p>
+<ul><li>Support +, -, *, / operations</li><li>Two operands</li><li>Display intermediate values</li><li>Show result on #</li></ul>
+<h3>Exercise 4: Menu System</h3>
+<p><strong>Goal</strong>: Navigate multi-level menu</p>
+<ul><li>3-4 menu items</li><li>Select with # key</li><li>Back with * key</li><li>Visual cursor (&gt;)</li></ul>
+<h3>Exercise 5: Reaction Time Game</h3>
+<p><strong>Goal</strong>: Measure reaction speed</p>
+<ul><li>Display random number</li><li>User enters number on keypad</li><li>Measure time taken</li><li>Display reaction time</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 24: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 22: I/O Ports</li><li>Section 10: External Interrupts (for interrupt mode)</li><li>GPIO configuration and pin change interrupts</li></ul>
+<h3>Keypad Resources</h3>
+<ul><li>Matrix keypad theory</li><li>Debouncing techniques</li><li>Anti-ghosting with diodes</li><li>N-key rollover implementation</li></ul>
+<h3>Application Notes</h3>
+<ul><li>Human interface design</li><li>Password security best practices</li><li>Menu system design patterns</li><li>Input validation techniques</li></ul>
+<h3>Hardware</h3>
+<ul><li>4x4 membrane keypad datasheet</li><li>Pull-up resistor selection</li><li>Diode anti-ghosting circuits</li><li>Keypad to MCU interfacing</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>Keypad_Matrix_Basic/</code></li><li>Shared libraries: <code>_keypad.h</code>, <code>_keypad.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:03_Port_Keypad_Matrix', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:03_Port_Keypad_Matrix') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

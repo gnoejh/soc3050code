@@ -1,0 +1,10 @@
+# The extracted SimulIDE_1.1.0-SR2_Win64/ folder is committed; this zip is the
+# same thing again, so it stays out of the repository.
+SimulIDE_1.1.0-SR2_Win64.zip
+
+# Companion applications for the SimulIDE 2.x line. Nothing in the course uses
+# them - SimulIDE 1.1.0-SR2 has its own built-in serial monitor and instruments.
+SimOscope_Win64.zip
+SimuCalc_Win64.zip
+SimuChar_Win64.zip
+SimuSerial_Win64.zip

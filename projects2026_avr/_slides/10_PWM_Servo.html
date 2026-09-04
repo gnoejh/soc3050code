@@ -1,0 +1,803 @@
+<title>Servo Motor Control with PWM</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Servo Motor Control with PWM</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Servo Motors</h2>
+<h3>What is a Servo Motor?</h3>
+<ul><li><strong>Position-controlled</strong> motor (not speed-controlled)</li><li><strong>Built-in feedback</strong> system with potentiometer</li><li><strong>PWM-controlled</strong> angle (typically 0-180°)</li><li>Common in <strong>robotics, RC models, automation</strong></li></ul>
+<h3>Servo Motor Components</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[PWM Signal] --&gt; B[Control Circuit]
+    B --&gt; C[DC Motor]
+    C --&gt; D[Gear Train]
+    D --&gt; E[Output Shaft]
+    E --&gt; F[Potentiometer]
+    F --&gt; B
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Servo Motor Characteristics</h3>
+<pre><code>Typical Specifications (e.g., SG90):
+- Operating Voltage: 4.8V - 6V
+- Stall Torque: 1.8 kg·cm @ 4.8V
+- Operating Speed: 0.1 s/60° @ 4.8V
+- Rotation: 0° to 180° (±90° from center)
+- Pulse Width: 1ms to 2ms (center: 1.5ms)
+- PWM Period: 20ms (50 Hz)</code></pre>
+<h3>PWM Signal for Servo Control</h3>
+<pre><code>     ┌─┐                   ┌─┐
+     │ │                   │ │
+  ───┘ └───────────────────┘ └───
+     
+     └─┬─┘                       
+   Pulse Width              Period (20ms)
+  
+  1.0ms  → 0°   (full left)
+  1.5ms  → 90°  (center)
+  2.0ms  → 180° (full right)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: Hardware Connection</h2>
+<h3>Servo Pinout</h3>
+<pre><code>Servo Wire Colors (standard):
+┌────────────┐
+│  Brown/Black  │ ← GND
+│  Red          │ ← VCC (4.8-6V)
+│  Orange/Yellow│ ← PWM Signal
+└────────────┘
+
+Note: Power servo from separate 5-6V supply
+      NOT from ATmega128&#x27;s 5V pin (insufficient current)</code></pre>
+<h3>Wiring Diagram</h3>
+<pre><code>ATmega128           Servo Motor
+---------           -----------
+PB5 (OC1A)   ────→  PWM Signal (Orange)
+GND          ────→  GND (Brown)
+
+External 5V Supply
+------------------
++5V          ────→  VCC (Red)
+GND          ────┬→  GND (Brown)
+                 └→  ATmega128 GND (common ground!)</code></pre>
+<h3>Multiple Servos</h3>
+<pre class="lang-c"><code>// Can control multiple servos with different OC pins
+
+PB5 (OC1A) → Servo 1 (Pan)
+PB6 (OC1B) → Servo 2 (Tilt)
+PB7 (OC1C) → Servo 3 (Gripper)
+
+// Or use software PWM for more servos</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: Timer1 PWM Configuration</h2>
+<h3>Initialize Timer1 for Servo Control</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+
+// PWM constants for servo
+#define SERVO_MIN  1000   // 1ms  = 0°
+#define SERVO_MID  1500   // 1.5ms = 90°
+#define SERVO_MAX  2000   // 2ms  = 180°
+
+void servo_init(void) {
+    // Set PB5 (OC1A) as output
+    DDRB |= (1 &lt;&lt; PB5);
+    
+    /*
+     * Timer1 Configuration:
+     * - Mode 14: Fast PWM, TOP = ICR1
+     * - Prescaler: 8
+     * - Non-inverting mode on OC1A
+     * 
+     * F_PWM = F_CPU / (Prescaler × (1 + TOP))
+     * 50 Hz = 16MHz / (8 × (1 + 39999))
+     * TOP = 39999 (gives exactly 20ms period)
+     */
+    
+    // Set TOP value for 20ms period
+    ICR1 = 39999;  // (16MHz / 8) / 50Hz - 1
+    
+    // Timer1 Control Register A:
+    // COM1A1:0 = 10 (Clear OC1A on compare match, non-inverting)
+    // WGM11:0 = 10 (part of Mode 14)
+    TCCR1A = (1 &lt;&lt; WGM11) | (1 &lt;&lt; COM1A1);
+    
+    // Timer1 Control Register B:
+    // WGM13:2 = 11 (part of Mode 14)
+    // CS12:0 = 010 (prescaler = 8)
+    TCCR1B = (1 &lt;&lt; WGM13) | (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS11);
+    
+    // Set initial position to center
+    OCR1A = SERVO_MID;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: Servo Position Control</h2>
+<h3>Set Servo Angle</h3>
+<pre class="lang-c"><code>void servo_set_angle(uint8_t angle) {
+    // Clamp angle to 0-180°
+    if (angle &gt; 180) angle = 180;
+    
+    // Map angle to pulse width (1000-2000 µs)
+    uint16_t pulse = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * angle) / 180;
+    
+    // Set compare value
+    OCR1A = pulse;
+}
+
+// Alternative: Set pulse width directly
+void servo_set_pulse(uint16_t pulse_us) {
+    // Clamp to safe range
+    if (pulse_us &lt; 500) pulse_us = 500;
+    if (pulse_us &gt; 2500) pulse_us = 2500;
+    
+    OCR1A = pulse_us;
+}
+
+// Example usage
+int main(void) {
+    servo_init();
+    
+    while (1) {
+        // Sweep from 0° to 180°
+        for (uint8_t angle = 0; angle &lt;= 180; angle++) {
+            servo_set_angle(angle);
+            _delay_ms(15);
+        }
+        
+        _delay_ms(500);
+        
+        // Sweep back from 180° to 0°
+        for (uint8_t angle = 180; angle &gt; 0; angle--) {
+            servo_set_angle(angle);
+            _delay_ms(15);
+        }
+        
+        _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Controlling Multiple Servos</h2>
+<h3>Two Servos (Pan-Tilt)</h3>
+<pre class="lang-c"><code>void servo_init_dual(void) {
+    // PB5 (OC1A) = Pan servo
+    // PB6 (OC1B) = Tilt servo
+    DDRB |= (1 &lt;&lt; PB5) | (1 &lt;&lt; PB6);
+    
+    ICR1 = 39999;  // 20ms period
+    
+    // Configure OC1A and OC1B for non-inverting PWM
+    TCCR1A = (1 &lt;&lt; WGM11) | (1 &lt;&lt; COM1A1) | (1 &lt;&lt; COM1B1);
+    TCCR1B = (1 &lt;&lt; WGM13) | (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS11);
+    
+    // Set both to center
+    OCR1A = SERVO_MID;
+    OCR1B = SERVO_MID;
+}
+
+void servo_set_pan(uint8_t angle) {
+    if (angle &gt; 180) angle = 180;
+    OCR1A = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * angle) / 180;
+}
+
+void servo_set_tilt(uint8_t angle) {
+    if (angle &gt; 180) angle = 180;
+    OCR1B = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * angle) / 180;
+}
+
+// Example: Pan-Tilt control
+int main(void) {
+    servo_init_dual();
+    
+    while (1) {
+        // Scan horizontally
+        for (uint8_t pan = 0; pan &lt;= 180; pan += 10) {
+            servo_set_pan(pan);
+            _delay_ms(100);
+        }
+        
+        // Tilt up/down
+        servo_set_tilt(45);
+        _delay_ms(500);
+        servo_set_tilt(135);
+        _delay_ms(500);
+        servo_set_tilt(90);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Smooth Movement</h2>
+<h3>Linear Interpolation</h3>
+<pre class="lang-c"><code>uint16_t current_pulse = SERVO_MID;
+
+void servo_move_smooth(uint16_t target_pulse, uint16_t duration_ms) {
+    uint16_t start = current_pulse;
+    uint32_t start_time = millis();
+    
+    while (millis() - start_time &lt; duration_ms) {
+        uint32_t elapsed = millis() - start_time;
+        
+        // Linear interpolation
+        current_pulse = start + ((target_pulse - start) * elapsed) / duration_ms;
+        
+        OCR1A = current_pulse;
+        _delay_ms(10);
+    }
+    
+    current_pulse = target_pulse;
+    OCR1A = target_pulse;
+}
+
+void servo_move_angle_smooth(uint8_t target_angle, uint16_t duration_ms) {
+    uint16_t target = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * target_angle) / 180;
+    servo_move_smooth(target, duration_ms);
+}
+
+// Usage
+servo_move_angle_smooth(0, 1000);    // Move to 0° in 1 second
+_delay_ms(500);
+servo_move_angle_smooth(180, 1000);  // Move to 180° in 1 second</code></pre>
+<h3>Speed Control</h3>
+<pre class="lang-c"><code>#define SERVO_SPEED_SLOW   5   // degrees per step
+#define SERVO_SPEED_MEDIUM 10
+#define SERVO_SPEED_FAST   20
+
+void servo_move_at_speed(uint8_t target_angle, uint8_t speed) {
+    uint8_t current_angle = ((OCR1A - SERVO_MIN) * 180) / (SERVO_MAX - SERVO_MIN);
+    
+    if (current_angle &lt; target_angle) {
+        // Move forward
+        while (current_angle &lt; target_angle) {
+            current_angle += speed;
+            if (current_angle &gt; target_angle) current_angle = target_angle;
+            
+            servo_set_angle(current_angle);
+            _delay_ms(50);
+        }
+    } else {
+        // Move backward
+        while (current_angle &gt; target_angle) {
+            current_angle -= speed;
+            if (current_angle &lt; target_angle) current_angle = target_angle;
+            
+            servo_set_angle(current_angle);
+            _delay_ms(50);
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Application - Joystick Control</h2>
+<h3>Joystick-Controlled Servo</h3>
+<pre class="lang-c"><code>#include &quot;_adc.h&quot;
+
+#define JOY_X_CHANNEL 0
+#define JOY_Y_CHANNEL 1
+
+void servo_joystick_control(void) {
+    servo_init_dual();
+    adc_init();
+    
+    while (1) {
+        // Read joystick
+        uint16_t joy_x = adc_read(JOY_X_CHANNEL);
+        uint16_t joy_y = adc_read(JOY_Y_CHANNEL);
+        
+        // Map ADC (0-1023) to servo angle (0-180)
+        uint8_t pan = (joy_x * 180) / 1023;
+        uint8_t tilt = (joy_y * 180) / 1023;
+        
+        // Set servo positions
+        servo_set_pan(pan);
+        servo_set_tilt(tilt);
+        
+        _delay_ms(20);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Application - Robotic Arm</h2>
+<h3>Simple 3-DOF Arm</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t base;      // 0-180°
+    uint8_t shoulder;  // 0-180°
+    uint8_t elbow;     // 0-180°
+} arm_position_t;
+
+arm_position_t arm_pos = {90, 90, 90};
+
+void arm_init(void) {
+    // Use Timer1 for 3 servos (OC1A, OC1B, OC1C)
+    DDRB |= (1 &lt;&lt; PB5) | (1 &lt;&lt; PB6) | (1 &lt;&lt; PB7);
+    
+    ICR1 = 39999;
+    TCCR1A = (1 &lt;&lt; WGM11) | (1 &lt;&lt; COM1A1) | (1 &lt;&lt; COM1B1) | (1 &lt;&lt; COM1C1);
+    TCCR1B = (1 &lt;&lt; WGM13) | (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS11);
+    
+    // Initialize to home position
+    arm_set_position(&amp;arm_pos);
+}
+
+void arm_set_position(arm_position_t *pos) {
+    // Clamp angles
+    if (pos-&gt;base &gt; 180) pos-&gt;base = 180;
+    if (pos-&gt;shoulder &gt; 180) pos-&gt;shoulder = 180;
+    if (pos-&gt;elbow &gt; 180) pos-&gt;elbow = 180;
+    
+    // Calculate pulse widths
+    uint16_t base_pulse = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * pos-&gt;base) / 180;
+    uint16_t shoulder_pulse = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * pos-&gt;shoulder) / 180;
+    uint16_t elbow_pulse = SERVO_MIN + ((uint32_t)(SERVO_MAX - SERVO_MIN) * pos-&gt;elbow) / 180;
+    
+    // Set servos
+    OCR1A = base_pulse;
+    OCR1B = shoulder_pulse;
+    OCR1C = elbow_pulse;
+}
+
+// Predefined poses
+void arm_pose_home(void) {
+    arm_pos.base = 90;
+    arm_pos.shoulder = 90;
+    arm_pos.elbow = 90;
+    arm_set_position(&amp;arm_pos);
+}
+
+void arm_pose_reach(void) {
+    arm_pos.base = 90;
+    arm_pos.shoulder = 45;
+    arm_pos.elbow = 135;
+    arm_set_position(&amp;arm_pos);
+}
+
+void arm_pose_up(void) {
+    arm_pos.base = 90;
+    arm_pos.shoulder = 135;
+    arm_pos.elbow = 45;
+    arm_set_position(&amp;arm_pos);
+}
+
+// Demo sequence
+int main(void) {
+    arm_init();
+    
+    while (1) {
+        arm_pose_home();
+        _delay_ms(2000);
+        
+        arm_pose_reach();
+        _delay_ms(2000);
+        
+        arm_pose_up();
+        _delay_ms(2000);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Application - Camera Gimbal</h2>
+<h3>2-Axis Stabilized Camera Mount</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t pan;    // Horizontal rotation
+    uint8_t tilt;   // Vertical tilt
+} gimbal_t;
+
+gimbal_t gimbal = {90, 90};
+
+void gimbal_init(void) {
+    servo_init_dual();
+    
+    // Start at center
+    servo_set_pan(90);
+    servo_set_tilt(90);
+}
+
+void gimbal_track_object(uint8_t object_x, uint8_t object_y) {
+    // object_x, object_y: position in image (0-255)
+    
+    // Calculate error from center
+    int16_t error_x = object_x - 128;
+    int16_t error_y = object_y - 128;
+    
+    // Proportional control
+    #define KP 0.1
+    
+    gimbal.pan += (int8_t)(error_x * KP);
+    gimbal.tilt += (int8_t)(error_y * KP);
+    
+    // Clamp to limits
+    if (gimbal.pan &lt; 0) gimbal.pan = 0;
+    if (gimbal.pan &gt; 180) gimbal.pan = 180;
+    if (gimbal.tilt &lt; 45) gimbal.tilt = 45;    // Limit tilt
+    if (gimbal.tilt &gt; 135) gimbal.tilt = 135;
+    
+    // Apply to servos
+    servo_set_pan(gimbal.pan);
+    servo_set_tilt(gimbal.tilt);
+}
+
+// Smooth scanning pattern
+void gimbal_scan(void) {
+    // Horizontal scan
+    for (uint8_t pan = 0; pan &lt;= 180; pan += 5) {
+        servo_set_pan(pan);
+        _delay_ms(100);
+        
+        // Check for object at each position
+        // (camera processing code here)
+    }
+    
+    // Return to center
+    servo_move_angle_smooth(90, 1000);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Application - Door Lock Mechanism</h2>
+<h3>Servo-Based Lock</h3>
+<pre class="lang-c"><code>#define LOCK_ANGLE    0     // Locked position
+#define UNLOCK_ANGLE  90    // Unlocked position
+
+typedef enum {
+    LOCK_STATE_LOCKED,
+    LOCK_STATE_UNLOCKED
+} lock_state_t;
+
+lock_state_t lock_state = LOCK_STATE_LOCKED;
+
+void lock_init(void) {
+    servo_init();
+    lock_door();
+}
+
+void lock_door(void) {
+    servo_move_angle_smooth(LOCK_ANGLE, 500);
+    lock_state = LOCK_STATE_LOCKED;
+    printf(&quot;Door LOCKED\n&quot;);
+}
+
+void unlock_door(void) {
+    servo_move_angle_smooth(UNLOCK_ANGLE, 500);
+    lock_state = LOCK_STATE_UNLOCKED;
+    printf(&quot;Door UNLOCKED\n&quot;);
+    
+    // Auto-lock after 5 seconds
+    _delay_ms(5000);
+    lock_door();
+}
+
+// Password-controlled lock
+void smart_lock(void) {
+    char password[5];
+    
+    lock_init();
+    keypad_init();
+    lcd_init();
+    
+    while (1) {
+        lcd_gotoxy(0, 0);
+        lcd_puts(&quot;Enter PIN:&quot;);
+        
+        enter_password(password, 4);
+        
+        if (strcmp(password, &quot;1234&quot;) == 0) {
+            lcd_gotoxy(0, 1);
+            lcd_puts(&quot;Access Granted &quot;);
+            unlock_door();
+        } else {
+            lcd_gotoxy(0, 1);
+            lcd_puts(&quot;Access Denied  &quot;);
+            _delay_ms(2000);
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Calibration</h2>
+<h3>Why Calibrate?</h3>
+<ul><li>Servos have <strong>mechanical variations</strong></li><li><strong>Pulse width ranges</strong> differ between models</li><li><strong>Center position</strong> may not be exactly 90°</li><li><strong>End stops</strong> may not align with 0° and 180°</li></ul>
+<h3>Calibration Procedure</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint16_t min_pulse;    // Pulse for 0°
+    uint16_t max_pulse;    // Pulse for 180°
+    uint16_t center_pulse; // Pulse for 90°
+} servo_cal_t;
+
+servo_cal_t cal = {
+    .min_pulse = 1000,
+    .max_pulse = 2000,
+    .center_pulse = 1500
+};
+
+void servo_calibrate(void) {
+    printf(&quot;Servo Calibration\n&quot;);
+    printf(&quot;-----------------\n&quot;);
+    
+    // Find minimum
+    printf(&quot;Finding minimum position...\n&quot;);
+    for (uint16_t pulse = 500; pulse &lt;= 1500; pulse += 10) {
+        OCR1A = pulse;
+        _delay_ms(100);
+        
+        printf(&quot;Pulse: %d us  (press button at limit)\n&quot;, pulse);
+        
+        if (button_pressed()) {
+            cal.min_pulse = pulse;
+            break;
+        }
+    }
+    
+    _delay_ms(1000);
+    
+    // Find maximum
+    printf(&quot;Finding maximum position...\n&quot;);
+    for (uint16_t pulse = 1500; pulse &lt;= 2500; pulse += 10) {
+        OCR1A = pulse;
+        _delay_ms(100);
+        
+        printf(&quot;Pulse: %d us  (press button at limit)\n&quot;, pulse);
+        
+        if (button_pressed()) {
+            cal.max_pulse = pulse;
+            break;
+        }
+    }
+    
+    // Calculate center
+    cal.center_pulse = (cal.min_pulse + cal.max_pulse) / 2;
+    
+    printf(&quot;\nCalibration complete:\n&quot;);
+    printf(&quot;Min:    %d us\n&quot;, cal.min_pulse);
+    printf(&quot;Center: %d us\n&quot;, cal.center_pulse);
+    printf(&quot;Max:    %d us\n&quot;, cal.max_pulse);
+    
+    // Save to EEPROM
+    eeprom_write_block(&amp;cal, (void*)0, sizeof(cal));
+}
+
+// Use calibrated values
+void servo_set_angle_calibrated(uint8_t angle) {
+    if (angle &gt; 180) angle = 180;
+    
+    uint16_t pulse = cal.min_pulse + 
+                     ((uint32_t)(cal.max_pulse - cal.min_pulse) * angle) / 180;
+    
+    OCR1A = pulse;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Troubleshooting</h2>
+<h3>Common Issues</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Solution</th></tr></thead><tbody><tr><td><strong>Servo jitters</strong></td><td>Insufficient power</td><td>Use external 5-6V supply, add capacitor</td></tr><tr><td><strong>No movement</strong></td><td>Wrong PWM frequency</td><td>Verify 50 Hz (20ms period)</td></tr><tr><td><strong>Limited range</strong></td><td>Pulse width too narrow</td><td>Calibrate min/max pulses</td></tr><tr><td><strong>Servo burns out</strong></td><td>Stalled against obstruction</td><td>Add current limiting, timeout</td></tr><tr><td><strong>Erratic behavior</strong></td><td>Noise on signal line</td><td>Add 100Ω resistor, shorten wires</td></tr><tr><td><strong>Slow response</strong></td><td>PWM period too long</td><td>Verify Timer1 settings</td></tr></tbody></table>
+<h3>Debugging Code</h3>
+<pre class="lang-c"><code>void servo_test(void) {
+    servo_init();
+    uart_init();
+    
+    printf(&quot;Servo Test\n&quot;);
+    printf(&quot;----------\n&quot;);
+    
+    // Test different pulse widths
+    uint16_t pulses[] = {500, 1000, 1500, 2000, 2500};
+    
+    for (uint8_t i = 0; i &lt; 5; i++) {
+        printf(&quot;Pulse: %d us\n&quot;, pulses[i]);
+        OCR1A = pulses[i];
+        _delay_ms(2000);
+    }
+    
+    // Sweep test
+    printf(&quot;\nSweep test...\n&quot;);
+    for (uint8_t angle = 0; angle &lt;= 180; angle += 10) {
+        printf(&quot;Angle: %d°\n&quot;, angle);
+        servo_set_angle(angle);
+        _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Best Practices</h2>
+<h3>Servo Control Guidelines</h3>
+<p>✓ <strong>External power supply</strong></p>
+<pre class="lang-c"><code>// NEVER power servo from ATmega128&#x27;s 5V pin!
+// Use separate 5-6V supply with common ground</code></pre>
+<p>✓ <strong>Add decoupling capacitor</strong></p>
+<pre class="lang-c"><code>// 100-470µF capacitor across servo power
+// Prevents voltage drops during movement</code></pre>
+<p>✓ <strong>Soft start</strong></p>
+<pre class="lang-c"><code>// Move to target gradually, not instantly
+servo_move_smooth(target, 1000);  // 1 second transition</code></pre>
+<p>✓ <strong>Limit PWM range</strong></p>
+<pre class="lang-c"><code>// Avoid extreme pulse widths (&lt; 500µs or &gt; 2500µs)
+if (pulse &lt; 500) pulse = 500;
+if (pulse &gt; 2500) pulse = 2500;</code></pre>
+<p>✓ <strong>Disable when not in use</strong></p>
+<pre class="lang-c"><code>// Stop PWM to reduce power and jitter
+TCCR1A &amp;= ~(1 &lt;&lt; COM1A1);  // Disconnect OC1A</code></pre>
+<p>✓ <strong>Monitor current</strong></p>
+<pre class="lang-c"><code>// Servos draw 100-500mA when moving
+// More when stalled → add overcurrent protection</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Summary</h2>
+<h3>Key Concepts</h3>
+<p>✓ <strong>PWM control</strong>: 1-2ms pulses at 50 Hz<br>✓ <strong>Position feedback</strong>: Internal potentiometer<br>✓ <strong>Timer1 configuration</strong>: Fast PWM mode, ICR1 = TOP<br>✓ <strong>Angle mapping</strong>: 0-180° → 1000-2000µs<br>✓ <strong>Multiple servos</strong>: Use OC1A, OC1B, OC1C<br>✓ <strong>Smooth movement</strong>: Linear interpolation<br>✓ <strong>Calibration</strong>: Adjust for mechanical variations</p>
+<h3>Applications</h3>
+<ul><li>Pan-tilt camera platforms</li><li>Robotic arms and grippers</li><li>Door locks and actuators</li><li>RC vehicles (steering)</li><li>Animatronics</li><li>Solar panel tracking</li></ul>
+<h3>Timer1 PWM Summary</h3>
+<pre><code>Mode: Fast PWM (Mode 14)
+TOP: ICR1 = 39999 (20ms period @ 16MHz/8)
+OCR1A/B/C: 1000-2000 (1-2ms pulse width)
+Frequency: 50 Hz
+Resolution: 0.5µs per count</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Practice Exercises</h2>
+<h3>Exercise 1: Basic Servo Control</h3>
+<p><strong>Goal</strong>: Control servo with buttons</p>
+<ul><li>Initialize Timer1 PWM</li><li>Set servo to 0°, 90°, 180°</li><li>Use buttons to control position</li><li>Display angle on LCD</li></ul>
+<h3>Exercise 2: Smooth Sweeping</h3>
+<p><strong>Goal</strong>: Create smooth servo movements</p>
+<ul><li>Implement linear interpolation</li><li>Sweep from 0° to 180° in 2 seconds</li><li>Add ease-in/ease-out acceleration</li><li>Display position in real-time</li></ul>
+<h3>Exercise 3: Pan-Tilt with Joystick</h3>
+<p><strong>Goal</strong>: Control 2 servos with joystick</p>
+<ul><li>Read analog joystick X and Y</li><li>Map to pan (0-180°) and tilt (0-180°)</li><li>Implement deadzone at center</li><li>Add smoothing filter</li></ul>
+<h3>Exercise 4: Robotic Gripper</h3>
+<p><strong>Goal</strong>: Build servo-controlled gripper</p>
+<ul><li>Use 1 servo for open/close</li><li>Map pressure sensor to grip strength</li><li>Add open/close buttons</li><li>Display state on LCD</li></ul>
+<h3>Exercise 5: Automated Door Lock</h3>
+<p><strong>Goal</strong>: Password-controlled lock</p>
+<ul><li>Use servo as lock mechanism</li><li>Keypad for PIN entry</li><li>LCD feedback</li><li>Auto-lock after timeout</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 16: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 15: 16-bit Timer/Counter1</li><li>PWM modes and configuration</li><li>Output Compare Units</li></ul>
+<h3>Servo Motor Resources</h3>
+<ul><li>Servo motor datasheets (SG90, MG996R, etc.)</li><li>PWM signal specifications</li><li>Torque and speed characteristics</li><li>Power requirements</li></ul>
+<h3>Control Algorithms</h3>
+<ul><li>PID control for servos</li><li>Inverse kinematics for robotic arms</li><li>Trajectory planning</li><li>Smooth motion profiles</li></ul>
+<h3>Applications</h3>
+<ul><li>Pan-tilt mechanisms</li><li>Robotic arm design</li><li>Camera stabilization</li><li>RC servo applications</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>PWM_Motor_Servo/</code></li><li>Shared libraries: <code>_servo.h</code>, <code>_servo.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:10_PWM_Servo', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:10_PWM_Servo') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

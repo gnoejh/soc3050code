@@ -1,0 +1,42 @@
+ATmega128 CLASSROOM DASHBOARD - STUDENT ACCESS
+============================================
+
+🌐 STUDENT LOGIN URL:
+   http://192.168.0.202:5001
+
+📱 QR CODE ACCESS:
+   Generate QR code for the URL above using any QR generator
+
+👥 CLASSROOM INSTRUCTIONS:
+
+1. Students connect to classroom WiFi
+2. Open web browser (Chrome, Firefox, Edge, Safari)
+3. Go to: http://192.168.0.202:5001
+4. Enter their full name
+5. Click "Start Coding Session"
+6. Begin working on ATmega128 projects
+
+🏫 TEACHER DASHBOARD:
+   http://192.168.0.202:5001/teacher
+
+📊 FEATURES:
+   • Each student gets isolated workspace
+   • Real-time activity monitoring
+   • Automatic session management
+   • Build and compile support
+   • SimulIDE integration ready
+
+⚙️  SYSTEM REQUIREMENTS:
+   • Modern web browser
+   • Network connection to server
+   • No software installation needed
+
+📞 TECHNICAL SUPPORT:
+   • Check server is running: W:\soc3050code\tools\start-classroom-dashboard.bat
+   • Verify network connectivity
+   • Check firewall settings
+   • Contact system administrator
+
+Generated: 10/08/2025 01:45:19
+Server: 192.168.0.202:5001
+Max Students: 50

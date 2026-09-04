@@ -1,0 +1,16 @@
+# Serial Communications Python Project Requirements
+# Install with: pip install -r requirements.txt
+
+# Core serial communication
+pyserial>=3.5
+
+# Data visualization (optional for this project, but useful)
+matplotlib>=3.7.0
+
+# Data analysis
+numpy>=1.24.0
+pandas>=2.0.0
+
+# For enhanced features (optional)
+# colorama>=0.4.6  # Colored terminal output
+

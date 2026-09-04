@@ -1,0 +1,49 @@
+<title>SOC3050 Lecture Decks</title>
+<style>
+  :root { --bg:#fff; --fg:#1a1c1f; --muted:#5b6270; --rule:#dfe3ea; --accent:#1f5fa8; --card:#f7f9fc; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#14171c; --fg:#e6e9ee; --muted:#9aa3b2; --rule:#2b313b; --accent:#78b4f0; --card:#1b1f26; }
+  }
+  :root[data-theme="dark"] { --bg:#14171c; --fg:#e6e9ee; --muted:#9aa3b2; --rule:#2b313b; --accent:#78b4f0; --card:#1b1f26; }
+  body { background:var(--bg); color:var(--fg); margin:0; padding:3rem 1.5rem 5rem;
+         font:16px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  h1 { font-size:2rem; margin:0 0 .3rem; letter-spacing:-.02em; }
+  .sub { color:var(--muted); margin:0 0 2rem; }
+  ol { list-style:none; padding:0; margin:0; display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.7rem; }
+  a.card { display:block; background:var(--card); border:1px solid var(--rule);
+            border-radius:9px; padding:.85rem 1rem; text-decoration:none; color:inherit; }
+  a.card:hover { border-color:var(--accent); }
+  .n { color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums; }
+  .t { display:block; font-weight:600; margin:.15rem 0 .2rem; }
+  .f { color:var(--muted); font-size:.87rem; }
+</style>
+<div class="wrap">
+  <h1>SOC3050 &mdash; ATmega128 Lecture Decks</h1>
+  <p class="sub">22 decks, 2026 AVR edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
+  <ol>
+    <li><a class="card" href="01_Port_Basic.html"><span class="n">01</span><span class="t">GPIO Port Programming</span><span class="f">DDR, PORT and PIN registers; driving LEDs and reading switches.</span></a></li>
+    <li><a class="card" href="02_Port_Button_Debounce.html"><span class="n">02</span><span class="t">Buttons and Debouncing</span><span class="f">Internal pull-ups, contact bounce, and a simple software debounce.</span></a></li>
+    <li><a class="card" href="03_Port_Keypad_Matrix.html"><span class="n">03</span><span class="t">Matrix Keypad Programming</span><span class="f">Row and column scanning of a 4x4 keypad without dedicated hardware.</span></a></li>
+    <li><a class="card" href="04_Inline_Assembly.html"><span class="n">04</span><span class="t">Inline Assembly Programming</span><span class="f">Asm volatile, operand constraints, and the AVR I/O instruction set.</span></a></li>
+    <li><a class="card" href="05_INT_External_Pins.html"><span class="n">05</span><span class="t">External Interrupts</span><span class="f">INT0-INT7, edge sensing, and writing an interrupt service routine.</span></a></li>
+    <li><a class="card" href="06_Timer0_Overflow_Blink.html"><span class="n">06</span><span class="t">Timer0 Overflow - LED Blinking</span><span class="f">Prescalers, the overflow flag, and interrupt-driven timing.</span></a></li>
+    <li><a class="card" href="07_Timer1_CTC_Precision.html"><span class="n">07</span><span class="t">Timer1 CTC Mode - Precision Timing</span><span class="f">Clear-Timer-on-Compare for exact output frequencies.</span></a></li>
+    <li><a class="card" href="08_Timer1_Input_Capture.html"><span class="n">08</span><span class="t">Timer1 Input Capture - Frequency and Pulse Measurement</span><span class="f">Measuring pulse width and frequency with the ICP unit.</span></a></li>
+    <li><a class="card" href="09_PWM_Motor_DC.html"><span class="n">09</span><span class="t">DC Motor Control with PWM</span><span class="f">Fast PWM, duty cycle, and driving a DC motor through an H-bridge.</span></a></li>
+    <li><a class="card" href="10_PWM_Servo.html"><span class="n">10</span><span class="t">Servo Motor Control with PWM</span><span class="f">50 Hz pulse-width positioning of an RC servo.</span></a></li>
+    <li><a class="card" href="11_ADC_Basic.html"><span class="n">11</span><span class="t">ADC (Analog-to-Digital Converter) Programming</span><span class="f">ADMUX, ADCSRA, reference selection, and 10-bit conversion.</span></a></li>
+    <li><a class="card" href="12_ADC_Light_Sensor.html"><span class="n">12</span><span class="t">CDS Light Sensor Programming</span><span class="f">Voltage dividers and scaling raw counts into engineering units.</span></a></li>
+    <li><a class="card" href="13_UART_Basic.html"><span class="n">13</span><span class="t">Serial Communications (UART)</span><span class="f">UBRR and baud rate, framing, and polled transmit and receive.</span></a></li>
+    <li><a class="card" href="14_UART_Ring_Buffer.html"><span class="n">14</span><span class="t">Interrupt-Driven UART and the Ring Buffer</span><span class="f">RX and TX interrupts feeding a ring buffer.</span></a></li>
+    <li><a class="card" href="15_SPI_Master_Basic.html"><span class="n">15</span><span class="t">SPI Master Communication</span><span class="f">SPCR, clock modes, and full-duplex shift-register transfer.</span></a></li>
+    <li><a class="card" href="16_I2C_RTC_DS1307.html"><span class="n">16</span><span class="t">DS1307 Real-Time Clock (I2C)</span><span class="f">TWI start, stop and acknowledge, and talking to a DS1307.</span></a></li>
+    <li><a class="card" href="17_LCD_Character.html"><span class="n">17</span><span class="t">LCD Character Display Programming</span><span class="f">Text output, cursor positioning, and formatting numbers.</span></a></li>
+    <li><a class="card" href="18_GLCD_Graphics.html"><span class="n">18</span><span class="t">Graphics LCD (GLCD) Programming</span><span class="f">KS0108 pages and columns, pixels, lines and bitmaps.</span></a></li>
+    <li><a class="card" href="19_EEPROM_ReadWrite.html"><span class="n">19</span><span class="t">Internal EEPROM</span><span class="f">Non-volatile storage, write timing, and endurance.</span></a></li>
+    <li><a class="card" href="20_Power_Sleep_Modes.html"><span class="n">20</span><span class="t">ATmega128 Sleep Modes</span><span class="f">Sleep modes, wake-up sources, and current budgeting.</span></a></li>
+    <li><a class="card" href="21_Watchdog_Reset.html"><span class="n">21</span><span class="t">Watchdog Timer System Reset</span><span class="f">WDT time-outs, safe reset, and recovering from a hang.</span></a></li>
+    <li><a class="card" href="22_RTOS_Scheduler.html"><span class="n">22</span><span class="t">Real-Time Operating Systems (RTOS)</span><span class="f">Task control blocks, a tick-driven scheduler, and context switching.</span></a></li>
+  </ol>
+</div>

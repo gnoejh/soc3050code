@@ -1,0 +1,431 @@
+<title>Timer0 Overflow - LED Blinking</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Timer0 Overflow - LED Blinking</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Timer0 Overflow</h2>
+<h3>What is Timer Overflow?</h3>
+<ul><li><strong>Overflow</strong> occurs when timer counts from MAX back to 0</li><li><strong>Timer0</strong> is an 8-bit counter (0-255)</li><li>Overflow happens every <strong>256 clock ticks</strong> after prescaling</li><li>Can generate <strong>interrupt</strong> for periodic tasks</li></ul>
+<h3>Why Use Timer Overflow?</h3>
+<p>✓ <strong>Simple periodic interrupts</strong> without compare registers<br>✓ <strong>Free-running timer</strong> for background tasks<br>✓ <strong>LED blinking</strong> without delay loops<br>✓ <strong>Multitasking</strong> - CPU free during timing</p>
+<h3>Applications</h3>
+<ul><li>LED animation and patterns</li><li>Periodic sensor sampling</li><li>Simple time bases</li><li>Background task scheduling</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 2: Timer0 Hardware Overview</h2>
+<h3>Timer0 Architecture</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[System Clock&lt;br/&gt;16 MHz] --&gt; B[Prescaler&lt;br/&gt;/1, /8, /64, /256, /1024]
+    B --&gt; C[TCNT0&lt;br/&gt;8-bit Counter]
+    C --&gt; D{Counter = 255?}
+    D --&gt;|Yes| E[Overflow&lt;br/&gt;TCNT0 → 0]
+    D --&gt;|No| C
+    E --&gt; F[TOV0 Flag Set]
+    F --&gt; G[Timer0 OVF&lt;br/&gt;Interrupt]
+    
+    H[Compare&lt;br/&gt;OCR0] --&gt; I[Compare Match&lt;br/&gt;OC0 Pin]
+    C --&gt; H
+    
+    style A fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#4ecdc4,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffe66d,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#95e1d3,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Timer0 Resources</h3>
+<table><thead><tr><th>Register</th><th>Description</th></tr></thead><tbody><tr><td><strong>TCNT0</strong></td><td>8-bit Counter Register (0-255)</td></tr><tr><td><strong>OCR0</strong></td><td>Output Compare Register</td></tr><tr><td><strong>TCCR0</strong></td><td>Timer Control Register</td></tr><tr><td><strong>TIMSK</strong></td><td>Interrupt Mask Register</td></tr><tr><td><strong>TIFR</strong></td><td>Interrupt Flag Register</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 3: Timer0 Control Registers</h2>
+<h3>TCCR0 - Timer/Counter Control Register</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TCCR0 │ FOC0 │ WGM00│ COM01│ COM00│ WGM01│ CS02 │ CS01 │ CS00 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bits</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>CS02:00</strong></td><td>Clock Select</td><td>Prescaler configuration</td></tr><tr><td><strong>WGM01:00</strong></td><td>Waveform Generation Mode</td><td>Operating mode selection</td></tr><tr><td><strong>COM01:00</strong></td><td>Compare Output Mode</td><td>OC0 pin behavior</td></tr><tr><td><strong>FOC0</strong></td><td>Force Output Compare</td><td>Force compare match (non-PWM modes)</td></tr></tbody></table>
+<h3>Clock Select (CS02:00) - Prescaler Options</h3>
+<pre><code>CS02 CS01 CS00 | Prescaler | Overflow Frequency @ 16MHz
+───────────────┼───────────┼──────────────────────────
+  0    0    0  | Stop      | -
+  0    0    1  | /1        | 62.5 kHz (every 16 µs)
+  0    1    0  | /8        | 7.8 kHz (every 128 µs)
+  0    1    1  | /64       | 977 Hz (every 1.024 ms)
+  1    0    0  | /256      | 244 Hz (every 4.096 ms)
+  1    0    1  | /1024     | 61 Hz (every 16.384 ms)</code></pre>
+<p><strong>Calculation:</strong></p>
+<pre><code>Overflow Frequency = F_CPU / (Prescaler × 256)
+Overflow Period = (Prescaler × 256) / F_CPU
+
+Example @ /1024:
+Frequency = 16,000,000 / (1024 × 256) = 61 Hz
+Period = (1024 × 256) / 16,000,000 = 16.384 ms</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: Interrupt Configuration</h2>
+<h3>TIMSK - Timer Interrupt Mask Register</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TIMSK │ OCIE2│ TOIE2│ TICIE1│OCIE1A│OCIE1B│ TOIE1│ OCIE0│ TOIE0│
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>TOIE0</strong></td><td>Timer0 Overflow Interrupt Enable</td><td>Enable overflow interrupt</td></tr><tr><td><strong>OCIE0</strong></td><td>Output Compare Interrupt Enable</td><td>Enable compare match interrupt</td></tr></tbody></table>
+<h3>TIFR - Timer Interrupt Flag Register</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TIFR  │ OCF2 │ TOV2 │ ICF1 │ OCF1A│ OCF1B│ TOV1 │ OCF0 │ TOV0 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>TOV0</strong></td><td>Timer0 Overflow Flag</td><td>Set when overflow occurs</td></tr><tr><td><strong>OCF0</strong></td><td>Output Compare Flag</td><td>Set on compare match</td></tr></tbody></table>
+<p><strong>Note:</strong> Flags are <strong>automatically cleared</strong> when ISR executes, or can be cleared manually by writing 1.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Polling vs Interrupt Methods</h2>
+<h3>Method 1: Polling (Software Check)</h3>
+<pre class="lang-c"><code>// Simple but CPU-intensive
+TCCR0 = 0x05;  // Prescaler /1024
+TCNT0 = 0;     // Reset counter
+
+while(1) {
+    if (TIFR &amp; (1 &lt;&lt; TOV0)) {  // Check overflow flag
+        TIFR |= (1 &lt;&lt; TOV0);   // Clear flag (write 1)
+        PORTB ^= 0x01;         // Toggle LED
+    }
+    // CPU is blocked waiting!
+}</code></pre>
+<p><strong>Pros:</strong> Simple, no interrupt overhead<br><strong>Cons:</strong> CPU blocked, can&#x27;t do other work</p>
+<h3>Method 2: Interrupt (Hardware Event)</h3>
+<pre class="lang-c"><code>// Efficient - CPU free until interrupt
+TCCR0 = 0x05;  // Prescaler /1024
+TIMSK |= (1 &lt;&lt; TOIE0);  // Enable overflow interrupt
+sei();  // Global interrupt enable
+
+ISR(TIMER0_OVF_vect) {
+    // Automatically called on overflow
+    PORTB ^= 0x01;  // Toggle LED
+    // Flag cleared automatically
+}
+
+int main(void) {
+    // ... setup ...
+    while(1) {
+        // CPU can do other work here!
+    }
+}</code></pre>
+<p><strong>Pros:</strong> CPU free, efficient, multitasking<br><strong>Cons:</strong> Slightly more complex, interrupt overhead</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Timing Calculations</h2>
+<h3>Overflow Frequency Calculation</h3>
+<pre><code>Overflow Period = (Prescaler × 256) / F_CPU
+Number of Overflows = Desired_Delay / Overflow_Period</code></pre>
+<h3>Example: 1 Hz Blink (500ms ON, 500ms OFF) @ 16 MHz</h3>
+<p><strong>Prescaler /1024:</strong></p>
+<pre><code>Overflow Period = (1024 × 256) / 16,000,000 = 0.016384 s = 16.384 ms
+Overflows for 500ms = 500 / 16.384 ≈ 31 overflows</code></pre>
+<p><strong>Implementation:</strong></p>
+<pre class="lang-c"><code>volatile uint8_t overflow_count = 0;
+
+ISR(TIMER0_OVF_vect) {
+    overflow_count++;
+    if (overflow_count &gt;= 31) {  // ~508ms
+        overflow_count = 0;
+        PORTB ^= 0x01;  // Toggle LED every 508ms
+    }
+}</code></pre>
+<h3>Prescaler Selection Guide</h3>
+<table><thead><tr><th>Desired Frequency</th><th>Recommended Prescaler</th></tr></thead><tbody><tr><td>&gt; 1 kHz</td><td>/8 or /64</td></tr><tr><td>100 Hz - 1 kHz</td><td>/256</td></tr><tr><td>&lt; 100 Hz</td><td>/1024</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 7: Complete Example - LED Blinking</h2>
+<h3>Hardware Setup</h3>
+<pre><code>ATmega128:
+- PB0-PB7: LEDs (Active LOW)
+- LEDs ON when port = 0
+- LEDs OFF when port = 1</code></pre>
+<h3>Full Code Example</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;avr/interrupt.h&gt;
+
+#define F_CPU 16000000UL
+
+// Global counter
+volatile uint8_t overflow_count = 0;
+
+// Overflow ISR
+ISR(TIMER0_OVF_vect) {
+    overflow_count++;
+    if (overflow_count &gt;= 31) {  // ~500ms
+        overflow_count = 0;
+        PORTB ^= 0xFF;  // Toggle all LEDs
+    }
+}
+
+int main(void) {
+    // Configure Port B as output
+    DDRB = 0xFF;
+    PORTB = 0xFF;  // LEDs OFF (active low)
+    
+    // Configure Timer0
+    TCCR0 = (1 &lt;&lt; CS02) | (1 &lt;&lt; CS00);  // Prescaler /1024
+    TCNT0 = 0;  // Reset counter
+    
+    // Enable overflow interrupt
+    TIMSK |= (1 &lt;&lt; TOIE0);
+    
+    // Enable global interrupts
+    sei();
+    
+    // Main loop - CPU free!
+    while(1) {
+        // Can do other work here
+    }
+    
+    return 0;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Advanced Patterns</h2>
+<h3>Multi-Speed Blinking</h3>
+<pre class="lang-c"><code>ISR(TIMER0_OVF_vect) {
+    static uint8_t count1 = 0, count2 = 0, count3 = 0;
+    
+    count1++;
+    count2++;
+    count3++;
+    
+    if (count1 &gt;= 15) {  // Fast: ~250ms
+        count1 = 0;
+        PORTB ^= 0x01;  // LED 0
+    }
+    
+    if (count2 &gt;= 31) {  // Medium: ~500ms
+        count2 = 0;
+        PORTB ^= 0x02;  // LED 1
+    }
+    
+    if (count3 &gt;= 61) {  // Slow: ~1s
+        count3 = 0;
+        PORTB ^= 0x04;  // LED 2
+    }
+}</code></pre>
+<h3>Multitasking Example</h3>
+<pre class="lang-c"><code>volatile uint8_t task_flag = 0;
+
+ISR(TIMER0_OVF_vect) {
+    static uint8_t count = 0;
+    count++;
+    
+    if (count &gt;= 61) {  // Every ~1 second
+        count = 0;
+        task_flag = 1;  // Signal main loop
+    }
+}
+
+int main(void) {
+    // ... setup ...
+    
+    while(1) {
+        if (task_flag) {
+            task_flag = 0;
+            // Do periodic work here
+            read_sensors();
+            update_display();
+        }
+        
+        // Other continuous work
+        check_buttons();
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Common Pitfalls and Solutions</h2>
+<h3>Problem 1: Incorrect Overflow Count</h3>
+<pre class="lang-c"><code>// ❌ WRONG - Integer division loses precision
+uint8_t count = 500 / 16.384;  // = 30 (should be 31)
+
+// ✅ CORRECT - Use proper rounding
+uint8_t count = (500 + 16.384/2) / 16.384;  // = 31
+// or
+uint8_t count = 31;  // Pre-calculated</code></pre>
+<h3>Problem 2: Flag Not Cleared (Polling Mode)</h3>
+<pre class="lang-c"><code>// ❌ WRONG - Flag never cleared
+while(1) {
+    if (TIFR &amp; (1 &lt;&lt; TOV0)) {
+        PORTB ^= 0x01;
+        // Flag still set - triggers continuously!
+    }
+}
+
+// ✅ CORRECT - Clear flag by writing 1
+while(1) {
+    if (TIFR &amp; (1 &lt;&lt; TOV0)) {
+        TIFR |= (1 &lt;&lt; TOV0);  // Clear flag
+        PORTB ^= 0x01;
+    }
+}</code></pre>
+<h3>Problem 3: Forgot Global Interrupts</h3>
+<pre class="lang-c"><code>// ❌ WRONG - ISR never called
+TIMSK |= (1 &lt;&lt; TOIE0);
+// Missing sei()!
+
+// ✅ CORRECT
+TIMSK |= (1 &lt;&lt; TOIE0);
+sei();  // Enable global interrupts</code></pre>
+<h3>Problem 4: Volatile Variables</h3>
+<pre class="lang-c"><code>// ❌ WRONG - Compiler may optimize away
+uint8_t overflow_count = 0;
+
+// ✅ CORRECT - Volatile prevents optimization
+volatile uint8_t overflow_count = 0;</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Summary and Key Takeaways</h2>
+<h3>Timer0 Overflow Key Concepts</h3>
+<p>✓ <strong>8-bit counter</strong> counts from 0 to 255<br>✓ <strong>Overflow</strong> occurs at 256, resets to 0<br>✓ <strong>Prescaler</strong> divides system clock (/1, /8, /64, /256, /1024)<br>✓ <strong>Overflow frequency</strong> = F_CPU / (Prescaler × 256)<br>✓ <strong>Two methods</strong>: Polling (simple) vs Interrupt (efficient)</p>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>TCCR0</strong></td><td>Configure prescaler and mode</td></tr><tr><td><strong>TCNT0</strong></td><td>Current counter value</td></tr><tr><td><strong>TIMSK</strong></td><td>Enable interrupts (TOIE0)</td></tr><tr><td><strong>TIFR</strong></td><td>Check/clear flags (TOV0)</td></tr></tbody></table>
+<h3>Best Practices</h3>
+<ol><li><strong>Use interrupts</strong> for efficient CPU usage</li><li><strong>Declare ISR variables as volatile</strong></li><li><strong>Calculate overflow counts</strong> for precise timing</li><li><strong>Keep ISRs short</strong> - set flags, do work in main loop</li><li><strong>Always enable global interrupts</strong> with <code>sei()</code></li></ol>
+<h3>Next Steps</h3>
+<ul><li>Learn <strong>Timer1 CTC mode</strong> for exact frequencies</li><li>Explore <strong>PWM modes</strong> for motor control</li><li>Study <strong>Input Capture</strong> for frequency measurement</li><li>Combine <strong>multiple timers</strong> for complex timing</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet - Section 17: 8-bit Timer/Counter0</a></li><li>Timer0 registers: Pages 115-119</li><li>Interrupt vectors: Page 64-65</li></ul>
+<h3>Related Projects</h3>
+<ul><li><code>Timer_Programming</code> - Comprehensive timer examples</li><li><code>Timer1_CTC_Precision</code> - CTC mode for exact timing</li><li><code>Timer_Stopwatch</code> - Complex timing application</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Timer/Counter tutorials</li><li>Interrupt programming best practices</li><li>Real-time operating system (RTOS) basics</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:06_Timer0_Overflow_Blink', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:06_Timer0_Overflow_Blink') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

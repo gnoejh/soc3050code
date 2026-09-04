@@ -1,0 +1,258 @@
+{
+    // SOC3050 build and simulation tasks.
+    //
+    // The default tasks work in BOTH lesson trees. tools/cli/build-current.ps1
+    // and simulate-current.ps1 look at the folder the open file is in and pick
+    // the right build system:
+    //
+    //   projects2026_avr/<lesson>/  -> the lesson's own build.bat, which calls
+    //                                  _build/build-lesson.bat (SimulIDE 1.1.0-SR2)
+    //   projects/<project>/         -> the legacy cli-build-project.ps1 (SR1)
+    //
+    // Open any file inside a lesson folder, then run the task.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Current Project",
+            "detail": "Build the lesson containing the open file (2026 or legacy tree)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\build-current.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-SourceFile",
+                "${fileBasename}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Simulate Current Project",
+            "detail": "Build if needed, then open the lesson in SimulIDE",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\simulate-current.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify All Lessons (2026)",
+            "detail": "Build all 22 lessons and validate each Main.hex is real firmware",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\projects2026_avr\\_build\\verify-all.ps1",
+                "-ShowWarnings"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Build Slides (2026)",
+            "detail": "Render every Slide.md into a presentable HTML deck",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}\\projects2026_avr\\_build\\build-slides.py"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Show Memory Usage",
+            "detail": "avr-size for the lesson's Main.elf",
+            "type": "shell",
+            "command": "${workspaceFolder}\\tools\\avr-toolchain\\bin\\avr-size.exe",
+            "args": [
+                "--format=berkeley",
+                "Main.elf"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [],
+            "dependsOn": "Build Current Project"
+        },
+        {
+            "label": "Clean Project",
+            "detail": "Remove build output from the lesson folder",
+            "type": "shell",
+            "command": "Remove-Item",
+            "args": [
+                "-Path",
+                "*.o,*.elf,*.hex,*.map,Board.simu",
+                "-Force",
+                "-ErrorAction",
+                "SilentlyContinue"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${fileDirname}",
+                "shell": {
+                    "executable": "pwsh.exe"
+                }
+            }
+        },
+        {
+            "label": "Program Hardware",
+            "detail": "Flash the built hex to a board on COM3 via avrdude",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-program-project.ps1",
+                "-ProjectDir",
+                "${fileDirname}",
+                "-Programmer",
+                "arduino",
+                "-Port",
+                "COM3"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Build and Program Current Project",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Current Project",
+                "Program Hardware"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        // ---------------------------------------------------------------
+        // Legacy: the projects/ tree, SimulIDE 1.1.0-SR1 and 0.4.15, and the
+        // TCP serial bridge. Kept for the older material; the tasks above
+        // cover everything in projects2026_avr.
+        // ---------------------------------------------------------------
+        {
+            "label": "Legacy: Simulate in SimulIDE 0.4.15",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\simulide\\cli-simulide-0415.ps1",
+                "-ProjectDir",
+                "${fileDirname}"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Legacy: SimulIDE Configure TCP",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-configure-simulide-tcp.ps1"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Legacy: SimulIDE Start TCP Bridge",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-start-tcp-bridge.ps1"
+            ],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Legacy: Serial TCP Client",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoExit",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\tools\\cli\\cli-run-serial-tcp-client.ps1"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": "test"
+        },
+        {
+            "label": "Legacy: SimulIDE Connect and Test (TCP)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Legacy: SimulIDE Configure TCP",
+                "Legacy: SimulIDE Start TCP Bridge",
+                "Legacy: Serial TCP Client"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

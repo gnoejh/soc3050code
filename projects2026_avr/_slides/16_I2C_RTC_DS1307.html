@@ -1,0 +1,814 @@
+<title>DS1307 Real-Time Clock (I2C)</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>DS1307 Real-Time Clock (I2C)</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to DS1307 RTC</h2>
+<h3>What is a Real-Time Clock?</h3>
+<ul><li><strong>Keeps track of time</strong> (seconds, minutes, hours, date)</li><li><strong>Battery-backed</strong> (continues during power-off)</li><li><strong>I2C interface</strong> for communication</li><li>Common in <strong>data loggers, alarms, timestamps</strong></li></ul>
+<h3>DS1307 Features</h3>
+<pre><code>Key Specifications:
+- I2C Address: 0x68 (7-bit)
+- Supply Voltage: 4.5-5.5V
+- Backup: 3V coin cell (CR2032)
+- Current: 1.5mA active, 500nA backup
+- Accuracy: ±2 minutes/year (typical)
+- SRAM: 56 bytes battery-backed
+- Square Wave Output: 1Hz, 4kHz, 8kHz, 32kHz</code></pre>
+<h3>DS1307 Block Diagram</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[ATmega128&lt;br/&gt;I2C Master] --&gt;|SDA/SCL| B[DS1307&lt;br/&gt;RTC]
+    B --&gt; C[32.768 kHz&lt;br/&gt;Crystal]
+    B --&gt; D[CR2032&lt;br/&gt;Battery]
+    B --&gt; E[SQW Output]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#fff3e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Time Registers (BCD Format)</h3>
+<pre><code>Register Map:
+0x00: Seconds (00-59)  + CH (Clock Halt bit)
+0x01: Minutes (00-59)
+0x02: Hours (00-23 or 01-12 + AM/PM)
+0x03: Day of week (1-7)
+0x04: Date (01-31)
+0x05: Month (01-12)
+0x06: Year (00-99, 2000-2099)
+0x07: Control register (SQW settings)
+0x08-0x3F: 56 bytes of RAM</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: Hardware Connection</h2>
+<h3>DS1307 Pinout</h3>
+<pre><code>DS1307 (8-pin DIP or SOIC)
+
+     ┌───────┐
+  X1 │1    8│ VCC (5V)
+  X2 │2    7│ SQW/OUT
+ VBat│3    6│ SCL
+ GND │4    5│ SDA
+     └───────┘
+
+X1, X2: 32.768 kHz crystal
+VBat:   3V coin cell (CR2032)</code></pre>
+<h3>Wiring Diagram</h3>
+<pre><code>ATmega128                DS1307
+---------                ------
+PD0 (SCL)  ───────4.7kΩ──┬──→ SCL (pin 6)
+                         │
+PD1 (SDA)  ───────4.7kΩ──┼──→ SDA (pin 5)
+                         │
+                       ──┴──
+                        ═══  (pull-up resistors)
+                        VCC
+
+VCC (5V)   ──────────────────→ VCC (pin 8)
+GND        ──────────────────→ GND (pin 4)
+
+CR2032 (+) ──────────────────→ VBat (pin 3)
+CR2032 (-) ──────────────────→ GND (pin 4)
+
+32.768 kHz Crystal:
+  Pin 1 ───── X1 (pin 1)
+  Pin 2 ───── X2 (pin 2)</code></pre>
+<h3>Crystal Load Capacitors</h3>
+<pre><code>Optional (usually internal):
+
+X1 ─┬─ 12.5pF ─ GND
+    │
+   Crystal
+    │
+X2 ─┴─ 12.5pF ─ GND
+
+Note: Some DS1307 modules have built-in caps</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: I2C Communication with DS1307</h2>
+<h3>DS1307 I2C Address</h3>
+<pre class="lang-c"><code>#define DS1307_ADDR  0x68  // 7-bit I2C address
+
+// Full 8-bit addresses:
+// Write: 0xD0 (0x68 &lt;&lt; 1 | 0)
+// Read:  0xD1 (0x68 &lt;&lt; 1 | 1)</code></pre>
+<h3>Write to DS1307 Register</h3>
+<pre class="lang-c"><code>void ds1307_write_byte(uint8_t reg, uint8_t data) {
+    i2c_start();
+    i2c_write(DS1307_ADDR &lt;&lt; 1);  // Write mode
+    i2c_write(reg);               // Register address
+    i2c_write(data);              // Data to write
+    i2c_stop();
+}
+
+// Example: Set seconds to 30
+ds1307_write_byte(0x00, 0x30);  // BCD format: 0x30 = 30 seconds</code></pre>
+<h3>Read from DS1307 Register</h3>
+<pre class="lang-c"><code>uint8_t ds1307_read_byte(uint8_t reg) {
+    uint8_t data;
+    
+    // Set register pointer
+    i2c_start();
+    i2c_write(DS1307_ADDR &lt;&lt; 1);   // Write mode
+    i2c_write(reg);                // Register address
+    
+    // Read data
+    i2c_start();                   // Repeated start
+    i2c_write((DS1307_ADDR &lt;&lt; 1) | 1);  // Read mode
+    data = i2c_read_nack();        // Read with NACK
+    i2c_stop();
+    
+    return data;
+}
+
+// Example: Read seconds
+uint8_t seconds_bcd = ds1307_read_byte(0x00);</code></pre>
+<h3>Burst Read (All Time Registers)</h3>
+<pre class="lang-c"><code>void ds1307_read_time(uint8_t *buffer) {
+    // Read registers 0x00-0x06 (7 bytes) in one burst
+    
+    i2c_start();
+    i2c_write(DS1307_ADDR &lt;&lt; 1);   // Write mode
+    i2c_write(0x00);               // Start at seconds register
+    
+    i2c_start();                   // Repeated start
+    i2c_write((DS1307_ADDR &lt;&lt; 1) | 1);  // Read mode
+    
+    for (uint8_t i = 0; i &lt; 6; i++) {
+        buffer[i] = i2c_read_ack();  // Read with ACK
+    }
+    buffer[6] = i2c_read_nack();     // Last byte with NACK
+    
+    i2c_stop();
+}
+
+// Usage:
+uint8_t time_data[7];
+ds1307_read_time(time_data);
+// time_data[0] = seconds, [1] = minutes, [2] = hours, etc.</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: BCD Conversion</h2>
+<h3>What is BCD (Binary-Coded Decimal)?</h3>
+<pre><code>DS1307 stores time in BCD format
+Each decimal digit = 4 bits
+
+Example: 59 seconds
+  Decimal: 59
+  Binary:  0b00111011 (0x3B)
+  BCD:     0b01011001 (0x59)
+           ────┬──── ────┬────
+           Tens = 5  Ones = 9</code></pre>
+<h3>BCD to Decimal Conversion</h3>
+<pre class="lang-c"><code>uint8_t bcd_to_decimal(uint8_t bcd) {
+    return ((bcd &gt;&gt; 4) * 10) + (bcd &amp; 0x0F);
+}
+
+// Example:
+uint8_t sec_bcd = 0x59;
+uint8_t sec_dec = bcd_to_decimal(sec_bcd);  // Result: 59</code></pre>
+<h3>Decimal to BCD Conversion</h3>
+<pre class="lang-c"><code>uint8_t decimal_to_bcd(uint8_t decimal) {
+    return ((decimal / 10) &lt;&lt; 4) | (decimal % 10);
+}
+
+// Example:
+uint8_t min_dec = 45;
+uint8_t min_bcd = decimal_to_bcd(min_dec);  // Result: 0x45</code></pre>
+<h3>Time Structure</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t second;   // 0-59
+    uint8_t minute;   // 0-59
+    uint8_t hour;     // 0-23
+    uint8_t day;      // 1-7 (day of week)
+    uint8_t date;     // 1-31
+    uint8_t month;    // 1-12
+    uint8_t year;     // 0-99 (2000-2099)
+} rtc_time_t;</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Initialize and Set Time</h2>
+<h3>Initialize DS1307</h3>
+<pre class="lang-c"><code>void ds1307_init(void) {
+    i2c_init();
+    
+    // Check if clock is halted (CH bit in seconds register)
+    uint8_t seconds = ds1307_read_byte(0x00);
+    
+    if (seconds &amp; 0x80) {
+        // Clock is halted, clear CH bit
+        ds1307_write_byte(0x00, 0x00);  // Start clock at 0 seconds
+    }
+    
+    // Set control register for 1Hz square wave output
+    ds1307_write_byte(0x07, 0x10);  // SQW = 1Hz
+}</code></pre>
+<h3>Set Time</h3>
+<pre class="lang-c"><code>void ds1307_set_time(rtc_time_t *time) {
+    // Convert to BCD and write to DS1307
+    
+    ds1307_write_byte(0x00, decimal_to_bcd(time-&gt;second) &amp; 0x7F);  // Clear CH bit
+    ds1307_write_byte(0x01, decimal_to_bcd(time-&gt;minute));
+    ds1307_write_byte(0x02, decimal_to_bcd(time-&gt;hour));          // 24-hour mode
+    ds1307_write_byte(0x03, decimal_to_bcd(time-&gt;day));
+    ds1307_write_byte(0x04, decimal_to_bcd(time-&gt;date));
+    ds1307_write_byte(0x05, decimal_to_bcd(time-&gt;month));
+    ds1307_write_byte(0x06, decimal_to_bcd(time-&gt;year));
+}
+
+// Example: Set time to 2024-03-15 14:30:45 (Friday)
+rtc_time_t time = {
+    .second = 45,
+    .minute = 30,
+    .hour = 14,
+    .day = 5,      // Friday (1=Sunday, 7=Saturday)
+    .date = 15,
+    .month = 3,
+    .year = 24     // 2024
+};
+
+ds1307_set_time(&amp;time);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Read Time</h2>
+<h3>Read Current Time</h3>
+<pre class="lang-c"><code>void ds1307_get_time(rtc_time_t *time) {
+    uint8_t buffer[7];
+    
+    // Burst read all time registers
+    ds1307_read_time(buffer);
+    
+    // Convert from BCD to decimal
+    time-&gt;second = bcd_to_decimal(buffer[0] &amp; 0x7F);  // Mask CH bit
+    time-&gt;minute = bcd_to_decimal(buffer[1]);
+    time-&gt;hour   = bcd_to_decimal(buffer[2] &amp; 0x3F);  // Mask 12/24 and AM/PM bits
+    time-&gt;day    = bcd_to_decimal(buffer[3]);
+    time-&gt;date   = bcd_to_decimal(buffer[4]);
+    time-&gt;month  = bcd_to_decimal(buffer[5]);
+    time-&gt;year   = bcd_to_decimal(buffer[6]);
+}
+
+// Usage:
+rtc_time_t current_time;
+ds1307_get_time(&amp;current_time);
+
+printf(&quot;Time: %02d:%02d:%02d\n&quot;, 
+       current_time.hour, current_time.minute, current_time.second);
+printf(&quot;Date: 20%02d-%02d-%02d\n&quot;, 
+       current_time.year, current_time.month, current_time.date);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Display Time on LCD</h2>
+<h3>LCD Clock Display</h3>
+<pre class="lang-c"><code>#include &quot;_lcd.h&quot;
+
+void display_clock(void) {
+    rtc_time_t time;
+    char buffer[17];
+    
+    lcd_init();
+    ds1307_init();
+    
+    while (1) {
+        ds1307_get_time(&amp;time);
+        
+        // Line 1: Time
+        lcd_gotoxy(0, 0);
+        sprintf(buffer, &quot;Time: %02d:%02d:%02d&quot;, 
+                time.hour, time.minute, time.second);
+        lcd_puts(buffer);
+        
+        // Line 2: Date
+        lcd_gotoxy(0, 1);
+        sprintf(buffer, &quot;Date: 20%02d/%02d/%02d&quot;, 
+                time.year, time.month, time.date);
+        lcd_puts(buffer);
+        
+        _delay_ms(500);  // Update every 0.5 seconds
+    }
+}</code></pre>
+<h3>Day of Week Display</h3>
+<pre class="lang-c"><code>const char *day_names[] = {
+    &quot;???&quot;, &quot;Sun&quot;, &quot;Mon&quot;, &quot;Tue&quot;, &quot;Wed&quot;, &quot;Thu&quot;, &quot;Fri&quot;, &quot;Sat&quot;
+};
+
+void display_clock_with_day(void) {
+    rtc_time_t time;
+    char buffer[17];
+    
+    while (1) {
+        ds1307_get_time(&amp;time);
+        
+        // Line 1: Time + Day
+        lcd_gotoxy(0, 0);
+        sprintf(buffer, &quot;%s %02d:%02d:%02d&quot;, 
+                day_names[time.day], time.hour, time.minute, time.second);
+        lcd_puts(buffer);
+        
+        // Line 2: Date
+        lcd_gotoxy(0, 1);
+        sprintf(buffer, &quot;20%02d-%02d-%02d&quot;, 
+                time.year, time.month, time.date);
+        lcd_puts(buffer);
+        
+        _delay_ms(1000);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Alarm Functionality</h2>
+<h3>Simple Alarm</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t enabled;
+} alarm_t;
+
+alarm_t alarm = {7, 30, 1};  // 7:30 AM, enabled
+
+void check_alarm(void) {
+    rtc_time_t time;
+    ds1307_get_time(&amp;time);
+    
+    if (alarm.enabled) {
+        if (time.hour == alarm.hour &amp;&amp; time.minute == alarm.minute &amp;&amp; time.second == 0) {
+            // Trigger alarm
+            buzzer_on();
+            printf(&quot;ALARM! Wake up!\n&quot;);
+            
+            // Wait for button press to dismiss
+            while (!button_pressed()) {
+                _delay_ms(100);
+            }
+            
+            buzzer_off();
+        }
+    }
+}</code></pre>
+<h3>Set Alarm via Keypad</h3>
+<pre class="lang-c"><code>void set_alarm_keypad(void) {
+    char input[5];
+    
+    lcd_clear();
+    lcd_puts(&quot;Set Alarm (HHMM):&quot;);
+    
+    // Enter 4 digits: HH MM
+    for (uint8_t i = 0; i &lt; 4; i++) {
+        input[i] = keypad_getchar();
+        lcd_putc(input[i]);
+    }
+    input[4] = &#x27;\0&#x27;;
+    
+    // Parse HH:MM
+    alarm.hour = (input[0] - &#x27;0&#x27;) * 10 + (input[1] - &#x27;0&#x27;);
+    alarm.minute = (input[2] - &#x27;0&#x27;) * 10 + (input[3] - &#x27;0&#x27;);
+    
+    if (alarm.hour &lt; 24 &amp;&amp; alarm.minute &lt; 60) {
+        alarm.enabled = 1;
+        
+        lcd_clear();
+        lcd_puts(&quot;Alarm set!&quot;);
+        sprintf(input, &quot;%02d:%02d&quot;, alarm.hour, alarm.minute);
+        lcd_gotoxy(0, 1);
+        lcd_puts(input);
+    } else {
+        lcd_clear();
+        lcd_puts(&quot;Invalid time!&quot;);
+    }
+    
+    _delay_ms(2000);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Data Logger with Timestamp</h2>
+<h3>Temperature Logger</h3>
+<pre class="lang-c"><code>#include &quot;_eeprom.h&quot;
+
+typedef struct {
+    uint8_t year, month, date;
+    uint8_t hour, minute, second;
+    int16_t temperature;  // °C × 10 (e.g., 235 = 23.5°C)
+} log_entry_t;
+
+#define MAX_LOG_ENTRIES 100
+log_entry_t log_buffer[MAX_LOG_ENTRIES];
+uint16_t log_count = 0;
+
+void log_temperature(int16_t temp) {
+    if (log_count &gt;= MAX_LOG_ENTRIES) {
+        log_count = 0;  // Wrap around (circular buffer)
+    }
+    
+    rtc_time_t time;
+    ds1307_get_time(&amp;time);
+    
+    log_buffer[log_count].year = time.year;
+    log_buffer[log_count].month = time.month;
+    log_buffer[log_count].date = time.date;
+    log_buffer[log_count].hour = time.hour;
+    log_buffer[log_count].minute = time.minute;
+    log_buffer[log_count].second = time.second;
+    log_buffer[log_count].temperature = temp;
+    
+    log_count++;
+    
+    printf(&quot;Logged: 20%02d-%02d-%02d %02d:%02d:%02d  Temp: %d.%d°C\n&quot;,
+           time.year, time.month, time.date,
+           time.hour, time.minute, time.second,
+           temp / 10, temp % 10);
+}
+
+// Periodic logging
+int main(void) {
+    ds1307_init();
+    adc_init();
+    uart_init();
+    
+    while (1) {
+        int16_t temp = read_temperature();  // From sensor
+        log_temperature(temp);
+        
+        _delay_ms(60000);  // Log every minute
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Battery-Backed SRAM</h2>
+<h3>Use DS1307&#x27;s 56-Byte RAM</h3>
+<pre class="lang-c"><code>// DS1307 RAM: registers 0x08 to 0x3F (56 bytes)
+
+void ds1307_write_ram(uint8_t addr, uint8_t data) {
+    if (addr &lt; 56) {
+        ds1307_write_byte(0x08 + addr, data);
+    }
+}
+
+uint8_t ds1307_read_ram(uint8_t addr) {
+    if (addr &lt; 56) {
+        return ds1307_read_byte(0x08 + addr);
+    }
+    return 0;
+}
+
+// Store settings in battery-backed RAM
+typedef struct {
+    uint8_t alarm_hour;
+    uint8_t alarm_minute;
+    uint8_t alarm_enabled;
+    uint8_t brightness;
+} settings_t;
+
+void save_settings(settings_t *settings) {
+    uint8_t *ptr = (uint8_t *)settings;
+    
+    for (uint8_t i = 0; i &lt; sizeof(settings_t); i++) {
+        ds1307_write_ram(i, ptr[i]);
+    }
+}
+
+void load_settings(settings_t *settings) {
+    uint8_t *ptr = (uint8_t *)settings;
+    
+    for (uint8_t i = 0; i &lt; sizeof(settings_t); i++) {
+        ptr[i] = ds1307_read_ram(i);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Square Wave Output</h2>
+<h3>Configure SQW/OUT Pin</h3>
+<pre class="lang-c"><code>// Control register (0x07):
+// Bit 7: OUT (output level when SQW disabled)
+// Bit 4: SQWE (square wave enable)
+// Bit 1-0: RS1:RS0 (rate select)
+
+#define SQW_1HZ    0x10  // 00: 1 Hz
+#define SQW_4KHZ   0x11  // 01: 4.096 kHz
+#define SQW_8KHZ   0x12  // 10: 8.192 kHz
+#define SQW_32KHZ  0x13  // 11: 32.768 kHz
+
+void ds1307_set_sqw(uint8_t mode) {
+    ds1307_write_byte(0x07, mode);
+}
+
+// Example: 1Hz heartbeat LED
+ds1307_set_sqw(SQW_1HZ);
+// Connect SQW pin to LED → blinks at 1Hz</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Application - Digital Clock</h2>
+<h3>Full-Featured Digital Clock</h3>
+<pre class="lang-c"><code>typedef enum {
+    MODE_CLOCK,
+    MODE_SET_TIME,
+    MODE_SET_ALARM
+} clock_mode_t;
+
+clock_mode_t mode = MODE_CLOCK;
+
+void digital_clock(void) {
+    lcd_init();
+    ds1307_init();
+    keypad_init();
+    
+    rtc_time_t time;
+    char key;
+    
+    while (1) {
+        key = keypad_getchar_noblock();
+        
+        switch (mode) {
+            case MODE_CLOCK:
+                ds1307_get_time(&amp;time);
+                display_time(&amp;time);
+                check_alarm();
+                
+                if (key == &#x27;A&#x27;) mode = MODE_SET_TIME;
+                if (key == &#x27;B&#x27;) mode = MODE_SET_ALARM;
+                break;
+                
+            case MODE_SET_TIME:
+                set_time_interactive();
+                mode = MODE_CLOCK;
+                break;
+                
+            case MODE_SET_ALARM:
+                set_alarm_keypad();
+                mode = MODE_CLOCK;
+                break;
+        }
+        
+        _delay_ms(100);
+    }
+}
+
+void set_time_interactive(void) {
+    lcd_clear();
+    lcd_puts(&quot;Set Time:&quot;);
+    
+    // Enter time via keypad
+    // (Implementation similar to set_alarm_keypad)
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Application - Attendance System</h2>
+<h3>RFID-Based Attendance Logger</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint8_t year, month, date;
+    uint8_t hour, minute;
+    uint32_t rfid_tag;
+    uint8_t type;  // 0=check-in, 1=check-out
+} attendance_t;
+
+void log_attendance(uint32_t rfid_tag, uint8_t type) {
+    rtc_time_t time;
+    ds1307_get_time(&amp;time);
+    
+    attendance_t entry;
+    entry.year = time.year;
+    entry.month = time.month;
+    entry.date = time.date;
+    entry.hour = time.hour;
+    entry.minute = time.minute;
+    entry.rfid_tag = rfid_tag;
+    entry.type = type;
+    
+    // Save to EEPROM or SD card
+    save_attendance_entry(&amp;entry);
+    
+    // Display on LCD
+    lcd_clear();
+    if (type == 0) {
+        lcd_puts(&quot;Check-In:&quot;);
+    } else {
+        lcd_puts(&quot;Check-Out:&quot;);
+    }
+    
+    lcd_gotoxy(0, 1);
+    char buffer[17];
+    sprintf(buffer, &quot;%02d:%02d  ID:%08lX&quot;, 
+            time.hour, time.minute, rfid_tag);
+    lcd_puts(buffer);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Troubleshooting</h2>
+<h3>Common Issues</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Solution</th></tr></thead><tbody><tr><td><strong>Time resets on power-off</strong></td><td>No battery or dead battery</td><td>Replace CR2032, check VBat connection</td></tr><tr><td><strong>Clock doesn&#x27;t run</strong></td><td>CH bit set, or crystal issue</td><td>Clear CH bit, verify 32.768kHz crystal</td></tr><tr><td><strong>Wrong time</strong></td><td>Not set or drifting</td><td>Set time, calibrate (±2 min/year typical)</td></tr><tr><td><strong>I2C communication fails</strong></td><td>Missing pull-ups</td><td>Add 4.7kΩ pull-ups on SDA/SCL</td></tr><tr><td><strong>Fast/slow</strong></td><td>Wrong crystal frequency</td><td>Use 32.768 kHz crystal</td></tr><tr><td><strong>Erratic readings</strong></td><td>Noise on I2C</td><td>Shorten wires, add capacitors</td></tr></tbody></table>
+<h3>Debug Code</h3>
+<pre class="lang-c"><code>void ds1307_test(void) {
+    uart_init();
+    i2c_init();
+    
+    printf(&quot;DS1307 Test\n&quot;);
+    printf(&quot;-----------\n&quot;);
+    
+    // Check I2C communication
+    i2c_start();
+    uint8_t ack = i2c_write(DS1307_ADDR &lt;&lt; 1);
+    i2c_stop();
+    
+    if (ack == 0) {
+        printf(&quot;DS1307 detected at 0x%02X\n&quot;, DS1307_ADDR);
+    } else {
+        printf(&quot;ERROR: DS1307 not found!\n&quot;);
+        return;
+    }
+    
+    // Read all time registers
+    printf(&quot;\nTime Registers (BCD):\n&quot;);
+    for (uint8_t reg = 0; reg &lt; 7; reg++) {
+        uint8_t value = ds1307_read_byte(reg);
+        printf(&quot;  Reg 0x%02X: 0x%02X (%d)\n&quot;, reg, value, bcd_to_decimal(value &amp; 0x7F));
+    }
+    
+    // Check CH bit
+    uint8_t seconds = ds1307_read_byte(0x00);
+    if (seconds &amp; 0x80) {
+        printf(&quot;\nWARNING: Clock is halted (CH bit set)\n&quot;);
+    } else {
+        printf(&quot;\nClock is running\n&quot;);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Summary</h2>
+<h3>Key Concepts</h3>
+<p>✓ <strong>I2C address</strong>: 0x68 (7-bit)<br>✓ <strong>BCD format</strong>: Time stored as Binary-Coded Decimal<br>✓ <strong>Battery backup</strong>: CR2032 keeps time during power-off<br>✓ <strong>Registers</strong>: 0x00-0x06 (time), 0x07 (control), 0x08-0x3F (RAM)<br>✓ <strong>Burst read</strong>: Read all time registers in one transaction<br>✓ <strong>Square wave</strong>: 1Hz, 4kHz, 8kHz, 32kHz output<br>✓ <strong>56-byte RAM</strong>: Battery-backed storage</p>
+<h3>Applications</h3>
+<ul><li>Digital clocks and timers</li><li>Data loggers (timestamp sensor readings)</li><li>Alarm systems</li><li>Attendance/time tracking</li><li>Scheduled automation</li><li>Event timestamps</li></ul>
+<h3>BCD Conversion Summary</h3>
+<pre class="lang-c"><code>// BCD → Decimal
+decimal = (bcd &gt;&gt; 4) * 10 + (bcd &amp; 0x0F);
+
+// Decimal → BCD
+bcd = ((decimal / 10) &lt;&lt; 4) | (decimal % 10);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Practice Exercises</h2>
+<h3>Exercise 1: Basic Clock</h3>
+<p><strong>Goal</strong>: Display time on LCD</p>
+<ul><li>Initialize DS1307 via I2C</li><li>Set initial time</li><li>Read and display time every second</li><li>Format as HH:MM:SS</li></ul>
+<h3>Exercise 2: Alarm Clock</h3>
+<p><strong>Goal</strong>: Implement alarm functionality</p>
+<ul><li>Set alarm time via keypad</li><li>Compare current time with alarm</li><li>Trigger buzzer when alarm time reached</li><li>Add snooze button (5-minute delay)</li></ul>
+<h3>Exercise 3: Data Logger</h3>
+<p><strong>Goal</strong>: Log sensor readings with timestamp</p>
+<ul><li>Read temperature every minute</li><li>Store timestamp + temperature in EEPROM</li><li>Display log on LCD</li><li>Export via UART</li></ul>
+<h3>Exercise 4: Attendance System</h3>
+<p><strong>Goal</strong>: Track check-in/check-out times</p>
+<ul><li>Read RFID tag</li><li>Log timestamp + tag ID</li><li>Display last 10 entries</li><li>Calculate total hours</li></ul>
+<h3>Exercise 5: Scheduled Tasks</h3>
+<p><strong>Goal</strong>: Execute tasks at specific times</p>
+<ul><li>Turn on lights at 18:00</li><li>Turn off lights at 22:00</li><li>Water plants at 08:00 and 18:00</li><li>Display next scheduled task</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 17: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 19: Two-Wire Interface (TWI/I2C)</li></ul>
+<h3>DS1307 Resources</h3>
+<ul><li>DS1307 Datasheet (Maxim Integrated)</li><li>I2C protocol specification</li><li>BCD format explanation</li><li>Crystal oscillator selection</li></ul>
+<h3>Related Topics</h3>
+<ul><li>I2C multi-device communication</li><li>Battery management</li><li>Time zone handling</li><li>NTP synchronization (for network-connected systems)</li></ul>
+<h3>Applications</h3>
+<ul><li>Home automation timers</li><li>Industrial process timestamping</li><li>Environmental monitoring</li><li>Access control systems</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>I2C_RTC_DS1307/</code></li><li>Shared libraries: <code>_i2c.h</code>, <code>_rtc.h</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:16_I2C_RTC_DS1307', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:16_I2C_RTC_DS1307') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

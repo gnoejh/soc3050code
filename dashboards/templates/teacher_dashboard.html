@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - ATmega128</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: background 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            margin-bottom: 1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #28a745;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .sessions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-info h4 {
+            margin-bottom: 0.3rem;
+            color: #333;
+        }
+
+        .session-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .session-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-idle {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-student {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .activity-action {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .activity-badge {
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-login {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-build {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-logout {
+            background: #e2e3e5;
+            color: #495057;
+        }
+
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .refresh-btn:hover {
+            background: #218838;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle.active {
+            background: #28a745;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle.active::after {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>
+            <span>🏫</span>
+            Teacher Dashboard
+        </h1>
+        <div class="nav-links">
+            <a href="/">Student Login</a>
+            <a href="#" onclick="exportData()">Export Data</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="activeStudents">0</div>
+                <div class="stat-label">Active Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalSessions">0</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="buildsToday">0</div>
+                <div class="stat-label">Builds Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgSessionTime">0m</div>
+                <div class="stat-label">Avg Session</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>👥 Active Sessions</h2>
+                <div class="auto-refresh">
+                    <span>Auto-refresh:</span>
+                    <div class="toggle active" id="autoRefreshToggle" onclick="toggleAutoRefresh()"></div>
+                </div>
+                <button class="refresh-btn" onclick="loadSessions()">Refresh Now</button>
+                <div id="sessionsList" class="sessions-list">
+                    Loading sessions...
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Recent Activity</h2>
+                <button class="refresh-btn" onclick="loadActivity()">Refresh Activity</button>
+                <div id="activityList" class="activity-list">
+                    Loading activity...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/socket.io.min.js"></script>
+    <script>
+        let socket = io();
+        let autoRefresh = true;
+        let refreshInterval;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSessions();
+            loadActivity();
+            startAutoRefresh();
+
+            // Join teacher room
+            socket.emit('join_teacher');
+        });
+
+        // Socket events
+        socket.on('connect', function () {
+            console.log('Teacher dashboard connected');
+        });
+
+        socket.on('teacher_joined', function (data) {
+            console.log(data.message);
+        });
+
+        socket.on('activity_update', function (activity) {
+            addActivityToList(activity);
+            updateStats();
+        });
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/teacher/sessions');
+                const sessions = await response.json();
+
+                displaySessions(sessions);
+                updateSessionStats(sessions);
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('sessionsList').innerHTML =
+                    '<p style="color: red;">Error loading sessions</p>';
+            }
+        }
+
+        async function loadActivity() {
+            try {
+                const response = await fetch('/api/teacher/activity');
+                const activities = await response.json();
+
+                displayActivity(activities);
+                updateActivityStats(activities);
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                document.getElementById('activityList').innerHTML =
+                    '<p style="color: red;">Error loading activity</p>';
+            }
+        }
+
+        function displaySessions(sessions) {
+            const sessionsList = document.getElementById('sessionsList');
+
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<p>No active sessions</p>';
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map(session => {
+                const loginTime = new Date(session.login_time);
+                const lastActivity = new Date(session.last_activity);
+                const isActive = (Date.now() - lastActivity.getTime()) < 300000; // 5 minutes
+
+                return `
+                    <div class="session-item">
+                        <div class="session-info">
+                            <h4>${session.student_name}</h4>
+                            <div class="session-details">
+                                ID: ${session.student_id}<br>
+                                Login: ${loginTime.toLocaleTimeString()}<br>
+                                Last activity: ${lastActivity.toLocaleTimeString()}
+                            </div>
+                        </div>
+                        <div class="session-status ${isActive ? 'status-active' : 'status-idle'}">
+                            ${isActive ? 'Active' : 'Idle'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayActivity(activities) {
+            const activityList = document.getElementById('activityList');
+
+            if (activities.length === 0) {
+                activityList.innerHTML = '<p>No recent activity</p>';
+                return;
+            }
+
+            activityList.innerHTML = activities.slice(0, 20).map(activity => {
+                const time = new Date(activity.timestamp);
+                const badgeClass = getBadgeClass(activity.action);
+
+                return `
+                    <div class="activity-item">
+                        <div class="activity-info">
+                            <div class="activity-student">${activity.student_id}</div>
+                            <div class="activity-action">${activity.action}: ${activity.details}</div>
+                        </div>
+                        <div>
+                            <div class="activity-badge ${badgeClass}">${activity.action}</div>
+                            <div class="activity-time">${time.toLocaleTimeString()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addActivityToList(activity) {
+            const activityList = document.getElementById('activityList');
+            const time = new Date(activity.timestamp);
+            const badgeClass = getBadgeClass(activity.action);
+
+            const newItem = document.createElement('div');
+            newItem.className = 'activity-item';
+            newItem.innerHTML = `
+                <div class="activity-info">
+                    <div class="activity-student">${activity.student_id}</div>
+                    <div class="activity-action">${activity.action}: ${activity.details}</div>
+                </div>
+                <div>
+                    <div class="activity-badge ${badgeClass}">${activity.action}</div>
+                    <div class="activity-time">${time.toLocaleTimeString()}</div>
+                </div>
+            `;
+
+            activityList.insertBefore(newItem, activityList.firstChild);
+
+            // Keep only last 20 items
+            while (activityList.children.length > 20) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        function getBadgeClass(action) {
+            if (action.includes('LOGIN')) return 'badge-login';
+            if (action.includes('BUILD')) return 'badge-build';
+            if (action.includes('FAILED') || action.includes('ERROR')) return 'badge-error';
+            if (action.includes('LOGOUT')) return 'badge-logout';
+            return 'badge-login';
+        }
+
+        function updateSessionStats(sessions) {
+            document.getElementById('activeStudents').textContent = sessions.length;
+            document.getElementById('totalSessions').textContent = sessions.length;
+        }
+
+        function updateActivityStats(activities) {
+            const today = new Date().toDateString();
+            const buildsToday = activities.filter(a =>
+                a.action.includes('BUILD') &&
+                new Date(a.timestamp).toDateString() === today
+            ).length;
+
+            document.getElementById('buildsToday').textContent = buildsToday;
+        }
+
+        function updateStats() {
+            // This would be called after each activity update
+            loadSessions(); // Refresh session stats
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const toggle = document.getElementById('autoRefreshToggle');
+
+            if (autoRefresh) {
+                toggle.classList.add('active');
+                startAutoRefresh();
+            } else {
+                toggle.classList.remove('active');
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+
+            refreshInterval = setInterval(() => {
+                if (autoRefresh) {
+                    loadSessions();
+                    loadActivity();
+                }
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        function exportData() {
+            // This would export session and activity data
+            alert('Export functionality coming soon!');
+        }
+    </script>
+</body>
+
+</html>

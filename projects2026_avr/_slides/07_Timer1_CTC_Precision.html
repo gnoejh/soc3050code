@@ -1,0 +1,458 @@
+<title>Timer1 CTC Mode - Precision Timing</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Timer1 CTC Mode - Precision Timing</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to CTC Mode</h2>
+<h3>What is CTC (Clear Timer on Compare)?</h3>
+<ul><li><strong>CTC</strong> = Clear Timer on Compare Match</li><li>Timer counts up to a <strong>programmable value</strong> (OCR1A)</li><li><strong>Automatically resets</strong> to 0 on match</li><li>Generates <strong>precise frequencies</strong> without overflow counting</li></ul>
+<h3>Why Use CTC Mode?</h3>
+<p>✓ <strong>Exact frequencies</strong> - no accumulation error<br>✓ <strong>Simple programming</strong> - set one register<br>✓ <strong>Wide frequency range</strong> - 1 Hz to MHz<br>✓ <strong>Hardware precision</strong> - no software calculation needed</p>
+<h3>CTC vs Normal Mode</h3>
+<table><thead><tr><th>Feature</th><th>Normal (Overflow)</th><th>CTC</th></tr></thead><tbody><tr><td><strong>Max Count</strong></td><td>Fixed (255 or 65535)</td><td>Programmable (OCR1A)</td></tr><tr><td><strong>Precision</strong></td><td>Requires counting overflows</td><td>Exact match</td></tr><tr><td><strong>Frequency Range</strong></td><td>Limited</td><td>Wide</td></tr><tr><td><strong>Complexity</strong></td><td>Medium</td><td>Simple</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 2: Timer1 Hardware Overview</h2>
+<h3>Timer1 Architecture (16-bit)</h3>
+<p>!<a href="image-1.png" target="_blank" rel="noopener">alt text</a></p>
+<p><strong>Timer1 CTC Mode Operation:</strong></p>
+<ol><li>System Clock (16 MHz) → Prescaler → TCNT1 Counter</li><li>Hardware compares TCNT1 with OCR1A every clock cycle</li><li>When TCNT1 = OCR1A:</li><li>Compare Match occurs</li><li>TCNT1 automatically clears to 0</li><li>OCF1A flag is set</li><li>TIMER1_COMPA interrupt fires (if enabled)</li><li>Counter restarts from 0, cycle repeats</li></ol>
+<p><strong>Key Components:</strong></p>
+<ul><li><strong>TCNT1</strong>: 16-bit counter (0-65535)</li><li><strong>OCR1A</strong>: Compare value (TOP)</li><li><strong>Prescaler</strong>: Divides clock (/1, /8, /64, /256, /1024)</li><li><strong>OCF1A</strong>: Compare match flag</li><li><strong>ISR</strong>: TIMER1_COMPA_vect interrupt handler</li></ul>
+<h3>Timer1 Resources</h3>
+<table><thead><tr><th>Register</th><th>Description</th><th>Bits</th></tr></thead><tbody><tr><td><strong>TCNT1H/L</strong></td><td>Counter value</td><td>16-bit</td></tr><tr><td><strong>OCR1AH/L</strong></td><td>Compare value A</td><td>16-bit</td></tr><tr><td><strong>OCR1BH/L</strong></td><td>Compare value B</td><td>16-bit</td></tr><tr><td><strong>OCR1CH/L</strong></td><td>Compare value C</td><td>16-bit</td></tr><tr><td><strong>TCCR1A/B</strong></td><td>Control registers</td><td>8-bit each</td></tr><tr><td><strong>TIMSK</strong></td><td>Interrupt mask</td><td>8-bit</td></tr><tr><td><strong>TIFR</strong></td><td>Interrupt flags</td><td>8-bit</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 3: CTC Mode Configuration</h2>
+<h3>TCCR1A - Timer1 Control Register A</h3>
+<pre><code>
+Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TCCR1A│COM1A1│COM1A0│COM1B1│COM1B0│COM1C1│COM1C0│ WGM11│ WGM10│
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘
+</code></pre>
+<h3>TCCR1B - Timer1 Control Register B</h3>
+<pre><code>
+Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TCCR1B│ ICNC1│ ICES1│  -   │ WGM13│ WGM12│ CS12 │ CS11 │ CS10 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘
+</code></pre>
+<h3>Waveform Generation Mode (WGM13:10)</h3>
+<table><thead><tr><th style="text-align:center">WGM13</th><th style="text-align:center">WGM12</th><th style="text-align:center">WGM11</th><th style="text-align:center">WGM10</th><th style="text-align:center">Mode</th><th>Description</th><th style="text-align:center">TOP</th><th style="text-align:center">Update OCR1x</th></tr></thead><tbody><tr><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td>Normal</td><td style="text-align:center">0xFFFF</td><td style="text-align:center">Immediate</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td>PWM Phase Correct 8-bit</td><td style="text-align:center">0x00FF</td><td style="text-align:center">TOP</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">2</td><td>PWM Phase Correct 9-bit</td><td style="text-align:center">0x01FF</td><td style="text-align:center">TOP</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">3</td><td>PWM Phase Correct 10-bit</td><td style="text-align:center">0x03FF</td><td style="text-align:center">TOP</td></tr><tr><td style="text-align:center"><strong>0</strong></td><td style="text-align:center"><strong>1</strong></td><td style="text-align:center"><strong>0</strong></td><td style="text-align:center"><strong>0</strong></td><td style="text-align:center"><strong>4</strong></td><td><strong>CTC</strong></td><td style="text-align:center"><strong>OCR1A</strong></td><td style="text-align:center"><strong>Immediate</strong></td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">5</td><td>Fast PWM 8-bit</td><td style="text-align:center">0x00FF</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">6</td><td>Fast PWM 9-bit</td><td style="text-align:center">0x01FF</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">7</td><td>Fast PWM 10-bit</td><td style="text-align:center">0x03FF</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">8</td><td>PWM Phase/Freq Correct</td><td style="text-align:center">ICR1</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">9</td><td>PWM Phase/Freq Correct</td><td style="text-align:center">OCR1A</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">10</td><td>PWM Phase Correct</td><td style="text-align:center">ICR1</td><td style="text-align:center">TOP</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">11</td><td>PWM Phase Correct</td><td style="text-align:center">OCR1A</td><td style="text-align:center">TOP</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">0</td><td style="text-align:center">12</td><td>CTC</td><td style="text-align:center">ICR1</td><td style="text-align:center">Immediate</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">1</td><td style="text-align:center">13</td><td>Reserved</td><td style="text-align:center">-</td><td style="text-align:center">-</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">0</td><td style="text-align:center">14</td><td>Fast PWM</td><td style="text-align:center">ICR1</td><td style="text-align:center">BOTTOM</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">1</td><td style="text-align:center">15</td><td>Fast PWM</td><td style="text-align:center">OCR1A</td><td style="text-align:center">BOTTOM</td></tr></tbody></table>
+<p><strong>For CTC Mode (Mode 4):</strong></p>
+<pre class="lang-c"><code>// Set WGM12 = 1, others = 0
+TCCR1A = 0x00;                    // WGM11:10 = 00
+TCCR1B = (1 &lt;&lt; WGM12);            // WGM13:12 = 01
+// Result: WGM13:10 = 0100 (Mode 4 - CTC)</code></pre>
+<p><strong>Key Points:</strong></p>
+<ul><li><strong>Mode 4</strong>: Counter clears when TCNT1 = OCR1A</li><li><strong>TOP = OCR1A</strong>: Maximum counter value is programmable</li><li><strong>Update Immediate</strong>: OCR1A can be changed anytime</li><li><strong>No PWM output</strong>: COM1A1:0 should be 00 for normal operation</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 4: Prescaler and Clock Select</h2>
+<h3>CS12:10 - Clock Select Bits</h3>
+<pre><code>
+CS12 CS11 CS10 | Prescaler | Timer Clock @ 16MHz
+───────────────┼───────────┼────────────────────
+  0    0    0  | Stop      | -
+  0    0    1  | /1        | 16 MHz
+  0    1    0  | /8        | 2 MHz
+  0    1    1  | /64       | 250 kHz
+  1    0    0  | /256      | 62.5 kHz
+  1    0    1  | /1024     | 15.625 kHz
+</code></pre>
+<h3>Frequency Calculation Formula</h3>
+<pre><code>
+F_output = F_CPU / (Prescaler × (1 + OCR1A))
+
+Rearranged:
+OCR1A = (F_CPU / (Prescaler × F_output)) - 1
+</code></pre>
+<h3>Example: Generate 1 Hz (1 second period)</h3>
+<pre><code>
+Target: 1 Hz
+F_CPU = 16,000,000 Hz
+Try Prescaler = 256:
+
+OCR1A = (16,000,000 / (256 × 1)) - 1
+      = 62,500 - 1
+      = 62,499
+
+Verify:
+F_output = 16,000,000 / (256 × 62,500) = 1 Hz ✓
+</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: CTC Programming Examples</h2>
+<h3>Example 1: 1 Hz Precision Timer</h3>
+<pre class="lang-c"><code>void setup_1hz_ctc(void) {
+    // CTC mode: WGM12 = 1
+    TCCR1B = (1 &lt;&lt; WGM12);
+    
+    // Prescaler /256
+    TCCR1B |= (1 &lt;&lt; CS12);
+    
+    // OCR1A = 62,499 for 1 Hz
+    OCR1A = 62499;
+    
+    // Enable compare match interrupt
+    TIMSK |= (1 &lt;&lt; OCIE1A);
+    
+    sei();  // Global interrupts
+}
+
+ISR(TIMER1_COMPA_vect) {
+    // Called exactly every 1 second
+    PORTB ^= 0x01;  // Toggle LED
+}</code></pre>
+<h3>Example 2: 10 Hz Timer</h3>
+<pre class="lang-c"><code>// OCR1A = (16,000,000 / (256 × 10)) - 1 = 6,249
+OCR1A = 6249;
+
+ISR(TIMER1_COMPA_vect) {
+    // Called 10 times per second
+    static uint8_t count = 0;
+    count++;
+    if (count &gt;= 10) {  // 10 × 100ms = 1 second
+        count = 0;
+        PORTB ^= 0x01;
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Frequency Range and Prescaler Selection</h2>
+<h3>Achievable Frequency Ranges @ 16 MHz</h3>
+<table><thead><tr><th>Prescaler</th><th>Min Frequency</th><th>Max Frequency</th><th>Best For</th></tr></thead><tbody><tr><td><strong>/1</strong></td><td>244 Hz</td><td>8 MHz</td><td>High freq (kHz-MHz)</td></tr><tr><td><strong>/8</strong></td><td>31 Hz</td><td>1 MHz</td><td>Medium-high (100Hz-100kHz)</td></tr><tr><td><strong>/64</strong></td><td>4 Hz</td><td>125 kHz</td><td>Medium (10Hz-10kHz)</td></tr><tr><td><strong>/256</strong></td><td>1 Hz</td><td>31.25 kHz</td><td>Low (1Hz-1kHz)</td></tr><tr><td><strong>/1024</strong></td><td>0.24 Hz</td><td>7.8 kHz</td><td>Very low (&lt; 1Hz)</td></tr></tbody></table>
+<p><strong>Calculation:</strong></p>
+<pre><code>Min Freq = F_CPU / (Prescaler × 65536)
+Max Freq = F_CPU / (Prescaler × 2)</code></pre>
+<h3>Prescaler Selection Guide</h3>
+<ol><li><strong>Start with target frequency</strong></li><li><strong>Try smallest prescaler</strong> that gives OCR1A &lt; 65536</li><li><strong>Verify precision</strong> with formula</li><li><strong>Adjust if needed</strong> for better resolution</li></ol>
+<h3>Example: 100 Hz</h3>
+<pre><code>Try /1:   OCR1A = 16,000,000 / (1 × 100) - 1 = 159,999 ❌ &gt; 65535
+Try /8:   OCR1A = 16,000,000 / (8 × 100) - 1 = 19,999 ✓
+Try /64:  OCR1A = 16,000,000 / (64 × 100) - 1 = 2,499 ✓ (better resolution)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Polling vs Interrupt Implementation</h2>
+<h3>Method 1: Polling (Check Flag)</h3>
+<pre class="lang-c"><code>void setup_ctc_polling(void) {
+    TCCR1B = (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS12);  // CTC, /256
+    OCR1A = 62499;  // 1 Hz
+    TCNT1 = 0;
+}
+
+int main(void) {
+    DDRB = 0xFF;
+    setup_ctc_polling();
+    
+    while(1) {
+        // Wait for compare match flag
+        if (TIFR &amp; (1 &lt;&lt; OCF1A)) {
+            TIFR |= (1 &lt;&lt; OCF1A);  // Clear flag
+            PORTB ^= 0x01;          // Toggle LED
+        }
+        // CPU is blocked waiting!
+    }
+}</code></pre>
+<p><strong>Pros:</strong> Simple, no interrupt overhead<br><strong>Cons:</strong> CPU can&#x27;t do other work</p>
+<h3>Method 2: Interrupt (Hardware Event)</h3>
+<pre class="lang-c"><code>void setup_ctc_interrupt(void) {
+    TCCR1B = (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS12);  // CTC, /256
+    OCR1A = 62499;  // 1 Hz
+    TIMSK |= (1 &lt;&lt; OCIE1A);  // Enable interrupt
+    sei();
+}
+
+ISR(TIMER1_COMPA_vect) {
+    PORTB ^= 0x01;  // Toggle LED
+}
+
+int main(void) {
+    DDRB = 0xFF;
+    setup_ctc_interrupt();
+    
+    while(1) {
+        // CPU free for other tasks!
+    }
+}</code></pre>
+<p><strong>Pros:</strong> CPU free, efficient, multitasking<br><strong>Cons:</strong> Interrupt overhead, more complex</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Multi-Frequency Generation</h2>
+<h3>Using Single Timer for Multiple Frequencies</h3>
+<pre class="lang-c"><code>volatile uint8_t counter_10hz = 0;
+volatile uint8_t counter_1hz = 0;
+
+// Base frequency: 100 Hz
+void setup_multi_freq(void) {
+    TCCR1B = (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS12) | (1 &lt;&lt; CS10);  // CTC, /1024
+    OCR1A = 155;  // ~100 Hz
+    TIMSK |= (1 &lt;&lt; OCIE1A);
+    sei();
+}
+
+ISR(TIMER1_COMPA_vect) {
+    counter_10hz++;
+    counter_1hz++;
+    
+    if (counter_10hz &gt;= 10) {  // 100Hz / 10 = 10Hz
+        counter_10hz = 0;
+        PORTB ^= 0x01;  // LED0: 10 Hz
+    }
+    
+    if (counter_1hz &gt;= 100) {  // 100Hz / 100 = 1Hz
+        counter_1hz = 0;
+        PORTB ^= 0x02;  // LED1: 1 Hz
+    }
+}</code></pre>
+<h3>Standard Frequencies Table @ 16 MHz</h3>
+<table><thead><tr><th>Frequency</th><th>Prescaler</th><th>OCR1A</th><th>Actual Freq</th><th>Error</th></tr></thead><tbody><tr><td><strong>1 Hz</strong></td><td>/256</td><td>62,499</td><td>1.000 Hz</td><td>0.000%</td></tr><tr><td><strong>10 Hz</strong></td><td>/256</td><td>6,249</td><td>10.000 Hz</td><td>0.000%</td></tr><tr><td><strong>100 Hz</strong></td><td>/64</td><td>2,499</td><td>100.000 Hz</td><td>0.000%</td></tr><tr><td><strong>1 kHz</strong></td><td>/8</td><td>1,999</td><td>1.000 kHz</td><td>0.000%</td></tr><tr><td><strong>10 kHz</strong></td><td>/1</td><td>1,599</td><td>10.000 kHz</td><td>0.000%</td></tr></tbody></table>
+<p><strong>Perfect accuracy</strong> with proper prescaler choice!</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Advanced CTC Techniques</h2>
+<h3>Technique 1: Variable Frequency</h3>
+<pre class="lang-c"><code>void set_frequency(uint16_t freq_hz) {
+    // Disable interrupts during update
+    cli();
+    
+    // Calculate OCR1A for 10 Hz - 1 kHz range
+    // Using prescaler /64
+    OCR1A = (F_CPU / (64UL * freq_hz)) - 1;
+    
+    sei();
+}
+
+// Usage
+set_frequency(100);  // Change to 100 Hz
+_delay_ms(5000);
+set_frequency(500);  // Change to 500 Hz</code></pre>
+<h3>Technique 2: Precision Test</h3>
+<pre class="lang-c"><code>ISR(TIMER1_COMPA_vect) {
+    static uint32_t total_ticks = 0;
+    static uint16_t seconds = 0;
+    
+    total_ticks++;
+    
+    if (total_ticks &gt;= 1) {  // For 1 Hz timer
+        seconds++;
+        total_ticks = 0;
+        
+        // Display elapsed time
+        printf(&quot;Time: %u seconds\r\n&quot;, seconds);
+    }
+}</code></pre>
+<h3>Technique 3: Software PWM</h3>
+<pre class="lang-c"><code>#define PWM_PERIOD 100  // 100 steps
+
+volatile uint8_t pwm_duty = 50;  // 50% duty cycle
+
+ISR(TIMER1_COMPA_vect) {
+    static uint8_t pwm_count = 0;
+    
+    pwm_count++;
+    if (pwm_count &gt;= PWM_PERIOD) {
+        pwm_count = 0;
+    }
+    
+    if (pwm_count &lt; pwm_duty) {
+        PORTB |= 0x01;   // LED ON
+    } else {
+        PORTB &amp;= ~0x01;  // LED OFF
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Common Pitfalls and Best Practices</h2>
+<h3>Pitfall 1: OCR1A Out of Range</h3>
+<pre class="lang-c"><code>// ❌ WRONG - OCR1A too large
+OCR1A = 100000;  // &gt; 65535, overflow!
+
+// ✅ CORRECT - Check prescaler
+// Use larger prescaler or lower frequency</code></pre>
+<h3>Pitfall 2: 16-bit Register Access</h3>
+<pre class="lang-c"><code>// ❌ WRONG - Race condition possible
+OCR1A = 62499;  // May be interrupted mid-write
+
+// ✅ CORRECT - Atomic access
+uint16_t value = 62499;
+cli();
+OCR1A = value;
+sei();
+
+// Or use compiler support
+OCR1A = 62499;  // AVR-GCC handles it atomically</code></pre>
+<h3>Pitfall 3: Forgetting to Clear Flag (Polling)</h3>
+<pre class="lang-c"><code>// ❌ WRONG
+if (TIFR &amp; (1 &lt;&lt; OCF1A)) {
+    // Flag not cleared - triggers continuously
+}
+
+// ✅ CORRECT
+if (TIFR &amp; (1 &lt;&lt; OCF1A)) {
+    TIFR |= (1 &lt;&lt; OCF1A);  // Clear by writing 1
+}</code></pre>
+<h3>Best Practices</h3>
+<p>✓ <strong>Use formula</strong> to calculate OCR1A<br>✓ <strong>Verify</strong> actual frequency with calculation<br>✓ <strong>Choose prescaler</strong> for best resolution<br>✓ <strong>Protect 16-bit</strong> register writes<br>✓ <strong>Keep ISRs short</strong> - set flags, do work in main</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Summary and Key Takeaways</h2>
+<h3>CTC Mode Advantages</h3>
+<p>✓ <strong>Exact frequencies</strong> without counting<br>✓ <strong>Simple programming</strong> - one register<br>✓ <strong>Wide range</strong> - 0.24 Hz to 8 MHz<br>✓ <strong>No error accumulation</strong><br>✓ <strong>Hardware precision</strong></p>
+<h3>Critical Formulas</h3>
+<pre><code>Frequency:  F = F_CPU / (Prescaler × (1 + OCR1A))
+OCR1A:      OCR1A = (F_CPU / (Prescaler × F)) - 1
+Period:     T = (Prescaler × (1 + OCR1A)) / F_CPU</code></pre>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>CTC Configuration</th></tr></thead><tbody><tr><td><strong>TCCR1B</strong></td><td>WGM12=1, CS12:10 for prescaler</td></tr><tr><td><strong>OCR1A</strong></td><td>Compare value (determines frequency)</td></tr><tr><td><strong>TIMSK</strong></td><td>OCIE1A=1 for interrupt</td></tr><tr><td><strong>TIFR</strong></td><td>OCF1A flag (polling mode)</td></tr></tbody></table>
+<h3>When to Use CTC</h3>
+<ul><li>Need <strong>exact frequencies</strong> (1Hz, 10Hz, 100Hz, etc.)</li><li><strong>Periodic tasks</strong> (sampling, updates)</li><li><strong>Multitasking</strong> with precise timing</li><li><strong>Frequency generation</strong> on OC1A pin</li></ul>
+<h3>Next Steps</h3>
+<ul><li>Learn <strong>PWM modes</strong> for motor control</li><li>Explore <strong>Input Capture</strong> for measurement</li><li>Study <strong>Phase Correct PWM</strong> for audio</li><li>Combine <strong>multiple compare channels</strong> (A, B, C)</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet - Section 16: Timer/Counter1</a></li><li>Timer1 registers: Pages 120-145</li><li>CTC mode details: Pages 124-125</li></ul>
+<h3>Related Projects</h3>
+<ul><li><code>Timer_Programming</code> - Comprehensive examples</li><li><code>Timer0_Overflow_Blink</code> - Basic overflow mode</li><li><code>Timer_Stopwatch</code> - CTC application example</li><li><code>Timer1_Input_Capture</code> - Advanced Timer1 features</li></ul>
+<h3>Frequency Calculator</h3>
+<pre><code>Online tool: Calculate OCR1A values
+https://eleccelerator.com/avr-timer-calculator/</code></pre>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:07_Timer1_CTC_Precision', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:07_Timer1_CTC_Precision') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

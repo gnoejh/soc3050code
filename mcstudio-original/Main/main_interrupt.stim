@@ -1,0 +1,11 @@
+// Example stimuli file, feeds any output on PINA back to PINB.
+#10
+DDRD = 0x00
+PORTD = 0xFF //Pull-up
+$repeat 1000
+	PIND = 0xFF
+	#10
+	PIND = 0x00
+	#10
+	$break
+$endrep

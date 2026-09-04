@@ -1,0 +1,562 @@
+<title>Timer1 Input Capture - Frequency and Pulse Measurement</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Timer1 Input Capture - Frequency and Pulse Measurement</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet - Section 16.8</a><br><strong>Target</strong>: ATmega128 @ 16 MHz<br><strong>Last Updated</strong>: December 1, 2025</p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Input Capture</h2>
+<h3>What is Input Capture?</h3>
+<ul><li><strong>Hardware feature</strong> that captures timer value on external event</li><li><strong>ICP1 pin</strong> (PD4 on ATmega128) triggers capture</li><li><strong>Saves TCNT1</strong> value to ICR1 register automatically</li><li>Used for <strong>precise timing</strong> of external events</li></ul>
+<p><strong>Demo Setup</strong>: ICP1 is connected to Push Button SW4 (PD4). Press SW4 to test!</p>
+<h3>Why Use Input Capture?</h3>
+<p>✓ <strong>Hardware precision</strong> - no software delay<br>✓ <strong>Microsecond accuracy</strong> - captures exact timer value<br>✓ <strong>Frequency measurement</strong> - measure signal periods<br>✓ <strong>Pulse width measurement</strong> - measure duty cycles<br>✓ <strong>RPM sensing</strong> - rotary encoders, wheel speed</p>
+<h3>Applications</h3>
+<ul><li>Frequency counter</li><li>Tachometer (RPM measurement)</li><li>Ultrasonic distance (echo timing)</li><li>IR remote decoding</li><li>Pulse width measurement</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 2: Input Capture Hardware</h2>
+<h3>SimulIDE Compatibility</h3>
+<table><thead><tr><th>Version</th><th>Status</th><th>Notes</th></tr></thead><tbody><tr><td><strong>SimulIDE 1.1.0-SR1</strong></td><td>✅ <strong>Fully Functional</strong></td><td>Timer1 Type 160 works perfectly</td></tr><tr><td><strong>SimulIDE 0.4.15</strong></td><td>✅ <strong>Fully Functional</strong></td><td>All features work</td></tr><tr><td><strong>Hardware</strong></td><td>✅ <strong>Fully Functional</strong></td><td>Reference implementation</td></tr></tbody></table>
+<p><strong>Note</strong>: Timer1 Input Capture (Type 160) works in ALL SimulIDE versions!</p>
+<h3>Timer1 Input Capture Architecture</h3>
+<pre class="lang-mermaid"><code>graph TD
+    A[ICP1 Pin PD4&lt;br/&gt;Push Button SW4] --&gt; B[Noise Canceler Optional]
+    B --&gt; C[Edge Detector]
+    C --&gt; D{Edge Match?}
+    D --&gt;|Yes| E[Capture TCNT1]
+    E --&gt; F[Store in ICR1]
+    F --&gt; G[Set ICF1 Flag]
+    G --&gt; H[Trigger TIMER1_CAPT ISR]
+    
+    I[TCNT1 Counter] --&gt; E</code></pre>
+<h3>Input Capture Resources</h3>
+<table><thead><tr><th>Register</th><th>Description</th></tr></thead><tbody><tr><td><strong>ICR1H/L</strong></td><td>Input Capture Register (captured timer value)</td></tr><tr><td><strong>TCNT1H/L</strong></td><td>Timer Counter (free-running)</td></tr><tr><td><strong>TCCR1B</strong></td><td>Control register (edge select, noise canceler)</td></tr><tr><td><strong>TIMSK</strong></td><td>Interrupt mask (TICIE1)</td></tr><tr><td><strong>TIFR</strong></td><td>Interrupt flag (ICF1)</td></tr></tbody></table>
+<h3>Pin Assignment</h3>
+<table><thead><tr><th>Timer</th><th>ICP Pin</th><th>ATmega128 Port</th><th>Hardware Connection</th></tr></thead><tbody><tr><td>Timer1</td><td>ICP1</td><td>PD4</td><td>Push Button SW4</td></tr><tr><td>Timer3</td><td>ICP3</td><td>PE4</td><td>Available</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 3: Input Capture Configuration</h2>
+<h3>TCCR1B - Control Register (IC bits)</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+TCCR1B│ ICNC1│ ICES1│  -   │ WGM13│ WGM12│ CS12 │ CS11 │ CS10 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>ICES1</strong></td><td>Input Capture Edge Select</td><td>1=Rising, 0=Falling</td></tr><tr><td><strong>ICNC1</strong></td><td>Input Capture Noise Canceler</td><td>1=Enable (4-clock delay)</td></tr><tr><td><strong>CS12:10</strong></td><td>Clock Select</td><td>Prescaler setting</td></tr></tbody></table>
+<h3>Basic Configuration</h3>
+<pre class="lang-c"><code>// Configure ICP1 as input (PD4 = Push Button SW4)
+DDRD &amp;= ~(1 &lt;&lt; PD4);   // PD4 as input
+PORTD |= (1 &lt;&lt; PD4);   // Enable pull-up (required for button)
+
+// Configure Timer1 for input capture
+TCCR1B = (1 &lt;&lt; ICES1);  // Capture on rising edge
+TCCR1B |= (1 &lt;&lt; CS11);  // Prescaler /8 (for 16MHz: 2MHz timer clock)
+
+// Enable input capture interrupt
+TIMSK |= (1 &lt;&lt; TICIE1);
+sei();</code></pre>
+<h3>Edge Selection</h3>
+<pre class="lang-c"><code>// Rising edge
+TCCR1B |= (1 &lt;&lt; ICES1);
+
+// Falling edge
+TCCR1B &amp;= ~(1 &lt;&lt; ICES1);
+
+// Toggle edge (for both edges)
+TCCR1B ^= (1 &lt;&lt; ICES1);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: Frequency Measurement Principles</h2>
+<h3>Method: Period Measurement</h3>
+<pre><code>Signal:  ┌─────┐     ┌─────┐     ┌─────┐
+         │     │     │     │     │     │
+    ─────┘     └─────┘     └─────┘     └─────
+         ↑           ↑           ↑
+      Capture1   Capture2   Capture3
+         │←─ Period ─→│
+         
+Period = Capture2 - Capture1
+Frequency = 1 / Period</code></pre>
+<h3>Calculation Formula @ 16 MHz</h3>
+<pre><code>Timer frequency after prescaler:
+  F_timer = F_CPU / Prescaler
+  F_timer = 16,000,000 / Prescaler
+  
+Ticks between edges:
+  Ticks = ICR1_new - ICR1_old
+  
+Signal frequency:
+  F_signal = F_timer / Ticks
+  
+Example 1 - Prescaler /8, 1 kHz signal:
+  F_timer = 16,000,000 / 8 = 2,000,000 Hz
+  Ticks = 2000
+  F_signal = 2,000,000 / 2000 = 1,000 Hz ✓
+  
+Example 2 - Prescaler /64, 100 Hz signal:
+  F_timer = 16,000,000 / 64 = 250,000 Hz
+  Ticks = 2500
+  F_signal = 250,000 / 2500 = 100 Hz ✓</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Frequency Measurement Implementation</h2>
+<h3>ISR-based Frequency Counter @ 16 MHz</h3>
+<pre class="lang-c"><code>#define F_CPU 16000000UL
+#define PRESCALER 64                    // For 10 Hz - 10 kHz range
+#define TIMER_FREQ (F_CPU / PRESCALER)  // 250 kHz
+
+volatile uint16_t last_capture = 0;
+volatile uint32_t frequency = 0;
+
+ISR(TIMER1_CAPT_vect) {
+    uint16_t current_capture = ICR1;
+    
+    // Calculate ticks (handles single overflow)
+    uint16_t ticks = current_capture - last_capture;
+    last_capture = current_capture;
+    
+    // Calculate frequency: 250000 / ticks
+    if (ticks &gt; 0) {
+        frequency = (uint32_t)TIMER_FREQ / ticks;
+    }
+}
+
+int main(void) {
+    // Setup ICP1 pin (PD4 = Button SW4)
+    DDRD &amp;= ~(1 &lt;&lt; PD4);   // PD4 as input
+    PORTD |= (1 &lt;&lt; PD4);   // Enable pull-up (required)
+    
+    // Timer1: Normal mode, /64 prescaler, rising edge
+    TCCR1A = 0x00;
+    TCCR1B = (1 &lt;&lt; ICES1) | (1 &lt;&lt; CS11) | (1 &lt;&lt; CS10);  // /64
+    
+    // Enable capture interrupt
+    TIMSK |= (1 &lt;&lt; TICIE1);
+    sei();
+    
+    while(1) {
+        // Display frequency (250000/ticks Hz)
+        printf(&quot;Frequency: %lu Hz\r\n&quot;, frequency);
+        _delay_ms(500);
+    }
+}</code></pre>
+<h3>Handling Timer Overflow</h3>
+<pre class="lang-c"><code>volatile uint8_t overflow_count = 0;
+
+ISR(TIMER1_OVF_vect) {
+    overflow_count++;
+}
+
+ISR(TIMER1_CAPT_vect) {
+    uint32_t current_capture = ((uint32_t)overflow_count &lt;&lt; 16) | ICR1;
+    static uint32_t last_capture = 0;
+    
+    uint32_t ticks = current_capture - last_capture;
+    last_capture = current_capture;
+    
+    if (ticks &gt; 0) {
+        frequency = TIMER_FREQ / ticks;
+    }
+    overflow_count = 0;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Pulse Width Measurement</h2>
+<h3>Method: Capture Both Edges</h3>
+<pre><code>Signal:  ┌───────────────┐
+         │               │
+    ─────┘               └─────────────
+         ↑               ↑
+    Rising Edge    Falling Edge
+    Capture1       Capture2
+         │← Pulse Width →│
+         
+Pulse Width = Capture2 - Capture1
+Duty Cycle = (Pulse Width / Period) × 100%</code></pre>
+<h3>Implementation</h3>
+<pre class="lang-c"><code>volatile uint16_t pulse_start = 0;
+volatile uint16_t pulse_width = 0;
+volatile uint8_t edge_state = 0;  // 0=waiting for rising, 1=waiting for falling
+
+ISR(TIMER1_CAPT_vect) {
+    if (edge_state == 0) {
+        // Rising edge - start of pulse
+        pulse_start = ICR1;
+        edge_state = 1;
+        
+        // Switch to falling edge detection
+        TCCR1B &amp;= ~(1 &lt;&lt; ICES1);
+    }
+    else {
+        // Falling edge - end of pulse
+        uint16_t pulse_end = ICR1;
+        pulse_width = pulse_end - pulse_start;
+        edge_state = 0;
+        
+        // Switch back to rising edge
+        TCCR1B |= (1 &lt;&lt; ICES1);
+    }
+}
+
+// Calculate pulse width in microseconds
+uint32_t get_pulse_width_us(void) {
+    // For prescaler /8: each tick = 0.5 µs
+    return (pulse_width * PRESCALER) / (F_CPU / 1000000UL);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Prescaler Selection and Range</h2>
+<h3>Frequency Measurement Ranges @ 16 MHz</h3>
+<table><thead><tr><th>Prescaler</th><th>Timer Freq</th><th>Min Freq</th><th>Max Freq</th><th>Resolution</th><th>Best Range</th></tr></thead><tbody><tr><td><strong>/1</strong></td><td>16.000 MHz</td><td>244 Hz</td><td>8.0 MHz</td><td>62.5 ns</td><td>&gt; 10 kHz</td></tr><tr><td><strong>/8</strong></td><td>2.000 MHz</td><td>31 Hz</td><td>1.0 MHz</td><td>500 ns</td><td>1 kHz - 100 kHz</td></tr><tr><td><strong>/64</strong></td><td>250 kHz</td><td>4 Hz</td><td>125 kHz</td><td>4.0 µs</td><td><strong>10 Hz - 10 kHz</strong> ⭐</td></tr><tr><td><strong>/256</strong></td><td>62.5 kHz</td><td>1 Hz</td><td>31.25 kHz</td><td>16 µs</td><td>1 Hz - 1 kHz</td></tr><tr><td><strong>/1024</strong></td><td>15.625 kHz</td><td>0.24 Hz</td><td>7.8 kHz</td><td>64 µs</td><td>&lt; 1 Hz</td></tr></tbody></table>
+<p><strong>Calculation Formulas:</strong></p>
+<pre><code>Timer_Freq = F_CPU / Prescaler = 16,000,000 / Prescaler
+Min_Freq = Timer_Freq / 65536  (16-bit counter max)
+Max_Freq = Timer_Freq / 2      (minimum 2 ticks)
+Resolution = 1 / Timer_Freq</code></pre>
+<h3>Prescaler Selection Guide</h3>
+<pre><code>Signal &gt; 10 kHz:        Use /1 or /8
+Signal 100 Hz - 10 kHz: Use /64 (recommended default)
+Signal 1 - 100 Hz:      Use /256
+Signal &lt; 1 Hz:          Use /1024</code></pre>
+<p><strong>Configuration Bits (CS12:10)</strong>:</p>
+<table><thead><tr><th>CS12</th><th>CS11</th><th>CS10</th><th>Prescaler</th><th>Code</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>1</td><td>/1</td><td><code>(1 &lt;&lt; CS10)</code></td></tr><tr><td>0</td><td>1</td><td>0</td><td>/8</td><td><code>(1 &lt;&lt; CS11)</code></td></tr><tr><td>0</td><td>1</td><td>1</td><td>/64</td><td><code>(1 &lt;&lt; CS11) | (1 &lt;&lt; CS10)</code></td></tr><tr><td>1</td><td>0</td><td>0</td><td>/256</td><td><code>(1 &lt;&lt; CS12)</code></td></tr><tr><td>1</td><td>0</td><td>1</td><td>/1024</td><td><code>(1 &lt;&lt; CS12) | (1 &lt;&lt; CS10)</code></td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 8: Noise Canceler</h2>
+<h3>Purpose</h3>
+<ul><li>Filters out <strong>short glitches</strong> on ICP pin</li><li>Uses <strong>4-clock sampling</strong> window</li><li>Reduces <strong>false triggers</strong></li></ul>
+<h3>Configuration</h3>
+<pre class="lang-c"><code>// Enable noise canceler
+TCCR1B |= (1 &lt;&lt; ICNC1);
+
+// Disable noise canceler (more responsive)
+TCCR1B &amp;= ~(1 &lt;&lt; ICNC1);</code></pre>
+<h3>Trade-offs</h3>
+<table><thead><tr><th>Feature</th><th>ICNC1 = 0 (Off)</th><th>ICNC1 = 1 (On)</th></tr></thead><tbody><tr><td><strong>Response</strong></td><td>Immediate</td><td>4 clocks delay</td></tr><tr><td><strong>Noise</strong></td><td>Sensitive</td><td>Filtered</td></tr><tr><td><strong>Use Case</strong></td><td>Clean signals</td><td>Noisy environments</td></tr></tbody></table>
+<h3>When to Use</h3>
+<p>✓ <strong>Enable</strong> for: Long cables, motors, switches<br>✗ <strong>Disable</strong> for: High-speed signals, short pulses</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Polling vs Interrupt Methods</h2>
+<h3>Method 1: Polling</h3>
+<pre class="lang-c"><code>uint16_t measure_frequency_polling(void) {
+    uint16_t capture1, capture2;
+    
+    // Wait for first edge
+    while (!(TIFR &amp; (1 &lt;&lt; ICF1)));
+    TIFR |= (1 &lt;&lt; ICF1);  // Clear flag
+    capture1 = ICR1;
+    
+    // Wait for second edge
+    while (!(TIFR &amp; (1 &lt;&lt; ICF1)));
+    TIFR |= (1 &lt;&lt; ICF1);
+    capture2 = ICR1;
+    
+    // Calculate frequency
+    uint16_t ticks = capture2 - capture1;
+    return (uint32_t)TIMER_FREQ / ticks;
+}</code></pre>
+<p><strong>Pros:</strong> Simple, blocking until measurement complete<br><strong>Cons:</strong> CPU locked, can&#x27;t do other work</p>
+<h3>Method 2: Interrupt</h3>
+<pre class="lang-c"><code>volatile uint16_t frequency = 0;
+volatile uint8_t measurement_ready = 0;
+
+ISR(TIMER1_CAPT_vect) {
+    static uint16_t last_capture = 0;
+    uint16_t current = ICR1;
+    
+    uint16_t ticks = current - last_capture;
+    last_capture = current;
+    
+    if (ticks &gt; 0) {
+        frequency = (uint32_t)TIMER_FREQ / ticks;
+        measurement_ready = 1;
+    }
+}
+
+int main(void) {
+    // ... setup ...
+    
+    while(1) {
+        if (measurement_ready) {
+            measurement_ready = 0;
+            printf(&quot;Freq: %u Hz\r\n&quot;, frequency);
+        }
+        
+        // Can do other work here
+    }
+}</code></pre>
+<p><strong>Pros:</strong> CPU free, multitasking<br><strong>Cons:</strong> Slightly more complex</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Advanced Applications</h2>
+<h3>Application 1: Tachometer (RPM Measurement)</h3>
+<pre class="lang-c"><code>// Sensor: 1 pulse per revolution
+ISR(TIMER1_CAPT_vect) {
+    static uint16_t last_capture = 0;
+    uint16_t current = ICR1;
+    
+    uint16_t ticks = current - last_capture;
+    last_capture = current;
+    
+    // RPM = (60 × Timer_Freq) / (Ticks × Pulses_per_Rev)
+    uint32_t rpm = (60UL * TIMER_FREQ) / ticks;
+    
+    display_rpm(rpm);
+}</code></pre>
+<h3>Application 2: Ultrasonic Distance Sensor (HC-SR04)</h3>
+<pre class="lang-c"><code>// Measure echo pulse width @ 16 MHz
+// Prescaler /8 → Each tick = 0.5 µs
+volatile uint16_t distance_cm = 0;
+
+ISR(TIMER1_CAPT_vect) {
+    static uint16_t pulse_start = 0;
+    static uint8_t state = 0;
+    
+    if (state == 0) {  // Rising edge - echo start
+        pulse_start = ICR1;
+        TCCR1B &amp;= ~(1 &lt;&lt; ICES1);  // Switch to falling
+        state = 1;
+    }
+    else {  // Falling edge - echo end
+        uint16_t pulse_width = ICR1 - pulse_start;
+        
+        // Distance calculation:
+        // Speed of sound = 343 m/s = 0.0343 cm/µs
+        // Round trip, so divide by 2
+        // Each tick @ /8 = 0.5 µs
+        // Distance = (ticks × 0.5 µs × 0.0343 cm/µs) / 2
+        // Simplified: Distance ≈ ticks / 58
+        
+        distance_cm = pulse_width / 58;
+        
+        TCCR1B |= (1 &lt;&lt; ICES1);  // Switch to rising
+        state = 0;
+    }
+}</code></pre>
+<h3>Application 3: IR Remote Decoder</h3>
+<pre class="lang-c"><code>// Decode IR pulses (e.g., NEC protocol)
+ISR(TIMER1_CAPT_vect) {
+    static uint16_t last_time = 0;
+    uint16_t current_time = ICR1;
+    
+    uint16_t pulse_length = current_time - last_time;
+    last_time = current_time;
+    
+    // Decode based on pulse length
+    if (pulse_length &gt; 13500 &amp;&amp; pulse_length &lt; 13900) {
+        // Start bit detected
+    }
+    else if (pulse_length &gt; 1000 &amp;&amp; pulse_length &lt; 1300) {
+        // Logic &#x27;0&#x27;
+    }
+    else if (pulse_length &gt; 2000 &amp;&amp; pulse_length &lt; 2300) {
+        // Logic &#x27;1&#x27;
+    }
+    
+    TCCR1B ^= (1 &lt;&lt; ICES1);  // Toggle edge
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Common Pitfalls and Solutions</h2>
+<h3>Pitfall 1: Division by Zero</h3>
+<pre class="lang-c"><code>// ❌ WRONG - may crash if ticks = 0
+frequency = TIMER_FREQ / ticks;
+
+// ✅ CORRECT - check first
+if (ticks &gt; 0) {
+    frequency = TIMER_FREQ / ticks;
+}</code></pre>
+<h3>Pitfall 2: Integer Overflow</h3>
+<pre class="lang-c"><code>// ❌ WRONG - overflow if frequency high
+uint16_t freq = TIMER_FREQ / ticks;  // Max 65535
+
+// ✅ CORRECT - use 32-bit
+uint32_t freq = (uint32_t)TIMER_FREQ / ticks;</code></pre>
+<h3>Pitfall 3: Forgetting Edge Toggle</h3>
+<pre class="lang-c"><code>// ❌ WRONG - stuck on one edge
+ISR(TIMER1_CAPT_vect) {
+    // Measure pulse, but never toggle edge!
+}
+
+// ✅ CORRECT - alternate edges
+ISR(TIMER1_CAPT_vect) {
+    // ... measurement ...
+    TCCR1B ^= (1 &lt;&lt; ICES1);  // Toggle edge
+}</code></pre>
+<h3>Best Practices</h3>
+<p>✓ <strong>Choose prescaler</strong> for expected frequency range<br>✓ <strong>Check for zero</strong> before division<br>✓ <strong>Use 32-bit</strong> for frequency calculations<br>✓ <strong>Toggle edge</strong> for pulse width measurement<br>✓ <strong>Enable noise canceler</strong> for noisy signals</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Summary and Key Takeaways</h2>
+<h3>Input Capture Key Concepts</h3>
+<p>✓ <strong>Hardware precision</strong> - captures exact timer value (zero CPU overhead)<br>✓ <strong>ICP1 pin</strong> (PD4 / SW4) triggers capture on edge<br>✓ <strong>ICR1 register</strong> stores captured TCNT1 value automatically<br>✓ <strong>Edge selection</strong> - rising, falling, or toggle both<br>✓ <strong>Noise canceler</strong> - optional 4-clock filter for noisy signals<br>✓ <strong>Wide range</strong> - 0.24 Hz to 8 MHz (depending on prescaler)</p>
+<h3>Critical Formulas @ 16 MHz</h3>
+<pre><code>Timer frequency:
+  F_timer = 16,000,000 / Prescaler
+  
+Signal frequency:
+  F_signal = F_timer / (Capture₂ - Capture₁)
+  
+Example (Prescaler /64):
+  F_timer = 250,000 Hz
+  Ticks = 2500
+  F_signal = 250,000 / 2500 = 100 Hz
+  
+Pulse width:
+  Pulse_Width = Falling_Capture - Rising_Capture
+  Time_µs = Pulse_Width × (Prescaler / 16)</code></pre>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>Purpose</th><th>Key Bits</th></tr></thead><tbody><tr><td><strong>ICR1H/L</strong></td><td>Captured timer value</td><td>Read captured TCNT1</td></tr><tr><td><strong>TCCR1B</strong></td><td>Control register</td><td>ICES1 (edge), ICNC1 (noise), CS12:10 (prescaler)</td></tr><tr><td><strong>TIMSK</strong></td><td>Interrupt enable</td><td>TICIE1 (enable ISR)</td></tr><tr><td><strong>TIFR</strong></td><td>Interrupt flag</td><td>ICF1 (capture occurred)</td></tr></tbody></table>
+<h3>Common Applications</h3>
+<table><thead><tr><th>Application</th><th>Prescaler</th><th>Typical Range</th><th>Example</th></tr></thead><tbody><tr><td><strong>Frequency Counter</strong></td><td>/64</td><td>10 Hz - 10 kHz</td><td>Audio, PWM signals</td></tr><tr><td><strong>Tachometer (RPM)</strong></td><td>/256</td><td>1-100 Hz</td><td>Motor speed sensing</td></tr><tr><td><strong>Ultrasonic Sensor</strong></td><td>/8</td><td>150 µs - 25 ms</td><td>Distance measurement</td></tr><tr><td><strong>IR Remote Decoder</strong></td><td>/8</td><td>560 µs - 2.25 ms</td><td>Remote control</td></tr><tr><td><strong>Servo PWM Reader</strong></td><td>/64</td><td>1-2 ms pulses</td><td>RC servo feedback</td></tr></tbody></table>
+<h3>SimulIDE Compatibility</h3>
+<p>✅ <strong>Timer1 Input Capture works in ALL SimulIDE versions</strong></p>
+<ul><li>SimulIDE 1.1.0-SR1: ✅ Fully functional</li><li>SimulIDE 0.4.15: ✅ Fully functional</li><li>Hardware: ✅ Reference implementation</li></ul>
+<h3>Best Practices</h3>
+<p>✓ <strong>Check for zero</strong> before division (avoid crash)<br>✓ <strong>Use 32-bit</strong> for frequency calculations (avoid overflow)<br>✓ <strong>Toggle edge</strong> for pulse width measurement<br>✓ <strong>Enable noise canceler</strong> for noisy signals/long cables<br>✓ <strong>Choose prescaler</strong> based on expected frequency range<br>✓ <strong>Handle overflow</strong> for very slow signals (&lt; 4 Hz @ /64)</p>
+<h3>Next Steps</h3>
+<ul><li>Combine with <strong>USART</strong> for data logging</li><li>Use <strong>multiple captures</strong> for averaging (reduce jitter)</li><li>Implement <strong>timeout detection</strong> (detect signal loss)</li><li>Build <strong>complete measurement system</strong> (frequency + duty cycle)</li><li>Explore <strong>Timer3 ICP3</strong> for additional channel</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet - Section 16.8: Input Capture Unit</a></li><li>Input Capture pages: 134-136</li><li>Noise canceler: Page 135</li></ul>
+<h3>Related Projects</h3>
+<ul><li><code>Timer_Programming</code> - Basic timer examples</li><li><code>Timer1_CTC_Precision</code> - CTC mode</li><li><code>Timer_Stopwatch</code> - Timer applications</li></ul>
+<h3>Application Notes</h3>
+<ul><li>AVR Frequency meter design</li><li>Ultrasonic sensor interfacing</li><li>IR remote decoding techniques</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:08_Timer1_Input_Capture', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:08_Timer1_Input_Capture') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

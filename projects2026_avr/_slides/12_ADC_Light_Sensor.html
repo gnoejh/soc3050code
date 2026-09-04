@@ -1,0 +1,1089 @@
+<title>CDS Light Sensor Programming</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>CDS Light Sensor Programming</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to CDS Photoresistors</h2>
+<h3>What is a CDS Sensor?</h3>
+<ul><li><strong>CdS (Cadmium Sulfide) Photoresistor</strong> or LDR (Light Dependent Resistor)</li><li><strong>Resistance changes</strong> with light intensity</li><li>Dark: High resistance (1MΩ - 10MΩ)</li><li>Bright: Low resistance (100Ω - 1kΩ)</li><li>Simple, low-cost ambient light sensor</li></ul>
+<h3>CDS Sensor Characteristics</h3>
+<pre><code>Resistance vs Light:
+      
+R(Ω) │
+10M  │ ●
+     │  ╲
+1M   │   ╲
+     │    ●
+100k │     ╲
+     │      ╲●
+10k  │        ╲
+     │         ●
+1k   │          ╲●
+     │            ╲●
+100  │              ●
+     └────────────────── Light (lux)
+     0   10  100  1k  10k</code></pre>
+<h3>Applications</h3>
+<ul><li><strong>Automatic lighting</strong> - street lights, garden lights</li><li><strong>Light meters</strong> - photography, displays</li><li><strong>Day/night detection</strong> - security systems</li><li><strong>Display brightness</strong> - auto-adjust LCD backlight</li><li><strong>Sun tracking</strong> - solar panel positioning</li></ul>
+<h3>CDS Sensor Architecture</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[Light] --&gt; B[CdS Photoresistor]
+    B --&gt; C[Variable Resistance]
+    C --&gt; D[Voltage Divider]
+    D --&gt; E[ATmega128 ADC]
+    E --&gt; F[Digital Value&lt;br/&gt;0-1023]
+    
+    style A fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: Voltage Divider Circuit</h2>
+<h3>Why Voltage Divider?</h3>
+<p>CDS sensor is a <strong>variable resistor</strong>, not a voltage source.<br>We need to convert resistance → voltage for ADC reading.</p>
+<h3>Voltage Divider Formula</h3>
+<pre><code>         VCC (+5V)
+            │
+            │
+           ┌┴┐
+           │ │ R1 (fixed resistor)
+           │ │
+           └┬┘
+            │
+            ├────→ Vout (to ADC)
+            │
+           ┌┴┐
+           │ │ CDS (light-dependent resistor)
+           │ │
+           └┬┘
+            │
+           GND
+
+Vout = VCC × (R_CDS / (R1 + R_CDS))</code></pre>
+<h3>Choosing R1 Value</h3>
+<pre class="lang-c"><code>// Target: Maximum sensitivity in operating range
+// Typical: R1 = √(R_dark × R_bright)
+
+// Example:
+// R_dark = 1 MΩ (night)
+// R_bright = 1 kΩ (daylight)
+// R1 = √(1000000 × 1000) = √1,000,000,000 = 31,623 Ω
+// Use standard value: 33kΩ or 47kΩ
+
+#define R1_VALUE 10000  // 10kΩ typical for indoor use</code></pre>
+<h3>Circuit Configurations</h3>
+<p><strong>Configuration 1: CDS on bottom (more common)</strong></p>
+<pre><code>VCC ── R1 ── Vout ── CDS ── GND
+
+Vout increases with light (brighter = higher voltage)</code></pre>
+<p><strong>Configuration 2: CDS on top</strong></p>
+<pre><code>VCC ── CDS ── Vout ── R1 ── GND
+
+Vout decreases with light (brighter = lower voltage)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: Hardware Connection</h2>
+<h3>Wiring Diagram</h3>
+<pre><code>CDS Module/Circuit         ATmega128
+-------------------        ---------
+VCC                ──→     VCC (5V)
+GND                ──→     GND
+Vout (analog)      ──→     PF0 (ADC0)
+
+Voltage Divider:
+    VCC
+     │
+    [R1] 10kΩ
+     │
+     ├─────→ ADC0 (PF0)
+     │
+    [CDS]
+     │
+    GND</code></pre>
+<h3>Multiple Sensor Array</h3>
+<pre class="lang-c"><code>// Use multiple ADC channels for light direction detection
+// 4 sensors in cross pattern
+
+#define CDS_FRONT   0  // ADC0
+#define CDS_BACK    1  // ADC1
+#define CDS_LEFT    2  // ADC2
+#define CDS_RIGHT   3  // ADC3
+
+//      FRONT
+//        │
+// LEFT ──┼── RIGHT
+//        │
+//       BACK</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: ADC Configuration</h2>
+<h3>Initialize ADC for Light Sensor</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+
+void adc_init(void) {
+    // Reference: AVCC with external capacitor
+    ADMUX = (1 &lt;&lt; REFS0);
+    
+    // Enable ADC, prescaler = 128
+    // ADC clock = 16MHz / 128 = 125 kHz
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Dummy conversion (first reading often inaccurate)
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+}
+
+uint16_t adc_read(uint8_t channel) {
+    // Select ADC channel (0-7)
+    ADMUX = (ADMUX &amp; 0xF8) | (channel &amp; 0x07);
+    
+    // Start conversion
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    
+    // Wait for completion
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+    
+    // Return 10-bit result
+    return ADC;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Basic Light Reading</h2>
+<h3>Read Light Sensor</h3>
+<pre class="lang-c"><code>#define CDS_CHANNEL  0  // ADC0
+
+uint16_t read_light_raw(void) {
+    return adc_read(CDS_CHANNEL);
+}
+
+// Convert ADC value to percentage (0-100%)
+uint8_t read_light_percent(void) {
+    uint16_t adc = read_light_raw();
+    
+    // Map 0-1023 to 0-100
+    return (uint8_t)((uint32_t)adc * 100 / 1023);
+}
+
+// Example usage
+int main(void) {
+    adc_init();
+    uart_init();
+    
+    while (1) {
+        uint16_t raw = read_light_raw();
+        uint8_t percent = read_light_percent();
+        
+        printf(&quot;Light: %4d (ADC)  %3d%%\n&quot;, raw, percent);
+        
+        _delay_ms(500);
+    }
+}</code></pre>
+<h3>Voltage Calculation</h3>
+<pre class="lang-c"><code>// Convert ADC value to voltage
+float adc_to_voltage(uint16_t adc) {
+    return (float)adc * 5.0 / 1023.0;
+}
+
+// Estimate CDS resistance (if R1 is known)
+float calculate_cds_resistance(uint16_t adc, uint32_t r1) {
+    // Vout = VCC × (R_CDS / (R1 + R_CDS))
+    // Solving for R_CDS:
+    // R_CDS = R1 × Vout / (VCC - Vout)
+    
+    float vout = adc_to_voltage(adc);
+    float r_cds = r1 * vout / (5.0 - vout);
+    
+    return r_cds;
+}
+
+// Usage
+uint16_t adc = read_light_raw();
+float volts = adc_to_voltage(adc);
+float resistance = calculate_cds_resistance(adc, 10000);
+
+printf(&quot;ADC: %d  Voltage: %.2fV  R_CDS: %.0f Ω\n&quot;, 
+       adc, volts, resistance);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Calibration</h2>
+<h3>Why Calibrate?</h3>
+<ul><li>Different sensors have different characteristics</li><li>Ambient light varies (indoor vs outdoor)</li><li>Aging affects sensor response</li><li>Application-specific thresholds</li></ul>
+<h3>Calibration Procedure</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint16_t dark_level;    // ADC value in darkness
+    uint16_t bright_level;  // ADC value in bright light
+} light_cal_t;
+
+light_cal_t cal = {0, 1023};  // Default values
+
+void calibrate_light_sensor(void) {
+    printf(&quot;Light Sensor Calibration\n&quot;);
+    printf(&quot;------------------------\n&quot;);
+    
+    // Calibrate dark level
+    printf(&quot;1. Cover sensor completely\n&quot;);
+    printf(&quot;   Press button when ready...\n&quot;);
+    wait_for_button();
+    
+    _delay_ms(500);
+    
+    // Average multiple readings
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i &lt; 10; i++) {
+        sum += read_light_raw();
+        _delay_ms(100);
+    }
+    cal.dark_level = sum / 10;
+    
+    printf(&quot;   Dark level: %d\n\n&quot;, cal.dark_level);
+    
+    // Calibrate bright level
+    printf(&quot;2. Expose sensor to bright light\n&quot;);
+    printf(&quot;   Press button when ready...\n&quot;);
+    wait_for_button();
+    
+    _delay_ms(500);
+    
+    sum = 0;
+    for (uint8_t i = 0; i &lt; 10; i++) {
+        sum += read_light_raw();
+        _delay_ms(100);
+    }
+    cal.bright_level = sum / 10;
+    
+    printf(&quot;   Bright level: %d\n\n&quot;, cal.bright_level);
+    
+    printf(&quot;Calibration complete!\n&quot;);
+    printf(&quot;Range: %d - %d\n&quot;, cal.dark_level, cal.bright_level);
+    
+    // Save to EEPROM
+    eeprom_write_block(&amp;cal, (void*)0, sizeof(cal));
+}
+
+// Apply calibration to reading
+uint8_t read_light_calibrated(void) {
+    uint16_t raw = read_light_raw();
+    
+    // Clamp to calibrated range
+    if (raw &lt; cal.dark_level) raw = cal.dark_level;
+    if (raw &gt; cal.bright_level) raw = cal.bright_level;
+    
+    // Map to 0-100%
+    return (uint8_t)((uint32_t)(raw - cal.dark_level) * 100 / 
+                     (cal.bright_level - cal.dark_level));
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Threshold Detection</h2>
+<h3>Simple Day/Night Detection</h3>
+<pre class="lang-c"><code>#define THRESHOLD_NIGHT  200  // ADC value
+#define THRESHOLD_DAY    600
+
+typedef enum {
+    LIGHT_DARK,
+    LIGHT_DIM,
+    LIGHT_BRIGHT
+} light_level_t;
+
+light_level_t get_light_level(void) {
+    uint16_t light = read_light_raw();
+    
+    if (light &lt; THRESHOLD_NIGHT) {
+        return LIGHT_DARK;
+    } else if (light &lt; THRESHOLD_DAY) {
+        return LIGHT_DIM;
+    } else {
+        return LIGHT_BRIGHT;
+    }
+}
+
+// Example: Automatic street light
+void automatic_light_control(void) {
+    #define LED_PIN PB0
+    
+    DDRB |= (1 &lt;&lt; LED_PIN);
+    
+    while (1) {
+        light_level_t level = get_light_level();
+        
+        if (level == LIGHT_DARK) {
+            // Turn light ON
+            PORTB |= (1 &lt;&lt; LED_PIN);
+            printf(&quot;Light: ON (dark)\n&quot;);
+            
+        } else if (level == LIGHT_BRIGHT) {
+            // Turn light OFF
+            PORTB &amp;= ~(1 &lt;&lt; LED_PIN);
+            printf(&quot;Light: OFF (bright)\n&quot;);
+        }
+        // DIM: no change (hysteresis)
+        
+        _delay_ms(1000);
+    }
+}</code></pre>
+<h3>Hysteresis for Stable Switching</h3>
+<pre class="lang-c"><code>// Prevent rapid on/off switching at threshold
+
+#define THRESHOLD_ON   300  // Turn light ON below this
+#define THRESHOLD_OFF  500  // Turn light OFF above this
+
+uint8_t light_state = 0;  // 0=OFF, 1=ON
+
+void light_control_with_hysteresis(void) {
+    uint16_t light = read_light_raw();
+    
+    if (light &lt; THRESHOLD_ON &amp;&amp; !light_state) {
+        // Turn ON
+        PORTB |= (1 &lt;&lt; LED_PIN);
+        light_state = 1;
+        printf(&quot;Light: ON\n&quot;);
+        
+    } else if (light &gt; THRESHOLD_OFF &amp;&amp; light_state) {
+        // Turn OFF
+        PORTB &amp;= ~(1 &lt;&lt; LED_PIN);
+        light_state = 0;
+        printf(&quot;Light: OFF\n&quot;);
+    }
+    
+    // Between THRESHOLD_ON and THRESHOLD_OFF: maintain current state
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Filtering</h2>
+<h3>Exponential Moving Average</h3>
+<pre class="lang-c"><code>// Smooth out noise and rapid fluctuations
+
+float light_filtered = 0;
+
+#define ALPHA 0.1  // Smoothing factor (0-1, lower = smoother)
+
+uint16_t read_light_filtered(void) {
+    uint16_t raw = read_light_raw();
+    
+    // EMA filter
+    light_filtered = ALPHA * raw + (1.0 - ALPHA) * light_filtered;
+    
+    return (uint16_t)light_filtered;
+}
+
+// Usage
+int main(void) {
+    adc_init();
+    
+    // Initialize filter with first reading
+    light_filtered = read_light_raw();
+    
+    while (1) {
+        uint16_t raw = read_light_raw();
+        uint16_t filtered = read_light_filtered();
+        
+        printf(&quot;Raw: %4d  Filtered: %4d\n&quot;, raw, filtered);
+        
+        _delay_ms(100);
+    }
+}</code></pre>
+<h3>Running Average Filter</h3>
+<pre class="lang-c"><code>#define SAMPLES 10
+
+uint16_t light_buffer[SAMPLES];
+uint8_t buffer_index = 0;
+
+uint16_t read_light_averaged(void) {
+    // Add new reading to buffer
+    light_buffer[buffer_index] = read_light_raw();
+    buffer_index = (buffer_index + 1) % SAMPLES;
+    
+    // Calculate average
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i &lt; SAMPLES; i++) {
+        sum += light_buffer[i];
+    }
+    
+    return (uint16_t)(sum / SAMPLES);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Application - Automatic Lighting</h2>
+<h3>Auto-Adjusting LED Brightness</h3>
+<pre class="lang-c"><code>// PWM-controlled LED brightness based on ambient light
+
+void init_pwm(void) {
+    // Timer0: Fast PWM, OC0 = PB4
+    TCCR0 = (1 &lt;&lt; WGM01) | (1 &lt;&lt; WGM00) | (1 &lt;&lt; COM01) | (1 &lt;&lt; CS01);
+    DDRB |= (1 &lt;&lt; PB4);
+}
+
+void auto_brightness(void) {
+    adc_init();
+    init_pwm();
+    
+    while (1) {
+        uint16_t light = read_light_filtered();
+        
+        // Inverse relationship: darker = brighter LED
+        uint8_t brightness;
+        
+        if (light &lt; 200) {
+            // Very dark: full brightness
+            brightness = 255;
+        } else if (light &gt; 800) {
+            // Very bright: LED off
+            brightness = 0;
+        } else {
+            // Map 200-800 to 255-0
+            brightness = (uint8_t)map(light, 200, 800, 255, 0);
+        }
+        
+        // Set PWM duty cycle
+        OCR0 = brightness;
+        
+        _delay_ms(100);
+    }
+}
+
+// Multi-level lighting
+void smart_lighting(void) {
+    uint16_t light = read_light_calibrated();  // 0-100%
+    
+    if (light &lt; 10) {
+        // Night mode: warm dim light
+        set_led_brightness(30);
+        printf(&quot;Mode: NIGHT (30%%)\n&quot;);
+        
+    } else if (light &lt; 30) {
+        // Evening mode: medium brightness
+        set_led_brightness(70);
+        printf(&quot;Mode: EVENING (70%%)\n&quot;);
+        
+    } else if (light &lt; 70) {
+        // Day mode: off or very dim
+        set_led_brightness(0);
+        printf(&quot;Mode: DAY (OFF)\n&quot;);
+        
+    } else {
+        // Bright mode: completely off
+        set_led_brightness(0);
+        printf(&quot;Mode: BRIGHT (OFF)\n&quot;);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Application - LCD Backlight Control</h2>
+<h3>Auto-Adjust LCD Backlight</h3>
+<pre class="lang-c"><code>// Adjust LCD backlight PWM based on ambient light
+
+#define LCD_BL_PIN PB5  // OC1A
+
+void init_lcd_backlight(void) {
+    // Timer1: Fast PWM, 8-bit
+    TCCR1A = (1 &lt;&lt; WGM10) | (1 &lt;&lt; COM1A1);
+    TCCR1B = (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS11);  // Prescaler = 8
+    
+    DDRB |= (1 &lt;&lt; LCD_BL_PIN);
+}
+
+void lcd_backlight_auto(void) {
+    adc_init();
+    init_lcd_backlight();
+    lcd_init();
+    
+    while (1) {
+        uint16_t light = read_light_filtered();
+        
+        // Brighter ambient = brighter backlight
+        uint8_t backlight;
+        
+        if (light &lt; 100) {
+            backlight = 50;   // Dim in dark
+        } else if (light &gt; 900) {
+            backlight = 255;  // Bright in bright light
+        } else {
+            backlight = (uint8_t)map(light, 100, 900, 50, 255);
+        }
+        
+        OCR1A = backlight;
+        
+        // Display light level on LCD
+        lcd_gotoxy(0, 0);
+        printf(&quot;Light: %3d%%&quot;, (light * 100) / 1023);
+        lcd_gotoxy(0, 1);
+        printf(&quot;Backlight: %3d&quot;, backlight);
+        
+        _delay_ms(200);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Application - Light Tracking</h2>
+<h3>4-Sensor Light Direction Detector</h3>
+<pre class="lang-c"><code>typedef struct {
+    uint16_t front;
+    uint16_t back;
+    uint16_t left;
+    uint16_t right;
+} light_array_t;
+
+light_array_t sensors;
+
+void read_light_array(void) {
+    sensors.front = adc_read(CDS_FRONT);
+    sensors.back  = adc_read(CDS_BACK);
+    sensors.left  = adc_read(CDS_LEFT);
+    sensors.right = adc_read(CDS_RIGHT);
+}
+
+typedef enum {
+    LIGHT_DIR_CENTER,
+    LIGHT_DIR_FRONT,
+    LIGHT_DIR_BACK,
+    LIGHT_DIR_LEFT,
+    LIGHT_DIR_RIGHT,
+    LIGHT_DIR_FRONT_LEFT,
+    LIGHT_DIR_FRONT_RIGHT,
+    LIGHT_DIR_BACK_LEFT,
+    LIGHT_DIR_BACK_RIGHT
+} light_direction_t;
+
+light_direction_t get_light_direction(void) {
+    read_light_array();
+    
+    // Find brightest sensor
+    uint16_t max = sensors.front;
+    light_direction_t dir = LIGHT_DIR_FRONT;
+    
+    if (sensors.back &gt; max) {
+        max = sensors.back;
+        dir = LIGHT_DIR_BACK;
+    }
+    if (sensors.left &gt; max) {
+        max = sensors.left;
+        dir = LIGHT_DIR_LEFT;
+    }
+    if (sensors.right &gt; max) {
+        max = sensors.right;
+        dir = LIGHT_DIR_RIGHT;
+    }
+    
+    // Check if difference is significant
+    #define THRESHOLD_DIFF 50
+    
+    if (max - sensors.front &lt; THRESHOLD_DIFF &amp;&amp;
+        max - sensors.back &lt; THRESHOLD_DIFF &amp;&amp;
+        max - sensors.left &lt; THRESHOLD_DIFF &amp;&amp;
+        max - sensors.right &lt; THRESHOLD_DIFF) {
+        // All sensors similar = centered or ambient
+        return LIGHT_DIR_CENTER;
+    }
+    
+    return dir;
+}
+
+// Solar tracker application
+void solar_tracker(void) {
+    while (1) {
+        light_direction_t dir = get_light_direction();
+        
+        switch (dir) {
+            case LIGHT_DIR_FRONT:
+                servo_tilt_up();
+                break;
+            case LIGHT_DIR_BACK:
+                servo_tilt_down();
+                break;
+            case LIGHT_DIR_LEFT:
+                servo_pan_left();
+                break;
+            case LIGHT_DIR_RIGHT:
+                servo_pan_right();
+                break;
+            case LIGHT_DIR_CENTER:
+                servo_stop();
+                break;
+            default:
+                break;
+        }
+        
+        _delay_ms(100);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Application - Light Meter</h2>
+<h3>Lux Estimation</h3>
+<pre class="lang-c"><code>// Approximate conversion to lux (requires calibration)
+
+float estimate_lux(uint16_t adc) {
+    // This is sensor-specific and approximate
+    // Proper calibration requires a reference lux meter
+    
+    // Example formula (adjust for your sensor):
+    // lux = k × (R_CDS)^(-γ)
+    
+    float r_cds = calculate_cds_resistance(adc, 10000);
+    
+    // Typical values: k = 50000, γ = 0.7
+    float lux = 50000.0 * pow(r_cds / 1000.0, -0.7);
+    
+    return lux;
+}
+
+void light_meter(void) {
+    adc_init();
+    lcd_init();
+    
+    while (1) {
+        uint16_t adc = read_light_filtered();
+        float lux = estimate_lux(adc);
+        
+        lcd_clear();
+        lcd_puts(&quot;Light Meter&quot;);
+        
+        lcd_gotoxy(0, 1);
+        if (lux &lt; 1) {
+            printf(&quot;%.2f lux&quot;, lux);
+        } else if (lux &lt; 1000) {
+            printf(&quot;%.0f lux&quot;, lux);
+        } else {
+            printf(&quot;%.1f klux&quot;, lux / 1000.0);
+        }
+        
+        // Show condition
+        lcd_gotoxy(10, 1);
+        if (lux &lt; 10) {
+            lcd_puts(&quot;DARK&quot;);
+        } else if (lux &lt; 100) {
+            lcd_puts(&quot;DIM&quot;);
+        } else if (lux &lt; 1000) {
+            lcd_puts(&quot;ROOM&quot;);
+        } else {
+            lcd_puts(&quot;BRIGHT&quot;);
+        }
+        
+        _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Application - Data Logger</h2>
+<h3>Log Light Levels Over Time</h3>
+<pre class="lang-c"><code>#include &lt;avr/eeprom.h&gt;
+
+#define LOG_SIZE 100
+uint16_t light_log[LOG_SIZE] EEMEM;
+uint8_t log_index = 0;
+
+void log_light_level(void) {
+    uint16_t light = read_light_filtered();
+    
+    // Write to EEPROM
+    eeprom_write_word(&amp;light_log[log_index], light);
+    
+    log_index++;
+    if (log_index &gt;= LOG_SIZE) {
+        log_index = 0;  // Wrap around (circular buffer)
+    }
+}
+
+void display_log(void) {
+    printf(&quot;Light Level Log:\n&quot;);
+    printf(&quot;----------------\n&quot;);
+    
+    for (uint8_t i = 0; i &lt; LOG_SIZE; i++) {
+        uint16_t value = eeprom_read_word(&amp;light_log[i]);
+        
+        if (value == 0xFFFF) {
+            // Unwritten EEPROM location
+            break;
+        }
+        
+        printf(&quot;%3d: %4d (&quot;, i, value);
+        
+        // Bar graph
+        uint8_t bars = value / 64;  // 0-15
+        for (uint8_t j = 0; j &lt; bars; j++) {
+            printf(&quot;#&quot;);
+        }
+        printf(&quot;)\n&quot;);
+    }
+}
+
+// Timed logging
+void auto_logger(void) {
+    adc_init();
+    timer_init();  // 1-minute interval
+    
+    printf(&quot;Starting light logger...\n&quot;);
+    printf(&quot;Logging every 1 minute\n&quot;);
+    
+    while (1) {
+        if (timer_expired()) {
+            log_light_level();
+            
+            uint16_t light = read_light_filtered();
+            printf(&quot;[%3d] Light: %4d\n&quot;, log_index, light);
+            
+            timer_reset();
+        }
+        
+        _delay_ms(100);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Advanced - Change Detection</h2>
+<h3>Detect Rapid Light Changes</h3>
+<pre class="lang-c"><code>uint16_t last_light = 0;
+
+#define CHANGE_THRESHOLD 100
+
+uint8_t detect_light_change(void) {
+    uint16_t current = read_light_filtered();
+    
+    int16_t delta = current - last_light;
+    
+    if (abs(delta) &gt; CHANGE_THRESHOLD) {
+        last_light = current;
+        return 1;  // Significant change detected
+    }
+    
+    last_light = current;
+    return 0;  // No significant change
+}
+
+// Motion detector (shadow detection)
+void shadow_detector(void) {
+    adc_init();
+    last_light = read_light_filtered();
+    
+    printf(&quot;Shadow detector active\n&quot;);
+    
+    while (1) {
+        if (detect_light_change()) {
+            uint16_t current = read_light_filtered();
+            
+            if (current &lt; last_light - CHANGE_THRESHOLD) {
+                printf(&quot;ALERT: Shadow detected!\n&quot;);
+                trigger_alarm();
+            } else {
+                printf(&quot;Light increased\n&quot;);
+            }
+        }
+        
+        _delay_ms(50);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Multiple Sensors - Average and Comparison</h2>
+<h3>Averaging Multiple Sensors</h3>
+<pre class="lang-c"><code>#define NUM_SENSORS 4
+
+uint16_t read_light_average(void) {
+    uint32_t sum = 0;
+    
+    for (uint8_t i = 0; i &lt; NUM_SENSORS; i++) {
+        sum += adc_read(i);
+    }
+    
+    return (uint16_t)(sum / NUM_SENSORS);
+}
+
+// Find brightest and darkest sensors
+void find_extremes(uint16_t *min, uint16_t *max, uint8_t *min_ch, uint8_t *max_ch) {
+    *min = 1023;
+    *max = 0;
+    
+    for (uint8_t i = 0; i &lt; NUM_SENSORS; i++) {
+        uint16_t value = adc_read(i);
+        
+        if (value &lt; *min) {
+            *min = value;
+            *min_ch = i;
+        }
+        
+        if (value &gt; *max) {
+            *max = value;
+            *max_ch = i;
+        }
+    }
+}
+
+// Example: Light balance detection
+void check_light_balance(void) {
+    uint16_t min, max;
+    uint8_t min_ch, max_ch;
+    
+    find_extremes(&amp;min, &amp;max, &amp;min_ch, &amp;max_ch);
+    
+    uint16_t difference = max - min;
+    
+    if (difference &lt; 50) {
+        printf(&quot;Light: BALANCED\n&quot;);
+    } else {
+        printf(&quot;Light: UNBALANCED (diff: %d)\n&quot;, difference);
+        printf(&quot;Darkest: CH%d (%d)\n&quot;, min_ch, min);
+        printf(&quot;Brightest: CH%d (%d)\n&quot;, max_ch, max);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Troubleshooting</h2>
+<h3>Common Issues</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Solution</th></tr></thead><tbody><tr><td><strong>Reading always 0 or 1023</strong></td><td>CDS disconnected</td><td>Check wiring</td></tr><tr><td><strong>No variation</strong></td><td>Wrong ADC channel</td><td>Verify ADMUX setting</td></tr><tr><td><strong>Noisy readings</strong></td><td>No filtering</td><td>Add capacitor (0.1µF) or software filter</td></tr><tr><td><strong>Inverted response</strong></td><td>Circuit reversed</td><td>Swap R1 and CDS positions</td></tr><tr><td><strong>Slow response</strong></td><td>R1 too large + ADC input capacitance</td><td>Use smaller R1 (1-10kΩ)</td></tr><tr><td><strong>Limited range</strong></td><td>R1 mismatch</td><td>Choose R1 = √(R_dark × R_bright)</td></tr></tbody></table>
+<h3>Debugging Code</h3>
+<pre class="lang-c"><code>void cds_diagnostic(void) {
+    adc_init();
+    uart_init();
+    
+    printf(&quot;CDS Sensor Diagnostic\n&quot;);
+    printf(&quot;---------------------\n&quot;);
+    
+    // Test ADC
+    printf(&quot;ADC Test:\n&quot;);
+    for (uint8_t ch = 0; ch &lt; 4; ch++) {
+        uint16_t value = adc_read(ch);
+        printf(&quot;ADC%d: %4d (0x%03X) %.2fV\n&quot;, 
+               ch, value, value, adc_to_voltage(value));
+    }
+    
+    printf(&quot;\nContinuous monitoring:\n&quot;);
+    printf(&quot;Cover/uncover sensor...\n\n&quot;);
+    
+    uint16_t min = 1023, max = 0;
+    
+    for (uint8_t i = 0; i &lt; 50; i++) {
+        uint16_t light = read_light_raw();
+        
+        if (light &lt; min) min = light;
+        if (light &gt; max) max = light;
+        
+        printf(&quot;Light: %4d   Min: %4d   Max: %4d   Range: %4d  [&quot;, 
+               light, min, max, max - min);
+        
+        // Bar graph
+        uint8_t bars = light / 64;
+        for (uint8_t j = 0; j &lt; 16; j++) {
+            printf(j &lt; bars ? &quot;#&quot; : &quot;-&quot;);
+        }
+        printf(&quot;]\n&quot;);
+        
+        _delay_ms(200);
+    }
+    
+    printf(&quot;\nDiagnostic complete.\n&quot;);
+    printf(&quot;Observed range: %d - %d\n&quot;, min, max);
+    
+    if (max - min &lt; 100) {
+        printf(&quot;WARNING: Limited range. Check:\n&quot;);
+        printf(&quot;  - Sensor connection\n&quot;);
+        printf(&quot;  - R1 value\n&quot;);
+        printf(&quot;  - Light variation\n&quot;);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 17: Best Practices</h2>
+<h3>CDS Sensor Programming Guidelines</h3>
+<p>✓ <strong>Use voltage divider</strong> with appropriate R1</p>
+<pre class="lang-c"><code>// R1 = √(R_dark × R_bright) for best sensitivity
+#define R1_VALUE 10000  // 10kΩ typical</code></pre>
+<p>✓ <strong>Filter readings</strong> for stability</p>
+<pre class="lang-c"><code>// Exponential moving average
+filtered = ALPHA * new + (1 - ALPHA) * filtered;</code></pre>
+<p>✓ <strong>Calibrate</strong> for application</p>
+<pre class="lang-c"><code>// Store min/max values
+eeprom_write_block(&amp;cal, (void*)0, sizeof(cal));</code></pre>
+<p>✓ <strong>Use hysteresis</strong> for threshold switching</p>
+<pre class="lang-c"><code>#define THRESHOLD_ON   300
+#define THRESHOLD_OFF  500  // Higher than ON</code></pre>
+<p>✓ <strong>Protect sensor</strong> from physical damage</p>
+<ul><li>CdS is fragile - handle carefully</li><li>Avoid excessive heat (&gt;70°C)</li><li>Protect from moisture</li></ul>
+<p>✓ <strong>Consider response time</strong></p>
+<ul><li>CDS sensors are slow (100ms - several seconds)</li><li>Not suitable for fast light detection</li><li>Use photodiodes or phototransistors for speed</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 18: Summary</h2>
+<h3>Key Concepts</h3>
+<p>✓ <strong>CDS sensor</strong> = light-dependent resistor<br>✓ <strong>Voltage divider</strong> converts resistance to voltage<br>✓ <strong>ADC</strong> reads 0-1023 proportional to light<br>✓ <strong>Calibration</strong> improves accuracy<br>✓ <strong>Filtering</strong> reduces noise<br>✓ <strong>Hysteresis</strong> prevents flickering<br>✓ <strong>Multiple sensors</strong> enable direction detection</p>
+<h3>Light Level Reference</h3>
+<pre><code>Environment               Lux       ADC (typical, 10kΩ R1)
+---------------------  ---------   -----------------------
+Full moonlight            0.1           10-50
+Indoor dim lighting       10            100-200
+Office lighting           300-500       400-600
+Overcast day              1,000         700-800
+Full daylight             10,000        900-950
+Direct sunlight           100,000       980-1000</code></pre>
+<h3>Applications</h3>
+<ul><li>Automatic lighting control</li><li>LCD backlight adjustment</li><li>Solar panel tracking</li><li>Light meters and data loggers</li><li>Security (shadow detection)</li><li>Photography exposure metering</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 19: Practice Exercises</h2>
+<h3>Exercise 1: Basic Light Reading</h3>
+<p><strong>Goal</strong>: Read and display light levels</p>
+<ul><li>Initialize ADC</li><li>Read CDS sensor on ADC0</li><li>Display raw ADC value</li><li>Calculate and display percentage</li></ul>
+<h3>Exercise 2: Automatic LED</h3>
+<p><strong>Goal</strong>: Control LED based on light</p>
+<ul><li>Turn LED on when dark (&lt;300 ADC)</li><li>Turn LED off when bright (&gt;700 ADC)</li><li>Implement hysteresis</li><li>Add visual feedback on LCD</li></ul>
+<h3>Exercise 3: PWM Brightness Control</h3>
+<p><strong>Goal</strong>: Auto-adjust LED brightness</p>
+<ul><li>Read light level</li><li>Map to PWM duty cycle (inverse)</li><li>Darker ambient = brighter LED</li><li>Use filtering for smooth transitions</li></ul>
+<h3>Exercise 4: Light Direction Detector</h3>
+<p><strong>Goal</strong>: Find brightest direction</p>
+<ul><li>Use 4 CDS sensors</li><li>Determine light source direction</li><li>Display on LCD with arrows</li><li>Control servo to point at light</li></ul>
+<h3>Exercise 5: Data Logger</h3>
+<p><strong>Goal</strong>: Log light levels over time</p>
+<ul><li>Sample every 10 seconds</li><li>Store 100 samples in EEPROM</li><li>Display log as bar graph</li><li>Calculate min/max/average</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 20: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 24: ADC</li><li>ADC characteristics and timing</li><li>Reference voltage selection</li></ul>
+<h3>CDS Sensor Resources</h3>
+<ul><li>Photoresistor datasheets</li><li>Light measurement units (lux, lumens)</li><li>Voltage divider design calculators</li><li>Response time characteristics</li></ul>
+<h3>Application Notes</h3>
+<ul><li>Light sensing circuit design</li><li>Filtering and signal conditioning</li><li>Solar tracking algorithms</li><li>Automatic lighting control</li></ul>
+<h3>Tools</h3>
+<ul><li>Lux meter for calibration</li><li>Oscilloscope for response time analysis</li><li>Serial plotter for visualization</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>CDS_Light_Sensor/</code></li><li>Shared libraries: <code>_adc.h</code>, <code>_light_sensor.h</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:12_ADC_Light_Sensor', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:12_ADC_Light_Sensor') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

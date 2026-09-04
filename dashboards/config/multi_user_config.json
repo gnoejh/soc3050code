@@ -1,0 +1,26 @@
+{
+    "server_ip": "0.0.0.0",
+    "port": 5001,
+    "max_students": 50,
+    "session_timeout_hours": 8,
+    "workspace_cleanup_days": 7,
+    "auto_backup": true,
+    "teacher_password": "admin123",
+    "debug": false,
+    "allowed_file_types": [
+        ".c",
+        ".h",
+        ".txt",
+        ".md"
+    ],
+    "max_file_size_mb": 10,
+    "rate_limiting": {
+        "builds_per_minute": 5,
+        "api_calls_per_minute": 30
+    },
+    "logging": {
+        "level": "INFO",
+        "max_log_files": 10,
+        "log_rotation_days": 30
+    }
+}

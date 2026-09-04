@@ -1,0 +1,992 @@
+<title>ADC (Analog-to-Digital Converter) Programming</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>ADC (Analog-to-Digital Converter) Programming</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to ADC</h2>
+<h3>What is ADC?</h3>
+<ul><li><strong>Analog-to-Digital Converter</strong> - Converts continuous analog voltages to discrete digital values</li><li>Essential for interfacing with sensors and analog signals</li><li>ATmega128 has <strong>8-channel, 10-bit ADC</strong></li></ul>
+<h3>Why Use ADC?</h3>
+<p>✓ Read <strong>sensor values</strong> (temperature, light, pressure)<br>✓ Measure <strong>voltage levels</strong> (battery monitoring)<br>✓ Process <strong>analog signals</strong> (audio, position)<br>✓ Interface with <strong>real-world</strong> analog systems</p>
+<h3>Key Specifications</h3>
+<ul><li><strong>Resolution</strong>: 10 bits (0-1023 values)</li><li><strong>Channels</strong>: 8 single-ended inputs (ADC0-ADC7)</li><li><strong>Reference Voltage</strong>: AREF, AVCC, or Internal 2.56V</li><li><strong>Conversion Time</strong>: 13-260 μs (depending on prescaler)</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 2: ATmega128 ADC Architecture</h2>
+<h3>ADC Block Diagram</h3>
+<pre class="lang-mermaid"><code>graph TB
+    subgraph &quot;ADC System&quot;
+        A[Analog Input&lt;br/&gt;ADC0-ADC7] --&gt; B[Input Multiplexer&lt;br/&gt;MUX4:0]
+        B --&gt; C[Sample &amp; Hold]
+        C --&gt; D[10-bit ADC&lt;br/&gt;Successive Approximation]
+        E[Reference Voltage&lt;br/&gt;AREF/AVCC/Internal] --&gt; D
+        F[Clock Source&lt;br/&gt;F_CPU] --&gt; G[Prescaler&lt;br/&gt;/2 to /128]
+        G --&gt; D
+        D --&gt; H[ADC Data Register&lt;br/&gt;ADCH:ADCL]
+        D --&gt; I[ADIF Flag]
+        I --&gt; J[ADC Interrupt]
+    end
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style H fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Input Channels</h3>
+<ul><li><strong>PORTF</strong>: ADC0-ADC7 (PF0-PF7)</li><li>Single-ended mode: measures voltage relative to GND</li><li>Voltage range: 0V to VREF</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3: ADC Operation Modes</h2>
+<h3>Conversion Modes</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A{ADC Mode} --&gt; B[Single Conversion]
+    A --&gt; C[Free Running]
+    A --&gt; D[Auto Trigger]
+    
+    B --&gt; E[Manual start&lt;br/&gt;Set ADSC bit]
+    C --&gt; F[Continuous&lt;br/&gt;conversion]
+    D --&gt; G[Triggered by&lt;br/&gt;Timer/Interrupt]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Single Conversion Mode</h3>
+<ol><li>Select channel</li><li>Start conversion (ADSC = 1)</li><li>Wait for completion (ADIF = 1)</li><li>Read result from ADCH:ADCL</li></ol>
+<h3>Free Running Mode</h3>
+<ul><li>Continuous conversions</li><li>New conversion starts immediately after previous completes</li><li>Useful for monitoring signals</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 4: ADC Control Registers</h2>
+<h3>ADMUX - ADC Multiplexer Selection Register</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+ADMUX │ REFS1│ REFS0│ ADLAR│ MUX4 │ MUX3 │ MUX2 │ MUX1 │ MUX0 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<h4>REFS1:0 - Reference Voltage Selection</h4>
+<pre><code>00 = AREF pin (external reference)
+01 = AVCC with external capacitor at AREF
+10 = Reserved
+11 = Internal 2.56V with external capacitor at AREF</code></pre>
+<h4>ADLAR - ADC Left Adjust Result</h4>
+<pre><code>0 = Right adjusted (default)
+1 = Left adjusted (8-bit mode)</code></pre>
+<h4>MUX4:0 - Channel Selection</h4>
+<pre><code>00000 = ADC0 (PF0)
+00001 = ADC1 (PF1)
+00010 = ADC2 (PF2)
+...
+00111 = ADC7 (PF7)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: ADC Control and Status Register A</h2>
+<h3>ADCSRA - ADC Control and Status Register A</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+ADCSRA│ ADEN │ ADSC │ ADATE│ ADIF │ ADIE │ADPS2 │ADPS1 │ADPS0 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<h3>Bit Functions</h3>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Function</th></tr></thead><tbody><tr><td><strong>ADEN</strong></td><td>ADC Enable</td><td>1 = Enable ADC</td></tr><tr><td><strong>ADSC</strong></td><td>Start Conversion</td><td>1 = Start conversion (stays high during conversion)</td></tr><tr><td><strong>ADATE</strong></td><td>Auto Trigger Enable</td><td>1 = Enable auto trigger mode</td></tr><tr><td><strong>ADIF</strong></td><td>Interrupt Flag</td><td>Set when conversion completes</td></tr><tr><td><strong>ADIE</strong></td><td>Interrupt Enable</td><td>1 = Enable ADC interrupt</td></tr><tr><td><strong>ADPS2:0</strong></td><td>Prescaler Select</td><td>Clock division factor</td></tr></tbody></table>
+<h3>Prescaler Selection (ADPS2:0)</h3>
+<pre><code>000 = /2     100 = /16
+001 = /2     101 = /32
+010 = /4     110 = /64
+011 = /8     111 = /128</code></pre>
+<p><strong>Requirement</strong>: ADC clock should be 50-200 kHz for maximum resolution</p>
+</section>
+<section class="slide">
+<h2>Slide 6: ADC Data Registers</h2>
+<h3>ADC Result Registers</h3>
+<pre><code>      ┌──────────────────────────────────────┐
+ADCL  │  7   6   5   4   3   2   1   0      │ (Low byte)
+      └──────────────────────────────────────┘
+      
+      ┌──────────────────────────────────────┐
+ADCH  │  -   -   -   -   -   -   9   8      │ (High byte)
+      └──────────────────────────────────────┘</code></pre>
+<h3>Right Adjusted (ADLAR = 0)</h3>
+<pre><code>10-bit result: ADCH[1:0] : ADCL[7:0]
+Read ADCL first, then ADCH</code></pre>
+<h3>Left Adjusted (ADLAR = 1)</h3>
+<pre><code>      ┌──────────────────────────────────────┐
+ADCL  │  -   -   -   -   -   -   1   0      │
+      └──────────────────────────────────────┘
+      
+      ┌──────────────────────────────────────┐
+ADCH  │  9   8   7   6   5   4   3   2      │
+      └──────────────────────────────────────┘
+
+8-bit mode: Read only ADCH</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: ADC Timing and Conversion</h2>
+<h3>Conversion Process</h3>
+<pre class="lang-mermaid"><code>sequenceDiagram
+    participant CPU
+    participant ADC
+    participant ADIF
+    
+    CPU-&gt;&gt;ADC: Set ADSC (Start)
+    Note over ADC: Sample &amp; Hold
+    Note over ADC: 13 ADC clock cycles
+    ADC-&gt;&gt;ADC: Successive Approximation
+    ADC-&gt;&gt;ADIF: Set ADIF flag
+    ADIF-&gt;&gt;CPU: Interrupt (if enabled)
+    CPU-&gt;&gt;ADC: Read ADCL
+    CPU-&gt;&gt;ADC: Read ADCH
+    Note over CPU: ADIF cleared</code></pre>
+<h3>Conversion Time Calculation</h3>
+<pre><code>Conversion Time = 13 × (1 / ADC_Clock)
+
+Example with F_CPU = 16 MHz, Prescaler = 128:
+ADC_Clock = 16 MHz / 128 = 125 kHz
+Conversion Time = 13 / 125 kHz = 104 μs</code></pre>
+<h3>First Conversion</h3>
+<ul><li>Takes 25 ADC clock cycles (initialization)</li><li>Subsequent conversions: 13 cycles</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 8: Prescaler Selection Guide</h2>
+<h3>ADC Clock Requirements</h3>
+<ul><li><strong>Optimal Range</strong>: 50-200 kHz for full 10-bit accuracy</li><li><strong>Maximum</strong>: 1 MHz (reduced resolution)</li></ul>
+<h3>Prescaler Selection Table</h3>
+<table><thead><tr><th>F_CPU</th><th>Prescaler</th><th>ADC Clock</th><th>Status</th></tr></thead><tbody><tr><td>16 MHz</td><td>/128</td><td>125 kHz</td><td>✓ Optimal</td></tr><tr><td>16 MHz</td><td>/64</td><td>250 kHz</td><td>⚠ High but OK</td></tr><tr><td>16 MHz</td><td>/32</td><td>500 kHz</td><td>⚠ Reduced accuracy</td></tr><tr><td>8 MHz</td><td>/64</td><td>125 kHz</td><td>✓ Optimal</td></tr><tr><td>8 MHz</td><td>/32</td><td>250 kHz</td><td>⚠ High but OK</td></tr><tr><td>1 MHz</td><td>/8</td><td>125 kHz</td><td>✓ Optimal</td></tr></tbody></table>
+<h3>Calculation</h3>
+<pre><code>Prescaler = F_CPU / Desired_ADC_Clock
+
+For F_CPU = 16 MHz, target 125 kHz:
+Prescaler = 16,000,000 / 125,000 = 128</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Practical Example - Single Conversion</h2>
+<h3>Complete ADC Initialization</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#define F_CPU 16000000UL
+
+void adc_init(void) {
+    // Select AVCC as reference voltage
+    ADMUX = (1 &lt;&lt; REFS0);
+    
+    // Enable ADC, prescaler = 128
+    // ADC clock = 16MHz/128 = 125kHz
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Perform dummy conversion (discard first result)
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+}
+
+uint16_t adc_read(uint8_t channel) {
+    // Select channel (0-7)
+    ADMUX = (ADMUX &amp; 0xF0) | (channel &amp; 0x0F);
+    
+    // Start conversion
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    
+    // Wait for completion
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+    
+    // Read result (10-bit)
+    return ADC;  // ADC = (ADCH &lt;&lt; 8) | ADCL
+}
+
+int main(void) {
+    uint16_t adc_value;
+    
+    adc_init();
+    
+    while(1) {
+        adc_value = adc_read(0);  // Read ADC0
+        
+        // adc_value is now 0-1023
+        // Process the value...
+    }
+    return 0;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Voltage Conversion</h2>
+<h3>Digital to Voltage Conversion</h3>
+<pre><code>Voltage = (ADC_Value × VREF) / 1024
+
+Where:
+- ADC_Value: 0-1023 (10-bit)
+- VREF: Reference voltage
+- 1024: 2^10 (10-bit resolution)</code></pre>
+<h3>Example Calculations</h3>
+<pre class="lang-c"><code>// With VREF = 5.0V
+uint16_t adc_value = 512;
+float voltage = (adc_value * 5.0) / 1024.0;
+// voltage = 2.5V
+
+// With VREF = 2.56V (internal)
+adc_value = 1023;
+voltage = (adc_value * 2.56) / 1024.0;
+// voltage = 2.56V
+
+// Avoiding floating point (integer math)
+uint16_t millivolts = (adc_value * 5000UL) / 1024;
+// millivolts = voltage in mV</code></pre>
+<h3>Resolution</h3>
+<pre><code>Resolution = VREF / 1024
+
+VREF = 5.0V:  Resolution = 4.88 mV/step
+VREF = 2.56V: Resolution = 2.5 mV/step</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Interrupt-Driven ADC</h2>
+<h3>ADC with Interrupts</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;avr/interrupt.h&gt;
+
+volatile uint16_t adc_result;
+volatile uint8_t adc_ready = 0;
+
+void adc_init_interrupt(void) {
+    // AVCC reference
+    ADMUX = (1 &lt;&lt; REFS0);
+    
+    // Enable ADC, interrupt, prescaler = 128
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADIE) | 
+             (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Enable global interrupts
+    sei();
+}
+
+void adc_start(uint8_t channel) {
+    // Select channel
+    ADMUX = (ADMUX &amp; 0xF0) | (channel &amp; 0x0F);
+    
+    // Start conversion
+    adc_ready = 0;
+    ADCSRA |= (1 &lt;&lt; ADSC);
+}
+
+// ADC Conversion Complete ISR
+ISR(ADC_vect) {
+    adc_result = ADC;
+    adc_ready = 1;
+}
+
+int main(void) {
+    adc_init_interrupt();
+    
+    while(1) {
+        adc_start(0);  // Start conversion on ADC0
+        
+        // Do other work while conversion happens
+        
+        // Wait for result
+        while (!adc_ready);
+        
+        // Use adc_result
+    }
+    return 0;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Free Running Mode</h2>
+<h3>Continuous Conversion</h3>
+<pre class="lang-c"><code>void adc_free_running_init(void) {
+    // AVCC reference, channel 0
+    ADMUX = (1 &lt;&lt; REFS0);
+    
+    // Enable ADC, auto trigger, interrupt, prescaler = 128
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADATE) | (1 &lt;&lt; ADIE) |
+             (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Auto trigger source = Free Running (default in SFIOR)
+    SFIOR = 0x00;
+    
+    // Start first conversion
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    
+    sei();
+}
+
+volatile uint16_t latest_adc;
+
+ISR(ADC_vect) {
+    latest_adc = ADC;
+    // Conversion automatically restarts
+}
+
+int main(void) {
+    adc_free_running_init();
+    
+    while(1) {
+        // latest_adc always has fresh data
+        // Use the value for monitoring, display, etc.
+    }
+    return 0;
+}</code></pre>
+<h3>Free Running Timing</h3>
+<pre class="lang-mermaid"><code>gantt
+    title Free Running ADC Conversions
+    dateFormat X
+    axisFormat %L
+    
+    section Conversions
+    Conv 1 :0, 13
+    Conv 2 :13, 13
+    Conv 3 :26, 13
+    Conv 4 :39, 13</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Sensor Reading Example</h2>
+<h3>Reading Temperature Sensor (LM35)</h3>
+<pre class="lang-c"><code>// LM35: 10mV per degree Celsius
+// VREF = 5V, ADC range 0-1023
+
+float read_temperature_lm35(void) {
+    uint16_t adc_value = adc_read(0);  // Read from ADC0
+    
+    // Convert to voltage (in mV)
+    uint32_t millivolts = (adc_value * 5000UL) / 1024;
+    
+    // LM35: 10mV per °C
+    float temperature = millivolts / 10.0;
+    
+    return temperature;
+}
+
+// Integer version (avoid floating point)
+int16_t read_temperature_lm35_int(void) {
+    uint16_t adc_value = adc_read(0);
+    
+    // Temperature in tenths of degree
+    // (adc * 5000 / 1024) / 10 = adc * 500 / 1024
+    int16_t temp_tenths = (adc_value * 500L) / 1024;
+    
+    return temp_tenths;  // Divide by 10 for actual temp
+}</code></pre>
+<h3>Reading Light Sensor (LDR/CDS)</h3>
+<pre class="lang-c"><code>uint16_t read_light_level(void) {
+    // LDR in voltage divider configuration
+    // Higher ADC value = more light (if LDR to GND)
+    // or less light (if LDR to VCC)
+    
+    uint16_t adc_value = adc_read(1);  // ADC1
+    
+    // Return raw value or percentage
+    uint8_t light_percent = (adc_value * 100UL) / 1023;
+    
+    return light_percent;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Multi-Channel Scanning</h2>
+<h3>Scanning Multiple Channels</h3>
+<pre class="lang-c"><code>#define NUM_CHANNELS 4
+uint16_t adc_values[NUM_CHANNELS];
+
+void adc_scan_channels(void) {
+    for (uint8_t ch = 0; ch &lt; NUM_CHANNELS; ch++) {
+        adc_values[ch] = adc_read(ch);
+    }
+}
+
+// With interrupt and state machine
+volatile uint8_t current_channel = 0;
+
+ISR(ADC_vect) {
+    adc_values[current_channel] = ADC;
+    
+    current_channel++;
+    if (current_channel &gt;= NUM_CHANNELS) {
+        current_channel = 0;
+    }
+    
+    // Select next channel and start conversion
+    ADMUX = (ADMUX &amp; 0xF0) | current_channel;
+    ADCSRA |= (1 &lt;&lt; ADSC);
+}
+
+void adc_start_scanning(void) {
+    current_channel = 0;
+    ADMUX = (ADMUX &amp; 0xF0) | current_channel;
+    ADCSRA |= (1 &lt;&lt; ADSC);  // Start first conversion
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: ADC Noise Reduction</h2>
+<h3>Sources of Noise</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Noise Sources] --&gt; B[Digital Switching]
+    A --&gt; C[Power Supply Ripple]
+    A --&gt; D[PCB Layout]
+    A --&gt; E[External Interference]
+    
+    B --&gt; F[Use ADC Noise&lt;br/&gt;Reduction Mode]
+    C --&gt; G[Filtering Capacitors]
+    D --&gt; H[Proper Grounding]
+    E --&gt; I[Shielded Cables]
+    
+    style A fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style H fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style I fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Hardware Solutions</h3>
+<ol><li><strong>Decoupling Capacitors</strong></li><li>100nF ceramic near ADC pins</li><li>10μF electrolytic on AVCC</li></ol>
+<ol><li><strong>AREF Capacitor</strong></li><li>0.1μF to GND (required for internal reference)</li></ol>
+<ol><li><strong>Separate Analog Ground</strong></li><li>AGND connected to DGND at single point</li></ol>
+<h3>Software Solutions</h3>
+<pre class="lang-c"><code>// Oversampling and averaging
+uint16_t adc_read_averaged(uint8_t channel, uint8_t samples) {
+    uint32_t sum = 0;
+    
+    for (uint8_t i = 0; i &lt; samples; i++) {
+        sum += adc_read(channel);
+    }
+    
+    return (uint16_t)(sum / samples);
+}
+
+// ADC Noise Reduction Sleep Mode
+#include &lt;avr/sleep.h&gt;
+
+uint16_t adc_read_noise_reduced(uint8_t channel) {
+    ADMUX = (ADMUX &amp; 0xF0) | (channel &amp; 0x0F);
+    
+    set_sleep_mode(SLEEP_MODE_ADC);
+    sleep_enable();
+    
+    ADCSRA |= (1 &lt;&lt; ADSC);  // Start conversion
+    sleep_cpu();             // Sleep during conversion
+    sleep_disable();
+    
+    return ADC;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: 8-bit Fast Mode</h2>
+<h3>Left-Adjusted Result (ADLAR = 1)</h3>
+<pre class="lang-c"><code>// For applications needing only 8-bit resolution
+void adc_init_8bit(void) {
+    // AVCC reference, left adjusted
+    ADMUX = (1 &lt;&lt; REFS0) | (1 &lt;&lt; ADLAR);
+    
+    // Enable ADC, prescaler = 128
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+}
+
+uint8_t adc_read_8bit(uint8_t channel) {
+    // Select channel, keep ADLAR set
+    ADMUX = (1 &lt;&lt; REFS0) | (1 &lt;&lt; ADLAR) | (channel &amp; 0x0F);
+    
+    // Start conversion
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    
+    // Wait for completion
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+    
+    // Read only high byte (8-bit result)
+    return ADCH;
+}</code></pre>
+<h3>Advantages of 8-bit Mode</h3>
+<p>✓ <strong>Faster</strong> - Only need to read ADCH<br>✓ <strong>Simpler</strong> - No 16-bit handling<br>✓ <strong>Sufficient</strong> - Many sensors don&#x27;t need 10-bit precision<br>✓ <strong>Better resolution</strong> - Can use faster ADC clock</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Auto Trigger Sources</h2>
+<h3>SFIOR - Special Function IO Register</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+SFIOR │ TSM  │  -   │  -   │  -   │ADTS2 │ADTS1 │ADTS0 │  -   │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<h3>Auto Trigger Source Selection (ADTS2:0)</h3>
+<table><thead><tr><th>ADTS2:0</th><th>Trigger Source</th></tr></thead><tbody><tr><td>000</td><td>Free Running mode</td></tr><tr><td>001</td><td>Analog Comparator</td></tr><tr><td>010</td><td>External Interrupt Request 0</td></tr><tr><td>011</td><td>Timer/Counter0 Compare Match</td></tr><tr><td>100</td><td>Timer/Counter0 Overflow</td></tr><tr><td>101</td><td>Timer/Counter1 Compare Match B</td></tr><tr><td>110</td><td>Timer/Counter1 Overflow</td></tr><tr><td>111</td><td>Timer/Counter1 Capture Event</td></tr></tbody></table>
+<h3>Example: Timer-Triggered ADC</h3>
+<pre class="lang-c"><code>void adc_timer_trigger_init(void) {
+    // ADC setup
+    ADMUX = (1 &lt;&lt; REFS0);
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADATE) | (1 &lt;&lt; ADIE) |
+             (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Trigger on Timer0 overflow
+    SFIOR = (1 &lt;&lt; ADTS2);
+    
+    // Setup Timer0 for periodic trigger (e.g., 1ms)
+    TCCR0 = (1 &lt;&lt; CS01) | (1 &lt;&lt; CS00);  // Prescaler 64
+    
+    sei();
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 18: Best Practices</h2>
+<h3>Design Guidelines</h3>
+<h4>1. Proper Initialization</h4>
+<pre class="lang-c"><code>// Always perform dummy conversion
+void adc_init(void) {
+    ADMUX = (1 &lt;&lt; REFS0);
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // First conversion is discarded
+    ADCSRA |= (1 &lt;&lt; ADSC);
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));
+}</code></pre>
+<h4>2. Read Sequence for 16-bit</h4>
+<pre class="lang-c"><code>// MUST read ADCL first, then ADCH
+uint16_t adc_result;
+uint8_t low, high;
+
+low = ADCL;   // Read low byte first (locks high byte)
+high = ADCH;  // Read high byte
+adc_result = (high &lt;&lt; 8) | low;
+
+// Or simply:
+adc_result = ADC;  // Compiler handles it correctly</code></pre>
+<h4>3. Channel Switching Delay</h4>
+<pre class="lang-c"><code>// After changing channel, allow time to settle
+ADMUX = (ADMUX &amp; 0xF0) | new_channel;
+_delay_us(10);  // Small delay
+ADCSRA |= (1 &lt;&lt; ADSC);</code></pre>
+<h4>4. Reference Voltage Stability</h4>
+<pre class="lang-c"><code>// Use external capacitor on AREF pin
+// 0.1μF ceramic recommended
+// Allow settling time after changing reference</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: Common Applications</h2>
+<h3>Application Examples</h3>
+<table><thead><tr><th>Application</th><th>Configuration</th><th>Notes</th></tr></thead><tbody><tr><td><strong>Temperature Sensor</strong></td><td>LM35 on ADC0</td><td>10mV/°C, 0-100°C range</td></tr><tr><td><strong>Light Sensor</strong></td><td>CDS/LDR divider</td><td>Use averaging for stability</td></tr><tr><td><strong>Potentiometer</strong></td><td>10kΩ pot on ADC1</td><td>User input, position sensing</td></tr><tr><td><strong>Battery Monitor</strong></td><td>Voltage divider</td><td>Monitor power supply</td></tr><tr><td><strong>Joystick</strong></td><td>2 channels (X,Y)</td><td>Game controller, navigation</td></tr><tr><td><strong>Audio Input</strong></td><td>Microphone amp</td><td>Fast sampling needed</td></tr><tr><td><strong>Accelerometer</strong></td><td>3 channels (X,Y,Z)</td><td>Motion detection</td></tr></tbody></table>
+<h3>Typical Sampling Rates</h3>
+<ul><li><strong>DC signals</strong>: 10-100 Hz sufficient</li><li><strong>Slow sensors</strong>: 1-10 Hz (temperature)</li><li><strong>Control loops</strong>: 100-1000 Hz</li><li><strong>Audio</strong>: 8-44 kHz (requires fast mode)</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 20: Debugging ADC Issues</h2>
+<h3>Common Problems and Solutions</h3>
+<h4>Problem 1: Always Reading 0 or 1023</h4>
+<pre class="lang-c"><code>// Check:
+ADCSRA |= (1 &lt;&lt; ADEN);  // ✓ ADC enabled?
+// ✓ Input pin configured (DDRF should be 0 for ADC pins)
+// ✓ Voltage actually present on pin?
+// ✓ Reference voltage correct?</code></pre>
+<h4>Problem 2: Noisy Readings</h4>
+<pre class="lang-c"><code>// Solution: Averaging
+uint16_t adc_filtered = adc_read_averaged(channel, 16);
+
+// Or exponential moving average
+static uint16_t ema = 0;
+uint16_t new_reading = adc_read(channel);
+ema = (ema * 7 + new_reading) / 8;  // Alpha = 1/8</code></pre>
+<h4>Problem 3: Incorrect Values</h4>
+<pre class="lang-c"><code>// Verify prescaler calculation
+// ADC clock should be 50-200 kHz
+uint32_t adc_clock = F_CPU / prescaler;
+// Check if in range
+
+// Verify reference voltage
+// VREF should match physical voltage</code></pre>
+<h4>Problem 4: Slow Conversions</h4>
+<pre class="lang-c"><code>// Reduce prescaler (trade-off: less accuracy)
+// Or use interrupt/free-running mode
+// Don&#x27;t wait in tight loop if doing other tasks</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 21: Advanced Techniques</h2>
+<h3>1. Oversampling for Higher Resolution</h3>
+<pre class="lang-c"><code>// Increase resolution beyond 10-bit
+// Oversample by 4^n for n additional bits
+
+uint16_t adc_read_12bit(uint8_t channel) {
+    // 4^1 = 4 samples for 1 extra bit (11-bit)
+    // 4^2 = 16 samples for 2 extra bits (12-bit)
+    uint32_t sum = 0;
+    
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        sum += adc_read(channel);
+    }
+    
+    // Right shift by (n samples bits - extra bits)
+    // 16 samples = 4 bits, want 2 extra bits
+    return (uint16_t)(sum &gt;&gt; 2);  // 12-bit result
+}</code></pre>
+<h3>2. Digital Filtering</h3>
+<pre class="lang-c"><code>// Moving average filter
+#define FILTER_SIZE 8
+uint16_t filter_buffer[FILTER_SIZE];
+uint8_t filter_index = 0;
+
+uint16_t adc_moving_average(uint8_t channel) {
+    filter_buffer[filter_index++] = adc_read(channel);
+    if (filter_index &gt;= FILTER_SIZE) filter_index = 0;
+    
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i &lt; FILTER_SIZE; i++) {
+        sum += filter_buffer[i];
+    }
+    
+    return (uint16_t)(sum / FILTER_SIZE);
+}</code></pre>
+<h3>3. Calibration</h3>
+<pre class="lang-c"><code>// Two-point calibration
+typedef struct {
+    uint16_t adc_low;   // ADC reading at known low value
+    uint16_t adc_high;  // ADC reading at known high value
+    float value_low;    // Actual low value
+    float value_high;   // Actual high value
+} calibration_t;
+
+float apply_calibration(uint16_t adc_raw, calibration_t *cal) {
+    float slope = (cal-&gt;value_high - cal-&gt;value_low) / 
+                  (float)(cal-&gt;adc_high - cal-&gt;adc_low);
+    
+    return cal-&gt;value_low + slope * (adc_raw - cal-&gt;adc_low);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 22: Complete Sensor Dashboard Example</h2>
+<h3>Multi-Sensor Monitoring System</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;avr/interrupt.h&gt;
+
+#define TEMP_CHANNEL    0  // LM35 temperature
+#define LIGHT_CHANNEL   1  // CDS light sensor
+#define POT_CHANNEL     2  // Potentiometer
+#define BATTERY_CHANNEL 3  // Battery voltage monitor
+
+volatile uint16_t sensor_data[4];
+volatile uint8_t current_sensor = 0;
+
+void sensors_init(void) {
+    // AVCC reference
+    ADMUX = (1 &lt;&lt; REFS0);
+    
+    // Enable ADC, auto-trigger, interrupt, prescaler 128
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADATE) | (1 &lt;&lt; ADIE) |
+             (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Free running mode
+    SFIOR = 0;
+    
+    sei();
+    
+    // Start first conversion
+    ADCSRA |= (1 &lt;&lt; ADSC);
+}
+
+ISR(ADC_vect) {
+    // Store result
+    sensor_data[current_sensor] = ADC;
+    
+    // Move to next sensor
+    current_sensor++;
+    if (current_sensor &gt;= 4) {
+        current_sensor = 0;
+    }
+    
+    // Select next channel
+    ADMUX = (ADMUX &amp; 0xF0) | current_sensor;
+}
+
+float get_temperature(void) {
+    // LM35: 10mV/°C, VREF=5V
+    return (sensor_data[TEMP_CHANNEL] * 500.0) / 1024.0;
+}
+
+uint8_t get_light_percent(void) {
+    return (sensor_data[LIGHT_CHANNEL] * 100UL) / 1023;
+}
+
+uint8_t get_potentiometer_percent(void) {
+    return (sensor_data[POT_CHANNEL] * 100UL) / 1023;
+}
+
+float get_battery_voltage(void) {
+    // Voltage divider R1=10k, R2=10k (divides by 2)
+    // Max input 10V -&gt; ADC sees 5V
+    return (sensor_data[BATTERY_CHANNEL] * 10.0) / 1024.0;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 23: ADC Performance Optimization</h2>
+<h3>Optimization Strategies</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Performance Goals] --&gt; B{Priority?}
+    B --&gt;|Speed| C[Increase ADC Clock&lt;br/&gt;Reduce Samples]
+    B --&gt;|Accuracy| D[Lower ADC Clock&lt;br/&gt;Oversampling]
+    B --&gt;|Low Power| E[Sleep Mode&lt;br/&gt;Slower Rate]
+    
+    C --&gt; F[Trade-off:&lt;br/&gt;Lower Resolution]
+    D --&gt; G[Trade-off:&lt;br/&gt;Slower Conversion]
+    E --&gt; H[Trade-off:&lt;br/&gt;Less Responsive]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Speed Optimization</h3>
+<pre class="lang-c"><code>// Fast 8-bit mode
+ADMUX = (1 &lt;&lt; REFS0) | (1 &lt;&lt; ADLAR);
+ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2);  // Prescaler /16
+
+uint8_t fast_read = ADCH;  // 8-bit only
+// Conversion time: ~26 μs @ 16 MHz</code></pre>
+<h3>Accuracy Optimization</h3>
+<pre class="lang-c"><code>// Slow 10-bit mode with averaging
+ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+
+uint16_t accurate_read = adc_read_averaged(channel, 64);
+// Trade-off: ~6.6 ms for 64 samples</code></pre>
+<h3>Power Optimization</h3>
+<pre class="lang-c"><code>// ADC noise reduction mode
+set_sleep_mode(SLEEP_MODE_ADC);
+ADCSRA |= (1 &lt;&lt; ADIE);  // Enable interrupt to wake
+
+// Conversion happens during sleep
+// CPU wakes when done</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 24: Reference Voltage Selection</h2>
+<h3>Reference Options Comparison</h3>
+<table><thead><tr><th>Reference</th><th>REFS1:0</th><th>Voltage</th><th>Pros</th><th>Cons</th></tr></thead><tbody><tr><td><strong>AREF</strong></td><td>00</td><td>External</td><td>Precision, flexibility</td><td>Requires external source</td></tr><tr><td><strong>AVCC</strong></td><td>01</td><td>~5V</td><td>Convenient, no ext. ref</td><td>Affected by supply noise</td></tr><tr><td><strong>Internal</strong></td><td>11</td><td>2.56V</td><td>Independent, stable</td><td>Lower range, needs cap</td></tr></tbody></table>
+<h3>Reference Selection Code</h3>
+<pre class="lang-c"><code>// External AREF (must provide voltage on AREF pin)
+void adc_init_external_ref(void) {
+    ADMUX = 0;  // REFS1:0 = 00
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+}
+
+// AVCC as reference (most common)
+void adc_init_avcc_ref(void) {
+    ADMUX = (1 &lt;&lt; REFS0);  // REFS1:0 = 01
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+}
+
+// Internal 2.56V reference
+void adc_init_internal_ref(void) {
+    ADMUX = (1 &lt;&lt; REFS1) | (1 &lt;&lt; REFS0);  // REFS1:0 = 11
+    ADCSRA = (1 &lt;&lt; ADEN) | (1 &lt;&lt; ADPS2) | (1 &lt;&lt; ADPS1) | (1 &lt;&lt; ADPS0);
+    
+    // Wait for voltage to stabilize
+    _delay_ms(10);
+}</code></pre>
+<h3>When to Use Each</h3>
+<ul><li><strong>AREF</strong>: Precision measurements, known reference voltage</li><li><strong>AVCC</strong>: General purpose, 0-5V range</li><li><strong>Internal 2.56V</strong>: Low voltage sensors, independent of supply</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 25: ADC Register Quick Reference</h2>
+<h3>Summary of Registers</h3>
+<pre><code>ADMUX   - Multiplexer Selection
+  • REFS1:0  - Reference voltage
+  • ADLAR    - Left adjust result
+  • MUX4:0   - Channel selection
+
+ADCSRA  - Control and Status Register A
+  • ADEN     - ADC Enable
+  • ADSC     - Start Conversion
+  • ADATE    - Auto Trigger Enable
+  • ADIF     - Interrupt Flag
+  • ADIE     - Interrupt Enable
+  • ADPS2:0  - Prescaler Select
+
+ADCL    - Data Register Low
+ADCH    - Data Register High
+  • Combined: ADC (16-bit access)
+
+SFIOR   - Special Function IO
+  • ADTS2:0  - Auto Trigger Source</code></pre>
+<h3>Quick Setup Template</h3>
+<pre class="lang-c"><code>void adc_init(void) {
+    ADMUX  = (1 &lt;&lt; REFS0);           // AVCC reference
+    ADCSRA = (1 &lt;&lt; ADEN)             // Enable
+           | (1 &lt;&lt; ADPS2)            // Prescaler
+           | (1 &lt;&lt; ADPS1) 
+           | (1 &lt;&lt; ADPS0);           // = 128
+}
+
+uint16_t adc_read(uint8_t ch) {
+    ADMUX = (ADMUX &amp; 0xF0) | ch;     // Select channel
+    ADCSRA |= (1 &lt;&lt; ADSC);           // Start
+    while (ADCSRA &amp; (1 &lt;&lt; ADSC));    // Wait
+    return ADC;                       // Return result
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 26: Practice Exercises</h2>
+<h3>Exercise 1: Basic ADC Reading</h3>
+<p><strong>Goal</strong>: Read potentiometer and display value</p>
+<ul><li>Initialize ADC with AVCC reference</li><li>Read ADC channel 0</li><li>Convert to voltage (0-5V)</li><li>Display on LCD or serial</li></ul>
+<h3>Exercise 2: Temperature Monitor</h3>
+<p><strong>Goal</strong>: Temperature monitoring with alarm</p>
+<ul><li>Read LM35 sensor</li><li>Convert to degrees Celsius</li><li>Trigger buzzer if temp &gt; 30°C</li><li>Update LCD every second</li></ul>
+<h3>Exercise 3: Light-Controlled LED</h3>
+<p><strong>Goal</strong>: Auto-brightness LED</p>
+<ul><li>Read CDS light sensor</li><li>Map to PWM duty cycle (inverse)</li><li>Darker environment = brighter LED</li><li>Use Timer PWM for LED control</li></ul>
+<h3>Exercise 4: Multi-Channel Data Logger</h3>
+<p><strong>Goal</strong>: Log multiple sensors</p>
+<ul><li>Read 4 sensors (temp, light, pot, voltage)</li><li>Use interrupt-driven scanning</li><li>Average 8 samples per channel</li><li>Send data via UART every 100ms</li></ul>
+<h3>Exercise 5: Joystick Control</h3>
+<p><strong>Goal</strong>: 2-axis joystick input</p>
+<ul><li>Read X and Y axes (2 ADC channels)</li><li>Center calibration (512 = center)</li><li>Dead zone implementation</li><li>Display position or control servo/motor</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 27: Summary</h2>
+<h3>Key Takeaways</h3>
+<p>✓ <strong>ATmega128 ADC</strong> is 10-bit, 8-channel converter<br>✓ <strong>Prescaler</strong> must give 50-200 kHz for best accuracy<br>✓ <strong>Three references</strong>: AREF, AVCC, Internal 2.56V<br>✓ <strong>Three modes</strong>: Single, Free Running, Auto Trigger<br>✓ <strong>Read sequence</strong>: ADCL first, then ADCH (or use ADC)<br>✓ <strong>First conversion</strong> should be discarded<br>✓ <strong>Averaging</strong> improves noise immunity<br>✓ <strong>Oversampling</strong> can increase resolution</p>
+<h3>Selection Guide</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A{ADC Requirements} --&gt; B{Speed&lt;br/&gt;Critical?}
+    A --&gt; C{High&lt;br/&gt;Accuracy?}
+    A --&gt; D{Low&lt;br/&gt;Power?}
+    
+    B --&gt;|Yes| E[8-bit mode&lt;br/&gt;Prescaler /16]
+    C --&gt;|Yes| F[10-bit, Prescaler /128&lt;br/&gt;Averaging]
+    D --&gt;|Yes| G[Sleep mode&lt;br/&gt;Slow sampling]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 28: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 22: Analog-to-Digital Converter</li><li>Pages 240-260: Complete ADC documentation</li></ul>
+<ul><li><strong>Application Notes</strong>:</li><li>AVR120: Characterization and Calibration of the ADC</li><li>AVR121: Enhancing ADC Resolution by Oversampling</li><li>AVR122: Calibration of the ADC</li></ul>
+<h3>Online Resources</h3>
+<ul><li>ADC Calculator Tools</li><li>Sensor Interface Examples</li><li>Oversampling Guides</li></ul>
+<h3>Next Steps</h3>
+<ul><li>Combine ADC with LCD display</li><li>Implement sensor fusion (multiple sensors)</li><li>Build data acquisition system</li><li>Explore differential ADC mode</li><li>Advanced filtering techniques</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>ADC_Basic/</code></li><li>Shared libraries: <code>_adc.h</code>, <code>_adc.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:11_ADC_Basic', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:11_ADC_Basic') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

@@ -1,0 +1,1130 @@
+<title>GPIO Port Programming</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>GPIO Port Programming</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to GPIO</h2>
+<h3>What is GPIO?</h3>
+<ul><li><strong>General Purpose Input/Output</strong></li><li>Digital pins that can be controlled by software</li><li>Can be configured as <strong>input</strong> or <strong>output</strong></li><li>Foundation of embedded system interfacing</li></ul>
+<h3>ATmega128 GPIO Features</h3>
+<ul><li><strong>53 programmable I/O lines</strong> (organized in ports)</li><li><strong>8 ports</strong>: PORTA to PORTG (8 bits each)</li><li>Each pin individually configurable</li><li><strong>Built-in pull-up resistors</strong> (optional)</li><li><strong>High current capability</strong>: Up to 40mA per pin</li></ul>
+<h3>GPIO Architecture</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[CPU] --&gt; B[Port Register&lt;br/&gt;PORTx]
+    B --&gt; C[Pin Driver]
+    C --&gt; D[Physical Pin]
+    
+    D --&gt; E[Pin Input&lt;br/&gt;PINx]
+    E --&gt; A
+    
+    F[Direction&lt;br/&gt;DDRx] --&gt; C
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: Port Registers</h2>
+<h3>Three Registers Per Port</h3>
+<p>Each port (A-G) has <strong>3 registers</strong>:</p>
+<table><thead><tr><th>Register</th><th>Name</th><th>Function</th></tr></thead><tbody><tr><td><strong>DDRx</strong></td><td>Data Direction Register</td><td>0=Input, 1=Output</td></tr><tr><td><strong>PORTx</strong></td><td>Port Data Register</td><td>Output: sets pin level&lt;br/&gt;Input: enables pull-up</td></tr><tr><td><strong>PINx</strong></td><td>Port Input Pins</td><td>Read current pin state</td></tr></tbody></table>
+<h3>Register Addresses (Examples)</h3>
+<pre class="lang-c"><code>// Port A (0x3A, 0x3B, 0x3C)
+#define DDRA  _SFR_IO8(0x1A)
+#define PORTA _SFR_IO8(0x1B)
+#define PINA  _SFR_IO8(0x19)
+
+// Port B (0x37, 0x38, 0x36)
+#define DDRB  _SFR_IO8(0x17)
+#define PORTB _SFR_IO8(0x18)
+#define PINB  _SFR_IO8(0x16)
+
+// Port C (0x34, 0x35, 0x33)
+#define DDRC  _SFR_IO8(0x14)
+#define PORTC _SFR_IO8(0x15)
+#define PINC  _SFR_IO8(0x13)
+
+// ... and so on for PORTD-PORTG</code></pre>
+<h3>Register Bit Layout</h3>
+<pre><code>Bit:     7     6     5     4     3     2     1     0
+       ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+DDRx:  │ DD7 │ DD6 │ DD5 │ DD4 │ DD3 │ DD2 │ DD1 │ DD0 │
+       └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+       ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+PORTx: │ P7  │ P6  │ P5  │ P4  │ P3  │ P2  │ P1  │ P0  │
+       └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+       ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+PINx:  │PIN7 │PIN6 │PIN5 │PIN4 │PIN3 │PIN2 │PIN1 │PIN0 │
+       └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: Pin Configuration</h2>
+<h3>Four Pin Modes</h3>
+<table><thead><tr><th>DDRx</th><th>PORTx</th><th>Mode</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>0</td><td><strong>Hi-Z Input</strong></td><td>High impedance, floating</td></tr><tr><td>0</td><td>1</td><td><strong>Input with Pull-up</strong></td><td>Pull-up resistor enabled</td></tr><tr><td>1</td><td>0</td><td><strong>Output LOW</strong></td><td>Pin drives 0V</td></tr><tr><td>1</td><td>1</td><td><strong>Output HIGH</strong></td><td>Pin drives 5V</td></tr></tbody></table>
+<h3>Configuration Flow</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Configure Pin] --&gt; B{Input or&lt;br/&gt;Output?}
+    B --&gt;|Input| C[Set DDRx bit = 0]
+    B --&gt;|Output| D[Set DDRx bit = 1]
+    
+    C --&gt; E{Pull-up&lt;br/&gt;needed?}
+    E --&gt;|Yes| F[Set PORTx bit = 1]
+    E --&gt;|No| G[Set PORTx bit = 0]
+    
+    D --&gt; H{Output&lt;br/&gt;level?}
+    H --&gt;|HIGH| I[Set PORTx bit = 1]
+    H --&gt;|LOW| J[Set PORTx bit = 0]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Example Configurations</h3>
+<pre class="lang-c"><code>// Configure PA0 as output, initially LOW
+DDRA |= (1 &lt;&lt; PA0);   // Set direction to output
+PORTA &amp;= ~(1 &lt;&lt; PA0); // Set output to LOW
+
+// Configure PB3 as input with pull-up
+DDRB &amp;= ~(1 &lt;&lt; PB3);  // Set direction to input
+PORTB |= (1 &lt;&lt; PB3);  // Enable pull-up resistor
+
+// Configure PC5 as output, initially HIGH
+DDRC |= (1 &lt;&lt; PC5);   // Set direction to output
+PORTC |= (1 &lt;&lt; PC5);  // Set output to HIGH
+
+// Configure PD2 as floating input
+DDRD &amp;= ~(1 &lt;&lt; PD2);  // Set direction to input
+PORTD &amp;= ~(1 &lt;&lt; PD2); // Disable pull-up (Hi-Z)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: Basic Output Operations</h2>
+<h3>Setting a Pin HIGH</h3>
+<pre class="lang-c"><code>// Method 1: Using bit-shift and OR
+PORTB |= (1 &lt;&lt; PB0);  // Set bit 0 HIGH
+
+// Method 2: Using _BV macro (same as above)
+PORTB |= _BV(PB0);
+
+// Method 3: Direct bit manipulation (less portable)
+PORTB |= 0b00000001;  // Set bit 0 HIGH
+
+// Method 4: Using sbi() instruction (single instruction)
+sbi(PORTB, PB0);      // Requires avr/sfr_defs.h</code></pre>
+<h3>Clearing a Pin LOW</h3>
+<pre class="lang-c"><code>// Method 1: Using bit-shift and AND with complement
+PORTB &amp;= ~(1 &lt;&lt; PB0);  // Clear bit 0 to LOW
+
+// Method 2: Using _BV macro
+PORTB &amp;= ~_BV(PB0);
+
+// Method 3: Using cbi() instruction
+cbi(PORTB, PB0);       // Requires avr/sfr_defs.h</code></pre>
+<h3>Toggling a Pin</h3>
+<pre class="lang-c"><code>// Method 1: XOR operation
+PORTB ^= (1 &lt;&lt; PB0);   // Toggle bit 0
+
+// Method 2: Read-modify-write
+if (PORTB &amp; (1 &lt;&lt; PB0)) {
+    PORTB &amp;= ~(1 &lt;&lt; PB0);  // Was HIGH, make LOW
+} else {
+    PORTB |= (1 &lt;&lt; PB0);   // Was LOW, make HIGH
+}
+
+// Method 3: Direct PIN write (ATmega specific)
+PINB = (1 &lt;&lt; PB0);     // Toggle PB0</code></pre>
+<h3>Example: Blinking LED</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;util/delay.h&gt;
+
+int main(void) {
+    // Configure PB0 as output
+    DDRB |= (1 &lt;&lt; PB0);
+    
+    while (1) {
+        // Turn LED on
+        PORTB |= (1 &lt;&lt; PB0);
+        _delay_ms(500);
+        
+        // Turn LED off
+        PORTB &amp;= ~(1 &lt;&lt; PB0);
+        _delay_ms(500);
+        
+        // Alternative: Toggle
+        // PORTB ^= (1 &lt;&lt; PB0);
+        // _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Basic Input Operations</h2>
+<h3>Reading a Pin</h3>
+<pre class="lang-c"><code>// Read single pin
+if (PINB &amp; (1 &lt;&lt; PB3)) {
+    // Pin PB3 is HIGH
+} else {
+    // Pin PB3 is LOW
+}
+
+// Store pin state in variable
+uint8_t button_state = (PINB &amp; (1 &lt;&lt; PB3)) &gt;&gt; PB3;
+// button_state = 1 if HIGH, 0 if LOW
+
+// Check if pin is LOW (button pressed with pull-up)
+if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+    // Button pressed
+}</code></pre>
+<h3>Button with Pull-up</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;util/delay.h&gt;
+
+int main(void) {
+    // PB0 = LED output
+    DDRB |= (1 &lt;&lt; PB0);
+    
+    // PB3 = Button input with pull-up
+    DDRB &amp;= ~(1 &lt;&lt; PB3);   // Input
+    PORTB |= (1 &lt;&lt; PB3);   // Enable pull-up
+    
+    while (1) {
+        if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+            // Button pressed (pin LOW)
+            PORTB |= (1 &lt;&lt; PB0);   // LED ON
+        } else {
+            // Button released (pin HIGH)
+            PORTB &amp;= ~(1 &lt;&lt; PB0);  // LED OFF
+        }
+    }
+}</code></pre>
+<h3>Input with Debouncing</h3>
+<pre class="lang-c"><code>uint8_t button_debounce(void) {
+    if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+        // Button might be pressed
+        _delay_ms(50);  // Wait for bounce to settle
+        
+        if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+            // Still pressed, confirmed
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+int main(void) {
+    DDRB &amp;= ~(1 &lt;&lt; PB3);  // Input
+    PORTB |= (1 &lt;&lt; PB3);  // Pull-up
+    DDRB |= (1 &lt;&lt; PB0);   // Output
+    
+    while (1) {
+        if (button_debounce()) {
+            PORTB ^= (1 &lt;&lt; PB0);  // Toggle LED
+            
+            // Wait for release
+            while (!(PINB &amp; (1 &lt;&lt; PB3)));
+            _delay_ms(50);
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Multi-Bit Operations</h2>
+<h3>Writing Multiple Pins</h3>
+<pre class="lang-c"><code>// Set multiple pins at once
+PORTB |= (1 &lt;&lt; PB0) | (1 &lt;&lt; PB2) | (1 &lt;&lt; PB5);  // Set PB0, PB2, PB5
+
+// Clear multiple pins
+PORTB &amp;= ~((1 &lt;&lt; PB1) | (1 &lt;&lt; PB3));  // Clear PB1, PB3
+
+// Set lower nibble (bits 0-3) to 0b1010
+PORTB = (PORTB &amp; 0xF0) | 0x0A;
+
+// Set upper nibble (bits 4-7) to 0b0101
+PORTB = (PORTB &amp; 0x0F) | 0x50;
+
+// Replace entire port value
+PORTB = 0b10101010;  // Set all pins at once</code></pre>
+<h3>Reading Multiple Pins</h3>
+<pre class="lang-c"><code>// Read entire port
+uint8_t port_value = PINB;
+
+// Extract lower nibble
+uint8_t lower = PINB &amp; 0x0F;
+
+// Extract upper nibble
+uint8_t upper = (PINB &amp; 0xF0) &gt;&gt; 4;
+
+// Read specific bits
+uint8_t bits_0_2 = PINB &amp; 0b00000111;  // Read PB0, PB1, PB2</code></pre>
+<h3>Example: 7-Segment Display</h3>
+<pre class="lang-c"><code>//     a
+//   ┌───┐
+// f │   │ b
+//   ├─g─┤
+// e │   │ c
+//   └───┘
+//     d    dp
+
+const uint8_t digit_segments[10] = {
+    0b00111111,  // 0 (a,b,c,d,e,f)
+    0b00000110,  // 1 (b,c)
+    0b01011011,  // 2 (a,b,d,e,g)
+    0b01001111,  // 3 (a,b,c,d,g)
+    0b01100110,  // 4 (b,c,f,g)
+    0b01101101,  // 5 (a,c,d,f,g)
+    0b01111101,  // 6 (a,c,d,e,f,g)
+    0b00000111,  // 7 (a,b,c)
+    0b01111111,  // 8 (all)
+    0b01101111   // 9 (a,b,c,d,f,g)
+};
+
+void display_digit(uint8_t digit) {
+    if (digit &lt; 10) {
+        PORTB = digit_segments[digit];
+    }
+}
+
+int main(void) {
+    DDRB = 0xFF;  // All outputs
+    
+    uint8_t count = 0;
+    
+    while (1) {
+        display_digit(count);
+        _delay_ms(1000);
+        
+        count++;
+        if (count &gt; 9) count = 0;
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Port Masking</h2>
+<h3>Selective Pin Modification</h3>
+<pre class="lang-c"><code>// Mask defines which bits to modify
+#define LED_MASK 0b00001111  // Lower 4 bits
+
+// Set only masked bits HIGH
+PORTB |= LED_MASK;
+
+// Clear only masked bits
+PORTB &amp;= ~LED_MASK;
+
+// Toggle only masked bits
+PORTB ^= LED_MASK;
+
+// Set masked bits to specific value
+uint8_t new_value = 0b00001010;
+PORTB = (PORTB &amp; ~LED_MASK) | (new_value &amp; LED_MASK);</code></pre>
+<h3>Example: Traffic Light Control</h3>
+<pre class="lang-c"><code>#define RED_LED     (1 &lt;&lt; PB0)
+#define YELLOW_LED  (1 &lt;&lt; PB1)
+#define GREEN_LED   (1 &lt;&lt; PB2)
+#define LIGHT_MASK  (RED_LED | YELLOW_LED | GREEN_LED)
+
+void set_lights(uint8_t state) {
+    // Clear all lights, then set new state
+    PORTB = (PORTB &amp; ~LIGHT_MASK) | (state &amp; LIGHT_MASK);
+}
+
+int main(void) {
+    DDRB |= LIGHT_MASK;  // Configure as outputs
+    
+    while (1) {
+        set_lights(GREEN_LED);       // Green only
+        _delay_ms(5000);
+        
+        set_lights(YELLOW_LED);      // Yellow only
+        _delay_ms(2000);
+        
+        set_lights(RED_LED);         // Red only
+        _delay_ms(5000);
+        
+        set_lights(RED_LED | YELLOW_LED);  // Red + Yellow
+        _delay_ms(1000);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Efficient Bit Manipulation</h2>
+<h3>Macros for Readability</h3>
+<pre class="lang-c"><code>// Define common operations as macros
+#define SET_BIT(reg, bit)     ((reg) |= (1 &lt;&lt; (bit)))
+#define CLEAR_BIT(reg, bit)   ((reg) &amp;= ~(1 &lt;&lt; (bit)))
+#define TOGGLE_BIT(reg, bit)  ((reg) ^= (1 &lt;&lt; (bit)))
+#define TEST_BIT(reg, bit)    ((reg) &amp; (1 &lt;&lt; (bit)))
+
+// Usage examples
+SET_BIT(PORTB, PB0);      // Turn on LED
+CLEAR_BIT(PORTB, PB1);    // Turn off LED
+TOGGLE_BIT(PORTB, PB2);   // Toggle LED
+
+if (TEST_BIT(PINB, PB3)) {
+    // Pin is HIGH
+}
+
+// Configure multiple pins
+#define OUTPUT_PIN(port, pin) SET_BIT(DDR##port, P##port##pin)
+#define INPUT_PIN(port, pin)  CLEAR_BIT(DDR##port, P##port##pin)
+
+OUTPUT_PIN(B, 0);  // Expands to: SET_BIT(DDRB, PB0)
+INPUT_PIN(B, 3);   // Expands to: CLEAR_BIT(DDRB, PB3)</code></pre>
+<h3>Assembly-Level Optimization</h3>
+<pre class="lang-c"><code>// Single-instruction set/clear (SBI/CBI)
+#include &lt;avr/sfr_defs.h&gt;
+
+// These compile to single instructions (2 cycles)
+sbi(PORTB, PB0);  // Set bit
+cbi(PORTB, PB1);  // Clear bit
+
+// Compared to C code (4-6 cycles)
+PORTB |= (1 &lt;&lt; PB0);
+PORTB &amp;= ~(1 &lt;&lt; PB1);
+
+// Note: sbi/cbi only work on I/O registers 0x00-0x1F
+// Use for PORTA-PORTG, not for extended I/O</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Port Initialization Patterns</h2>
+<h3>Pattern 1: All Outputs</h3>
+<pre class="lang-c"><code>void port_init_all_outputs(void) {
+    DDRA = 0xFF;   // All pins as outputs
+    PORTA = 0x00;  // All pins LOW initially
+}</code></pre>
+<h3>Pattern 2: All Inputs with Pull-ups</h3>
+<pre class="lang-c"><code>void port_init_all_inputs(void) {
+    DDRA = 0x00;   // All pins as inputs
+    PORTA = 0xFF;  // Enable all pull-ups
+}</code></pre>
+<h3>Pattern 3: Mixed Configuration</h3>
+<pre class="lang-c"><code>void port_init_mixed(void) {
+    // Lower nibble: outputs (LEDs)
+    // Upper nibble: inputs with pull-ups (buttons)
+    
+    DDRA = 0x0F;   // PA0-PA3 outputs, PA4-PA7 inputs
+    PORTA = 0xF0;  // PA0-PA3 LOW, PA4-PA7 pull-ups enabled
+}</code></pre>
+<h3>Pattern 4: Specific Pins</h3>
+<pre class="lang-c"><code>void port_init_specific(void) {
+    // PB0, PB2: outputs (LEDs)
+    DDRB |= (1 &lt;&lt; PB0) | (1 &lt;&lt; PB2);
+    PORTB &amp;= ~((1 &lt;&lt; PB0) | (1 &lt;&lt; PB2));
+    
+    // PB1, PB3: inputs with pull-ups (buttons)
+    DDRB &amp;= ~((1 &lt;&lt; PB1) | (1 &lt;&lt; PB3));
+    PORTB |= (1 &lt;&lt; PB1) | (1 &lt;&lt; PB3);
+    
+    // PB4: input without pull-up (analog sensor)
+    DDRB &amp;= ~(1 &lt;&lt; PB4);
+    PORTB &amp;= ~(1 &lt;&lt; PB4);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Application - LED Patterns</h2>
+<h3>Knight Rider Effect</h3>
+<pre class="lang-c"><code>void knight_rider(void) {
+    DDRB = 0xFF;  // All outputs
+    
+    while (1) {
+        // Move left to right
+        for (uint8_t i = 0; i &lt; 8; i++) {
+            PORTB = (1 &lt;&lt; i);
+            _delay_ms(100);
+        }
+        
+        // Move right to left
+        for (int8_t i = 6; i &gt;= 1; i--) {
+            PORTB = (1 &lt;&lt; i);
+            _delay_ms(100);
+        }
+    }
+}</code></pre>
+<h3>Binary Counter</h3>
+<pre class="lang-c"><code>void binary_counter(void) {
+    DDRB = 0xFF;  // All outputs
+    uint8_t count = 0;
+    
+    while (1) {
+        PORTB = count;
+        _delay_ms(500);
+        count++;
+    }
+}</code></pre>
+<h3>Random Blink</h3>
+<pre class="lang-c"><code>#include &lt;stdlib.h&gt;
+
+void random_blink(void) {
+    DDRB = 0xFF;
+    
+    // Seed with timer or ADC noise
+    srand(TCNT0);
+    
+    while (1) {
+        PORTB = rand() &amp; 0xFF;
+        _delay_ms(200);
+    }
+}</code></pre>
+<h3>Chasing Pattern</h3>
+<pre class="lang-c"><code>void chasing_pattern(void) {
+    DDRB = 0xFF;
+    uint8_t pattern = 0b00000111;  // 3 consecutive LEDs
+    
+    while (1) {
+        PORTB = pattern;
+        _delay_ms(100);
+        
+        // Rotate left
+        pattern = (pattern &lt;&lt; 1) | (pattern &gt;&gt; 7);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Application - Button Matrix</h2>
+<h3>4-Button Input</h3>
+<pre class="lang-c"><code>#define BTN_UP     (1 &lt;&lt; PB0)
+#define BTN_DOWN   (1 &lt;&lt; PB1)
+#define BTN_LEFT   (1 &lt;&lt; PB2)
+#define BTN_RIGHT  (1 &lt;&lt; PB3)
+#define BTN_MASK   (BTN_UP | BTN_DOWN | BTN_LEFT | BTN_RIGHT)
+
+void button_matrix_init(void) {
+    // Configure as inputs with pull-ups
+    DDRB &amp;= ~BTN_MASK;
+    PORTB |= BTN_MASK;
+}
+
+uint8_t read_buttons(void) {
+    // Read and invert (button press = LOW)
+    return (~PINB) &amp; BTN_MASK;
+}
+
+void handle_buttons(void) {
+    uint8_t buttons = read_buttons();
+    
+    if (buttons &amp; BTN_UP) {
+        printf(&quot;UP pressed\n&quot;);
+    }
+    if (buttons &amp; BTN_DOWN) {
+        printf(&quot;DOWN pressed\n&quot;);
+    }
+    if (buttons &amp; BTN_LEFT) {
+        printf(&quot;LEFT pressed\n&quot;);
+    }
+    if (buttons &amp; BTN_RIGHT) {
+        printf(&quot;RIGHT pressed\n&quot;);
+    }
+}
+
+int main(void) {
+    button_matrix_init();
+    uart_init();
+    
+    uint8_t last_state = 0;
+    
+    while (1) {
+        uint8_t current = read_buttons();
+        
+        // Detect press (transition from 0 to 1)
+        uint8_t pressed = current &amp; ~last_state;
+        
+        if (pressed) {
+            if (pressed &amp; BTN_UP)    printf(&quot;UP\n&quot;);
+            if (pressed &amp; BTN_DOWN)  printf(&quot;DOWN\n&quot;);
+            if (pressed &amp; BTN_LEFT)  printf(&quot;LEFT\n&quot;);
+            if (pressed &amp; BTN_RIGHT) printf(&quot;RIGHT\n&quot;);
+        }
+        
+        last_state = current;
+        _delay_ms(50);  // Debounce delay
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Application - Parallel Interface</h2>
+<h3>8-Bit Data Bus</h3>
+<pre class="lang-c"><code>// Write 8-bit data to parallel port
+void parallel_write(uint8_t data) {
+    PORTA = data;  // Put data on bus
+    
+    // Strobe write enable pin
+    PORTB |= (1 &lt;&lt; PB0);   // WR HIGH
+    _delay_us(1);
+    PORTB &amp;= ~(1 &lt;&lt; PB0);  // WR LOW
+}
+
+// Read 8-bit data from parallel port
+uint8_t parallel_read(void) {
+    // Trigger read
+    PORTB |= (1 &lt;&lt; PB1);   // RD HIGH
+    _delay_us(1);
+    
+    uint8_t data = PINA;   // Read data bus
+    
+    PORTB &amp;= ~(1 &lt;&lt; PB1);  // RD LOW
+    
+    return data;
+}
+
+// Initialize parallel interface
+void parallel_init(void) {
+    // PORTA = data bus (bidirectional)
+    DDRA = 0xFF;   // Start as output
+    PORTA = 0x00;
+    
+    // PORTB = control signals
+    DDRB |= (1 &lt;&lt; PB0) | (1 &lt;&lt; PB1);  // WR, RD as outputs
+    PORTB &amp;= ~((1 &lt;&lt; PB0) | (1 &lt;&lt; PB1));  // Both LOW
+}
+
+// Switch data bus direction
+void parallel_set_direction(uint8_t is_output) {
+    if (is_output) {
+        DDRA = 0xFF;  // Output mode
+    } else {
+        DDRA = 0x00;  // Input mode
+        PORTA = 0x00; // Disable pull-ups (external pull-ups assumed)
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Application - Bit-Banging SPI</h2>
+<h3>Software SPI (Bit-Banging)</h3>
+<pre class="lang-c"><code>// Pin definitions
+#define MOSI  PB5
+#define MISO  PB6
+#define SCK   PB7
+#define SS    PB4
+
+void spi_init(void) {
+    // MOSI, SCK, SS as outputs
+    DDRB |= (1 &lt;&lt; MOSI) | (1 &lt;&lt; SCK) | (1 &lt;&lt; SS);
+    
+    // MISO as input
+    DDRB &amp;= ~(1 &lt;&lt; MISO);
+    
+    // Initial states
+    PORTB |= (1 &lt;&lt; SS);    // SS HIGH (inactive)
+    PORTB &amp;= ~(1 &lt;&lt; SCK);  // SCK LOW
+}
+
+uint8_t spi_transfer(uint8_t data) {
+    uint8_t received = 0;
+    
+    for (uint8_t i = 0; i &lt; 8; i++) {
+        // Set MOSI based on MSB of data
+        if (data &amp; 0x80) {
+            PORTB |= (1 &lt;&lt; MOSI);
+        } else {
+            PORTB &amp;= ~(1 &lt;&lt; MOSI);
+        }
+        
+        // Clock HIGH
+        PORTB |= (1 &lt;&lt; SCK);
+        _delay_us(1);
+        
+        // Read MISO
+        received &lt;&lt;= 1;
+        if (PINB &amp; (1 &lt;&lt; MISO)) {
+            received |= 1;
+        }
+        
+        // Clock LOW
+        PORTB &amp;= ~(1 &lt;&lt; SCK);
+        _delay_us(1);
+        
+        data &lt;&lt;= 1;  // Next bit
+    }
+    
+    return received;
+}
+
+void spi_select(void) {
+    PORTB &amp;= ~(1 &lt;&lt; SS);  // SS LOW (active)
+}
+
+void spi_deselect(void) {
+    PORTB |= (1 &lt;&lt; SS);   // SS HIGH (inactive)
+}
+
+// Example usage
+int main(void) {
+    spi_init();
+    
+    spi_select();
+    uint8_t response = spi_transfer(0xAA);
+    spi_deselect();
+    
+    printf(&quot;Received: 0x%02X\n&quot;, response);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Timing Considerations</h2>
+<h3>Propagation Delay</h3>
+<pre class="lang-c"><code>// GPIO operations are not instantaneous
+
+// Write → Pin change delay: ~1-2 clock cycles
+PORTB |= (1 &lt;&lt; PB0);
+// Pin is now HIGH (after ~62.5ns @ 16MHz)
+
+// For fast operations, add explicit delays
+PORTB |= (1 &lt;&lt; PB0);
+_delay_us(1);  // Ensure signal has stabilized
+PORTB &amp;= ~(1 &lt;&lt; PB0);</code></pre>
+<h3>Setup and Hold Times</h3>
+<pre class="lang-c"><code>// When interfacing with external devices
+void write_with_timing(uint8_t data) {
+    // Setup time: data must be stable before clock edge
+    PORTA = data;
+    _delay_us(1);  // Setup time
+    
+    // Clock pulse
+    PORTB |= (1 &lt;&lt; PB0);
+    _delay_us(1);  // Hold time
+    PORTB &amp;= ~(1 &lt;&lt; PB0);
+}</code></pre>
+<h3>Maximum Toggle Frequency</h3>
+<pre><code>Maximum GPIO toggle rate:
+- With simple toggle: f_max ≈ F_CPU / 2
+- At 16 MHz: ~8 MHz max toggle rate
+
+Practical limit (with C code overhead):
+- ~1-2 MHz typical</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Power Consumption</h2>
+<h3>Port Configuration Impact</h3>
+<pre class="lang-c"><code>// High impedance input (worst for power)
+DDRA &amp;= ~(1 &lt;&lt; PA0);  // Input
+PORTA &amp;= ~(1 &lt;&lt; PA0); // No pull-up
+// Pin floats → can oscillate → higher power
+
+// Input with pull-up (better)
+DDRA &amp;= ~(1 &lt;&lt; PA0);  // Input
+PORTA |= (1 &lt;&lt; PA0);  // Pull-up
+// Stable HIGH → less power
+
+// Output (best - defined state)
+DDRA |= (1 &lt;&lt; PA0);   // Output
+PORTA &amp;= ~(1 &lt;&lt; PA0); // Defined state
+// No oscillation → lowest power</code></pre>
+<h3>Unused Pin Configuration</h3>
+<pre class="lang-c"><code>void configure_unused_pins(void) {
+    // Method 1: Configure as outputs, drive LOW
+    DDRB |= (1 &lt;&lt; PB5) | (1 &lt;&lt; PB6);  // Unused pins
+    PORTB &amp;= ~((1 &lt;&lt; PB5) | (1 &lt;&lt; PB6));
+    
+    // Method 2: Configure as inputs with pull-ups
+    // (useful if pins might be connected later)
+    DDRC &amp;= ~((1 &lt;&lt; PC0) | (1 &lt;&lt; PC1));
+    PORTC |= (1 &lt;&lt; PC0) | (1 &lt;&lt; PC1);
+}
+
+// Best practice: never leave pins floating
+void init_all_ports(void) {
+    // Configure all unused pins
+    // Example: PORTF not used
+    DDRF = 0xFF;   // All outputs
+    PORTF = 0x00;  // All LOW
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Advanced - Port Multiplexing</h2>
+<h3>Sharing Pins for Multiple Functions</h3>
+<pre class="lang-c"><code>typedef enum {
+    MODE_LED,
+    MODE_BUTTON,
+    MODE_SENSOR
+} port_mode_t;
+
+port_mode_t current_mode = MODE_LED;
+
+void set_port_mode(port_mode_t mode) {
+    switch (mode) {
+        case MODE_LED:
+            DDRA = 0xFF;   // All outputs
+            PORTA = 0x00;
+            break;
+            
+        case MODE_BUTTON:
+            DDRA = 0x00;   // All inputs
+            PORTA = 0xFF;  // Pull-ups
+            break;
+            
+        case MODE_SENSOR:
+            DDRA = 0x00;   // All inputs
+            PORTA = 0x00;  // No pull-ups
+            break;
+    }
+    
+    current_mode = mode;
+}
+
+// Time-multiplexed display (Charlieplexing concept)
+void display_multiplex(void) {
+    // Show digit 0 on position 0
+    DDRA = 0xFF;
+    PORTA = digit_segments[0];
+    DDRB |= (1 &lt;&lt; PB0);
+    PORTB &amp;= ~(1 &lt;&lt; PB0);  // Enable position 0
+    _delay_ms(5);
+    
+    // Show digit 1 on position 1
+    PORTA = digit_segments[1];
+    PORTB |= (1 &lt;&lt; PB0);   // Disable position 0
+    DDRB |= (1 &lt;&lt; PB1);
+    PORTB &amp;= ~(1 &lt;&lt; PB1);  // Enable position 1
+    _delay_ms(5);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 17: Testing and Debugging</h2>
+<h3>Port Test Functions</h3>
+<pre class="lang-c"><code>// Test all pins by toggling
+void test_all_pins(void) {
+    printf(&quot;Testing all pins on PORTB\n&quot;);
+    
+    DDRB = 0xFF;  // All outputs
+    
+    for (uint8_t pin = 0; pin &lt; 8; pin++) {
+        printf(&quot;Testing PB%d\n&quot;, pin);
+        
+        PORTB = 0x00;
+        _delay_ms(500);
+        
+        PORTB = (1 &lt;&lt; pin);
+        _delay_ms(500);
+    }
+    
+    PORTB = 0x00;
+}
+
+// Read and display port state
+void debug_port_state(void) {
+    printf(&quot;DDRB:  0x%02X (0b&quot;, DDRB);
+    for (int8_t i = 7; i &gt;= 0; i--) {
+        printf(&quot;%d&quot;, (DDRB &gt;&gt; i) &amp; 1);
+    }
+    printf(&quot;)\n&quot;);
+    
+    printf(&quot;PORTB: 0x%02X (0b&quot;, PORTB);
+    for (int8_t i = 7; i &gt;= 0; i--) {
+        printf(&quot;%d&quot;, (PORTB &gt;&gt; i) &amp; 1);
+    }
+    printf(&quot;)\n&quot;);
+    
+    printf(&quot;PINB:  0x%02X (0b&quot;, PINB);
+    for (int8_t i = 7; i &gt;= 0; i--) {
+        printf(&quot;%d&quot;, (PINB &gt;&gt; i) &amp; 1);
+    }
+    printf(&quot;)\n\n&quot;);
+}
+
+// Input test with live monitoring
+void test_inputs(void) {
+    DDRB = 0x00;   // All inputs
+    PORTB = 0xFF;  // Pull-ups
+    
+    while (1) {
+        debug_port_state();
+        _delay_ms(500);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 18: Best Practices</h2>
+<h3>GPIO Programming Guidelines</h3>
+<p>✓ <strong>Always initialize ports</strong> before use</p>
+<pre class="lang-c"><code>void init(void) {
+    // Bad: Using port without initialization
+    // PORTB |= (1 &lt;&lt; PB0);  // ← May have unexpected state
+    
+    // Good: Initialize first
+    DDRB |= (1 &lt;&lt; PB0);   // Configure as output
+    PORTB &amp;= ~(1 &lt;&lt; PB0); // Set initial state
+}</code></pre>
+<p>✓ <strong>Use meaningful names</strong></p>
+<pre class="lang-c"><code>// Bad
+#define LED 0
+
+// Good
+#define LED_STATUS_PIN PB0
+#define LED_STATUS_PORT PORTB
+#define LED_STATUS_DDR DDRB
+
+#define LED_ON()  (LED_STATUS_PORT |= (1 &lt;&lt; LED_STATUS_PIN))
+#define LED_OFF() (LED_STATUS_PORT &amp;= ~(1 &lt;&lt; LED_STATUS_PIN))</code></pre>
+<p>✓ <strong>Configure unused pins</strong></p>
+<pre class="lang-c"><code>// Unused pins should not float
+DDRF = 0xFF;   // All outputs
+PORTF = 0x00;  // Drive LOW</code></pre>
+<p>✓ <strong>Use atomic operations</strong> for interrupt safety</p>
+<pre class="lang-c"><code>#include &lt;util/atomic.h&gt;
+
+ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    PORTB |= (1 &lt;&lt; PB0);
+    PORTB &amp;= ~(1 &lt;&lt; PB1);
+}</code></pre>
+<p>✓ <strong>Document pin assignments</strong></p>
+<pre class="lang-c"><code>/*
+ * Pin Configuration:
+ * PB0 - LED Status (output)
+ * PB1 - LED Error (output)
+ * PB2 - Button Reset (input, pull-up)
+ * PB3 - Sensor Enable (output)
+ * PB4-7 - Unused (configured as outputs, LOW)
+ */</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: Common Mistakes</h2>
+<h3>Mistake 1: Forgetting Direction Configuration</h3>
+<pre class="lang-c"><code>// ❌ WRONG: Setting output without configuring DDR
+PORTB |= (1 &lt;&lt; PB0);  // May not work if PB0 is input!
+
+// ✓ CORRECT
+DDRB |= (1 &lt;&lt; PB0);   // Configure as output first
+PORTB |= (1 &lt;&lt; PB0);  // Then set HIGH</code></pre>
+<h3>Mistake 2: Reading PORT Instead of PIN</h3>
+<pre class="lang-c"><code>// ❌ WRONG: Reading PORT register
+if (PORTB &amp; (1 &lt;&lt; PB3)) {  // Reads output latch, not pin state!
+
+// ✓ CORRECT: Read PIN register
+if (PINB &amp; (1 &lt;&lt; PB3)) {   // Reads actual pin state</code></pre>
+<h3>Mistake 3: Not Debouncing Inputs</h3>
+<pre class="lang-c"><code>// ❌ WRONG: No debouncing
+if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+    count++;  // Will count multiple times per press!
+}
+
+// ✓ CORRECT: With debouncing
+if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+    _delay_ms(50);
+    if (!(PINB &amp; (1 &lt;&lt; PB3))) {
+        count++;
+        while (!(PINB &amp; (1 &lt;&lt; PB3)));  // Wait for release
+        _delay_ms(50);
+    }
+}</code></pre>
+<h3>Mistake 4: Unintended Bit Modification</h3>
+<pre class="lang-c"><code>// ❌ WRONG: Affects other bits
+PORTB = (1 &lt;&lt; PB0);  // Sets PB0, but clears all others!
+
+// ✓ CORRECT: Use bitwise OR
+PORTB |= (1 &lt;&lt; PB0);  // Sets only PB0</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 20: Performance Comparison</h2>
+<h3>Operation Speed</h3>
+<pre class="lang-c"><code>// Benchmark: Toggle PB0 1 million times
+
+// Method 1: Bitwise XOR
+start = micros();
+for (uint32_t i = 0; i &lt; 1000000; i++) {
+    PORTB ^= (1 &lt;&lt; PB0);
+}
+end = micros();
+printf(&quot;XOR: %lu us\n&quot;, end - start);
+
+// Method 2: If-else
+start = micros();
+for (uint32_t i = 0; i &lt; 1000000; i++) {
+    if (PORTB &amp; (1 &lt;&lt; PB0)) {
+        PORTB &amp;= ~(1 &lt;&lt; PB0);
+    } else {
+        PORTB |= (1 &lt;&lt; PB0);
+    }
+}
+end = micros();
+printf(&quot;If-else: %lu us\n&quot;, end - start);
+
+// Method 3: PIN write (fastest)
+start = micros();
+for (uint32_t i = 0; i &lt; 1000000; i++) {
+    PINB = (1 &lt;&lt; PB0);
+}
+end = micros();
+printf(&quot;PIN write: %lu us\n&quot;, end - start);</code></pre>
+<h3>Typical Results @ 16MHz</h3>
+<pre><code>Method          Cycles/Toggle    Time/Toggle
+---------------------------------------------
+XOR             ~6 cycles        375 ns
+If-else         ~12 cycles       750 ns
+PIN write       ~2 cycles        125 ns
+sbi/cbi         ~2 cycles        125 ns</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 21: Summary</h2>
+<h3>Key Concepts</h3>
+<p>✓ <strong>Three registers per port</strong>: DDRx (direction), PORTx (output/pull-up), PINx (input)<br>✓ <strong>Pin modes</strong>: Hi-Z input, Input with pull-up, Output LOW, Output HIGH<br>✓ <strong>Bit manipulation</strong>: Use <code>|=</code>, <code>&amp;= ~</code>, <code>^=</code> for set, clear, toggle<br>✓ <strong>Read from PIN</strong>, write to PORT<br>✓ <strong>Initialize before use</strong> - don&#x27;t leave pins floating<br>✓ <strong>Debounce inputs</strong> for reliable button reading<br>✓ <strong>Use masks</strong> for multi-bit operations<br>✓ <strong>Document pin assignments</strong> clearly</p>
+<h3>GPIO Applications</h3>
+<ul><li>LED control and displays</li><li>Button and switch input</li><li>Parallel data buses</li><li>Bit-banging communication protocols</li><li>Sensor interfacing</li><li>Motor and relay control</li></ul>
+<h3>Best Practices Checklist</h3>
+<ul><li>✓ Initialize DDRx and PORTx on startup</li><li>✓ Configure unused pins (output LOW or input with pull-up)</li><li>✓ Use meaningful macro names for pins</li><li>✓ Read PIN register for inputs, not PORT</li><li>✓ Debounce mechanical switches</li><li>✓ Use atomic blocks when necessary</li><li>✓ Comment pin assignments in code</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 22: Practice Exercises</h2>
+<h3>Exercise 1: LED Blink</h3>
+<p><strong>Goal</strong>: Basic output control</p>
+<ul><li>Configure PB0 as output</li><li>Blink LED at 1 Hz (500ms on, 500ms off)</li><li>Add second LED on PB1 blinking at 2 Hz</li></ul>
+<h3>Exercise 2: Button-Controlled LED</h3>
+<p><strong>Goal</strong>: Basic input and output</p>
+<ul><li>PB0 = LED output</li><li>PB3 = Button input (with pull-up)</li><li>LED on when button pressed</li><li>Add debouncing</li></ul>
+<h3>Exercise 3: Binary Counter</h3>
+<p><strong>Goal</strong>: Multi-bit output</p>
+<ul><li>Use PORTB (8 LEDs)</li><li>Count from 0 to 255</li><li>Display binary value</li><li>500ms per count</li></ul>
+<h3>Exercise 4: Traffic Light</h3>
+<p><strong>Goal</strong>: Sequential control</p>
+<ul><li>3 LEDs (Red, Yellow, Green)</li><li>Proper traffic light sequence</li><li>Realistic timing</li></ul>
+<h3>Exercise 5: Button Counter</h3>
+<p><strong>Goal</strong>: Edge detection</p>
+<ul><li>Button on PB3</li><li>Count button presses</li><li>Display count on 4 LEDs (binary)</li><li>Proper debouncing required</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 23: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 4: I/O Ports</li><li>Section 29: Register Summary</li><li>Electrical Characteristics</li></ul>
+<h3>Port Programming</h3>
+<ul><li>GPIO fundamentals</li><li>Pull-up/pull-down resistors</li><li>Schmitt trigger inputs</li><li>Current sourcing/sinking</li></ul>
+<h3>Advanced Topics</h3>
+<ul><li>Port multiplexing</li><li>Charlieplexing for LEDs</li><li>Interrupt on pin change</li><li>Analog comparator on GPIO</li></ul>
+<h3>Tools</h3>
+<ul><li>Logic analyzer for debugging</li><li>Oscilloscope for timing</li><li>Multimeter for voltage checks</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>Port_Basic/</code></li><li>Shared libraries: <code>_port.h</code>, <code>_port.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:01_Port_Basic', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:01_Port_Basic') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

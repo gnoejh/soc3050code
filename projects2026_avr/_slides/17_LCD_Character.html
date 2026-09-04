@@ -1,0 +1,1314 @@
+<title>LCD Character Display Programming</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>LCD Character Display Programming</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Character LCDs</h2>
+<h3>What is a Character LCD?</h3>
+<ul><li><strong>Alphanumeric display</strong> module (16x2, 20x4 common sizes)</li><li><strong>HD44780</strong> controller (industry standard)</li><li>Displays <strong>ASCII characters</strong> and <strong>custom symbols</strong></li><li>Built-in <strong>character generator ROM</strong> (CGROM)</li><li>Programmable <strong>custom characters</strong> (CGRAM)</li></ul>
+<h3>Common LCD Sizes</h3>
+<table><thead><tr><th>Size</th><th>Columns</th><th>Rows</th><th>Total Characters</th></tr></thead><tbody><tr><td><strong>16x2</strong></td><td>16</td><td>2</td><td>32</td></tr><tr><td><strong>16x4</strong></td><td>16</td><td>4</td><td>64</td></tr><tr><td><strong>20x2</strong></td><td>20</td><td>2</td><td>40</td></tr><tr><td><strong>20x4</strong></td><td>20</td><td>4</td><td>80</td></tr></tbody></table>
+<h3>Applications</h3>
+<p>✓ <strong>User interfaces</strong> - Menus, settings<br>✓ <strong>Sensor displays</strong> - Temperature, voltage<br>✓ <strong>Status indicators</strong> - System state, errors<br>✓ <strong>Data logging</strong> - Real-time values<br>✓ <strong>Calculators</strong> - Input/output display</p>
+</section>
+<section class="slide">
+<h2>Slide 2: HD44780 LCD Controller</h2>
+<h3>Architecture Overview</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Microcontroller] --&gt;|Commands| B[LCD Controller&lt;br/&gt;HD44780]
+    A --&gt;|Data| B
+    
+    B --&gt; C[DDRAM&lt;br/&gt;Display Data RAM]
+    B --&gt; D[CGRAM&lt;br/&gt;Custom Characters]
+    B --&gt; E[CGROM&lt;br/&gt;Character Patterns]
+    
+    C --&gt; F[LCD Display]
+    E --&gt; F
+    
+    style B fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Memory Organization</h3>
+<ul><li><strong>DDRAM</strong>: Display Data RAM (80 bytes)</li><li>Stores characters to display</li><li>Address maps to screen position</li></ul>
+<ul><li><strong>CGROM</strong>: Character Generator ROM (fixed)</li><li>208 5x8 dot patterns</li><li>Standard ASCII + Japanese characters</li></ul>
+<ul><li><strong>CGRAM</strong>: Character Generator RAM (64 bytes)</li><li>8 custom 5x8 characters</li><li>User-programmable</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3: LCD Pin Configuration</h2>
+<h3>16-Pin LCD Interface</h3>
+<table><thead><tr><th>Pin</th><th>Symbol</th><th>Function</th><th>Direction</th></tr></thead><tbody><tr><td>1</td><td>VSS</td><td>Ground</td><td>-</td></tr><tr><td>2</td><td>VDD</td><td>+5V Power</td><td>-</td></tr><tr><td>3</td><td>V0</td><td>Contrast</td><td>- (pot)</td></tr><tr><td>4</td><td>RS</td><td>Register Select</td><td>Input</td></tr><tr><td>5</td><td>R/W</td><td>Read/Write</td><td>Input</td></tr><tr><td>6</td><td>E</td><td>Enable</td><td>Input</td></tr><tr><td>7-14</td><td>D0-D7</td><td>Data Bus</td><td>I/O</td></tr><tr><td>15</td><td>A (LED+)</td><td>Backlight +</td><td>-</td></tr><tr><td>16</td><td>K (LED-)</td><td>Backlight -</td><td>-</td></tr></tbody></table>
+<h3>Signal Functions</h3>
+<pre><code>RS = 0: Instruction register (commands)
+RS = 1: Data register (characters)
+
+R/W = 0: Write to LCD
+R/W = 1: Read from LCD
+
+E: Enable signal (falling edge latches data)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: 4-Bit vs 8-Bit Mode</h2>
+<h3>8-Bit Mode</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[ATmega128] --&gt;|D0-D7| B[LCD]
+    A --&gt;|RS| B
+    A --&gt;|RW| B
+    A --&gt;|E| B
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<ul><li><strong>11 I/O pins</strong> total (8 data + 3 control)</li><li><strong>Faster</strong> communication</li><li><strong>Simple</strong> - one transaction per byte</li></ul>
+<h3>4-Bit Mode (Recommended)</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[ATmega128] --&gt;|D4-D7| B[LCD]
+    A --&gt;|RS| B
+    A --&gt;|RW| B
+    A --&gt;|E| B
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<ul><li><strong>7 I/O pins</strong> (4 data + 3 control)</li><li><strong>Saves pins</strong> (critical for small MCUs)</li><li><strong>Slightly slower</strong> - two nibbles per byte</li><li><strong>Industry standard</strong> for embedded systems</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 5: LCD Initialization Sequence</h2>
+<h3>Power-On Timing</h3>
+<pre class="lang-mermaid"><code>gantt
+    title LCD Initialization Timeline
+    dateFormat X
+    axisFormat %L ms
+    
+    section Power
+    VDD rises        :0, 15
+    
+    section Wait
+    Power stabilize  :15, 40
+    
+    section Init
+    Function Set 1   :40, 5
+    Wait 4.1ms       :45, 5
+    Function Set 2   :50, 1
+    Wait 100us       :51, 1
+    Function Set 3   :52, 1
+    Configuration    :53, 5</code></pre>
+<h3>Initialization Code (4-bit)</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;util/delay.h&gt;
+
+// LCD connections
+#define LCD_RS  PA0
+#define LCD_RW  PA1
+#define LCD_E   PA2
+#define LCD_D4  PA4
+#define LCD_D5  PA5
+#define LCD_D6  PA6
+#define LCD_D7  PA7
+
+#define LCD_DATA_PORT  PORTA
+#define LCD_CTRL_PORT  PORTA
+#define LCD_DATA_DDR   DDRA
+#define LCD_CTRL_DDR   DDRA
+
+void lcd_init(void) {
+    // Configure pins as outputs
+    LCD_DATA_DDR |= (1 &lt;&lt; LCD_D4) | (1 &lt;&lt; LCD_D5) | 
+                    (1 &lt;&lt; LCD_D6) | (1 &lt;&lt; LCD_D7);
+    LCD_CTRL_DDR |= (1 &lt;&lt; LCD_RS) | (1 &lt;&lt; LCD_RW) | (1 &lt;&lt; LCD_E);
+    
+    // Wait for LCD to power up
+    _delay_ms(50);
+    
+    // Initialize to 4-bit mode (special sequence)
+    lcd_write_nibble(0x03);
+    _delay_ms(5);
+    
+    lcd_write_nibble(0x03);
+    _delay_us(150);
+    
+    lcd_write_nibble(0x03);
+    lcd_write_nibble(0x02);  // Switch to 4-bit mode
+    
+    // Function Set: 4-bit, 2 lines, 5x8 font
+    lcd_command(0x28);
+    
+    // Display ON, cursor OFF, blink OFF
+    lcd_command(0x0C);
+    
+    // Clear display
+    lcd_command(0x01);
+    _delay_ms(2);
+    
+    // Entry mode: increment, no shift
+    lcd_command(0x06);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Low-Level LCD Functions</h2>
+<h3>Enable Pulse</h3>
+<pre class="lang-c"><code>void lcd_enable_pulse(void) {
+    LCD_CTRL_PORT |= (1 &lt;&lt; LCD_E);   // E = 1
+    _delay_us(1);                     // Minimum 450ns
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_E);  // E = 0
+    _delay_us(50);                    // Command execution time
+}
+
+void lcd_write_nibble(uint8_t nibble) {
+    // Clear data pins
+    LCD_DATA_PORT &amp;= 0x0F;
+    
+    // Write nibble to D4-D7
+    LCD_DATA_PORT |= (nibble &lt;&lt; 4);
+    
+    // Pulse enable
+    lcd_enable_pulse();
+}
+
+void lcd_write_byte(uint8_t byte) {
+    // Send high nibble first
+    lcd_write_nibble(byte &gt;&gt; 4);
+    
+    // Then low nibble
+    lcd_write_nibble(byte &amp; 0x0F);
+}</code></pre>
+<h3>Command vs Data</h3>
+<pre class="lang-c"><code>void lcd_command(uint8_t cmd) {
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_RS);  // RS = 0 (command)
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_RW);  // RW = 0 (write)
+    
+    lcd_write_byte(cmd);
+}
+
+void lcd_data(uint8_t data) {
+    LCD_CTRL_PORT |= (1 &lt;&lt; LCD_RS);   // RS = 1 (data)
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_RW);  // RW = 0 (write)
+    
+    lcd_write_byte(data);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: LCD Commands Reference</h2>
+<h3>Common Commands</h3>
+<table><thead><tr><th>Command</th><th>Hex Code</th><th>Function</th></tr></thead><tbody><tr><td><strong>Clear Display</strong></td><td>0x01</td><td>Clear screen, home cursor</td></tr><tr><td><strong>Return Home</strong></td><td>0x02</td><td>Cursor to (0,0)</td></tr><tr><td><strong>Entry Mode</strong></td><td>0x04-0x07</td><td>Cursor direction</td></tr><tr><td><strong>Display Control</strong></td><td>0x08-0x0F</td><td>Display/cursor ON/OFF</td></tr><tr><td><strong>Cursor Shift</strong></td><td>0x10-0x1F</td><td>Move cursor/display</td></tr><tr><td><strong>Function Set</strong></td><td>0x20-0x3F</td><td>Interface/lines/font</td></tr><tr><td><strong>Set CGRAM</strong></td><td>0x40-0x7F</td><td>Custom character address</td></tr><tr><td><strong>Set DDRAM</strong></td><td>0x80-0xFF</td><td>Display position</td></tr></tbody></table>
+<h3>Entry Mode (0x04 + options)</h3>
+<pre class="lang-c"><code>#define LCD_ENTRY_INC       0x02  // Increment cursor
+#define LCD_ENTRY_DEC       0x00  // Decrement cursor
+#define LCD_ENTRY_SHIFT     0x01  // Shift display
+
+// Example: Increment cursor, no shift
+lcd_command(0x04 | LCD_ENTRY_INC);</code></pre>
+<h3>Display Control (0x08 + options)</h3>
+<pre class="lang-c"><code>#define LCD_DISPLAY_ON      0x04
+#define LCD_DISPLAY_OFF     0x00
+#define LCD_CURSOR_ON       0x02
+#define LCD_CURSOR_OFF      0x00
+#define LCD_BLINK_ON        0x01
+#define LCD_BLINK_OFF       0x00
+
+// Example: Display ON, cursor ON, blink ON
+lcd_command(0x08 | LCD_DISPLAY_ON | LCD_CURSOR_ON | LCD_BLINK_ON);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Text Display Functions</h2>
+<h3>Basic Text Output</h3>
+<pre class="lang-c"><code>void lcd_putc(char c) {
+    lcd_data(c);
+}
+
+void lcd_puts(const char *str) {
+    while (*str) {
+        lcd_putc(*str++);
+    }
+}
+
+void lcd_clear(void) {
+    lcd_command(0x01);
+    _delay_ms(2);  // Clear command is slow
+}
+
+void lcd_home(void) {
+    lcd_command(0x02);
+    _delay_ms(2);
+}</code></pre>
+<h3>Example Usage</h3>
+<pre class="lang-c"><code>int main(void) {
+    lcd_init();
+    
+    lcd_puts(&quot;Hello, World!&quot;);
+    
+    while (1) {
+        // Display stays on
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Cursor Positioning</h2>
+<h3>DDRAM Address Mapping (16x2 LCD)</h3>
+<pre><code>Row 0: 0x00 - 0x0F  (positions 0-15)
+Row 1: 0x40 - 0x4F  (positions 16-31)
+
+Visual:     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+Row 0:     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+Row 1:     40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F</code></pre>
+<h3>DDRAM Address Mapping (20x4 LCD)</h3>
+<pre><code>Row 0: 0x00 - 0x13  (positions 0-19)
+Row 1: 0x40 - 0x53  (positions 20-39)
+Row 2: 0x14 - 0x27  (positions 40-59)
+Row 3: 0x54 - 0x67  (positions 60-79)</code></pre>
+<h3>Positioning Functions</h3>
+<pre class="lang-c"><code>void lcd_gotoxy(uint8_t x, uint8_t y) {
+    uint8_t address;
+    
+    // Calculate DDRAM address
+    switch (y) {
+        case 0:  address = 0x00 + x; break;
+        case 1:  address = 0x40 + x; break;
+        case 2:  address = 0x14 + x; break;  // For 20x4
+        case 3:  address = 0x54 + x; break;  // For 20x4
+        default: address = 0x00;     break;
+    }
+    
+    // Set DDRAM address (command 0x80 + address)
+    lcd_command(0x80 | address);
+}
+
+// Example: Write to specific position
+void example(void) {
+    lcd_gotoxy(5, 0);   // Column 5, Row 0
+    lcd_puts(&quot;Hello&quot;);
+    
+    lcd_gotoxy(0, 1);   // Column 0, Row 1
+    lcd_puts(&quot;World!&quot;);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Formatted Output with printf</h2>
+<h3>Using printf with LCD</h3>
+<pre class="lang-c"><code>#include &lt;stdio.h&gt;
+
+// Custom putc for printf redirection
+int lcd_putchar(char c, FILE *stream) {
+    lcd_data(c);
+    return 0;
+}
+
+// Create FILE stream
+FILE lcd_stream = FDEV_SETUP_STREAM(lcd_putchar, NULL, _FDEV_SETUP_WRITE);
+
+void lcd_printf_init(void) {
+    stdout = &amp;lcd_stream;  // Redirect stdout to LCD
+}
+
+// Example usage
+int main(void) {
+    lcd_init();
+    lcd_printf_init();
+    
+    int temperature = 25;
+    float voltage = 3.14;
+    
+    lcd_clear();
+    printf(&quot;Temp: %d C&quot;, temperature);
+    
+    lcd_gotoxy(0, 1);
+    printf(&quot;V: %.2f V&quot;, voltage);
+    
+    while (1);
+}</code></pre>
+<h3>sprintf Alternative</h3>
+<pre class="lang-c"><code>#include &lt;stdio.h&gt;
+
+void display_sensor(uint16_t adc_value) {
+    char buffer[17];  // 16 chars + null
+    
+    float voltage = (adc_value * 5.0) / 1024.0;
+    
+    sprintf(buffer, &quot;ADC: %4d&quot;, adc_value);
+    lcd_gotoxy(0, 0);
+    lcd_puts(buffer);
+    
+    sprintf(buffer, &quot;V: %.3f V&quot;, voltage);
+    lcd_gotoxy(0, 1);
+    lcd_puts(buffer);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Custom Characters</h2>
+<h3>Character Structure (5x8)</h3>
+<pre><code>Each character is 8 rows of 5 pixels
+Only lower 5 bits used per row
+
+Example: Heart symbol
+Row  Binary    Hex
+0    00000    0x00
+1    01010    0x0A
+2    11111    0x1F
+3    11111    0x1F
+4    11111    0x1F
+5    01110    0x0E
+6    00100    0x04
+7    00000    0x00</code></pre>
+<h3>Creating Custom Characters</h3>
+<pre class="lang-c"><code>// Define custom character patterns
+const uint8_t custom_chars[][8] = {
+    // Character 0: Heart
+    {0x00, 0x0A, 0x1F, 0x1F, 0x1F, 0x0E, 0x04, 0x00},
+    
+    // Character 1: Degree symbol
+    {0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00},
+    
+    // Character 2: Battery full
+    {0x0E, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F},
+    
+    // Character 3: Battery half
+    {0x0E, 0x1B, 0x11, 0x11, 0x1F, 0x1F, 0x1F, 0x1F},
+    
+    // Character 4: Battery empty
+    {0x0E, 0x1B, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F},
+    
+    // Character 5: Arrow up
+    {0x04, 0x0E, 0x15, 0x04, 0x04, 0x04, 0x04, 0x00},
+    
+    // Character 6: Arrow down
+    {0x04, 0x04, 0x04, 0x04, 0x15, 0x0E, 0x04, 0x00},
+    
+    // Character 7: Bell
+    {0x04, 0x0E, 0x0E, 0x0E, 0x1F, 0x00, 0x04, 0x00}
+};
+
+void lcd_load_custom_chars(void) {
+    uint8_t i, j;
+    
+    for (i = 0; i &lt; 8; i++) {
+        // Set CGRAM address (0x40 + character*8)
+        lcd_command(0x40 + (i * 8));
+        
+        // Write 8 bytes for character pattern
+        for (j = 0; j &lt; 8; j++) {
+            lcd_data(custom_chars[i][j]);
+        }
+    }
+    
+    // Return to DDRAM
+    lcd_command(0x80);
+}
+
+// Display custom characters
+void display_custom(void) {
+    lcd_load_custom_chars();
+    
+    lcd_clear();
+    lcd_puts(&quot;Custom: &quot;);
+    
+    // Display custom characters 0-7
+    for (uint8_t i = 0; i &lt; 8; i++) {
+        lcd_data(i);  // Character code 0-7
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Progress Bar Example</h2>
+<h3>Animated Progress Bar</h3>
+<pre class="lang-c"><code>// Custom characters for progress bar
+const uint8_t progress_chars[][8] = {
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F},  // 0: Empty
+    {0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F},  // 1: 20%
+    {0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x1F},  // 2: 40%
+    {0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1F},  // 3: 60%
+    {0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1F},  // 4: 80%
+    {0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F},  // 5: Full
+};
+
+void lcd_progress_bar(uint8_t row, uint8_t percent) {
+    uint8_t full_chars = (percent * 16) / 100;
+    uint8_t partial = ((percent * 16) % 100) / 20;
+    
+    lcd_gotoxy(0, row);
+    
+    // Draw full characters
+    for (uint8_t i = 0; i &lt; full_chars; i++) {
+        lcd_data(5);  // Full block
+    }
+    
+    // Draw partial character
+    if (full_chars &lt; 16) {
+        lcd_data(partial);
+    }
+    
+    // Draw empty characters
+    for (uint8_t i = full_chars + 1; i &lt; 16; i++) {
+        lcd_data(0);  // Empty block
+    }
+}
+
+// Example: Loading animation
+int main(void) {
+    lcd_init();
+    lcd_load_progress_bar_chars();
+    
+    lcd_puts(&quot;Loading...&quot;);
+    
+    for (uint8_t i = 0; i &lt;= 100; i++) {
+        lcd_progress_bar(1, i);
+        _delay_ms(50);
+    }
+    
+    lcd_clear();
+    lcd_puts(&quot;Complete!&quot;);
+    
+    while (1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Scrolling Text</h2>
+<h3>Horizontal Scrolling</h3>
+<pre class="lang-c"><code>void lcd_scroll_left(void) {
+    lcd_command(0x18);  // Scroll display left
+}
+
+void lcd_scroll_right(void) {
+    lcd_command(0x1C);  // Scroll display right
+}
+
+// Marquee effect
+void lcd_marquee(const char *text, uint8_t row) {
+    uint8_t len = strlen(text);
+    
+    // Print text off-screen to the right
+    lcd_gotoxy(16, row);
+    lcd_puts(text);
+    
+    // Scroll text across display
+    for (uint8_t i = 0; i &lt; len + 16; i++) {
+        lcd_scroll_left();
+        _delay_ms(200);
+    }
+}
+
+// Long text scrolling
+void lcd_scroll_text(const char *text, uint8_t row) {
+    uint8_t len = strlen(text);
+    
+    if (len &lt;= 16) {
+        lcd_gotoxy(0, row);
+        lcd_puts(text);
+        return;
+    }
+    
+    // Scroll through long text
+    for (uint8_t i = 0; i &lt;= len - 16; i++) {
+        lcd_gotoxy(0, row);
+        
+        for (uint8_t j = 0; j &lt; 16; j++) {
+            lcd_putc(text[i + j]);
+        }
+        
+        _delay_ms(300);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Sensor Data Display</h2>
+<h3>Real-Time Sensor Dashboard</h3>
+<pre class="lang-c"><code>void display_sensor_dashboard(void) {
+    char buffer[17];
+    
+    // Read sensors
+    uint16_t temp_adc = adc_read(0);
+    uint16_t light_adc = adc_read(1);
+    
+    // Convert to physical units
+    float temperature = (temp_adc * 5.0 * 100.0) / 1024.0;  // TMP36
+    uint8_t light_percent = (light_adc * 100) / 1024;
+    
+    // Display temperature
+    lcd_gotoxy(0, 0);
+    sprintf(buffer, &quot;Temp: %2.1f&quot;, temperature);
+    lcd_puts(buffer);
+    lcd_data(0);  // Degree symbol (custom char)
+    lcd_putc(&#x27;C&#x27;);
+    
+    // Display light level
+    lcd_gotoxy(0, 1);
+    sprintf(buffer, &quot;Light: %3d%%&quot;, light_percent);
+    lcd_puts(buffer);
+}
+
+int main(void) {
+    lcd_init();
+    adc_init();
+    lcd_load_custom_chars();
+    
+    while (1) {
+        display_sensor_dashboard();
+        _delay_ms(500);
+    }
+}</code></pre>
+<h3>Multi-Sensor Display</h3>
+<pre class="lang-c"><code>typedef struct {
+    float temperature;
+    float humidity;
+    uint16_t pressure;
+    uint8_t battery_percent;
+} sensor_data_t;
+
+void display_multi_sensor(sensor_data_t *data) {
+    char buffer[21];
+    
+    // 20x4 LCD layout
+    // Row 0: Temperature
+    lcd_gotoxy(0, 0);
+    sprintf(buffer, &quot;T:%2.1fC  H:%2.0f%%&quot;, 
+            data-&gt;temperature, data-&gt;humidity);
+    lcd_puts(buffer);
+    
+    // Row 1: Pressure
+    lcd_gotoxy(0, 1);
+    sprintf(buffer, &quot;P:%4d hPa&quot;, data-&gt;pressure);
+    lcd_puts(buffer);
+    
+    // Row 2: Battery with icon
+    lcd_gotoxy(0, 2);
+    lcd_puts(&quot;Batt:&quot;);
+    display_battery_icon(data-&gt;battery_percent);
+    sprintf(buffer, &quot; %3d%%&quot;, data-&gt;battery_percent);
+    lcd_puts(buffer);
+    
+    // Row 3: Timestamp
+    lcd_gotoxy(0, 3);
+    sprintf(buffer, &quot;%02d:%02d:%02d&quot;, hours, minutes, seconds);
+    lcd_puts(buffer);
+}
+
+void display_battery_icon(uint8_t percent) {
+    if (percent &gt; 75) {
+        lcd_data(2);  // Full battery
+    } else if (percent &gt; 25) {
+        lcd_data(3);  // Half battery
+    } else {
+        lcd_data(4);  // Empty battery
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Menu System</h2>
+<h3>Simple Menu Navigation</h3>
+<pre class="lang-c"><code>typedef struct {
+    const char *text;
+    void (*action)(void);
+} menu_item_t;
+
+const menu_item_t main_menu[] = {
+    {&quot;1. View Sensors&quot;, show_sensors},
+    {&quot;2. Settings&quot;, show_settings},
+    {&quot;3. About&quot;, show_about},
+    {&quot;4. Exit&quot;, exit_menu}
+};
+
+#define MENU_ITEMS 4
+uint8_t menu_index = 0;
+
+void display_menu(void) {
+    lcd_clear();
+    
+    // Display current item
+    lcd_gotoxy(0, 0);
+    lcd_puts(main_menu[menu_index].text);
+    
+    // Display next item (if exists)
+    if (menu_index + 1 &lt; MENU_ITEMS) {
+        lcd_gotoxy(0, 1);
+        lcd_puts(main_menu[menu_index + 1].text);
+    }
+}
+
+void menu_up(void) {
+    if (menu_index &gt; 0) {
+        menu_index--;
+        display_menu();
+    }
+}
+
+void menu_down(void) {
+    if (menu_index &lt; MENU_ITEMS - 1) {
+        menu_index++;
+        display_menu();
+    }
+}
+
+void menu_select(void) {
+    main_menu[menu_index].action();
+}
+
+// Button handling
+int main(void) {
+    lcd_init();
+    button_init();
+    
+    display_menu();
+    
+    while (1) {
+        if (button_up_pressed()) {
+            menu_up();
+            _delay_ms(200);  // Debounce
+        }
+        
+        if (button_down_pressed()) {
+            menu_down();
+            _delay_ms(200);
+        }
+        
+        if (button_select_pressed()) {
+            menu_select();
+            _delay_ms(200);
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Busy Flag Checking</h2>
+<h3>Reading Busy Flag (Optional)</h3>
+<pre class="lang-c"><code>uint8_t lcd_read_busy_flag(void) {
+    uint8_t busy;
+    
+    // Set D4-D7 as inputs
+    LCD_DATA_DDR &amp;= 0x0F;
+    
+    // RS = 0 (command), RW = 1 (read)
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_RS);
+    LCD_CTRL_PORT |= (1 &lt;&lt; LCD_RW);
+    
+    // Pulse enable and read high nibble
+    LCD_CTRL_PORT |= (1 &lt;&lt; LCD_E);
+    _delay_us(1);
+    busy = LCD_DATA_PIN &amp; 0x80;  // BF is in D7
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_E);
+    
+    _delay_us(1);
+    
+    // Pulse enable for low nibble (discarded)
+    LCD_CTRL_PORT |= (1 &lt;&lt; LCD_E);
+    _delay_us(1);
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_E);
+    
+    // Set D4-D7 back to outputs
+    LCD_DATA_DDR |= 0xF0;
+    LCD_CTRL_PORT &amp;= ~(1 &lt;&lt; LCD_RW);
+    
+    return busy;
+}
+
+void lcd_wait_busy(void) {
+    while (lcd_read_busy_flag());
+}
+
+// Use instead of delays
+void lcd_command_fast(uint8_t cmd) {
+    lcd_wait_busy();
+    lcd_command(cmd);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 17: LCD Timing Diagrams</h2>
+<h3>Write Operation Timing</h3>
+<pre class="lang-mermaid"><code>gantt
+    title LCD Write Cycle (4-bit mode)
+    dateFormat X
+    axisFormat %L us
+    
+    section Signals
+    Setup RS/RW    :0, 1
+    Setup Data     :1, 1
+    E High         :2, 1
+    Hold Time      :3, 1
+    E Low          :4, 40</code></pre>
+<h3>Critical Timing Parameters</h3>
+<table><thead><tr><th>Parameter</th><th>Symbol</th><th>Min</th><th>Typical</th><th>Max</th><th>Unit</th></tr></thead><tbody><tr><td>Enable pulse width</td><td>tPW</td><td>450</td><td>-</td><td>-</td><td>ns</td></tr><tr><td>Enable cycle time</td><td>tC</td><td>1000</td><td>-</td><td>-</td><td>ns</td></tr><tr><td>Data setup time</td><td>tDSW</td><td>195</td><td>-</td><td>-</td><td>ns</td></tr><tr><td>Data hold time</td><td>tH</td><td>10</td><td>-</td><td>-</td><td>ns</td></tr><tr><td>Clear/Home command</td><td>-</td><td>1.52</td><td>-</td><td>-</td><td>ms</td></tr><tr><td>Other commands</td><td>-</td><td>37</td><td>-</td><td>-</td><td>µs</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 18: Error Handling and Debugging</h2>
+<h3>Common Issues and Solutions</h3>
+<pre class="lang-c"><code>// Problem 1: No display
+// - Check power (VDD, VSS)
+// - Check contrast (V0 pin)
+// - Verify initialization sequence
+// - Check connections
+
+// Problem 2: Garbage characters
+// - Initialization failed
+// - Wrong timing
+// - Electrical noise
+void lcd_test_init(void) {
+    _delay_ms(100);  // Extra power-up delay
+    
+    // Multiple initialization attempts
+    for (uint8_t i = 0; i &lt; 3; i++) {
+        lcd_init();
+        _delay_ms(10);
+    }
+    
+    // Test pattern
+    lcd_clear();
+    lcd_puts(&quot;LCD Init OK!&quot;);
+}
+
+// Problem 3: Flickering
+// - Update only changed characters
+// - Use cursor positioning
+void lcd_update_value(uint8_t x, uint8_t y, int value) {
+    static int last_value = -1;
+    
+    if (value != last_value) {
+        char buffer[6];
+        sprintf(buffer, &quot;%4d&quot;, value);
+        
+        lcd_gotoxy(x, y);
+        lcd_puts(buffer);
+        
+        last_value = value;
+    }
+}
+
+// Debug helper
+void lcd_test_pattern(void) {
+    lcd_clear();
+    
+    // Test all characters
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        lcd_gotoxy(i, 0);
+        lcd_data(&#x27;0&#x27; + i);
+    }
+    
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        lcd_gotoxy(i, 1);
+        lcd_data(&#x27;A&#x27; + i);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: Performance Optimization</h2>
+<h3>Reducing Write Time</h3>
+<pre class="lang-c"><code>// Bad: Multiple character writes
+void slow_display(int value) {
+    lcd_gotoxy(0, 0);
+    lcd_puts(&quot;Value: &quot;);
+    
+    char buffer[6];
+    sprintf(buffer, &quot;%4d&quot;, value);
+    lcd_puts(buffer);
+}
+
+// Good: Build string first
+void fast_display(int value) {
+    char buffer[17];
+    sprintf(buffer, &quot;Value: %4d&quot;, value);
+    
+    lcd_gotoxy(0, 0);
+    lcd_puts(buffer);
+}
+
+// Optimization: Partial updates
+void optimized_display(int value) {
+    static int last = -1;
+    
+    if (value != last) {
+        char buffer[5];
+        sprintf(buffer, &quot;%4d&quot;, value);
+        
+        // Only update changed digits
+        lcd_gotoxy(7, 0);  // Skip &quot;Value: &quot; part
+        lcd_puts(buffer);
+        
+        last = value;
+    }
+}
+
+// Fast clear line
+void lcd_clear_line(uint8_t row) {
+    lcd_gotoxy(0, row);
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        lcd_putc(&#x27; &#x27;);
+    }
+    lcd_gotoxy(0, row);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 20: Advanced Features</h2>
+<h3>Backlight Control</h3>
+<pre class="lang-c"><code>// Hardware PWM for brightness control
+void lcd_backlight_init(void) {
+    // Configure Timer2 for PWM on OC2 (PB7)
+    DDRB |= (1 &lt;&lt; PB7);
+    
+    // Fast PWM mode
+    TCCR2 = (1 &lt;&lt; WGM21) | (1 &lt;&lt; WGM20);
+    TCCR2 |= (1 &lt;&lt; COM21);  // Non-inverting
+    TCCR2 |= (1 &lt;&lt; CS20);   // No prescaler
+    
+    OCR2 = 128;  // 50% brightness
+}
+
+void lcd_backlight(uint8_t brightness) {
+    OCR2 = brightness;  // 0-255
+}
+
+// Auto-dimming
+void lcd_backlight_timeout(void) {
+    static uint32_t last_activity = 0;
+    uint32_t now = millis();
+    
+    if (now - last_activity &gt; 30000) {  // 30 seconds
+        lcd_backlight(50);  // Dim
+    } else {
+        lcd_backlight(255);  // Bright
+    }
+}</code></pre>
+<h3>Sleep Mode Display</h3>
+<pre class="lang-c"><code>void lcd_power_down(void) {
+    // Turn off display
+    lcd_command(0x08);
+    
+    // Turn off backlight
+    lcd_backlight(0);
+}
+
+void lcd_power_up(void) {
+    // Turn on display
+    lcd_command(0x0C);
+    
+    // Turn on backlight
+    lcd_backlight(255);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 21: I2C LCD Adapter</h2>
+<h3>PCF8574 I2C Backpack</h3>
+<pre><code>LCD Pin    PCF8574 Pin    Function
+D4         P4             Data 4
+D5         P5             Data 5
+D6         P6             Data 6
+D7         P7             Data 7
+RS         P0             Register Select
+RW         P1             Read/Write (usually GND)
+E          P2             Enable
+BL         P3             Backlight (via transistor)</code></pre>
+<h3>I2C LCD Functions</h3>
+<pre class="lang-c"><code>#include &quot;i2c.h&quot;
+
+#define LCD_I2C_ADDR  0x27  // Common address
+
+// Bit positions in PCF8574
+#define RS_BIT  0
+#define RW_BIT  1
+#define E_BIT   2
+#define BL_BIT  3
+
+void lcd_i2c_write_nibble(uint8_t nibble, uint8_t rs) {
+    uint8_t data = (nibble &lt;&lt; 4) | (1 &lt;&lt; BL_BIT);  // Backlight ON
+    
+    if (rs) data |= (1 &lt;&lt; RS_BIT);
+    
+    // Send with E=1
+    i2c_start();
+    i2c_write(LCD_I2C_ADDR &lt;&lt; 1);
+    i2c_write(data | (1 &lt;&lt; E_BIT));
+    i2c_stop();
+    
+    _delay_us(1);
+    
+    // Send with E=0
+    i2c_start();
+    i2c_write(LCD_I2C_ADDR &lt;&lt; 1);
+    i2c_write(data);
+    i2c_stop();
+    
+    _delay_us(50);
+}
+
+void lcd_i2c_command(uint8_t cmd) {
+    lcd_i2c_write_nibble(cmd &gt;&gt; 4, 0);
+    lcd_i2c_write_nibble(cmd &amp; 0x0F, 0);
+}
+
+void lcd_i2c_data(uint8_t data) {
+    lcd_i2c_write_nibble(data &gt;&gt; 4, 1);
+    lcd_i2c_write_nibble(data &amp; 0x0F, 1);
+}</code></pre>
+<p><strong>Advantages</strong>: Only 2 wires (SDA, SCL) instead of 6-11 pins!</p>
+</section>
+<section class="slide">
+<h2>Slide 22: Complete LCD Library Structure</h2>
+<h3>lcd.h - Header File</h3>
+<pre class="lang-c"><code>#ifndef LCD_H
+#define LCD_H
+
+#include &lt;avr/io.h&gt;
+#include &lt;util/delay.h&gt;
+#include &lt;stdint.h&gt;
+
+// Configuration
+#define LCD_COLS  16
+#define LCD_ROWS  2
+
+// Pin definitions
+#define LCD_RS    PA0
+#define LCD_E     PA2
+#define LCD_D4    PA4
+#define LCD_D5    PA5
+#define LCD_D6    PA6
+#define LCD_D7    PA7
+
+// Function prototypes
+void lcd_init(void);
+void lcd_clear(void);
+void lcd_home(void);
+void lcd_gotoxy(uint8_t x, uint8_t y);
+void lcd_putc(char c);
+void lcd_puts(const char *str);
+void lcd_command(uint8_t cmd);
+void lcd_data(uint8_t data);
+void lcd_create_char(uint8_t location, const uint8_t charmap[]);
+void lcd_cursor_on(void);
+void lcd_cursor_off(void);
+void lcd_blink_on(void);
+void lcd_blink_off(void);
+
+#endif</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 23: Application Example - Digital Clock</h2>
+<h3>Clock Display with LCD</h3>
+<pre class="lang-c"><code>#include &quot;lcd.h&quot;
+#include &quot;rtc.h&quot;  // RTC library (DS1307)
+
+typedef struct {
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
+} time_t;
+
+typedef struct {
+    uint8_t day;
+    uint8_t month;
+    uint16_t year;
+} date_t;
+
+void display_clock(void) {
+    time_t time;
+    date_t date;
+    char buffer[17];
+    
+    while (1) {
+        // Read time from RTC
+        rtc_read_time(&amp;time);
+        rtc_read_date(&amp;date);
+        
+        // Display time (centered)
+        lcd_gotoxy(4, 0);
+        sprintf(buffer, &quot;%02d:%02d:%02d&quot;, 
+                time.hours, time.minutes, time.seconds);
+        lcd_puts(buffer);
+        
+        // Display date
+        lcd_gotoxy(2, 1);
+        sprintf(buffer, &quot;%02d/%02d/%04d&quot;, 
+                date.day, date.month, date.year);
+        lcd_puts(buffer);
+        
+        _delay_ms(1000);
+    }
+}
+
+int main(void) {
+    lcd_init();
+    rtc_init();
+    
+    lcd_clear();
+    lcd_puts(&quot;   Digital Clock&quot;);
+    _delay_ms(2000);
+    lcd_clear();
+    
+    display_clock();
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 24: Application Example - Thermometer</h2>
+<h3>Temperature Display with Graph</h3>
+<pre class="lang-c"><code>#define SAMPLES 16  // Number of graph points
+
+void display_temperature_graph(float temp_history[]) {
+    char buffer[17];
+    
+    // Row 0: Current temperature
+    lcd_gotoxy(0, 0);
+    sprintf(buffer, &quot;Temp: %.1f&quot;, temp_history[SAMPLES-1]);
+    lcd_puts(buffer);
+    lcd_data(0);  // Degree symbol
+    lcd_putc(&#x27;C&#x27;);
+    
+    // Row 1: Bar graph of temperature trend
+    lcd_gotoxy(0, 1);
+    
+    for (uint8_t i = 0; i &lt; SAMPLES; i++) {
+        uint8_t bar_height = (uint8_t)((temp_history[i] - 20.0) / 10.0 * 5.0);
+        
+        if (bar_height &gt; 5) bar_height = 5;
+        
+        lcd_data(bar_height);  // Custom bar characters 0-5
+    }
+}
+
+int main(void) {
+    float temp_history[SAMPLES] = {0};
+    uint8_t index = 0;
+    
+    lcd_init();
+    adc_init();
+    lcd_load_bar_chars();
+    
+    while (1) {
+        // Read temperature sensor
+        uint16_t adc = adc_read(0);
+        float temp = (adc * 5.0 * 100.0) / 1024.0;  // TMP36
+        
+        // Update history
+        temp_history[index] = temp;
+        index = (index + 1) % SAMPLES;
+        
+        // Display
+        display_temperature_graph(temp_history);
+        
+        _delay_ms(1000);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 25: Best Practices</h2>
+<h3>LCD Programming Guidelines</h3>
+<p>✓ <strong>Initialization</strong></p>
+<ul><li>Always wait 50ms after power-up</li><li>Follow HD44780 initialization sequence exactly</li><li>Test initialization with known patterns</li></ul>
+<p>✓ <strong>Timing</strong></p>
+<ul><li>Use adequate delays (or busy flag checking)</li><li>Clear command needs 1.52ms minimum</li><li>Other commands need 37µs minimum</li></ul>
+<p>✓ <strong>Code Organization</strong></p>
+<ul><li>Create reusable LCD library</li><li>Separate display logic from business logic</li><li>Use helper functions (gotoxy, printf, etc.)</li></ul>
+<p>✓ <strong>Performance</strong></p>
+<ul><li>Only update changed characters</li><li>Build strings before sending to LCD</li><li>Use cursor positioning to skip unchanged parts</li></ul>
+<p>✓ <strong>Power Saving</strong></p>
+<ul><li>Turn off display when not needed</li><li>Dim backlight after timeout</li><li>Use sleep modes between updates</li></ul>
+<p>✓ <strong>Debugging</strong></p>
+<ul><li>Test with simple patterns first</li><li>Verify connections with multimeter</li><li>Use oscilloscope for timing issues</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 26: Common Mistakes to Avoid</h2>
+<h3>Pitfalls and Solutions</h3>
+<pre class="lang-c"><code>// ❌ WRONG: Insufficient delay after clear
+lcd_clear();
+lcd_puts(&quot;Hello&quot;);  // May not work!
+
+// ✓ CORRECT: Proper delay
+lcd_clear();
+_delay_ms(2);
+lcd_puts(&quot;Hello&quot;);
+
+// ❌ WRONG: Forgetting to set position
+lcd_puts(&quot;Line 1&quot;);
+lcd_puts(&quot;Line 2&quot;);  // Overwrites line 1!
+
+// ✓ CORRECT: Set position for each line
+lcd_gotoxy(0, 0);
+lcd_puts(&quot;Line 1&quot;);
+lcd_gotoxy(0, 1);
+lcd_puts(&quot;Line 2&quot;);
+
+// ❌ WRONG: Buffer overflow
+char buffer[16];  // No room for null terminator!
+sprintf(buffer, &quot;Temperature: %d&quot;, temp);
+
+// ✓ CORRECT: Account for null terminator
+char buffer[17];  // 16 chars + 1 null
+sprintf(buffer, &quot;Temperature: %d&quot;, temp);
+
+// ❌ WRONG: Float without width specifier
+sprintf(buffer, &quot;%f&quot;, voltage);  // May exceed buffer!
+
+// ✓ CORRECT: Limited precision
+sprintf(buffer, &quot;%.2f&quot;, voltage);  // Max 4-5 chars
+
+// ❌ WRONG: No bounds checking
+lcd_gotoxy(20, 5);  // Out of bounds!
+
+// ✓ CORRECT: Validate coordinates
+if (x &lt; LCD_COLS &amp;&amp; y &lt; LCD_ROWS) {
+    lcd_gotoxy(x, y);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 27: Practice Exercises</h2>
+<h3>Exercise 1: Basic Display</h3>
+<p><strong>Goal</strong>: Display static text</p>
+<ul><li>Initialize LCD</li><li>Display &quot;Hello, World!&quot; on first line</li><li>Display your name on second line</li><li>Add a custom heart symbol</li></ul>
+<h3>Exercise 2: Counter Display</h3>
+<p><strong>Goal</strong>: Count button presses</p>
+<ul><li>Display count on LCD</li><li>Update only when button pressed</li><li>Reset with long press</li><li>Show count in decimal and hex</li></ul>
+<h3>Exercise 3: Sensor Monitor</h3>
+<p><strong>Goal</strong>: Multi-sensor display</p>
+<ul><li>Read 2-3 analog sensors</li><li>Display values with units</li><li>Update every second</li><li>Use custom degree/arrow symbols</li></ul>
+<h3>Exercise 4: Menu System</h3>
+<p><strong>Goal</strong>: Navigate settings menu</p>
+<ul><li>3-4 menu items</li><li>Up/down buttons to navigate</li><li>Select button to enter</li><li>Display current selection with arrow</li></ul>
+<h3>Exercise 5: Thermometer with Graph</h3>
+<p><strong>Goal</strong>: Temperature trending</p>
+<ul><li>Display current temperature</li><li>Show 16-sample history graph</li><li>Min/max indicators</li><li>Custom bar graph characters</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 28: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 22: I/O Ports (for LCD connections)</li><li>GPIO configuration and timing</li></ul>
+<h3>HD44780 Resources</h3>
+<ul><li>HD44780U Datasheet (Hitachi)</li><li>LCD command reference</li><li>Timing diagrams and specifications</li></ul>
+<h3>Application Notes</h3>
+<ul><li>Character LCD interfacing</li><li>Custom character generation</li><li>I2C LCD adapter usage</li><li>Power optimization for LCDs</li></ul>
+<h3>Online Tools</h3>
+<ul><li>Custom character generator</li><li>LCD simulator</li><li>Timing calculator</li></ul>
+<h3>Libraries</h3>
+<ul><li>LiquidCrystal (Arduino - reference)</li><li>Peter Fleury&#x27;s LCD library</li><li>AVR-GCC LCD examples</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>LCD_Character_Basic/</code></li><li>Shared libraries: <code>_glcd.h</code>, <code>_glcd.c</code> (for graphics LCD variant)</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:17_LCD_Character', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:17_LCD_Character') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

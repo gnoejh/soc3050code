@@ -1,0 +1,1245 @@
+<title>Serial Communications (UART)</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Serial Communications (UART)</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Serial Communication</h2>
+<h3>What is UART?</h3>
+<ul><li><strong>Universal Asynchronous Receiver/Transmitter</strong></li><li><strong>Serial communication</strong> protocol - sends data one bit at a time</li><li><strong>Asynchronous</strong> - no shared clock signal between devices</li><li>Most common interface for microcontroller communication</li></ul>
+<h3>Why Use UART?</h3>
+<p>✓ <strong>Simple</strong> - Only 2 wires (TX, RX) + ground<br>✓ <strong>Universal</strong> - Supported by almost all microcontrollers<br>✓ <strong>Flexible</strong> - Configurable baud rate and format<br>✓ <strong>Long distance</strong> - RS-232/RS-485 for industrial use<br>✓ <strong>PC communication</strong> - USB-to-serial adapters</p>
+<h3>Common Applications</h3>
+<ul><li>PC debugging and data logging</li><li>GPS module communication</li><li>Bluetooth/WiFi module control</li><li>Sensor data transmission</li><li>Inter-microcontroller communication</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 2: UART Communication Basics</h2>
+<h3>Serial Data Transmission</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[Parallel Data&lt;br/&gt;8 bits] --&gt; B[UART TX]
+    B --&gt;|Serial Stream| C[One bit at a time]
+    C --&gt;|Serial Stream| D[UART RX]
+    D --&gt; E[Parallel Data&lt;br/&gt;8 bits]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Frame Format</h3>
+<pre><code>     Start  D0  D1  D2  D3  D4  D5  D6  D7  Stop
+Idle ─┐  ┌──┬──┬──┬──┬──┬──┬──┬──┬──────── Idle
+      └──┘  Data bits (LSB first)
+      
+Common formats:
+• 8N1: 8 data bits, No parity, 1 stop bit
+• 8E1: 8 data bits, Even parity, 1 stop bit
+• 8O1: 8 data bits, Odd parity, 1 stop bit</code></pre>
+<h3>Key Parameters</h3>
+<ul><li><strong>Baud Rate</strong>: Bits per second (9600, 19200, 38400, 57600, 115200)</li><li><strong>Data Bits</strong>: Usually 5-9 bits (most common: 8)</li><li><strong>Parity</strong>: None, Even, or Odd</li><li><strong>Stop Bits</strong>: 1 or 2 bits</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3: ATmega128 UART Hardware</h2>
+<h3>UART Resources</h3>
+<p>ATmega128 has <strong>2 USART</strong> (Universal Synchronous/Asynchronous Receiver/Transmitter):</p>
+<table><thead><tr><th>USART</th><th>TX Pin</th><th>RX Pin</th><th>XCK Pin</th></tr></thead><tbody><tr><td><strong>USART0</strong></td><td>PE1 (TXD0)</td><td>PE0 (RXD0)</td><td>PE2 (XCK0)</td></tr><tr><td><strong>USART1</strong></td><td>PD3 (TXD1)</td><td>PD2 (RXD1)</td><td>PD5 (XCK1)</td></tr></tbody></table>
+<h3>Block Diagram</h3>
+<pre class="lang-mermaid"><code>graph TB
+    subgraph &quot;USART Module&quot;
+        A[UDR Register&lt;br/&gt;Data Buffer] --&gt; B[Transmit Shift Register]
+        B --&gt; C[TXD Pin]
+        
+        D[RXD Pin] --&gt; E[Receive Shift Register]
+        E --&gt; F[UDR Register&lt;br/&gt;Data Buffer]
+        
+        G[Baud Rate&lt;br/&gt;Generator] --&gt; B
+        G --&gt; E
+        
+        H[Clock/Prescaler] --&gt; G
+    end
+    
+    I[Control Logic] --&gt; A
+    I --&gt; F
+    J[Interrupts] --&gt; K[TXC, UDRE, RXC]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: UART Control Registers</h2>
+<h3>UCSRA - USART Control and Status Register A</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+UCSRA │ RXC  │ TXC  │ UDRE │  FE  │  DOR │  PE  │ U2X  │ MPCM │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>RXC</strong></td><td>RX Complete</td><td>Set when data received</td></tr><tr><td><strong>TXC</strong></td><td>TX Complete</td><td>Set when transmission complete</td></tr><tr><td><strong>UDRE</strong></td><td>Data Register Empty</td><td>Set when ready to send</td></tr><tr><td><strong>FE</strong></td><td>Frame Error</td><td>Framing error detected</td></tr><tr><td><strong>DOR</strong></td><td>Data OverRun</td><td>Data lost (not read in time)</td></tr><tr><td><strong>PE</strong></td><td>Parity Error</td><td>Parity check failed</td></tr><tr><td><strong>U2X</strong></td><td>Double Speed</td><td>Doubles USART transmission speed</td></tr><tr><td><strong>MPCM</strong></td><td>Multi-processor</td><td>Communication mode</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 5: UART Control Registers (continued)</h2>
+<h3>UCSRB - USART Control and Status Register B</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+UCSRB │ RXCIE│ TXCIE│ UDRIE│ RXEN │ TXEN │UCSZ2 │ RXB8 │ TXB8 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><strong>RXCIE</strong></td><td>RX Complete Interrupt Enable</td><td>Enable RX interrupt</td></tr><tr><td><strong>TXCIE</strong></td><td>TX Complete Interrupt Enable</td><td>Enable TX complete interrupt</td></tr><tr><td><strong>UDRIE</strong></td><td>Data Register Empty Interrupt</td><td>Enable TX ready interrupt</td></tr><tr><td><strong>RXEN</strong></td><td>Receiver Enable</td><td>Enable receiver</td></tr><tr><td><strong>TXEN</strong></td><td>Transmitter Enable</td><td>Enable transmitter</td></tr><tr><td><strong>UCSZ2</strong></td><td>Character Size bit 2</td><td>With UCSZ1:0, sets data bits</td></tr><tr><td><strong>RXB8/TXB8</strong></td><td>9th data bit</td><td>For 9-bit mode</td></tr></tbody></table>
+<h3>UCSRC - USART Control and Status Register C</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+UCSRC │URSEL │ UMSEL│ UPM1 │ UPM0 │ USBS │UCSZ1 │UCSZ0 │ UCPOL│
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Baud Rate Configuration</h2>
+<h3>Baud Rate Calculation</h3>
+<pre><code>UBRR = (F_CPU / (16 × BAUD)) - 1     // Normal mode
+UBRR = (F_CPU / (8 × BAUD)) - 1      // Double speed mode (U2X=1)</code></pre>
+<h3>UBRR - USART Baud Rate Register (16-bit)</h3>
+<pre><code>UBRRH (High byte) : UBRRL (Low byte)</code></pre>
+<h3>Common Baud Rates @ 16 MHz</h3>
+<table><thead><tr><th>Baud Rate</th><th>UBRR (U2X=0)</th><th>UBRR (U2X=1)</th><th>Error %</th></tr></thead><tbody><tr><td>2400</td><td>416</td><td>832</td><td>0.0</td></tr><tr><td>4800</td><td>207</td><td>416</td><td>0.0</td></tr><tr><td>9600</td><td>103</td><td>207</td><td>0.0</td></tr><tr><td>14400</td><td>68</td><td>138</td><td>0.0</td></tr><tr><td>19200</td><td>51</td><td>103</td><td>0.0</td></tr><tr><td>38400</td><td>25</td><td>51</td><td>0.0</td></tr><tr><td>57600</td><td>16</td><td>34</td><td>2.1 / 0.0</td></tr><tr><td>115200</td><td>8</td><td>16</td><td>-3.5 / 2.1</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 7: UART Initialization</h2>
+<h3>Basic UART Setup</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#define F_CPU 16000000UL
+#define BAUD 9600
+#define UBRR_VALUE ((F_CPU / (16UL * BAUD)) - 1)
+
+void uart_init(void) {
+    // Set baud rate
+    UBRR0H = (uint8_t)(UBRR_VALUE &gt;&gt; 8);
+    UBRR0L = (uint8_t)UBRR_VALUE;
+    
+    // Enable receiver and transmitter
+    UCSR0B = (1 &lt;&lt; RXEN0) | (1 &lt;&lt; TXEN0);
+    
+    // Set frame format: 8 data bits, 1 stop bit, no parity
+    UCSR0C = (1 &lt;&lt; URSEL0) | (1 &lt;&lt; UCSZ01) | (1 &lt;&lt; UCSZ00);
+}
+
+// For USART1
+void uart1_init(void) {
+    UBRR1H = (uint8_t)(UBRR_VALUE &gt;&gt; 8);
+    UBRR1L = (uint8_t)UBRR_VALUE;
+    UCSR1B = (1 &lt;&lt; RXEN1) | (1 &lt;&lt; TXEN1);
+    UCSR1C = (1 &lt;&lt; URSEL1) | (1 &lt;&lt; UCSZ11) | (1 &lt;&lt; UCSZ10);
+}</code></pre>
+<h3>Configuration Options</h3>
+<pre class="lang-c"><code>// Double speed mode (better accuracy for some baud rates)
+UCSR0A |= (1 &lt;&lt; U2X0);
+UBRR0 = (F_CPU / (8UL * BAUD)) - 1;
+
+// 9-bit mode
+UCSR0C |= (1 &lt;&lt; UCSZ02) | (1 &lt;&lt; UCSZ01) | (1 &lt;&lt; UCSZ00);
+
+// Even parity
+UCSR0C |= (1 &lt;&lt; UPM01);
+
+// 2 stop bits
+UCSR0C |= (1 &lt;&lt; USBS0);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Transmitting Data</h2>
+<h3>Sending a Single Character</h3>
+<pre class="lang-c"><code>void uart_putc(char c) {
+    // Wait for empty transmit buffer
+    while (!(UCSR0A &amp; (1 &lt;&lt; UDRE0)));
+    
+    // Put data into buffer, sends the data
+    UDR0 = c;
+}
+
+// With timeout
+uint8_t uart_putc_timeout(char c, uint16_t timeout) {
+    uint16_t count = 0;
+    
+    while (!(UCSR0A &amp; (1 &lt;&lt; UDRE0))) {
+        if (count++ &gt; timeout) {
+            return 0;  // Timeout
+        }
+        _delay_us(1);
+    }
+    
+    UDR0 = c;
+    return 1;  // Success
+}</code></pre>
+<h3>Sending a String</h3>
+<pre class="lang-c"><code>void uart_puts(const char *str) {
+    while (*str) {
+        uart_putc(*str++);
+    }
+}
+
+// From program memory (Flash)
+void uart_puts_P(const char *str) {
+    char c;
+    while ((c = pgm_read_byte(str++))) {
+        uart_putc(c);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Receiving Data</h2>
+<h3>Receiving a Single Character</h3>
+<pre class="lang-c"><code>char uart_getc(void) {
+    // Wait for data to be received
+    while (!(UCSR0A &amp; (1 &lt;&lt; RXC0)));
+    
+    // Get and return received data
+    return UDR0;
+}
+
+// Non-blocking receive
+int16_t uart_getc_nowait(void) {
+    if (UCSR0A &amp; (1 &lt;&lt; RXC0)) {
+        return UDR0;
+    }
+    return -1;  // No data available
+}
+
+// With error checking
+uint16_t uart_getc_error(void) {
+    uint8_t status, data;
+    
+    // Wait for data
+    while (!(UCSR0A &amp; (1 &lt;&lt; RXC0)));
+    
+    // Get status and data
+    status = UCSR0A;
+    data = UDR0;
+    
+    // Check for errors
+    if (status &amp; ((1 &lt;&lt; FE0) | (1 &lt;&lt; DOR0) | (1 &lt;&lt; PE0))) {
+        return 0xFFFF;  // Error occurred
+    }
+    
+    return data;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Buffered Communication</h2>
+<h3>Circular Buffer Implementation</h3>
+<pre class="lang-c"><code>#define UART_RX_BUFFER_SIZE 128
+#define UART_TX_BUFFER_SIZE 128
+
+// RX buffer
+volatile char rx_buffer[UART_RX_BUFFER_SIZE];
+volatile uint8_t rx_head = 0;
+volatile uint8_t rx_tail = 0;
+
+// TX buffer
+volatile char tx_buffer[UART_TX_BUFFER_SIZE];
+volatile uint8_t tx_head = 0;
+volatile uint8_t tx_tail = 0;
+
+void uart_init_buffered(void) {
+    // Set baud rate
+    UBRR0H = (uint8_t)(UBRR_VALUE &gt;&gt; 8);
+    UBRR0L = (uint8_t)UBRR_VALUE;
+    
+    // Enable RX, TX, and RX interrupt
+    UCSR0B = (1 &lt;&lt; RXEN0) | (1 &lt;&lt; TXEN0) | (1 &lt;&lt; RXCIE0);
+    
+    // 8N1 format
+    UCSR0C = (1 &lt;&lt; URSEL0) | (1 &lt;&lt; UCSZ01) | (1 &lt;&lt; UCSZ00);
+    
+    sei();
+}
+
+// RX interrupt
+ISR(USART0_RX_vect) {
+    uint8_t next_head = (rx_head + 1) % UART_RX_BUFFER_SIZE;
+    
+    if (next_head != rx_tail) {
+        rx_buffer[rx_head] = UDR0;
+        rx_head = next_head;
+    }
+    // else buffer overflow - data lost
+}
+
+uint8_t uart_available(void) {
+    return (rx_head - rx_tail + UART_RX_BUFFER_SIZE) % UART_RX_BUFFER_SIZE;
+}
+
+char uart_getc_buffered(void) {
+    while (rx_head == rx_tail);  // Wait for data
+    
+    char c = rx_buffer[rx_tail];
+    rx_tail = (rx_tail + 1) % UART_RX_BUFFER_SIZE;
+    return c;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Buffered Transmission</h2>
+<h3>TX Buffer with Interrupts</h3>
+<pre class="lang-c"><code>void uart_putc_buffered(char c) {
+    uint8_t next_head = (tx_head + 1) % UART_TX_BUFFER_SIZE;
+    
+    // Wait if buffer is full
+    while (next_head == tx_tail);
+    
+    tx_buffer[tx_head] = c;
+    tx_head = next_head;
+    
+    // Enable UDRE interrupt
+    UCSR0B |= (1 &lt;&lt; UDRIE0);
+}
+
+// TX Data Register Empty interrupt
+ISR(USART0_UDRE_vect) {
+    if (tx_head != tx_tail) {
+        // Send next byte
+        UDR0 = tx_buffer[tx_tail];
+        tx_tail = (tx_tail + 1) % UART_TX_BUFFER_SIZE;
+    } else {
+        // Buffer empty, disable interrupt
+        UCSR0B &amp;= ~(1 &lt;&lt; UDRIE0);
+    }
+}
+
+void uart_flush(void) {
+    // Wait until all data transmitted
+    while (tx_head != tx_tail);
+    
+    // Wait for transmission complete
+    while (!(UCSR0A &amp; (1 &lt;&lt; TXC0)));
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Formatted Output</h2>
+<h3>printf() Support</h3>
+<pre class="lang-c"><code>#include &lt;stdio.h&gt;
+
+// Link putchar to UART
+int uart_putchar(char c, FILE *stream) {
+    if (c == &#x27;\n&#x27;) {
+        uart_putc(&#x27;\r&#x27;);  // Add carriage return
+    }
+    uart_putc(c);
+    return 0;
+}
+
+// Create stream
+static FILE uart_stdout = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
+
+void uart_init_printf(void) {
+    uart_init();
+    stdout = &amp;uart_stdout;  // Redirect stdout to UART
+}
+
+// Now you can use printf()
+int main(void) {
+    uart_init_printf();
+    
+    int value = 42;
+    float temp = 23.5;
+    
+    printf(&quot;Value: %d\n&quot;, value);
+    printf(&quot;Temperature: %.1f°C\n&quot;, temp);
+    printf(&quot;Hex: 0x%02X\n&quot;, value);
+    
+    while(1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Parsing Received Data</h2>
+<h3>Simple Command Parser</h3>
+<pre class="lang-c"><code>#define CMD_BUFFER_SIZE 64
+char cmd_buffer[CMD_BUFFER_SIZE];
+uint8_t cmd_index = 0;
+
+void process_uart_input(void) {
+    if (uart_available()) {
+        char c = uart_getc_buffered();
+        
+        if (c == &#x27;\n&#x27; || c == &#x27;\r&#x27;) {
+            // End of command
+            cmd_buffer[cmd_index] = &#x27;\0&#x27;;
+            
+            if (cmd_index &gt; 0) {
+                parse_command(cmd_buffer);
+            }
+            
+            cmd_index = 0;
+        } else if (cmd_index &lt; CMD_BUFFER_SIZE - 1) {
+            cmd_buffer[cmd_index++] = c;
+        }
+    }
+}
+
+void parse_command(char *cmd) {
+    if (strcmp(cmd, &quot;LED ON&quot;) == 0) {
+        PORTA |= (1 &lt;&lt; PA0);
+        uart_puts(&quot;LED turned ON\n&quot;);
+    } else if (strcmp(cmd, &quot;LED OFF&quot;) == 0) {
+        PORTA &amp;= ~(1 &lt;&lt; PA0);
+        uart_puts(&quot;LED turned OFF\n&quot;);
+    } else if (strncmp(cmd, &quot;SET &quot;, 4) == 0) {
+        int value = atoi(cmd + 4);
+        OCR0 = value;
+        printf(&quot;PWM set to %d\n&quot;, value);
+    } else {
+        uart_puts(&quot;Unknown command\n&quot;);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Binary Data Transmission</h2>
+<h3>Sending Binary Data</h3>
+<pre class="lang-c"><code>void uart_write_bytes(const uint8_t *data, uint16_t len) {
+    for (uint16_t i = 0; i &lt; len; i++) {
+        uart_putc(data[i]);
+    }
+}
+
+// Send 16-bit value
+void uart_put_uint16(uint16_t value) {
+    uart_putc(value &gt;&gt; 8);    // High byte
+    uart_putc(value &amp; 0xFF);  // Low byte
+}
+
+// Send 32-bit value
+void uart_put_uint32(uint32_t value) {
+    uart_putc(value &gt;&gt; 24);
+    uart_putc(value &gt;&gt; 16);
+    uart_putc(value &gt;&gt; 8);
+    uart_putc(value &amp; 0xFF);
+}
+
+// Send float
+void uart_put_float(float value) {
+    union {
+        float f;
+        uint8_t bytes[4];
+    } data;
+    
+    data.f = value;
+    uart_write_bytes(data.bytes, 4);
+}</code></pre>
+<h3>Receiving Binary Data</h3>
+<pre class="lang-c"><code>uint16_t uart_get_uint16(void) {
+    uint16_t value;
+    value = (uint16_t)uart_getc() &lt;&lt; 8;
+    value |= uart_getc();
+    return value;
+}
+
+float uart_get_float(void) {
+    union {
+        float f;
+        uint8_t bytes[4];
+    } data;
+    
+    for (uint8_t i = 0; i &lt; 4; i++) {
+        data.bytes[i] = uart_getc();
+    }
+    
+    return data.f;
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: Protocol Design</h2>
+<h3>Simple Packet Protocol</h3>
+<pre class="lang-c"><code>// Packet structure:
+// [START] [LEN] [TYPE] [DATA...] [CHECKSUM] [END]
+
+#define PKT_START  0xAA
+#define PKT_END    0x55
+
+typedef struct {
+    uint8_t start;
+    uint8_t length;
+    uint8_t type;
+    uint8_t data[64];
+    uint8_t checksum;
+    uint8_t end;
+} packet_t;
+
+void send_packet(uint8_t type, const uint8_t *data, uint8_t len) {
+    packet_t pkt;
+    
+    pkt.start = PKT_START;
+    pkt.length = len;
+    pkt.type = type;
+    memcpy(pkt.data, data, len);
+    
+    // Calculate checksum
+    pkt.checksum = 0;
+    for (uint8_t i = 0; i &lt; len; i++) {
+        pkt.checksum += data[i];
+    }
+    pkt.checksum = ~pkt.checksum + 1;  // Two&#x27;s complement
+    
+    pkt.end = PKT_END;
+    
+    // Send packet
+    uart_putc(pkt.start);
+    uart_putc(pkt.length);
+    uart_putc(pkt.type);
+    uart_write_bytes(pkt.data, len);
+    uart_putc(pkt.checksum);
+    uart_putc(pkt.end);
+}
+
+uint8_t receive_packet(packet_t *pkt) {
+    // Wait for start byte
+    while (uart_getc() != PKT_START);
+    
+    pkt-&gt;length = uart_getc();
+    pkt-&gt;type = uart_getc();
+    
+    // Read data
+    for (uint8_t i = 0; i &lt; pkt-&gt;length; i++) {
+        pkt-&gt;data[i] = uart_getc();
+    }
+    
+    pkt-&gt;checksum = uart_getc();
+    pkt-&gt;end = uart_getc();
+    
+    // Verify checksum
+    uint8_t calc_checksum = 0;
+    for (uint8_t i = 0; i &lt; pkt-&gt;length; i++) {
+        calc_checksum += pkt-&gt;data[i];
+    }
+    calc_checksum = ~calc_checksum + 1;
+    
+    // Verify end marker
+    if (pkt-&gt;end != PKT_END || calc_checksum != pkt-&gt;checksum) {
+        return 0;  // Error
+    }
+    
+    return 1;  // Success
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 16: Flow Control (Software)</h2>
+<h3>XON/XOFF Flow Control</h3>
+<pre class="lang-c"><code>#define XON  0x11   // Resume transmission
+#define XOFF 0x13   // Pause transmission
+
+volatile uint8_t tx_paused = 0;
+
+ISR(USART0_RX_vect) {
+    char c = UDR0;
+    
+    if (c == XOFF) {
+        tx_paused = 1;
+    } else if (c == XON) {
+        tx_paused = 0;
+    } else {
+        // Normal data reception
+        uint8_t next_head = (rx_head + 1) % UART_RX_BUFFER_SIZE;
+        
+        if (next_head != rx_tail) {
+            rx_buffer[rx_head] = c;
+            rx_head = next_head;
+            
+            // Check if buffer getting full
+            if (uart_available() &gt; (UART_RX_BUFFER_SIZE * 3 / 4)) {
+                uart_putc(XOFF);  // Ask sender to pause
+            }
+        }
+    }
+}
+
+void uart_putc_flowcontrol(char c) {
+    while (tx_paused);  // Wait if paused
+    uart_putc(c);
+}
+
+// Resume reception when buffer has space
+void check_buffer_level(void) {
+    if (uart_available() &lt; (UART_RX_BUFFER_SIZE / 4)) {
+        uart_putc(XON);  // Resume transmission
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 17: Multi-Device Communication</h2>
+<h3>Addressing Scheme</h3>
+<pre class="lang-c"><code>#define MY_ADDRESS 0x01
+
+typedef struct {
+    uint8_t dest_addr;
+    uint8_t src_addr;
+    uint8_t command;
+    uint8_t data[16];
+    uint8_t checksum;
+} message_t;
+
+void send_message(uint8_t dest, uint8_t cmd, const uint8_t *data, uint8_t len) {
+    message_t msg;
+    
+    msg.dest_addr = dest;
+    msg.src_addr = MY_ADDRESS;
+    msg.command = cmd;
+    memcpy(msg.data, data, len);
+    
+    // Calculate checksum
+    msg.checksum = msg.dest_addr + msg.src_addr + msg.command;
+    for (uint8_t i = 0; i &lt; len; i++) {
+        msg.checksum += msg.data[i];
+    }
+    
+    // Send message
+    uart_putc(0xFF);  // Sync byte
+    uart_putc(msg.dest_addr);
+    uart_putc(msg.src_addr);
+    uart_putc(msg.command);
+    uart_write_bytes(msg.data, len);
+    uart_putc(msg.checksum);
+}
+
+uint8_t receive_message(message_t *msg) {
+    // Wait for sync
+    while (uart_getc() != 0xFF);
+    
+    msg-&gt;dest_addr = uart_getc();
+    
+    // Check if message is for us
+    if (msg-&gt;dest_addr != MY_ADDRESS &amp;&amp; msg-&gt;dest_addr != 0xFF) {
+        return 0;  // Not for us
+    }
+    
+    msg-&gt;src_addr = uart_getc();
+    msg-&gt;command = uart_getc();
+    
+    // Read data (assume fixed length for simplicity)
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        msg-&gt;data[i] = uart_getc();
+    }
+    
+    msg-&gt;checksum = uart_getc();
+    
+    // Verify checksum
+    uint8_t calc = msg-&gt;dest_addr + msg-&gt;src_addr + msg-&gt;command;
+    for (uint8_t i = 0; i &lt; 16; i++) {
+        calc += msg-&gt;data[i];
+    }
+    
+    return (calc == msg-&gt;checksum);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 18: Data Logging Example</h2>
+<h3>SD Card Data Logger</h3>
+<pre class="lang-c"><code>#include &lt;stdio.h&gt;
+#include &quot;rtc.h&quot;  // Real-time clock functions
+
+typedef struct {
+    uint32_t timestamp;
+    float temperature;
+    float humidity;
+    uint16_t light;
+} sensor_log_t;
+
+void log_sensor_data(void) {
+    sensor_log_t log;
+    
+    log.timestamp = rtc_get_timestamp();
+    log.temperature = read_temperature();
+    log.humidity = read_humidity();
+    log.light = read_light_sensor();
+    
+    // Send as CSV
+    printf(&quot;%lu,%.2f,%.2f,%u\n&quot;, 
+           log.timestamp,
+           log.temperature,
+           log.humidity,
+           log.light);
+}
+
+// Or binary format for efficiency
+void log_sensor_binary(void) {
+    sensor_log_t log;
+    
+    log.timestamp = rtc_get_timestamp();
+    log.temperature = read_temperature();
+    log.humidity = read_humidity();
+    log.light = read_light_sensor();
+    
+    // Send binary packet
+    uart_putc(0xAA);  // Start marker
+    uart_put_uint32(log.timestamp);
+    uart_put_float(log.temperature);
+    uart_put_float(log.humidity);
+    uart_put_uint16(log.light);
+    uart_putc(0x55);  // End marker
+}
+
+int main(void) {
+    uart_init_printf();
+    sensors_init();
+    
+    // Send CSV header
+    printf(&quot;Timestamp,Temperature,Humidity,Light\n&quot;);
+    
+    while (1) {
+        log_sensor_data();
+        _delay_ms(1000);  // Log every second
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: GPS Module Communication</h2>
+<h3>NMEA Sentence Parsing</h3>
+<pre class="lang-c"><code>// GPS sends NMEA sentences like:
+// $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+
+typedef struct {
+    uint8_t hour, minute, second;
+    float latitude;
+    char lat_dir;
+    float longitude;
+    char lon_dir;
+    uint8_t fix_quality;
+    uint8_t num_satellites;
+    float altitude;
+} gps_data_t;
+
+gps_data_t gps;
+
+void parse_gga_sentence(char *sentence) {
+    // Example: $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+    char *token = strtok(sentence, &quot;,&quot;);
+    uint8_t field = 0;
+    
+    while (token != NULL) {
+        switch (field) {
+            case 0:  // $GPGGA
+                break;
+            case 1:  // Time (HHMMSS.sss)
+                gps.hour = (token[0] - &#x27;0&#x27;) * 10 + (token[1] - &#x27;0&#x27;);
+                gps.minute = (token[2] - &#x27;0&#x27;) * 10 + (token[3] - &#x27;0&#x27;);
+                gps.second = (token[4] - &#x27;0&#x27;) * 10 + (token[5] - &#x27;0&#x27;);
+                break;
+            case 2:  // Latitude (DDMM.MMMM)
+                gps.latitude = atof(token);
+                break;
+            case 3:  // N/S
+                gps.lat_dir = token[0];
+                break;
+            case 4:  // Longitude (DDDMM.MMMM)
+                gps.longitude = atof(token);
+                break;
+            case 5:  // E/W
+                gps.lon_dir = token[0];
+                break;
+            case 6:  // Fix quality
+                gps.fix_quality = atoi(token);
+                break;
+            case 7:  // Number of satellites
+                gps.num_satellites = atoi(token);
+                break;
+            case 9:  // Altitude
+                gps.altitude = atof(token);
+                break;
+        }
+        token = strtok(NULL, &quot;,&quot;);
+        field++;
+    }
+}
+
+void process_gps_data(void) {
+    static char nmea_buffer[128];
+    static uint8_t buffer_index = 0;
+    
+    while (uart_available()) {
+        char c = uart_getc_buffered();
+        
+        if (c == &#x27;$&#x27;) {
+            buffer_index = 0;
+        }
+        
+        nmea_buffer[buffer_index++] = c;
+        
+        if (c == &#x27;\n&#x27; &amp;&amp; buffer_index &gt; 10) {
+            nmea_buffer[buffer_index] = &#x27;\0&#x27;;
+            
+            if (strncmp(nmea_buffer, &quot;$GPGGA&quot;, 6) == 0) {
+                parse_gga_sentence(nmea_buffer);
+            }
+            
+            buffer_index = 0;
+        }
+        
+        if (buffer_index &gt;= sizeof(nmea_buffer) - 1) {
+            buffer_index = 0;  // Buffer overflow protection
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 20: Bluetooth Module (HC-05/HC-06)</h2>
+<h3>AT Command Configuration</h3>
+<pre class="lang-c"><code>// HC-05 uses AT commands for configuration
+void bluetooth_init(void) {
+    uart1_init();  // Use UART1 for Bluetooth
+    _delay_ms(1000);
+}
+
+void bt_send_at_command(const char *cmd) {
+    uart1_puts(cmd);
+    uart1_puts(&quot;\r\n&quot;);
+    _delay_ms(100);
+}
+
+void bt_configure(void) {
+    // Enter AT mode (KEY pin HIGH, or default for HC-06)
+    
+    bt_send_at_command(&quot;AT&quot;);              // Test
+    bt_send_at_command(&quot;AT+NAME=MyDevice&quot;); // Set name
+    bt_send_at_command(&quot;AT+PIN=1234&quot;);     // Set PIN
+    bt_send_at_command(&quot;AT+BAUD=9600&quot;);    // Set baud rate
+    
+    // Response usually &quot;OK&quot;
+}
+
+// Normal operation
+void bt_send_data(const char *data) {
+    uart1_puts(data);
+}
+
+void bt_receive_data(void) {
+    if (uart1_available()) {
+        char c = uart1_getc_buffered();
+        // Process received data
+        process_bluetooth_command(c);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 21: RS-232 Level Conversion</h2>
+<h3>MAX232 Interface</h3>
+<pre class="lang-mermaid"><code>graph LR
+    subgraph &quot;ATmega128&quot;
+        A[TXD&lt;br/&gt;0-5V] 
+        B[RXD&lt;br/&gt;0-5V]
+    end
+    
+    subgraph &quot;MAX232&quot;
+        C[T1IN] --&gt; D[T1OUT]
+        E[R1OUT] --&gt; F[R1IN]
+    end
+    
+    subgraph &quot;RS-232 Device&quot;
+        G[RX&lt;br/&gt;±12V]
+        H[TX&lt;br/&gt;±12V]
+    end
+    
+    A --&gt; C
+    D --&gt; G
+    H --&gt; F
+    E --&gt; B
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff4e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Why RS-232?</h3>
+<ul><li><strong>Industrial standard</strong> for long-distance serial communication</li><li><strong>±12V signals</strong> - better noise immunity</li><li><strong>Longer cables</strong> - up to 15 meters</li><li><strong>Hardware flow control</strong> - RTS/CTS pins available</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 22: Debugging Techniques</h2>
+<h3>Debug Output Functions</h3>
+<pre class="lang-c"><code>// Debug levels
+#define DEBUG_NONE  0
+#define DEBUG_ERROR 1
+#define DEBUG_WARN  2
+#define DEBUG_INFO  3
+#define DEBUG_VERBOSE 4
+
+uint8_t debug_level = DEBUG_INFO;
+
+void debug_print(uint8_t level, const char *msg) {
+    if (level &lt;= debug_level) {
+        const char *prefix[] = {&quot;&quot;, &quot;[ERROR] &quot;, &quot;[WARN]  &quot;, &quot;[INFO]  &quot;, &quot;[DEBUG] &quot;};
+        uart_puts(prefix[level]);
+        uart_puts(msg);
+        uart_puts(&quot;\n&quot;);
+    }
+}
+
+void debug_printf(uint8_t level, const char *fmt, ...) {
+    if (level &lt;= debug_level) {
+        va_list args;
+        char buffer[128];
+        
+        va_start(args, fmt);
+        vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+        
+        debug_print(level, buffer);
+    }
+}
+
+// Usage
+debug_printf(DEBUG_INFO, &quot;System initialized&quot;);
+debug_printf(DEBUG_WARN, &quot;Temperature high: %.1f&quot;, temp);
+debug_printf(DEBUG_ERROR, &quot;Sensor read failed: %d&quot;, error_code);</code></pre>
+<h3>Memory Dump</h3>
+<pre class="lang-c"><code>void uart_hexdump(const uint8_t *data, uint16_t len) {
+    for (uint16_t i = 0; i &lt; len; i++) {
+        if (i % 16 == 0) {
+            printf(&quot;\n%04X: &quot;, i);
+        }
+        printf(&quot;%02X &quot;, data[i]);
+        
+        if (i % 16 == 15 || i == len - 1) {
+            // Print ASCII representation
+            uint16_t start = i - (i % 16);
+            printf(&quot; | &quot;);
+            for (uint16_t j = start; j &lt;= i; j++) {
+                char c = data[j];
+                printf(&quot;%c&quot;, (c &gt;= 32 &amp;&amp; c &lt;= 126) ? c : &#x27;.&#x27;);
+            }
+        }
+    }
+    printf(&quot;\n&quot;);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 23: Performance Considerations</h2>
+<h3>Transmission Speed</h3>
+<pre class="lang-mermaid"><code>graph TB
+    A[Baud Rate Selection] --&gt; B{Application?}
+    B --&gt;|Debug/Logging| C[9600-19200 bps&lt;br/&gt;Reliable, Compatible]
+    B --&gt;|Sensor Data| D[38400-57600 bps&lt;br/&gt;Good Balance]
+    B --&gt;|High-Speed| E[115200+ bps&lt;br/&gt;Fast, Check Errors]
+    
+    F[Buffer Size] --&gt; G{Data Rate?}
+    G --&gt;|Low| H[32-64 bytes&lt;br/&gt;Minimal RAM]
+    G --&gt;|Medium| I[128-256 bytes&lt;br/&gt;Standard]
+    G --&gt;|High| J[512+ bytes&lt;br/&gt;Burst Handling]
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Optimization Tips</h3>
+<pre class="lang-c"><code>// 1. Use interrupts for RX (don&#x27;t poll)
+// 2. Use buffered TX for non-blocking sends
+// 3. Choose appropriate baud rate (error &lt; 2%)
+// 4. Enable double-speed mode (U2X) for better accuracy
+// 5. Use DMA if available (not in ATmega128)
+
+// Measure throughput
+void benchmark_uart(void) {
+    uint32_t start_time = millis();
+    const uint16_t test_bytes = 1000;
+    
+    for (uint16_t i = 0; i &lt; test_bytes; i++) {
+        uart_putc(&#x27;A&#x27;);
+    }
+    uart_flush();
+    
+    uint32_t elapsed = millis() - start_time;
+    uint32_t bytes_per_sec = (test_bytes * 1000UL) / elapsed;
+    
+    printf(&quot;Throughput: %lu bytes/sec\n&quot;, bytes_per_sec);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 24: Common Issues and Solutions</h2>
+<h3>Problem 1: Garbage Characters</h3>
+<pre class="lang-c"><code>// Cause: Baud rate mismatch
+// Solution: Verify both sides use same baud rate
+// Check: Calculate actual baud rate from UBRR
+uint32_t actual_baud = F_CPU / (16 * (UBRR0 + 1));
+printf(&quot;Actual baud: %lu\n&quot;, actual_baud);
+
+// Use U2X mode for better accuracy
+UCSR0A |= (1 &lt;&lt; U2X0);
+UBRR0 = (F_CPU / (8UL * BAUD)) - 1;</code></pre>
+<h3>Problem 2: Data Loss</h3>
+<pre class="lang-c"><code>// Cause: Buffer overflow, no RX interrupt
+// Solution: Use buffered RX with interrupts
+// Increase buffer size if needed
+#define UART_RX_BUFFER_SIZE 256
+
+// Check for overruns
+if (UCSR0A &amp; (1 &lt;&lt; DOR0)) {
+    debug_print(DEBUG_ERROR, &quot;Data overrun!&quot;);
+}</code></pre>
+<h3>Problem 3: No Data Received</h3>
+<pre class="lang-c"><code>// Checklist:
+// 1. RX/TX crossed? (TX-&gt;RX, RX-&gt;TX)
+// 2. Common ground connected?
+// 3. UART enabled? (RXEN bit set)
+// 4. Baud rate correct?
+// 5. Voltage levels compatible?
+
+// Test loopback
+void uart_loopback_test(void) {
+    // Connect TX to RX physically
+    uart_putc(&#x27;A&#x27;);
+    _delay_ms(10);
+    if (uart_available()) {
+        char c = uart_getc();
+        printf(&quot;Loopback OK: %c\n&quot;, c);
+    } else {
+        printf(&quot;Loopback FAILED\n&quot;);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 25: Complete Application Example</h2>
+<h3>Wireless Sensor Node</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+#include &lt;avr/interrupt.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+#define NODE_ID 1
+
+typedef struct {
+    uint8_t node_id;
+    uint32_t timestamp;
+    float temperature;
+    float humidity;
+    uint16_t battery;
+} sensor_packet_t;
+
+void send_sensor_packet(void) {
+    sensor_packet_t pkt;
+    
+    pkt.node_id = NODE_ID;
+    pkt.timestamp = millis();
+    pkt.temperature = read_temperature();
+    pkt.humidity = read_humidity();
+    pkt.battery = read_battery_voltage();
+    
+    // Send as JSON
+    printf(&quot;{\&quot;id\&quot;:%d,\&quot;time\&quot;:%lu,\&quot;temp\&quot;:%.1f,\&quot;hum\&quot;:%.1f,\&quot;bat\&quot;:%u}\n&quot;,
+           pkt.node_id,
+           pkt.timestamp,
+           pkt.temperature,
+           pkt.humidity,
+           pkt.battery);
+}
+
+void process_commands(void) {
+    static char cmd[32];
+    static uint8_t idx = 0;
+    
+    while (uart_available()) {
+        char c = uart_getc_buffered();
+        
+        if (c == &#x27;\n&#x27;) {
+            cmd[idx] = &#x27;\0&#x27;;
+            
+            if (strcmp(cmd, &quot;READ&quot;) == 0) {
+                send_sensor_packet();
+            } else if (strcmp(cmd, &quot;STATUS&quot;) == 0) {
+                printf(&quot;Node %d: OK\n&quot;, NODE_ID);
+            } else if (strncmp(cmd, &quot;SET_INTERVAL &quot;, 13) == 0) {
+                uint16_t interval = atoi(cmd + 13);
+                set_sample_interval(interval);
+                printf(&quot;Interval set to %u ms\n&quot;, interval);
+            }
+            
+            idx = 0;
+        } else if (idx &lt; sizeof(cmd) - 1) {
+            cmd[idx++] = c;
+        }
+    }
+}
+
+int main(void) {
+    uart_init_buffered();
+    uart_init_printf();
+    sensors_init();
+    
+    printf(&quot;Sensor Node %d Ready\n&quot;, NODE_ID);
+    
+    uint32_t last_send = 0;
+    uint16_t send_interval = 5000;  // 5 seconds
+    
+    while (1) {
+        process_commands();
+        
+        if (millis() - last_send &gt; send_interval) {
+            send_sensor_packet();
+            last_send = millis();
+        }
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 26: Summary</h2>
+<h3>Key Takeaways</h3>
+<p>✓ <strong>UART</strong> is simple, universal serial communication<br>✓ <strong>ATmega128</strong> has 2 independent USART modules<br>✓ <strong>Baud rate</strong> must match on both sides (check error %)<br>✓ <strong>Interrupts + buffers</strong> enable non-blocking operation<br>✓ <strong>Frame format</strong> typically 8N1 (8 data, no parity, 1 stop)<br>✓ <strong>Protocols</strong> add structure for reliable communication<br>✓ <strong>Error checking</strong> (parity, checksum) improves reliability</p>
+<h3>Best Practices Checklist</h3>
+<ul><li>✓ Use interrupt-driven buffered I/O</li><li>✓ Implement timeout on receive operations</li><li>✓ Add error checking and handling</li><li>✓ Choose appropriate baud rate (&lt;2% error)</li><li>✓ Use protocols for structured data</li><li>✓ Add checksums for critical data</li><li>✓ Cross RX/TX correctly, common ground</li><li>✓ Document communication protocol</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 27: Practice Exercises</h2>
+<h3>Exercise 1: Echo Server</h3>
+<p><strong>Goal</strong>: Create a UART echo program</p>
+<ul><li>Receive characters from PC</li><li>Echo them back immediately</li><li>Add line buffer for complete lines</li><li>Convert to uppercase</li></ul>
+<h3>Exercise 2: Command Interface</h3>
+<p><strong>Goal</strong>: Implement command parser</p>
+<ul><li>LED control (ON/OFF)</li><li>PWM control (SET value)</li><li>ADC reading (READ channel)</li><li>Status query (STATUS)</li></ul>
+<h3>Exercise 3: Data Logger</h3>
+<p><strong>Goal</strong>: Log sensor data to PC</p>
+<ul><li>Sample sensors every second</li><li>Send CSV format data</li><li>Include timestamp</li><li>Implement START/STOP commands</li></ul>
+<h3>Exercise 4: Binary Protocol</h3>
+<p><strong>Goal</strong>: Create efficient binary protocol</p>
+<ul><li>Define packet structure</li><li>Add start/end markers</li><li>Implement checksum</li><li>Parse received packets</li></ul>
+<h3>Exercise 5: Wireless Communication</h3>
+<p><strong>Goal</strong>: Two ATmega128 communicating</p>
+<ul><li>Wireless modules on UART</li><li>Send messages between nodes</li><li>Acknowledge receipt</li><li>Handle transmission errors</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 28: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 18: USART</li><li>Pages 145-168: Complete USART documentation</li></ul>
+<h3>Application Notes</h3>
+<ul><li>AVR306: Using the AVR UART in C</li><li>AVR304: Half Duplex Interrupt Driven Software UART</li><li>AVR274: UART Boot Loader Implementation</li></ul>
+<h3>Online Tools</h3>
+<ul><li>Baud rate calculator</li><li>Serial terminal programs (PuTTY, Tera Term, minicom)</li><li>Logic analyzer for debugging</li></ul>
+<h3>Communication Standards</h3>
+<ul><li>RS-232 specification</li><li>NMEA 0183 (GPS)</li><li>Modbus RTU protocol</li><li>JSON format</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>Serial_Communications/</code></li><li>Shared libraries: <code>uart.h</code>, <code>uart.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:13_UART_Basic', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:13_UART_Basic') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

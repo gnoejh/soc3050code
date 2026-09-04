@@ -1,0 +1,294 @@
+<title>External Interrupts</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>External Interrupts</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> — Section 11, External Interrupts</p>
+</section>
+<section class="slide">
+<h2>Slide 1: Polling Versus Interrupting</h2>
+<p>In the previous lesson the CPU asked &quot;is the button down yet?&quot; thousands of<br>times a second. That works, but it has two costs: the CPU can do nothing else<br>while it asks, and anything shorter than the gap between two questions is<br>missed entirely.</p>
+<p>An interrupt inverts the arrangement. The hardware watches the pin. When the<br>event happens it stops whatever the CPU was doing, runs a short handler, and<br>puts the CPU back exactly where it was.</p>
+<pre><code>Polling:                        Interrupt:
+
+  while (1) {                     while (1) {
+      check_button();                 do_real_work();
+      do_real_work();             }
+  }                               ISR(INT0_vect) { ... }
+      ^                                    ^
+  work delayed by every check      hardware calls you, only when needed</code></pre>
+<h3>What you gain</h3>
+<ul><li><strong>Latency</strong> — response in microseconds, not &quot;next time round the loop&quot;</li><li><strong>Efficiency</strong> — no cycles spent asking about things that did not happen</li><li><strong>Short events</strong> — a 10 µs pulse is caught, not missed between polls</li></ul>
+<h3>What you pay</h3>
+<ul><li>Code now runs in two places at once, and they share variables</li><li>The order of events becomes harder to reason about</li><li>A bug in an ISR is much harder to see</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 2: The ATmega128&#x27;s Eight External Interrupts</h2>
+<p>Eight pins can generate an external interrupt, split across two ports.</p>
+<table><thead><tr><th>Interrupt</th><th>Pin</th><th>Also known as</th><th>Vector</th></tr></thead><tbody><tr><td><strong>INT0</strong></td><td>PD0</td><td>SCL</td><td><code>INT0_vect</code></td></tr><tr><td><strong>INT1</strong></td><td>PD1</td><td>SDA</td><td><code>INT1_vect</code></td></tr><tr><td><strong>INT2</strong></td><td>PD2</td><td>RXD1</td><td><code>INT2_vect</code></td></tr><tr><td><strong>INT3</strong></td><td>PD3</td><td>TXD1</td><td><code>INT3_vect</code></td></tr><tr><td><strong>INT4</strong></td><td>PE4</td><td>OC3B</td><td><code>INT4_vect</code></td></tr><tr><td><strong>INT5</strong></td><td>PE5</td><td>OC3C</td><td><code>INT5_vect</code></td></tr><tr><td><strong>INT6</strong></td><td>PE6</td><td>T3</td><td><code>INT6_vect</code></td></tr><tr><td><strong>INT7</strong></td><td>PE7</td><td>IC3</td><td><code>INT7_vect</code></td></tr></tbody></table>
+<p>Lower vector number means higher priority when two fire at once.</p>
+<h3>An important asymmetry</h3>
+<p><strong>INT0 to INT3 can only be triggered by a <em>level</em>, or by an edge detected from<br>the I/O clock.</strong> <strong>INT4 to INT7 have full asynchronous edge detection</strong> and can<br>wake the chip from deep sleep on an edge. This matters in the power lesson: if<br>you need an edge to wake a sleeping CPU, use INT4–INT7 or a low level on<br>INT0–INT3.</p>
+<h3>On this board</h3>
+<p>PD0 and PD1 carry push buttons, so <strong>INT0 and INT1 are the two this lesson<br>uses</strong>. PD2 and PD3 are the serial port and must not be repurposed. PE4–PE7 are<br>wired to the graphic LCD&#x27;s control lines.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Choosing the Trigger — EICRA and EICRB</h2>
+<p>Each interrupt has two bits saying <em>what</em> counts as an event.</p>
+<p><strong>EICRA</strong> covers INT0–INT3, <strong>EICRB</strong> covers INT4–INT7.</p>
+<table><thead><tr><th style="text-align:center">ISCn1</th><th style="text-align:center">ISCn0</th><th>Triggers on</th></tr></thead><tbody><tr><td style="text-align:center">0</td><td style="text-align:center">0</td><td><strong>Low level</strong> — fires continuously while the pin is low</td></tr><tr><td style="text-align:center">0</td><td style="text-align:center">1</td><td><strong>Any edge</strong> — both rising and falling</td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">0</td><td><strong>Falling edge</strong></td></tr><tr><td style="text-align:center">1</td><td style="text-align:center">1</td><td><strong>Rising edge</strong></td></tr></tbody></table>
+<pre class="lang-c"><code>EICRA = (1 &lt;&lt; ISC01);                  // INT0 on a falling edge
+EICRA = (1 &lt;&lt; ISC11) | (1 &lt;&lt; ISC10);   // INT1 on a rising edge</code></pre>
+<h3>Read the bit positions carefully</h3>
+<p><code>EICRA</code> packs four interrupts into eight bits: INT0 in bits 1:0, INT1 in bits<br>3:2, INT2 in 5:4, INT3 in 7:6. Writing <code>EICRA = (1 &lt;&lt; ISC01)</code> sets INT0 and<br><strong>clears the other three</strong> — which is exactly what the lesson wants when it<br>switches demos, but is a trap if you meant to configure them independently. Use<br><code>|=</code> and a mask when several interrupts are live at once.</p>
+<h3>Why &quot;low level&quot; is dangerous</h3>
+<p>A low-level interrupt re-fires as long as the pin stays low. Hold the button<br>down and the ISR runs back to back, forever, and the main program never<br>advances. Use it only when you will remove the cause inside the ISR.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Enabling — EIMSK and EIFR</h2>
+<pre class="lang-c"><code>EIMSK |= (1 &lt;&lt; INT0);    // let INT0 through
+sei();                   // and allow interrupts globally</code></pre>
+<table><thead><tr><th>Register</th><th>Bit</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>EIMSK</strong></td><td>INT7..INT0</td><td>1 = this interrupt is enabled</td></tr><tr><td><strong>EIFR</strong></td><td>INTF7..INTF0</td><td>1 = this interrupt is pending</td></tr><tr><td><strong>SREG</strong></td><td>I (bit 7)</td><td>the global enable, set by <code>sei()</code></td></tr></tbody></table>
+<p>Both the individual mask <strong>and</strong> the global flag must be set. Forgetting <code>sei()</code><br>is the single most common reason an ISR &quot;never runs&quot;.</p>
+<h3>Clearing a stale flag</h3>
+<p>Changing the trigger condition can itself set the flag, so a spurious interrupt<br>fires the moment you enable it. Clear it first — and note the odd convention:</p>
+<pre class="lang-c"><code>EIFR |= (1 &lt;&lt; INTF0);    // writing ONE clears the flag</code></pre>
+<p>Writing a one to clear looks backwards, but it lets you clear one flag without<br>a read-modify-write that might lose another arriving in between.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Writing the Handler</h2>
+<pre class="lang-c"><code>volatile uint32_t int0_count = 0;
+
+ISR(INT0_vect)
+{
+    int0_count++;
+    PORTB ^= (1 &lt;&lt; PB7);
+}</code></pre>
+<h3><code>volatile</code> is not optional</h3>
+<p><code>int0_count</code> is written by the ISR and read by <code>main</code>. Without <code>volatile</code> the<br>compiler is entitled to notice that <code>main</code> never changes it, cache it in a<br>register, and print the same value forever. <code>volatile</code> forces every access back<br>to memory. <strong>Every variable shared between an ISR and main code must be<br><code>volatile</code>.</strong></p>
+<h3>Keep it short</h3>
+<p>An ISR runs with interrupts disabled. Everything else waits. The handler above<br>is two instructions of real work — that is the right size.</p>
+<p><strong>Do not</strong> call <code>_delay_ms</code>, <code>printf</code>, or anything that blocks, from an ISR.<br>Set a flag; do the work in <code>main</code>:</p>
+<pre class="lang-c"><code>volatile uint8_t pressed = 0;
+
+ISR(INT0_vect) { pressed = 1; }          // fast
+
+int main(void) {
+    while (1) {
+        if (pressed) { pressed = 0; handle_it(); }   // slow, but safe
+    }
+}</code></pre>
+<h3>Atomic access to multi-byte variables</h3>
+<p><code>int0_count</code> is 32 bits, so the AVR reads it in four instructions. An interrupt<br>landing in the middle gives you two halves of two different values. When it<br>matters, read it with interrupts off:</p>
+<pre class="lang-c"><code>uint32_t snapshot;
+uint8_t sreg = SREG;
+cli();
+snapshot = int0_count;
+SREG = sreg;            // restores the previous interrupt state</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Interrupts and Bounce</h2>
+<p>An interrupt is faster than a human, and much faster than a bouncing contact.<br>Wiring an undebounced button to INT0 gives you five to ten interrupts per press.</p>
+<p>Three ways out:</p>
+<ol><li><strong>Hardware filter</strong> — an RC network plus the pin&#x27;s Schmitt trigger, as in the debounce lesson. The ISR then fires once, and costs nothing extra.</li><li><strong>Ignore repeats in time</strong> — record a timer tick in the ISR and reject any edge closer than 20 ms to the last accepted one.</li><li><strong>Disable, then re-enable</strong> — clear the mask bit inside the ISR, and set it again from a timer some milliseconds later.</li></ol>
+<pre class="lang-c"><code>ISR(INT0_vect)
+{
+    if ((uint8_t)(tick_ms - last_ms) &lt; 20) return;   // still bouncing
+    last_ms = tick_ms;
+    int0_count++;
+}</code></pre>
+<p>The lesson program counts raw edges deliberately, so you can <em>see</em> the bounce in<br>the count and appreciate why the previous lesson existed.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: The Lesson Program</h2>
+<p>Two demos, selected over the serial link.</p>
+<pre class="lang-c"><code>void demo1_falling_edge(void)
+{
+    EICRA = (1 &lt;&lt; ISC01);        // INT0, falling edge
+    EIMSK = (1 &lt;&lt; INT0);
+    sei();
+
+    for (uint8_t i = 0; i &lt; 100; i++)
+    {
+        char msg[40];
+        sprintf(msg, &quot;\rCount: %lu  &quot;, int0_count);
+        uart_puts(msg);
+        _delay_ms(100);
+    }
+    EIMSK = 0;                   // stop listening before returning
+}</code></pre>
+<p><code>demo2_rising_edge</code> is the same shape with <code>EICRA = (1 &lt;&lt; ISC11) | (1 &lt;&lt; ISC10)</code><br>and <code>EIMSK = (1 &lt;&lt; INT1)</code>.</p>
+<h3>Two details worth noticing</h3>
+<ul><li><strong><code>EIMSK = 0</code> on the way out.</strong> Leaving an interrupt enabled after its demo has finished means the next demo&#x27;s counter is corrupted by the wrong pin.</li><li><strong><code>\r</code> and no <code>\n</code>.</strong> The carriage return rewrites the same terminal line, so the count appears to tick in place instead of scrolling.</li></ul>
+<h3>Falling versus rising on this board</h3>
+<p>The buttons are active low: pressing pulls the pin down, releasing lets the<br>pull-up take it back up. So <strong>demo 1 counts presses</strong> and <strong>demo 2 counts<br>releases</strong>. Running both on the same button is the clearest way to see that the<br>edge really is what you selected.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Running It</h2>
+<pre><code>cd projects2026_avr\05_INT_External_Pins
+build.bat
+simulate.bat</code></pre>
+<p>In SimulIDE:</p>
+<ol><li>Press <strong>Play</strong>.</li><li>Open the <strong>Serial Monitor</strong> at 9600 baud.</li><li>Send <code>1</code> for the falling-edge demo, or <code>2</code> for rising edge.</li><li>Click the button on PD0 (demo 1) or PD1 (demo 2) and watch the count.</li><li>LEDs on PB7 and PB6 toggle on each accepted edge.</li></ol>
+<p>Each demo runs for about 10 seconds (100 iterations x 100 ms) then returns to<br>the menu.</p>
+<h3>If the count never moves</h3>
+<ul><li><code>sei()</code> missing, or <code>EIMSK</code> never set</li><li>Wrong <code>EICRA</code> bits — check you set <code>ISCn1:ISCn0</code> for the interrupt you meant</li><li>Pull-up not enabled, so the pin never made a clean edge</li></ul>
+<h3>If the count jumps several per click</h3>
+<p>That is contact bounce, and it is the expected result. Exercise 3 asks you to<br>fix it.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Exercises</h2>
+<ol><li><strong>Count both edges.</strong> Set INT0 to &quot;any edge&quot; (<code>ISC00</code> only) and confirm the count rises on press <em>and</em> release.</li><li><strong>Use INT4.</strong> Move the demo to PE4. Note what else on the board uses PORTE and what breaks — this is a real constraint, not a trick question.</li><li><strong>Debounce the interrupt.</strong> Add the 20 ms rejection window from Slide 6, driven by a Timer0 millisecond tick. Compare counts before and after.</li><li><strong>Priority.</strong> Enable INT0 and INT1 together, hold both buttons, and work out from the counts which handler ran first. Explain it from the vector table.</li><li><strong>Flag-and-defer.</strong> Rewrite the ISR to set a flag only, doing the counting and printing in <code>main</code>. Measure how the response changes.</li><li><strong>Latency.</strong> Toggle a spare pin at the top of the ISR and look at the delay from the button edge on the board&#x27;s oscilloscope. How many clock cycles is it?</li></ol>
+</section>
+<section class="slide">
+<h2>Summary</h2>
+<h3>Key Points</h3>
+<p>✓ <strong>Eight external interrupts</strong> — INT0–INT3 on PORTD, INT4–INT7 on PORTE<br>✓ <strong>EICRA/EICRB choose the trigger</strong> — low level, any edge, falling, or rising<br>✓ <strong>EIMSK enables, <code>sei()</code> permits</strong> — you need both<br>✓ <strong>EIFR clears by writing a one</strong>, which is counter-intuitive but deliberate<br>✓ <strong>Shared variables must be <code>volatile</code></strong>, or the compiler will optimise them away<br>✓ <strong>ISRs must be short</strong> — set a flag, do the work in <code>main</code><br>✓ <strong>Interrupts do not debounce</strong> — a bouncing switch produces many interrupts</p>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>EICRA</strong></td><td>Trigger condition for INT0–INT3</td></tr><tr><td><strong>EICRB</strong></td><td>Trigger condition for INT4–INT7</td></tr><tr><td><strong>EIMSK</strong></td><td>Per-interrupt enable</td></tr><tr><td><strong>EIFR</strong></td><td>Pending flags; write 1 to clear</td></tr><tr><td><strong>SREG</strong></td><td>Bit 7 is the global interrupt enable</td></tr></tbody></table>
+<h3>Best Practices</h3>
+<ol><li><strong>Clear the flag</strong> before enabling, to swallow a spurious first interrupt</li><li><strong>Disable on the way out</strong> of a routine that owned an interrupt</li><li><strong>Guard multi-byte shared variables</strong> with <code>cli()</code>/restore, not bare <code>cli()</code>/<code>sei()</code></li><li><strong>Avoid low-level triggers</strong> unless the ISR removes the cause</li><li><strong>Use INT4–INT7</strong> when an edge must wake the chip from deep sleep</li></ol>
+<h3>Next Steps</h3>
+<ul><li><strong>Timer interrupts</strong> — periodic events instead of external ones</li><li><strong>Input capture</strong> — an interrupt that also records <em>when</em> it happened</li><li><strong>Sleep modes</strong> — using an interrupt as the only way back to life</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, Section 11 &quot;External Interrupts&quot; — EICRA, EICRB, EIMSK, EIFR</li><li>ATmega128 Datasheet, Section 9 &quot;Interrupts&quot; — the vector table and priorities</li><li>avr-libc manual, <code>&lt;avr/interrupt.h&gt;</code> — <code>ISR</code>, <code>sei</code>, <code>cli</code>, <code>ATOMIC_BLOCK</code></li></ul>
+<h3>Related Lessons</h3>
+<ul><li><code>02_Port_Button_Debounce</code> — why the raw edge count is not the press count</li><li><code>08_Timer1_Input_Capture</code> — interrupts that timestamp themselves</li><li><code>20_Power_Sleep_Modes</code> — which interrupts survive which sleep mode</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR130 — setting up and using the AVR timers and interrupts</li><li>avr-libc FAQ, &quot;Why does the compiler optimise my variable away?&quot;</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:05_INT_External_Pins', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:05_INT_External_Pins') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

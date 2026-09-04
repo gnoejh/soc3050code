@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATmega128 Project Builder - Student Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e1e5e9;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            background: #f8f9fa;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e1e5e9;
+            font-size: 0.9rem;
+        }
+
+        .projects-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            max-height: calc(100vh - 200px);
+            /* Ensure it fits within viewport */
+            /* Custom scrollbar styling for better visibility */
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f3f4;
+        }
+
+        /* Webkit scrollbar styling for Chrome/Safari */
+        .projects-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .projects-list::-webkit-scrollbar-track {
+            background: #f1f3f4;
+            border-radius: 4px;
+        }
+
+        .projects-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .projects-list::-webkit-scrollbar-thumb:hover {
+            background: #5a67d8;
+        }
+
+        .project-count-hint {
+            font-size: 0.8rem;
+            color: #666;
+            padding: 0.25rem 0.5rem;
+            text-align: center;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+            display: none;
+        }
+
+        .project-count-hint.show {
+            display: block;
+        }
+
+        .project-item {
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .project-item:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .project-item.selected {
+            background: #e8f0fe;
+            border-color: #667eea;
+            border-width: 2px;
+        }
+
+        .project-item.modified::after {
+            content: "●";
+            color: #28a745;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .project-name {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .project-desc {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .project-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 0.7rem;
+            color: #999;
+        }
+
+        .project-actions {
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .workspace-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+            padding: 0 1rem;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 0.8rem 1.2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            background: white;
+            font-weight: 600;
+        }
+
+        .tab-close {
+            color: #999;
+            font-size: 1.2rem;
+            margin-left: 5px;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .tab-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #666;
+        }
+
+        .workspace-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            padding: 1rem;
+            resize: none;
+            outline: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            line-height: 1.6;
+            tab-size: 4;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+            font-size: 0.8rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .save-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .saved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .modified {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .saving {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .bottom-panel {
+            height: 280px;
+            border-top: 1px solid #e1e5e9;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .panel-tab {
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .panel-tab.active {
+            border-bottom-color: #667eea;
+            background: white;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-area {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            height: 100%;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .file-tree {
+            padding: 0.5rem;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 0.4rem 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+
+        .file-item.active {
+            background: #e8f0fe;
+            font-weight: 600;
+        }
+
+        .file-icon {
+            width: 16px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-top: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: #e1e5e9;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .project-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .project-info h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .project-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 250px;
+            }
+
+            .projects-list {
+                max-height: 400px;
+                /* Increased from 150px to show more projects */
+            }
+
+            .bottom-panel {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>
+            <span>🎓</span>
+            ATmega128 Project Builder
+        </h1>
+        <div class="user-info">
+            <span id="studentName">Loading...</span>
+            <span id="projectStatus" class="save-status saved">Ready</span>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    📁 Projects
+                    <button class="btn btn-sm" onclick="showNewProjectModal()" title="Create New Project">+</button>
+                </div>
+                <div class="project-count-hint" id="projectCountHint">
+                    Scroll to see all projects ↕️
+                </div>
+                <div id="projectsList" class="projects-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading projects...
+                    </div>
+                </div>
+                <div class="project-actions">
+                    <div class="btn-group">
+                        <button id="buildBtn" class="btn-sm btn-primary" onclick="buildProject()" disabled>
+                            🔨 Build
+                        </button>
+                        <button id="runBtn" class="btn-sm btn-success" onclick="runProject()" disabled>
+                            ▶️ Run
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-sm btn-secondary" onclick="copyProject()" disabled id="copyBtn">
+                            📋 Copy
+                        </button>
+                        <button class="btn-sm btn-warning" onclick="resetProject()" disabled id="resetBtn">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Editor Area -->
+        <div class="main-area">
+            <div class="workspace-tabs" id="workspaceTabs">
+                <div class="tab active" data-file="welcome">
+                    📝 Welcome
+                </div>
+            </div>
+
+            <div class="workspace-content">
+                <div class="editor-toolbar">
+                    <div class="file-info">
+                        <span id="currentFile">Welcome</span>
+                        <span id="fileStatus" class="save-status saved">Saved</span>
+                        <span id="fileLine">Line 1, Col 1</span>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn-sm btn-secondary" onclick="saveFile()" id="saveBtn">
+                            💾 Save
+                        </button>
+                        <button class="btn-sm btn-secondary" onclick="formatCode()">
+                            📐 Format
+                        </button>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <textarea id="codeEditor" class="code-editor" placeholder="Select a project to start coding...">
+Welcome to ATmega128 Project Builder!
+
+🎓 Your Personal Development Environment
+═══════════════════════════════════════
+
+📁 Getting Started:
+1. Select a project from the sidebar
+2. Edit your code in this editor
+3. Build your project with the Build button
+4. Run simulation or deploy to hardware
+
+✨ Features:
+• Auto-save as you type
+• Syntax highlighting for C/C++
+• Real-time build feedback
+• Integrated simulator
+• Multiple file support
+• Project templates
+
+🚀 Ready to code? Select a project from the left sidebar!
+                    </textarea>
+                </div>
+            </div>
+
+            <!-- Bottom Panel -->
+            <div class="bottom-panel">
+                <div class="panel-tabs">
+                    <div class="panel-tab active" data-panel="output">
+                        🖥️ Build Output
+                    </div>
+                    <div class="panel-tab" data-panel="files">
+                        📂 Files
+                    </div>
+                    <div class="panel-tab" data-panel="simulator">
+                        🎮 Simulator
+                    </div>
+                    <div class="panel-tab" data-panel="help">
+                        ❓ Help
+                    </div>
+                </div>
+
+                <div class="panel-content">
+                    <div id="output" class="output-area">
+                        Welcome to ATmega128 Project Builder!
+
+                        Ready to build your first project.
+                        Select a project and click Build to see compilation output here.
+
+                        🔧 Build System Features:
+                        • Real-time compilation with AVR-GCC
+                        • Detailed error messages with line numbers
+                        • Memory usage statistics
+                        • Optimization reports
+                        • Hex file generation for programming
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-left">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Connected</span>
+            </div>
+            <div id="sessionInfo">Session active</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        <div>
+            <span id="memoryUsage">Ready</span>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <h3>Create New Project</h3>
+            <form id="newProjectForm">
+                <div class="form-group">
+                    <label for="projectName">Project Name:</label>
+                    <input type="text" id="projectName" name="projectName" placeholder="My_ATmega128_Project" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="projectTemplate">Template:</label>
+                    <select id="projectTemplate" name="projectTemplate">
+                        <option value="basic">Basic - Empty main.c</option>
+                        <option value="blink">LED Blink Example</option>
+                        <option value="serial">Serial Communication</option>
+                        <option value="adc">ADC Reading</option>
+                        <option value="timer">Timer Example</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="projectDesc">Description:</label>
+                    <textarea id="projectDesc" name="projectDesc"
+                        placeholder="Brief description of your project..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('newProjectModal')">Cancel</button>
+                    <button type="submit" class="btn-sm btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/socket.io.min.js"></script>
+    <script>
+        let socket = io();
+        let selectedProject = null;
+        let currentFile = 'welcome';
+        let projects = [];
+        let openFiles = new Map();
+        let autoSaveTimeout = null;
+        let isModified = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            loadProjects();
+            updateSessionInfo();
+            setupEditor();
+            setupPanelTabs();
+        });
+
+        // Socket events
+        socket.on('connect', function () {
+            console.log('Connected to server');
+            updateStatusBar('Connected', true);
+        });
+
+        socket.on('disconnect', function () {
+            console.log('Disconnected from server');
+            updateStatusBar('Disconnected', false);
+        });
+
+        socket.on('status', function (data) {
+            console.log('Status:', data.message);
+        });
+
+        // Project Management
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects');
+                projects = await response.json();
+
+                if (projects.error) {
+                    displayOutput(`Error: ${projects.error}`);
+                    return;
+                }
+
+                displayProjects(projects);
+            } catch (error) {
+                displayOutput(`Error loading projects: ${error.message}`);
+            }
+        }
+
+        function displayProjects(projects) {
+            const projectsList = document.getElementById('projectsList');
+
+            if (projects.length === 0) {
+                projectsList.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No projects found.<br><button class="btn-sm btn-primary" onclick="showNewProjectModal()">Create New Project</button></p>';
+                return;
+            }
+
+            projectsList.innerHTML = projects.map(project => {
+                const isModified = openFiles.has(project.name) && openFiles.get(project.name).modified;
+                const lastModified = new Date(project.last_modified || Date.now()).toLocaleDateString();
+                const fileCount = project.file_count || 1;
+
+                return `
+                    <div class="project-item ${isModified ? 'modified' : ''}" onclick="selectProject('${project.name}')">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-desc">${project.description || 'ATmega128 project with Main.c'}</div>
+                        <div class="project-stats">
+                            <span>📄 ${fileCount} files</span>
+                            <span>📅 ${lastModified}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Show scroll hint if there are many projects (more than 5)
+            const projectCountHint = document.getElementById('projectCountHint');
+            if (projects.length > 5) {
+                projectCountHint.classList.add('show');
+                projectCountHint.textContent = `Scroll to see all ${projects.length} projects ↕️`;
+            } else {
+                projectCountHint.classList.remove('show');
+            }
+        }
+
+        async function selectProject(projectName) {
+            if (selectedProject === projectName) return;
+
+            selectedProject = projectName;
+
+            // Update UI
+            document.querySelectorAll('.project-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            event.target.closest('.project-item').classList.add('selected');
+
+            // Enable buttons
+            document.getElementById('buildBtn').disabled = false;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('copyBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = false;
+
+            // Load project files
+            await loadProjectFiles(projectName);
+
+            displayOutput(`Selected project: ${projectName}\nLoading files...`);
+        }
+
+        async function loadProjectFiles(projectName) {
+            try {
+                const response = await fetch('/api/file/read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project: projectName, filename: 'Main.c' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    openFile('Main.c', data.content);
+                    updateFileStatus('saved');
+                } else {
+                    displayOutput(`Error loading Main.c: ${data.error}`);
+                }
+            } catch (error) {
+                displayOutput(`Error loading files: ${error.message}`);
+            }
+        }
+
+        function openFile(filename, content) {
+            // Add to open files
+            openFiles.set(filename, {
+                content: content,
+                original: content,
+                modified: false
+            });
+
+            // Add tab
+            addTab(filename);
+
+            // Switch to file
+            switchToFile(filename);
+        }
+
+        function addTab(filename) {
+            const tabs = document.getElementById('workspaceTabs');
+
+            // Remove welcome tab if it exists
+            if (document.querySelector('[data-file="welcome"]') && filename !== 'welcome') {
+                document.querySelector('[data-file="welcome"]').remove();
+            }
+
+            // Check if tab already exists
+            if (document.querySelector(`[data-file="${filename}"]`)) {
+                return;
+            }
+
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.setAttribute('data-file', filename);
+            tab.innerHTML = `
+                📄 ${filename}
+                <span class="tab-close" onclick="closeFile('${filename}', event)">×</span>
+            `;
+            tab.onclick = () => switchToFile(filename);
+
+            tabs.appendChild(tab);
+        }
+
+        function switchToFile(filename) {
+            currentFile = filename;
+
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-file="${filename}"]`).classList.add('active');
+
+            // Update editor
+            const editor = document.getElementById('codeEditor');
+            const fileData = openFiles.get(filename);
+
+            if (fileData) {
+                editor.value = fileData.content;
+                updateFileStatus(fileData.modified ? 'modified' : 'saved');
+            }
+
+            // Update UI
+            document.getElementById('currentFile').textContent = filename;
+        }
+
+        function closeFile(filename, event) {
+            event.stopPropagation();
+
+            // Remove tab
+            document.querySelector(`[data-file="${filename}"]`).remove();
+
+            // Remove from open files
+            openFiles.delete(filename);
+
+            // Switch to another file if current file was closed
+            if (currentFile === filename) {
+                const remainingTabs = document.querySelectorAll('.tab');
+                if (remainingTabs.length > 0) {
+                    const firstTab = remainingTabs[0];
+                    switchToFile(firstTab.getAttribute('data-file'));
+                } else {
+                    // Open welcome tab
+                    currentFile = 'welcome';
+                    addTab('welcome');
+                    switchToFile('welcome');
+                }
+            }
+        }
+
+        // Editor Functions
+        function setupEditor() {
+            const editor = document.getElementById('codeEditor');
+
+            editor.addEventListener('input', function () {
+                if (currentFile !== 'welcome') {
+                    const fileData = openFiles.get(currentFile);
+                    if (fileData) {
+                        fileData.content = editor.value;
+                        fileData.modified = fileData.content !== fileData.original;
+                        updateFileStatus(fileData.modified ? 'modified' : 'saved');
+
+                        // Auto-save after 2 seconds of inactivity
+                        clearTimeout(autoSaveTimeout);
+                        autoSaveTimeout = setTimeout(() => {
+                            if (fileData.modified) {
+                                saveFile();
+                            }
+                        }, 2000);
+                    }
+                }
+            });
+
+            editor.addEventListener('keydown', function (e) {
+                // Tab key for indentation
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+
+                    editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+                    editor.selectionStart = editor.selectionEnd = start + 4;
+                }
+
+                // Ctrl+S for save
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveFile();
+                }
+            });
+
+            // Track cursor position
+            editor.addEventListener('input', updateCursorInfo);
+            editor.addEventListener('click', updateCursorInfo);
+            editor.addEventListener('keyup', updateCursorInfo);
+        }
+
+        function updateCursorInfo() {
+            const editor = document.getElementById('codeEditor');
+            const position = editor.selectionStart;
+            const value = editor.value;
+
+            const lines = value.substring(0, position).split('\n');
+            const line = lines.length;
+            const col = lines[lines.length - 1].length + 1;
+
+            document.getElementById('fileLine').textContent = `Line ${line}, Col ${col}`;
+        }
+
+        async function saveFile() {
+            if (currentFile === 'welcome' || !selectedProject) return;
+
+            const fileData = openFiles.get(currentFile);
+            if (!fileData || !fileData.modified) return;
+
+            updateFileStatus('saving');
+
+            try {
+                const response = await fetch('/api/file/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project: selectedProject,
+                        filename: currentFile,
+                        content: fileData.content
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    fileData.original = fileData.content;
+                    fileData.modified = false;
+                    updateFileStatus('saved');
+                    displayOutput(`✅ File saved: ${currentFile}`);
+                } else {
+                    updateFileStatus('error');
+                    displayOutput(`❌ Save failed: ${data.error}`);
+                }
+            } catch (error) {
+                updateFileStatus('error');
+                displayOutput(`❌ Save error: ${error.message}`);
+            }
+        }
+
+        function formatCode() {
+            // Basic C code formatting
+            const editor = document.getElementById('codeEditor');
+            let code = editor.value;
+
+            // Simple formatting (can be enhanced)
+            code = code.replace(/\{\s*\n/g, '{\n');
+            code = code.replace(/\n\s*\}/g, '\n}');
+            code = code.replace(/;(\S)/g, '; $1');
+
+            editor.value = code;
+
+            // Trigger input event to mark as modified
+            const event = new Event('input', { bubbles: true });
+            editor.dispatchEvent(event);
+        }
+
+        function updateFileStatus(status) {
+            const statusElement = document.getElementById('fileStatus');
+            const projectStatus = document.getElementById('projectStatus');
+
+            statusElement.className = `save-status ${status}`;
+            projectStatus.className = `save-status ${status}`;
+
+            switch (status) {
+                case 'saved':
+                    statusElement.textContent = 'Saved';
+                    projectStatus.textContent = 'Ready';
+                    break;
+                case 'modified':
+                    statusElement.textContent = 'Modified';
+                    projectStatus.textContent = 'Modified';
+                    break;
+                case 'saving':
+                    statusElement.textContent = 'Saving...';
+                    projectStatus.textContent = 'Saving';
+                    break;
+                case 'error':
+                    statusElement.textContent = 'Error';
+                    projectStatus.textContent = 'Error';
+                    break;
+            }
+        }
+
+        // Build System
+        async function buildProject() {
+            if (!selectedProject) return;
+
+            const buildBtn = document.getElementById('buildBtn');
+            buildBtn.disabled = true;
+            buildBtn.innerHTML = '🔄 Building...';
+
+            // Save current file before building
+            await saveFile();
+
+            displayOutput(`🔨 Building ${selectedProject}...\n`);
+            showProgress(true);
+
+            try {
+                const response = await fetch('/api/build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project: selectedProject })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayOutput(`✅ Build successful!\n\n${data.output}`);
+                    document.getElementById('memoryUsage').textContent = 'Build successful';
+                } else {
+                    displayOutput(`❌ Build failed!\n\n${data.output}`);
+                    document.getElementById('memoryUsage').textContent = 'Build failed';
+                }
+            } catch (error) {
+                displayOutput(`❌ Build error: ${error.message}`);
+            } finally {
+                buildBtn.disabled = false;
+                buildBtn.innerHTML = '🔨 Build';
+                showProgress(false);
+            }
+        }
+
+        async function runProject() {
+            if (!selectedProject) return;
+
+            const runBtn = document.getElementById('runBtn');
+            runBtn.disabled = true;
+            runBtn.innerHTML = '🚀 Starting...';
+
+            displayOutput(`▶️ Starting simulation for ${selectedProject}...\n`);
+            showProgress(true);
+
+            try {
+                const response = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project: selectedProject })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayOutput(`✅ ${data.message}\n`);
+                    displayOutput(`🎮 SimulIDE should open in a new window\n`);
+                    displayOutput(`📋 Circuit loaded: ${selectedProject}\n`);
+                    displayOutput(`💡 The simulation will show your ATmega128 running your compiled code\n`);
+                } else {
+                    displayOutput(`❌ Simulation failed: ${data.error}\n`);
+                    if (data.needs_build) {
+                        displayOutput(`💡 Tip: Build your project first using the Build button\n`);
+                    }
+                }
+            } catch (error) {
+                displayOutput(`❌ Simulation error: ${error.message}\n`);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = '▶️ Run';
+                showProgress(false);
+            }
+        }
+
+        // Project Management Functions
+        function showNewProjectModal() {
+            document.getElementById('newProjectModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function copyProject() {
+            if (!selectedProject) return;
+
+            const newName = prompt(`Enter name for copy of ${selectedProject}:`);
+            if (newName) {
+                displayOutput(`📋 Copying project ${selectedProject} to ${newName}...\n`);
+                displayOutput(`Project copy feature coming soon!\n`);
+            }
+        }
+
+        function resetProject() {
+            if (!selectedProject) return;
+
+            if (confirm(`Reset ${selectedProject} to original state? This will lose all changes!`)) {
+                displayOutput(`🔄 Resetting project ${selectedProject}...\n`);
+                displayOutput(`Project reset feature coming soon!\n`);
+            }
+        }
+
+        // Panel Management
+        function setupPanelTabs() {
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    const panel = this.getAttribute('data-panel');
+                    switchPanel(panel);
+                });
+            });
+        }
+
+        function switchPanel(panelName) {
+            // Update tabs
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-panel="${panelName}"]`).classList.add('active');
+
+            // Update content
+            const content = document.querySelector('.panel-content');
+
+            switch (panelName) {
+                case 'output':
+                    content.innerHTML = '<div id="output" class="output-area">' +
+                        (document.getElementById('output').textContent || 'Build output will appear here...') + '</div>';
+                    break;
+                case 'files':
+                    content.innerHTML = '<div class="file-tree"><div class="file-item active"><span class="file-icon">📄</span>Main.c</div><div class="file-item"><span class="file-icon">📄</span>Main.h</div></div>';
+                    break;
+                case 'simulator':
+                    content.innerHTML = '<div style="padding: 1rem; text-align: center;"><h4>🎮 Simulator Integration</h4><p>SimulIDE integration coming soon!</p><button class="btn-sm btn-primary" onclick="runProject()">Launch External SimulIDE</button></div>';
+                    break;
+                case 'help':
+                    content.innerHTML = '<div style="padding: 1rem;"><h4>❓ Quick Help</h4><ul style="line-height: 1.6;"><li><strong>Ctrl+S:</strong> Save file</li><li><strong>Tab:</strong> Indent code</li><li><strong>Build:</strong> Compile project</li><li><strong>Run:</strong> Start simulation</li></ul></div>';
+                    break;
+            }
+        }
+
+        // Utility Functions
+        function displayOutput(text) {
+            const output = document.getElementById('output');
+            if (output) {
+                output.textContent += text + '\n';
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+
+        function showProgress(show) {
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.display = show ? 'block' : 'none';
+
+            if (show) {
+                const fill = document.querySelector('.progress-fill');
+                let width = 0;
+                const interval = setInterval(() => {
+                    width += 2;
+                    fill.style.width = width + '%';
+                    if (width >= 90) clearInterval(interval);
+                }, 50);
+            }
+        }
+
+        function updateStatusBar(status, connected) {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-indicator span');
+
+            statusText.textContent = status;
+            statusDot.style.background = connected ? '#28a745' : '#dc3545';
+        }
+
+        function updateSessionInfo() {
+            const now = new Date();
+            document.getElementById('sessionInfo').textContent =
+                `Session: ${now.toLocaleTimeString()}`;
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // Initialize welcome content
+        openFiles.set('welcome', {
+            content: document.getElementById('codeEditor').value,
+            original: document.getElementById('codeEditor').value,
+            modified: false
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1031 @@
+<title>SPI Master Communication</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>SPI Master Communication</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to SPI</h2>
+<h3>What is SPI?</h3>
+<ul><li><strong>Serial Peripheral Interface</strong></li><li><strong>Synchronous</strong> serial communication protocol</li><li>Developed by Motorola</li><li><strong>Full-duplex</strong> communication (simultaneous TX/RX)</li><li><strong>Master-slave</strong> architecture</li></ul>
+<h3>SPI Bus Structure</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[Master&lt;br/&gt;MCU] --&gt;|MOSI| B[Slave 1&lt;br/&gt;SS1]
+    A --&gt;|SCK| B
+    B --&gt;|MISO| A
+    A --&gt;|SS1| B
+    
+    A --&gt;|MOSI| C[Slave 2&lt;br/&gt;SS2]
+    A --&gt;|SCK| C
+    C --&gt;|MISO| A
+    A --&gt;|SS2| C
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Key Features</h3>
+<p>✓ <strong>4-wire interface</strong>: MOSI, MISO, SCK, SS<br>✓ <strong>Full-duplex</strong>: Simultaneous send/receive<br>✓ <strong>High speed</strong>: 1 MHz to 50+ MHz<br>✓ <strong>Simple protocol</strong>: No addressing, no ACK<br>✓ <strong>Flexible</strong>: Multiple modes and configurations</p>
+</section>
+<section class="slide">
+<h2>Slide 2: SPI Signal Lines</h2>
+<h3>Four-Wire Interface</h3>
+<table><thead><tr><th>Signal</th><th>Name</th><th>Direction</th><th>Function</th></tr></thead><tbody><tr><td><strong>MOSI</strong></td><td>Master Out Slave In</td><td>Master → Slave</td><td>Data from master</td></tr><tr><td><strong>MISO</strong></td><td>Master In Slave Out</td><td>Slave → Master</td><td>Data from slave</td></tr><tr><td><strong>SCK</strong></td><td>Serial Clock</td><td>Master → Slave</td><td>Clock signal</td></tr><tr><td><strong>SS</strong></td><td>Slave Select</td><td>Master → Slave</td><td>Chip select (active LOW)</td></tr></tbody></table>
+<p><strong>Alternative Names:</strong></p>
+<ul><li>MOSI = SDO (Serial Data Out), SI (Serial In), DI (Data In)</li><li>MISO = SDI (Serial Data In), SO (Serial Out), DO (Data Out)</li><li>SS = CS (Chip Select), NSS (Not Slave Select)</li></ul>
+<h3>ATmega128 SPI Pins</h3>
+<pre><code>ATmega128 SPI Pins:
+- MOSI: PB2 (Port B, Pin 2)
+- MISO: PB3 (Port B, Pin 3)
+- SCK:  PB1 (Port B, Pin 1)
+- SS:   PB0 (Port B, Pin 0) - Can use any GPIO for slave select</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: SPI Communication</h2>
+<h3>Full-Duplex Operation</h3>
+<pre><code>Master and Slave each have shift register
+Data shifts out while data shifts in simultaneously
+
+Master Shift Register:  [7 6 5 4 3 2 1 0]
+                         ↓ MOSI      MISO ↑
+Slave Shift Register:   [7 6 5 4 3 2 1 0]
+
+Clock: Master generates SCK
+Each clock pulse shifts one bit</code></pre>
+<h3>SPI Transaction</h3>
+<pre class="lang-mermaid"><code>sequenceDiagram
+    participant Master
+    participant Slave
+    
+    Master-&gt;&gt;Slave: Assert SS (LOW)
+    Master-&gt;&gt;Slave: Clock + MOSI bit 7
+    Slave-&gt;&gt;Master: MISO bit 7
+    Master-&gt;&gt;Slave: Clock + MOSI bit 6
+    Slave-&gt;&gt;Master: MISO bit 6
+    Note over Master,Slave: ... 6 more bits ...
+    Master-&gt;&gt;Slave: Clock + MOSI bit 0
+    Slave-&gt;&gt;Master: MISO bit 0
+    Master-&gt;&gt;Slave: Deassert SS (HIGH)</code></pre>
+<h3>Timing Diagram</h3>
+<pre><code>SS   ‾‾‾‾\_______________________________/‾‾‾‾
+
+SCK  ______/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\____
+
+MOSI ------&lt;D7&gt;&lt;D6&gt;&lt;D5&gt;&lt;D4&gt;&lt;D3&gt;&lt;D2&gt;&lt;D1&gt;&lt;D0&gt;---
+
+MISO ------&lt;D7&gt;&lt;D6&gt;&lt;D5&gt;&lt;D4&gt;&lt;D3&gt;&lt;D2&gt;&lt;D1&gt;&lt;D0&gt;---</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: SPI Modes (Clock Polarity and Phase)</h2>
+<h3>CPOL and CPHA</h3>
+<table><thead><tr><th>Mode</th><th>CPOL</th><th>CPHA</th><th>Idle Clock</th><th>Sample Edge</th></tr></thead><tbody><tr><td><strong>0</strong></td><td>0</td><td>0</td><td>LOW</td><td>Rising (leading)</td></tr><tr><td><strong>1</strong></td><td>0</td><td>1</td><td>LOW</td><td>Falling (trailing)</td></tr><tr><td><strong>2</strong></td><td>1</td><td>0</td><td>HIGH</td><td>Falling (leading)</td></tr><tr><td><strong>3</strong></td><td>1</td><td>1</td><td>HIGH</td><td>Rising (trailing)</td></tr></tbody></table>
+<p><strong>CPOL</strong> (Clock Polarity):</p>
+<ul><li>0: Clock idle state is LOW</li><li>1: Clock idle state is HIGH</li></ul>
+<p><strong>CPHA</strong> (Clock Phase):</p>
+<ul><li>0: Sample on leading edge, shift on trailing edge</li><li>1: Shift on leading edge, sample on trailing edge</li></ul>
+<h3>Mode 0 Timing (Most Common)</h3>
+<pre><code>CPOL=0, CPHA=0
+
+SCK  ___/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\___
+       ↑ sample     ↑ sample
+       
+Data setup on falling edge, sampled on rising edge</code></pre>
+<h3>Mode 3 Timing</h3>
+<pre><code>CPOL=1, CPHA=1
+
+SCK  ‾‾‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾‾‾
+         ↑ sample     ↑ sample</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: ATmega128 SPI Registers</h2>
+<h3>SPI Control Register (SPCR)</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+SPCR  │ SPIE │ SPE  │ DORD │ MSTR │ CPOL │ CPHA │ SPR1 │ SPR0 │
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<p><strong>Bit Descriptions:</strong></p>
+<ul><li><strong>SPIE</strong>: SPI Interrupt Enable</li><li><strong>SPE</strong>: SPI Enable</li><li><strong>DORD</strong>: Data Order (0=MSB first, 1=LSB first)</li><li><strong>MSTR</strong>: Master/Slave Select (1=Master)</li><li><strong>CPOL</strong>: Clock Polarity</li><li><strong>CPHA</strong>: Clock Phase</li><li><strong>SPR1:SPR0</strong>: SPI Clock Rate Select</li></ul>
+<h3>SPI Status Register (SPSR)</h3>
+<pre><code>Bit     7      6      5      4      3      2      1      0
+      ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+SPSR  │ SPIF │ WCOL │   -  │   -  │   -  │   -  │   -  │ SPI2X│
+      └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘</code></pre>
+<p><strong>Bit Descriptions:</strong></p>
+<ul><li><strong>SPIF</strong>: SPI Interrupt Flag (set when transfer complete)</li><li><strong>WCOL</strong>: Write Collision Flag</li><li><strong>SPI2X</strong>: Double SPI Speed</li></ul>
+<h3>SPI Data Register (SPDR)</h3>
+<pre><code>SPDR: Read/write data register
+- Write to SPDR starts transmission
+- Read from SPDR gets received data</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: SPI Clock Frequency</h2>
+<h3>Clock Rate Selection</h3>
+<pre><code>SPI_CLK = F_CPU / Prescaler
+
+Prescaler options (SPR1, SPR0, SPI2X):</code></pre>
+<table><thead><tr><th>SPI2X</th><th>SPR1</th><th>SPR0</th><th>Prescaler</th><th>SPI Clock @ 16MHz</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td>4</td><td>4 MHz</td></tr><tr><td>0</td><td>0</td><td>1</td><td>16</td><td>1 MHz</td></tr><tr><td>0</td><td>1</td><td>0</td><td>64</td><td>250 kHz</td></tr><tr><td>0</td><td>1</td><td>1</td><td>128</td><td>125 kHz</td></tr><tr><td>1</td><td>0</td><td>0</td><td>2</td><td>8 MHz</td></tr><tr><td>1</td><td>0</td><td>1</td><td>8</td><td>2 MHz</td></tr><tr><td>1</td><td>1</td><td>0</td><td>32</td><td>500 kHz</td></tr><tr><td>1</td><td>1</td><td>1</td><td>64</td><td>250 kHz</td></tr></tbody></table>
+<h3>Example Calculations</h3>
+<pre class="lang-c"><code>// F_CPU = 16 MHz
+
+// 4 MHz: SPR1=0, SPR0=0, SPI2X=0
+#define SPI_CLOCK_DIV4   0x00
+
+// 1 MHz: SPR1=0, SPR0=1, SPI2X=0
+#define SPI_CLOCK_DIV16  0x01
+
+// 8 MHz: SPR1=0, SPR0=0, SPI2X=1 (fastest)
+#define SPI_CLOCK_DIV2   0x04</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: SPI Initialization</h2>
+<h3>Master Mode Initialization</h3>
+<pre class="lang-c"><code>#include &lt;avr/io.h&gt;
+
+void spi_master_init(void) {
+    // Set MOSI, SCK, and SS as outputs
+    DDRB |= (1 &lt;&lt; PB2) | (1 &lt;&lt; PB1) | (1 &lt;&lt; PB0);
+    
+    // Set MISO as input
+    DDRB &amp;= ~(1 &lt;&lt; PB3);
+    
+    // Enable SPI, Master mode, Clock = F_CPU/16 (1 MHz @ 16MHz)
+    // Mode 0: CPOL=0, CPHA=0
+    SPCR = (1 &lt;&lt; SPE) | (1 &lt;&lt; MSTR) | (1 &lt;&lt; SPR0);
+}
+
+// Faster SPI (4 MHz)
+void spi_master_init_fast(void) {
+    DDRB |= (1 &lt;&lt; PB2) | (1 &lt;&lt; PB1) | (1 &lt;&lt; PB0);
+    DDRB &amp;= ~(1 &lt;&lt; PB3);
+    
+    // Clock = F_CPU/4 = 4 MHz
+    SPCR = (1 &lt;&lt; SPE) | (1 &lt;&lt; MSTR);
+}
+
+// SPI Mode selection
+void spi_set_mode(uint8_t mode) {
+    switch (mode) {
+        case 0:  // CPOL=0, CPHA=0
+            SPCR &amp;= ~((1 &lt;&lt; CPOL) | (1 &lt;&lt; CPHA));
+            break;
+        case 1:  // CPOL=0, CPHA=1
+            SPCR &amp;= ~(1 &lt;&lt; CPOL);
+            SPCR |= (1 &lt;&lt; CPHA);
+            break;
+        case 2:  // CPOL=1, CPHA=0
+            SPCR |= (1 &lt;&lt; CPOL);
+            SPCR &amp;= ~(1 &lt;&lt; CPHA);
+            break;
+        case 3:  // CPOL=1, CPHA=1
+            SPCR |= (1 &lt;&lt; CPOL) | (1 &lt;&lt; CPHA);
+            break;
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: SPI Transfer Functions</h2>
+<h3>Basic Transfer</h3>
+<pre class="lang-c"><code>uint8_t spi_transfer(uint8_t data) {
+    // Start transmission
+    SPDR = data;
+    
+    // Wait for transmission complete
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    
+    // Return received data
+    return SPDR;
+}
+
+// Write only (ignore received data)
+void spi_write(uint8_t data) {
+    SPDR = data;
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    (void)SPDR;  // Dummy read to clear SPIF
+}
+
+// Read only (send dummy byte)
+uint8_t spi_read(void) {
+    SPDR = 0xFF;  // Dummy byte
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    return SPDR;
+}
+
+// Multi-byte transfer
+void spi_transfer_bytes(uint8_t *tx_data, uint8_t *rx_data, uint16_t length) {
+    for (uint16_t i = 0; i &lt; length; i++) {
+        rx_data[i] = spi_transfer(tx_data[i]);
+    }
+}
+
+// Write buffer
+void spi_write_bytes(const uint8_t *data, uint16_t length) {
+    for (uint16_t i = 0; i &lt; length; i++) {
+        spi_write(data[i]);
+    }
+}
+
+// Read buffer
+void spi_read_bytes(uint8_t *buffer, uint16_t length) {
+    for (uint16_t i = 0; i &lt; length; i++) {
+        buffer[i] = spi_read();
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Slave Select (Chip Select)</h2>
+<h3>Managing Multiple Slaves</h3>
+<pre class="lang-c"><code>// Define slave select pins
+#define SS_DEVICE_1  PB0
+#define SS_DEVICE_2  PB4
+#define SS_DEVICE_3  PB5
+
+void spi_init_multi_slave(void) {
+    // Set SS pins as outputs
+    DDRB |= (1 &lt;&lt; SS_DEVICE_1) | (1 &lt;&lt; SS_DEVICE_2) | (1 &lt;&lt; SS_DEVICE_3);
+    
+    // Deselect all devices (SS HIGH)
+    PORTB |= (1 &lt;&lt; SS_DEVICE_1) | (1 &lt;&lt; SS_DEVICE_2) | (1 &lt;&lt; SS_DEVICE_3);
+    
+    spi_master_init();
+}
+
+// Select device
+void spi_select(uint8_t device_pin) {
+    PORTB &amp;= ~(1 &lt;&lt; device_pin);  // Pull LOW to select
+}
+
+// Deselect device
+void spi_deselect(uint8_t device_pin) {
+    PORTB |= (1 &lt;&lt; device_pin);   // Pull HIGH to deselect
+}
+
+// Transaction with device
+void spi_transaction(uint8_t device_pin, uint8_t *tx, uint8_t *rx, uint16_t len) {
+    spi_select(device_pin);
+    spi_transfer_bytes(tx, rx, len);
+    spi_deselect(device_pin);
+}
+
+// Example usage
+int main(void) {
+    spi_init_multi_slave();
+    
+    uint8_t tx_data[3] = {0x01, 0x02, 0x03};
+    uint8_t rx_data[3];
+    
+    // Communicate with device 1
+    spi_transaction(SS_DEVICE_1, tx_data, rx_data, 3);
+    
+    // Communicate with device 2
+    spi_transaction(SS_DEVICE_2, tx_data, rx_data, 3);
+    
+    while (1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Example - 25LC256 EEPROM</h2>
+<h3>SPI EEPROM (25LC256)</h3>
+<pre><code>Capacity: 256 Kbit (32 KB)
+Page size: 64 bytes
+Max clock: 10 MHz
+SPI Mode: 0,0 or 1,1
+
+Commands:
+  0x03: READ
+  0x02: WRITE
+  0x06: WREN (Write Enable)
+  0x04: WRDI (Write Disable)
+  0x05: RDSR (Read Status)
+  0x01: WRSR (Write Status)</code></pre>
+<h3>25LC256 Driver</h3>
+<pre class="lang-c"><code>#define EEPROM_SS  PB0
+
+// Command codes
+#define EEPROM_CMD_READ   0x03
+#define EEPROM_CMD_WRITE  0x02
+#define EEPROM_CMD_WREN   0x06
+#define EEPROM_CMD_WRDI   0x04
+#define EEPROM_CMD_RDSR   0x05
+
+void eeprom_init(void) {
+    spi_master_init();
+    
+    // SS as output, HIGH (deselected)
+    DDRB |= (1 &lt;&lt; EEPROM_SS);
+    PORTB |= (1 &lt;&lt; EEPROM_SS);
+}
+
+uint8_t eeprom_read_status(void) {
+    uint8_t status;
+    
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_RDSR);
+    status = spi_read();
+    spi_deselect(EEPROM_SS);
+    
+    return status;
+}
+
+void eeprom_write_enable(void) {
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_WREN);
+    spi_deselect(EEPROM_SS);
+}
+
+void eeprom_wait_ready(void) {
+    while (eeprom_read_status() &amp; 0x01);  // Wait for WIP bit clear
+}
+
+uint8_t eeprom_read_byte(uint16_t address) {
+    uint8_t data;
+    
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_READ);
+    spi_write(address &gt;&gt; 8);    // Address high byte
+    spi_write(address &amp; 0xFF);  // Address low byte
+    data = spi_read();
+    spi_deselect(EEPROM_SS);
+    
+    return data;
+}
+
+void eeprom_write_byte(uint16_t address, uint8_t data) {
+    eeprom_write_enable();
+    
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_WRITE);
+    spi_write(address &gt;&gt; 8);
+    spi_write(address &amp; 0xFF);
+    spi_write(data);
+    spi_deselect(EEPROM_SS);
+    
+    eeprom_wait_ready();
+}
+
+void eeprom_read_bytes(uint16_t address, uint8_t *buffer, uint16_t length) {
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_READ);
+    spi_write(address &gt;&gt; 8);
+    spi_write(address &amp; 0xFF);
+    spi_read_bytes(buffer, length);
+    spi_deselect(EEPROM_SS);
+}
+
+void eeprom_write_page(uint16_t address, uint8_t *data, uint8_t length) {
+    if (length &gt; 64) length = 64;
+    
+    eeprom_write_enable();
+    
+    spi_select(EEPROM_SS);
+    spi_write(EEPROM_CMD_WRITE);
+    spi_write(address &gt;&gt; 8);
+    spi_write(address &amp; 0xFF);
+    spi_write_bytes(data, length);
+    spi_deselect(EEPROM_SS);
+    
+    eeprom_wait_ready();
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Example - MCP3008 ADC</h2>
+<h3>MCP3008 8-Channel 10-bit ADC</h3>
+<pre><code>Channels: 8 single-ended or 4 differential
+Resolution: 10-bit
+Sample rate: 200 ksps
+SPI Mode: 0,0 or 1,1
+Max clock: 3.6 MHz @ 5V</code></pre>
+<h3>MCP3008 Communication Protocol</h3>
+<pre><code>Start bit + Single/Diff + Channel (3 bits) + ... = Result (10 bits)
+
+Command format: [Start][SGL/DIFF][D2][D1][D0]</code></pre>
+<h3>MCP3008 Driver</h3>
+<pre class="lang-c"><code>#define MCP3008_SS  PB4
+
+void mcp3008_init(void) {
+    spi_master_init();
+    
+    DDRB |= (1 &lt;&lt; MCP3008_SS);
+    PORTB |= (1 &lt;&lt; MCP3008_SS);
+}
+
+uint16_t mcp3008_read(uint8_t channel) {
+    if (channel &gt; 7) channel = 7;
+    
+    uint8_t command = 0x18 | channel;  // Start + Single-ended + channel
+    
+    spi_select(MCP3008_SS);
+    
+    spi_write(0x01);             // Start bit
+    uint8_t high = spi_write(command &lt;&lt; 4);
+    uint8_t low = spi_read();
+    
+    spi_deselect(MCP3008_SS);
+    
+    // Combine result (10 bits)
+    uint16_t result = ((high &amp; 0x03) &lt;&lt; 8) | low;
+    
+    return result;
+}
+
+// Read differential (channel 0-3)
+uint16_t mcp3008_read_diff(uint8_t channel) {
+    if (channel &gt; 3) channel = 3;
+    
+    uint8_t command = 0x10 | channel;  // Start + Differential + channel
+    
+    spi_select(MCP3008_SS);
+    
+    spi_write(0x01);
+    uint8_t high = spi_write(command &lt;&lt; 4);
+    uint8_t low = spi_read();
+    
+    spi_deselect(MCP3008_SS);
+    
+    uint16_t result = ((high &amp; 0x03) &lt;&lt; 8) | low;
+    
+    return result;
+}
+
+// Example usage
+int main(void) {
+    spi_init();
+    mcp3008_init();
+    lcd_init();
+    
+    while (1) {
+        uint16_t adc_ch0 = mcp3008_read(0);
+        uint16_t adc_ch1 = mcp3008_read(1);
+        
+        lcd_gotoxy(0, 0);
+        printf(&quot;CH0: %4d&quot;, adc_ch0);
+        
+        lcd_gotoxy(0, 1);
+        printf(&quot;CH1: %4d&quot;, adc_ch1);
+        
+        _delay_ms(100);
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Example - NRF24L01 Wireless</h2>
+<h3>NRF24L01+ 2.4GHz Transceiver</h3>
+<pre><code>Frequency: 2.4 GHz ISM band
+Data rate: 250kbps, 1Mbps, 2Mbps
+Range: 10-100m (depending on power/antenna)
+SPI Mode: 0,0
+Max clock: 10 MHz</code></pre>
+<h3>NRF24L01 Basic Commands</h3>
+<pre class="lang-c"><code>#define NRF24_SS   PB0
+#define NRF24_CE   PB4  // Chip Enable (TX/RX mode)
+
+// Command codes
+#define NRF24_CMD_R_REGISTER    0x00
+#define NRF24_CMD_W_REGISTER    0x20
+#define NRF24_CMD_R_RX_PAYLOAD  0x61
+#define NRF24_CMD_W_TX_PAYLOAD  0xA0
+#define NRF24_CMD_FLUSH_TX      0xE1
+#define NRF24_CMD_FLUSH_RX      0xE2
+#define NRF24_CMD_NOP           0xFF
+
+// Register addresses
+#define NRF24_REG_CONFIG      0x00
+#define NRF24_REG_STATUS      0x07
+#define NRF24_REG_TX_ADDR     0x10
+#define NRF24_REG_RX_ADDR_P0  0x0A
+
+void nrf24_init(void) {
+    spi_master_init();
+    
+    // SS and CE as outputs
+    DDRB |= (1 &lt;&lt; NRF24_SS) | (1 &lt;&lt; NRF24_CE);
+    PORTB |= (1 &lt;&lt; NRF24_SS);
+    PORTB &amp;= ~(1 &lt;&lt; NRF24_CE);
+    
+    _delay_ms(100);  // Power-on delay
+}
+
+uint8_t nrf24_read_register(uint8_t reg) {
+    uint8_t value;
+    
+    spi_select(NRF24_SS);
+    spi_write(NRF24_CMD_R_REGISTER | reg);
+    value = spi_read();
+    spi_deselect(NRF24_SS);
+    
+    return value;
+}
+
+void nrf24_write_register(uint8_t reg, uint8_t value) {
+    spi_select(NRF24_SS);
+    spi_write(NRF24_CMD_W_REGISTER | reg);
+    spi_write(value);
+    spi_deselect(NRF24_SS);
+}
+
+void nrf24_write_tx_payload(uint8_t *data, uint8_t length) {
+    spi_select(NRF24_SS);
+    spi_write(NRF24_CMD_W_TX_PAYLOAD);
+    spi_write_bytes(data, length);
+    spi_deselect(NRF24_SS);
+}
+
+void nrf24_read_rx_payload(uint8_t *buffer, uint8_t length) {
+    spi_select(NRF24_SS);
+    spi_write(NRF24_CMD_R_RX_PAYLOAD);
+    spi_read_bytes(buffer, length);
+    spi_deselect(NRF24_SS);
+}
+
+void nrf24_transmit(uint8_t *data, uint8_t length) {
+    nrf24_write_tx_payload(data, length);
+    
+    // Pulse CE to start transmission
+    PORTB |= (1 &lt;&lt; NRF24_CE);
+    _delay_us(15);
+    PORTB &amp;= ~(1 &lt;&lt; NRF24_CE);
+    
+    // Wait for TX complete (check STATUS register)
+    _delay_ms(1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 13: Example - MAX7219 LED Matrix</h2>
+<h3>MAX7219 LED Driver</h3>
+<pre><code>Features:
+  - 8 digits of 7-segment or 8x8 LED matrix
+  - Multiplexed display
+  - SPI interface
+  - Internal oscillator
+  - SPI Mode: 0,0
+  - Max clock: 10 MHz</code></pre>
+<h3>MAX7219 Driver</h3>
+<pre class="lang-c"><code>#define MAX7219_SS  PB0
+
+// Register addresses
+#define MAX7219_REG_NOOP        0x00
+#define MAX7219_REG_DIGIT0      0x01
+#define MAX7219_REG_DIGIT7      0x08
+#define MAX7219_REG_DECODE      0x09
+#define MAX7219_REG_INTENSITY   0x0A
+#define MAX7219_REG_SCANLIMIT   0x0B
+#define MAX7219_REG_SHUTDOWN    0x0C
+#define MAX7219_REG_DISPTEST    0x0F
+
+void max7219_write(uint8_t reg, uint8_t data) {
+    spi_select(MAX7219_SS);
+    spi_write(reg);
+    spi_write(data);
+    spi_deselect(MAX7219_SS);
+}
+
+void max7219_init(void) {
+    spi_master_init();
+    
+    DDRB |= (1 &lt;&lt; MAX7219_SS);
+    PORTB |= (1 &lt;&lt; MAX7219_SS);
+    
+    // Display test off
+    max7219_write(MAX7219_REG_DISPTEST, 0x00);
+    
+    // Scan limit: all 8 digits
+    max7219_write(MAX7219_REG_SCANLIMIT, 0x07);
+    
+    // Decode: No decode for LED matrix
+    max7219_write(MAX7219_REG_DECODE, 0x00);
+    
+    // Intensity: Medium brightness
+    max7219_write(MAX7219_REG_INTENSITY, 0x08);
+    
+    // Shutdown: Normal operation
+    max7219_write(MAX7219_REG_SHUTDOWN, 0x01);
+    
+    // Clear display
+    max7219_clear();
+}
+
+void max7219_clear(void) {
+    for (uint8_t i = 1; i &lt;= 8; i++) {
+        max7219_write(i, 0x00);
+    }
+}
+
+void max7219_set_row(uint8_t row, uint8_t data) {
+    if (row &lt; 8) {
+        max7219_write(row + 1, data);
+    }
+}
+
+// Display pattern on 8x8 matrix
+void max7219_display_pattern(const uint8_t *pattern) {
+    for (uint8_t row = 0; row &lt; 8; row++) {
+        max7219_set_row(row, pattern[row]);
+    }
+}
+
+// Example: Smiley face
+const uint8_t smiley[8] = {
+    0b00111100,
+    0b01000010,
+    0b10100101,
+    0b10000001,
+    0b10100101,
+    0b10011001,
+    0b01000010,
+    0b00111100
+};
+
+int main(void) {
+    max7219_init();
+    max7219_display_pattern(smiley);
+    
+    while (1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: SPI with DMA (Interrupts)</h2>
+<h3>Interrupt-Driven SPI</h3>
+<pre class="lang-c"><code>volatile uint8_t spi_busy = 0;
+volatile uint8_t *spi_tx_ptr;
+volatile uint8_t *spi_rx_ptr;
+volatile uint16_t spi_length;
+volatile uint16_t spi_index;
+
+void spi_init_interrupt(void) {
+    spi_master_init();
+    
+    // Enable SPI interrupt
+    SPCR |= (1 &lt;&lt; SPIE);
+    sei();
+}
+
+ISR(SPI_STC_vect) {
+    // Read received byte
+    if (spi_rx_ptr) {
+        spi_rx_ptr[spi_index] = SPDR;
+    } else {
+        (void)SPDR;  // Dummy read
+    }
+    
+    spi_index++;
+    
+    if (spi_index &lt; spi_length) {
+        // Send next byte
+        if (spi_tx_ptr) {
+            SPDR = spi_tx_ptr[spi_index];
+        } else {
+            SPDR = 0xFF;  // Dummy byte
+        }
+    } else {
+        // Transfer complete
+        spi_busy = 0;
+    }
+}
+
+void spi_transfer_async(uint8_t *tx, uint8_t *rx, uint16_t length) {
+    while (spi_busy);  // Wait for previous transfer
+    
+    spi_tx_ptr = tx;
+    spi_rx_ptr = rx;
+    spi_length = length;
+    spi_index = 0;
+    spi_busy = 1;
+    
+    // Start first byte
+    if (tx) {
+        SPDR = tx[0];
+    } else {
+        SPDR = 0xFF;
+    }
+}
+
+// Example usage
+int main(void) {
+    spi_init_interrupt();
+    
+    uint8_t tx_data[10] = {1,2,3,4,5,6,7,8,9,10};
+    uint8_t rx_data[10];
+    
+    spi_select(DEVICE_SS);
+    spi_transfer_async(tx_data, rx_data, 10);
+    
+    // Do other work while transfer happens
+    while (spi_busy) {
+        // Other tasks
+    }
+    
+    spi_deselect(DEVICE_SS);
+    
+    // Process received data
+    
+    while (1);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: SPI vs I2C Comparison</h2>
+<h3>Performance Comparison</h3>
+<table><thead><tr><th>Feature</th><th><strong>SPI</strong></th><th><strong>I2C</strong></th></tr></thead><tbody><tr><td><strong>Wires</strong></td><td>4 (MOSI, MISO, SCK, SS)</td><td>2 (SDA, SCL)</td></tr><tr><td><strong>Speed</strong></td><td>1-50 MHz</td><td>100 kHz - 1 MHz</td></tr><tr><td><strong>Full-duplex</strong></td><td>Yes</td><td>No</td></tr><tr><td><strong>Multi-master</strong></td><td>No (typically)</td><td>Yes</td></tr><tr><td><strong>Addressing</strong></td><td>Dedicated SS per slave</td><td>7/10-bit address</td></tr><tr><td><strong>Protocol</strong></td><td>No protocol (raw data)</td><td>Start/Stop/ACK</td></tr><tr><td><strong>Hardware</strong></td><td>Simple shift register</td><td>More complex</td></tr><tr><td><strong>Pin count</strong></td><td>High (1 SS per device)</td><td>Low (shared bus)</td></tr></tbody></table>
+<h3>When to Use SPI?</h3>
+<p>✓ <strong>High-speed</strong> data transfer (displays, SD cards)<br>✓ <strong>Full-duplex</strong> communication needed<br>✓ <strong>Simple, reliable</strong> protocol<br>✓ <strong>Continuous data</strong> streaming<br>✓ <strong>Few devices</strong> (&lt;4 slaves)</p>
+<h3>When to Use I2C?</h3>
+<p>✓ <strong>Many devices</strong> on one bus<br>✓ <strong>Limited pins</strong> available<br>✓ <strong>Moderate speed</strong> sufficient<br>✓ <strong>Addressable slaves</strong><br>✓ <strong>Standardized</strong> sensors/peripherals</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Common SPI Devices</h2>
+<h3>Memory Devices</h3>
+<ul><li><strong>25LC256</strong>: SPI EEPROM (32 KB)</li><li><strong>W25Q32</strong>: SPI Flash (4 MB)</li><li><strong>SD Card</strong>: Mass storage</li></ul>
+<h3>Displays</h3>
+<ul><li><strong>MAX7219</strong>: LED matrix driver</li><li><strong>ST7735</strong>: Color TFT LCD</li><li><strong>ILI9341</strong>: TFT LCD controller</li><li><strong>SSD1306</strong>: OLED (also I2C)</li></ul>
+<h3>Sensors</h3>
+<ul><li><strong>MCP3008</strong>: 10-bit ADC</li><li><strong>BME280</strong>: Temp/Humidity/Pressure (also I2C)</li><li><strong>MPU6000</strong>: IMU (also I2C as MPU6050)</li></ul>
+<h3>Communication</h3>
+<ul><li><strong>NRF24L01</strong>: 2.4 GHz wireless</li><li><strong>LoRa SX1278</strong>: Long-range wireless</li><li><strong>W5500</strong>: Ethernet controller</li></ul>
+<h3>DAC/ADC</h3>
+<ul><li><strong>MCP4921</strong>: 12-bit DAC</li><li><strong>ADS1118</strong>: 16-bit ADC</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 17: Debugging SPI</h2>
+<h3>Common Issues and Solutions</h3>
+<pre class="lang-c"><code>// 1. Check SPI signals
+void debug_spi_pins(void) {
+    printf(&quot;MOSI: %d\n&quot;, (PORTB &amp; (1 &lt;&lt; PB2)) ? 1 : 0);
+    printf(&quot;MISO: %d\n&quot;, (PINB &amp; (1 &lt;&lt; PB3)) ? 1 : 0);
+    printf(&quot;SCK:  %d\n&quot;, (PORTB &amp; (1 &lt;&lt; PB1)) ? 1 : 0);
+    printf(&quot;SS:   %d\n&quot;, (PORTB &amp; (1 &lt;&lt; PB0)) ? 1 : 0);
+}
+
+// 2. Test loopback (connect MOSI to MISO)
+void spi_loopback_test(void) {
+    printf(&quot;SPI Loopback Test\n&quot;);
+    
+    for (uint8_t i = 0; i &lt; 10; i++) {
+        uint8_t sent = i * 17;
+        uint8_t received = spi_transfer(sent);
+        
+        if (sent == received) {
+            printf(&quot;PASS: 0x%02X\n&quot;, sent);
+        } else {
+            printf(&quot;FAIL: Sent 0x%02X, Got 0x%02X\n&quot;, sent, received);
+        }
+    }
+}
+
+// 3. Verify clock frequency with oscilloscope
+void spi_clock_test(void) {
+    // Send continuous data for scope measurement
+    while (1) {
+        spi_transfer(0xAA);  // Alternating pattern
+    }
+}
+
+// 4. Check device communication
+void spi_device_test(uint8_t ss_pin) {
+    spi_select(ss_pin);
+    
+    uint8_t response = spi_transfer(0x00);  // Read status or ID
+    
+    spi_deselect(ss_pin);
+    
+    printf(&quot;Device response: 0x%02X\n&quot;, response);
+}</code></pre>
+<h3>Debugging Checklist</h3>
+<ul><li>✓ Verify pin connections (MOSI, MISO, SCK, SS)</li><li>✓ Check SPI mode matches device requirements</li><li>✓ Confirm clock frequency within device limits</li><li>✓ Ensure SS is controlled properly</li><li>✓ Verify power supply to slave device</li><li>✓ Check for proper pull-up/pull-down resistors</li><li>✓ Use logic analyzer or oscilloscope</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 18: Best Practices</h2>
+<h3>SPI Design Guidelines</h3>
+<p>✓ <strong>Hardware</strong></p>
+<ul><li>Keep traces short (&lt;6 inches for high speeds)</li><li>Use ground plane for noise reduction</li><li>Add decoupling caps (0.1µF) near each device</li><li>Match impedance for high-speed signals (&gt;10 MHz)</li></ul>
+<p>✓ <strong>Software</strong></p>
+<ul><li>Always deselect (SS HIGH) when idle</li><li>Check SPI mode compatibility with device</li><li>Add delays if device requires setup time</li><li>Implement error checking where possible</li></ul>
+<p>✓ <strong>Performance</strong></p>
+<ul><li>Use fastest clock rate device supports</li><li>Minimize SS toggling overhead</li><li>Use interrupt/DMA for large transfers</li><li>Batch multiple bytes in one transaction</li></ul>
+<p>✓ <strong>Reliability</strong></p>
+<ul><li>Add timeout mechanisms</li><li>Implement retry logic for critical operations</li><li>Verify data with checksums when possible</li><li>Handle write collision errors</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 19: Performance Optimization</h2>
+<h3>High-Speed SPI</h3>
+<pre class="lang-c"><code>// 1. Use maximum safe clock rate
+void spi_init_max_speed(void) {
+    // F_CPU/2 = 8 MHz @ 16 MHz
+    DDRB |= (1 &lt;&lt; PB2) | (1 &lt;&lt; PB1) | (1 &lt;&lt; PB0);
+    DDRB &amp;= ~(1 &lt;&lt; PB3);
+    
+    SPCR = (1 &lt;&lt; SPE) | (1 &lt;&lt; MSTR);
+    SPSR |= (1 &lt;&lt; SPI2X);
+}
+
+// 2. Inline transfer for speed
+static inline uint8_t spi_transfer_fast(uint8_t data) {
+    SPDR = data;
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    return SPDR;
+}
+
+// 3. Unrolled loop for fixed-size transfers
+void spi_write_4_bytes(uint8_t *data) {
+    SPDR = data[0];
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    
+    SPDR = data[1];
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    
+    SPDR = data[2];
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    
+    SPDR = data[3];
+    while (!(SPSR &amp; (1 &lt;&lt; SPIF)));
+    
+    (void)SPDR;  // Clear SPIF
+}
+
+// 4. DMA-style with interrupts (see Slide 14)
+
+// 5. Minimize SS toggling
+void spi_burst_write_efficient(uint8_t ss, uint8_t *data, uint16_t length) {
+    spi_select(ss);
+    
+    // Write all bytes in one transaction
+    for (uint16_t i = 0; i &lt; length; i++) {
+        spi_write(data[i]);
+    }
+    
+    spi_deselect(ss);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 20: Summary</h2>
+<h3>Key Takeaways</h3>
+<p>✓ <strong>SPI</strong> is a 4-wire (MOSI, MISO, SCK, SS) protocol<br>✓ <strong>Full-duplex</strong>: Simultaneous send and receive<br>✓ <strong>Master-slave</strong>: Master controls clock<br>✓ <strong>High-speed</strong>: Up to 8 MHz on ATmega128 (SPI2X mode)<br>✓ <strong>Simple protocol</strong>: No addressing, no ACK<br>✓ <strong>Four modes</strong>: Determined by CPOL and CPHA<br>✓ <strong>Slave select</strong>: Active LOW, one per device<br>✓ <strong>Flexible</strong>: Works with many device types</p>
+<h3>Common Applications</h3>
+<ul><li>Flash/EEPROM memory</li><li>SD cards</li><li>Displays (LCD, LED matrix, OLED)</li><li>Sensors (ADC, IMU, pressure)</li><li>Wireless modules (NRF24, LoRa)</li><li>DAC/ADC converters</li></ul>
+<h3>Design Checklist</h3>
+<ul><li>✓ Set correct SPI mode for device</li><li>✓ Choose appropriate clock frequency</li><li>✓ Control SS pin properly</li><li>✓ Short PCB traces for high speeds</li><li>✓ Decoupling capacitors</li><li>✓ Error handling and timeouts</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 21: Practice Exercises</h2>
+<h3>Exercise 1: SPI Loopback</h3>
+<p><strong>Goal</strong>: Test SPI hardware</p>
+<ul><li>Connect MOSI to MISO</li><li>Send test patterns</li><li>Verify received = sent</li><li>Test different clock speeds</li></ul>
+<h3>Exercise 2: 25LC256 EEPROM</h3>
+<p><strong>Goal</strong>: Read/write SPI EEPROM</p>
+<ul><li>Initialize 25LC256</li><li>Write data to addresses</li><li>Read back and verify</li><li>Implement page write</li></ul>
+<h3>Exercise 3: MCP3008 ADC</h3>
+<p><strong>Goal</strong>: Read analog sensors via SPI ADC</p>
+<ul><li>Connect sensors to MCP3008</li><li>Read 8 channels</li><li>Display values on LCD</li><li>Calculate voltages</li></ul>
+<h3>Exercise 4: MAX7219 LED Matrix</h3>
+<p><strong>Goal</strong>: Control 8x8 LED matrix</p>
+<ul><li>Initialize MAX7219</li><li>Display patterns</li><li>Animate scrolling text</li><li>Control brightness</li></ul>
+<h3>Exercise 5: Multi-Device SPI</h3>
+<p><strong>Goal</strong>: Multiple SPI devices</p>
+<ul><li>Connect EEPROM, ADC, and display</li><li>Unique SS for each</li><li>Read ADC, store to EEPROM</li><li>Display on MAX7219</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 22: Additional Resources</h2>
+<h3>ATmega128 Documentation</h3>
+<ul><li><strong><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">Official Datasheet (PDF)</a></strong></li><li>Section 18: Serial Peripheral Interface (SPI)</li><li>Pages 145-153: Complete SPI documentation</li><li>Register descriptions and timing</li></ul>
+<h3>SPI Device Datasheets</h3>
+<ul><li>25LC256: SPI EEPROM (Microchip)</li><li>MCP3008: 10-bit ADC (Microchip)</li><li>MAX7219: LED driver (Maxim)</li><li>NRF24L01+: 2.4GHz transceiver (Nordic)</li><li>W25Q32: SPI Flash (Winbond)</li></ul>
+<h3>Application Notes</h3>
+<ul><li>SPI clock frequency selection</li><li>Multi-slave SPI systems</li><li>High-speed SPI layout guidelines</li></ul>
+<h3>Tools</h3>
+<ul><li>Logic analyzer for SPI debugging</li><li>Oscilloscope for signal verification</li><li>SPI protocol analyzers</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></li><li>Project source code in <code>SPI_Master_Basic/</code></li><li>Shared libraries: <code>_spi.h</code>, <code>_spi.c</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:15_SPI_Master_Basic', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:15_SPI_Master_Basic') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

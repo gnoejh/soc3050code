@@ -1,0 +1,516 @@
+<title>Watchdog Timer System Reset</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Watchdog Timer System Reset</h1>
+<h2>Automatic Crash Detection and Recovery</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Introduction to Watchdog Timer</h2>
+<h3>What is a Watchdog Timer?</h3>
+<ul><li><strong>Independent hardware timer</strong> (~1 MHz RC oscillator)</li><li><strong>Monitors software execution</strong> for crashes/hangs</li><li><strong>Automatically resets system</strong> if not periodically cleared</li><li><strong>Fail-safe mechanism</strong> for reliability</li></ul>
+<h3>Watchdog Architecture</h3>
+<pre class="lang-mermaid"><code>graph TD
+    A[Start System] --&gt; B[Enable Watchdog 1s]
+    B --&gt; C[Main Loop]
+    C --&gt; D{Work Complete?}
+    D --&gt;|Yes| E[wdt_reset]
+    E --&gt; C
+    D --&gt;|Hang/Crash| F[Watchdog Timeout]
+    F --&gt; G[System Reset]
+    G --&gt; H[Check MCUCSR]
+    H --&gt; I{Watchdog Reset?}
+    I --&gt;|Yes| J[Recovery Mode]
+    I --&gt;|No| B
+    J --&gt; B
+    
+    style F fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style J fill:#e1ffe1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Watchdog Timeout Periods</h3>
+<pre><code>WDP2 WDP1 WDP0 | Timeout    | Cycles (1 MHz osc)
+---------------|------------|-------------------
+ 0    0    0   | 16.3 ms    | 16K cycles
+ 0    0    1   | 32.5 ms    | 32K cycles
+ 0    1    0   | 65 ms      | 64K cycles
+ 0    1    1   | 0.13 s     | 128K cycles
+ 1    0    0   | 0.26 s     | 256K cycles
+ 1    0    1   | 0.52 s     | 512K cycles
+ 1    1    0   | 1.0 s      | 1M cycles
+ 1    1    1   | 2.1 s      | 2M cycles</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: WDTCR Register</h2>
+<h3>Watchdog Timer Control Register</h3>
+<pre><code>WDTCR (Watchdog Timer Control Register)
+Bit:   7    6    5    4    3    2    1    0
+Name:  -    -    -   WDCE  WDE  WDP2 WDP1 WDP0
+
+WDCE (Watchdog Change Enable):
+  - Must be set with WDE to change settings
+  - Auto-clears after 4 clock cycles
+  - TIMING CRITICAL!
+
+WDE (Watchdog Enable):
+  - 1 = Watchdog enabled
+  - 0 = Watchdog disabled (only if WDCE=1)
+
+WDP2:WDP0 (Watchdog Prescaler):
+  - Select timeout period (see table)</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 3: Enabling Watchdog</h2>
+<h3>Enable Watchdog (1 Second Timeout)</h3>
+<pre class="lang-c"><code>#include &lt;avr/wdt.h&gt;
+#include &lt;avr/interrupt.h&gt;
+
+void watchdog_enable_1s(void) {
+    cli();  // Disable interrupts (critical timing)
+    
+    wdt_reset();  // Reset watchdog first
+    
+    // Timed sequence (MUST complete within 4 cycles!)
+    WDTCR = (1 &lt;&lt; WDCE) | (1 &lt;&lt; WDE);  // Enable change mode
+    WDTCR = (1 &lt;&lt; WDE) | (1 &lt;&lt; WDP2) | (1 &lt;&lt; WDP1);  // 1 second timeout
+    
+    sei();  // Re-enable interrupts
+}</code></pre>
+<h3>Using wdt.h Library</h3>
+<pre class="lang-c"><code>#include &lt;avr/wdt.h&gt;
+
+void demo_enable(void) {
+    /*
+     * Timeout macros:
+     * WDTO_15MS, WDTO_30MS, WDTO_60MS, WDTO_120MS,
+     * WDTO_250MS, WDTO_500MS, WDTO_1S, WDTO_2S,
+     * WDTO_4S (not all AVRs), WDTO_8S (not all AVRs)
+     */
+    
+    wdt_enable(WDTO_1S);  // Enable with 1 second timeout
+    
+    printf(&quot;Watchdog enabled (1 second)\n&quot;);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 4: Resetting the Watchdog</h2>
+<h3>Prevent System Reset (wdt_reset)</h3>
+<pre class="lang-c"><code>void main_loop_with_watchdog(void) {
+    wdt_enable(WDTO_1S);
+    
+    while (1) {
+        // Do work (MUST complete within 1 second!)
+        read_sensors();
+        process_data();
+        update_display();
+        
+        // Reset watchdog timer (CRITICAL!)
+        wdt_reset();  // Prevents system reset
+        
+        _delay_ms(500);  // Safe delay (&lt; 1000ms timeout)
+    }
+}</code></pre>
+<h3>Manual Reset (Without Library)</h3>
+<pre class="lang-c"><code>void reset_watchdog_manual(void) {
+    __asm__ __volatile__ (&quot;wdr&quot;);  // WDR instruction
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 5: Disabling the Watchdog</h2>
+<h3>Safe Watchdog Disable</h3>
+<pre class="lang-c"><code>void watchdog_disable(void) {
+    cli();  // Disable interrupts
+    
+    wdt_reset();  // Reset watchdog timer
+    
+    // Clear Watchdog Reset Flag (important!)
+    MCUCSR &amp;= ~(1 &lt;&lt; WDRF);
+    
+    // Timed sequence to disable
+    WDTCR = (1 &lt;&lt; WDCE) | (1 &lt;&lt; WDE);  // Enable change
+    WDTCR = 0x00;  // Clear WDE and prescaler
+    
+    sei();  // Re-enable interrupts
+}</code></pre>
+<h3>Using wdt.h</h3>
+<pre class="lang-c"><code>wdt_disable();  // Automatically handles timing</code></pre>
+<p><strong>Warning</strong>: If watchdog was enabled by fuse, cannot disable in software!</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Detecting Watchdog Reset</h2>
+<h3>MCUCSR Register</h3>
+<pre><code>MCUCSR (MCU Control and Status Register)
+Bit:   7    6    5    4    3    2    1    0
+Name:  -    -    -    -   WDRF BORF EXTRF PORF
+
+WDRF (Watchdog Reset Flag):
+  - Set by hardware if watchdog caused reset
+  - Must be manually cleared by software
+  - Read before clearing to detect reset source
+
+BORF: Brown-out Reset Flag
+EXTRF: External Reset Flag  
+PORF: Power-on Reset Flag</code></pre>
+<h3>Check Reset Source</h3>
+<pre class="lang-c"><code>const char* get_reset_source(void) {
+    uint8_t mcucsr = MCUCSR;
+    
+    if (mcucsr &amp; (1 &lt;&lt; WDRF)) {
+        return &quot;Watchdog Reset&quot;;
+    } else if (mcucsr &amp; (1 &lt;&lt; BORF)) {
+        return &quot;Brown-out Reset&quot;;
+    } else if (mcucsr &amp; (1 &lt;&lt; EXTRF)) {
+        return &quot;External Reset&quot;;
+    } else if (mcucsr &amp; (1 &lt;&lt; PORF)) {
+        return &quot;Power-on Reset&quot;;
+    } else {
+        return &quot;Unknown&quot;;
+    }
+}
+
+void main(void) {
+    // Check why system reset
+    const char* reason = get_reset_source();
+    printf(&quot;Reset reason: %s\n&quot;, reason);
+    
+    // Clear reset flags
+    MCUCSR = 0;
+    
+    // Continue initialization...
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 7: Application - Watchdog Protected Loop</h2>
+<h3>Basic Watchdog Protection</h3>
+<pre class="lang-c"><code>void protected_main_loop(void) {
+    uart_init();
+    
+    wdt_enable(WDTO_2S);  // 2 second timeout
+    
+    printf(&quot;Watchdog enabled\n&quot;);
+    
+    uint32_t iteration = 0;
+    
+    while (1) {
+        iteration++;
+        
+        // Do essential work
+        printf(&quot;Iteration: %lu\n&quot;, iteration);
+        
+        // Blink LED to show activity
+        PORTB ^= (1 &lt;&lt; PB0);
+        
+        _delay_ms(500);
+        
+        // Reset watchdog (prevents system reset)
+        wdt_reset();
+    }
+}
+
+/*
+ * If system hangs in any function:
+ * - Watchdog will timeout after 2 seconds
+ * - System automatically resets
+ * - Program restarts from main()
+ * - MCUCSR will show watchdog reset
+ */</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: Crash Detection Demo</h2>
+<h3>Intentional Hang (Testing)</h3>
+<pre class="lang-c"><code>void demo_intentional_hang(void) {
+    printf(&quot;Enabling watchdog (1 second)...\n&quot;);
+    
+    wdt_enable(WDTO_1S);
+    
+    printf(&quot;Entering infinite loop WITHOUT wdt_reset...\n&quot;);
+    printf(&quot;System should reset in 1 second!\n&quot;);
+    
+    _delay_ms(100);  // Let UART finish
+    
+    // Intentionally hang (no wdt_reset!)
+    while (1) {
+        // Simulated crash/hang
+        PORTC = 0xFF;  // All LEDs on
+        _delay_ms(100);
+        PORTC = 0x00;
+        _delay_ms(100);
+        
+        // NOTE: wdt_reset() is NOT called!
+    }
+    
+    // This code is unreachable - system will reset
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 9: Reset Recovery System</h2>
+<h3>Persistent Reset Counter</h3>
+<pre class="lang-c"><code>// Variable survives reset (stored in .noinit section)
+volatile uint8_t reset_count __attribute__((section(&quot;.noinit&quot;)));
+
+void main(void) {
+    uart_init();
+    
+    // Check reset source
+    if (MCUCSR &amp; (1 &lt;&lt; WDRF)) {
+        printf(&quot;*** WATCHDOG RESET DETECTED ***\n&quot;);
+        reset_count++;
+        printf(&quot;Reset count: %u\n&quot;, reset_count);
+        
+        // Clear watchdog flag
+        MCUCSR &amp;= ~(1 &lt;&lt; WDRF);
+        
+        // Recovery actions
+        if (reset_count &gt;= 3) {
+            printf(&quot;Too many resets! Entering safe mode...\n&quot;);
+            safe_mode();
+        }
+    } else {
+        // Normal startup
+        reset_count = 0;
+        printf(&quot;Normal boot\n&quot;);
+    }
+    
+    // Disable watchdog during init
+    wdt_disable();
+    
+    // Initialize system...
+    
+    // Re-enable watchdog for normal operation
+    wdt_enable(WDTO_1S);
+    
+    while (1) {
+        main_loop();
+        wdt_reset();
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Long-Running Tasks</h2>
+<h3>Watchdog Reset During Delays</h3>
+<pre class="lang-c"><code>// BAD: Long delay exceeds watchdog timeout
+void bad_long_task(void) {
+    wdt_enable(WDTO_1S);
+    
+    _delay_ms(2000);  // Exceeds 1 second → RESET!
+    
+    // Unreachable
+}
+
+// GOOD: Reset watchdog within long tasks
+void good_long_task(void) {
+    wdt_enable(WDTO_1S);
+    
+    for (uint8_t i = 0; i &lt; 4; i++) {
+        _delay_ms(500);  // Safe (&lt; 1000ms)
+        wdt_reset();      // Reset every 500ms
+    }
+    
+    // Total 2 seconds, but watchdog reset every 500ms
+}
+
+// BEST: Watchdog-aware delay function
+void delay_with_wdt(uint16_t ms) {
+    while (ms &gt; 500) {
+        _delay_ms(500);
+        wdt_reset();
+        ms -= 500;
+    }
+    _delay_ms(ms);
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 11: Troubleshooting</h2>
+<h3>Common Issues</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Solution</th></tr></thead><tbody><tr><td><strong>System resets repeatedly</strong></td><td>Watchdog timeout too short</td><td>Increase timeout or add more wdt_reset() calls</td></tr><tr><td><strong>Can&#x27;t disable watchdog</strong></td><td>Enabled by fuse</td><td>Check fuse settings (WDTON fuse)</td></tr><tr><td><strong>Reset source unknown</strong></td><td>MCUCSR not checked early</td><td>Read MCUCSR at start of main()</td></tr><tr><td><strong>Reset flag not set</strong></td><td>Cleared before reading</td><td>Check MCUCSR before clearing</td></tr><tr><td><strong>Watchdog doesn&#x27;t work</strong></td><td>Not enabled correctly</td><td>Follow timed sequence precisely</td></tr><tr><td><strong>System resets during init</strong></td><td>Watchdog enabled from fuse</td><td>Disable or reset watchdog early in main()</td></tr></tbody></table>
+<h3>Debug Reset Loops</h3>
+<pre class="lang-c"><code>void debug_reset_loop(void) {
+    // Preserve reset count across resets
+    static uint8_t boot_count __attribute__((section(&quot;.noinit&quot;)));
+    
+    boot_count++;
+    
+    printf(&quot;\n=== BOOT #%u ===\n&quot;, boot_count);
+    printf(&quot;Reset reason: 0x%02X\n&quot;, MCUCSR);
+    
+    if (boot_count &gt; 10) {
+        printf(&quot;ERROR: Too many resets! Halting.\n&quot;);
+        wdt_disable();
+        while (1);  // Stop
+    }
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Summary</h2>
+<h3>Key Concepts</h3>
+<p>✓ <strong>Watchdog timer</strong>: Independent RC oscillator monitors software<br>✓ <strong>Timeout periods</strong>: 16ms to 2.1 seconds<br>✓ <strong>wdt_reset()</strong>: Must call before timeout to prevent reset<br>✓ <strong>WDRF flag</strong>: Detect watchdog-caused resets in MCUCSR<br>✓ <strong>Fail-safe</strong>: Automatically recover from crashes/hangs<br>✓ <strong>Critical timing</strong>: Enable/disable requires precise sequence<br>✓ <strong>Reset counter</strong>: Track recovery attempts</p>
+<h3>Watchdog Workflow</h3>
+<pre class="lang-mermaid"><code>graph LR
+    A[Enable WDT] --&gt; B[Do Work]
+    B --&gt; C[wdt_reset]
+    C --&gt; B
+    B --&gt;|Hang| D[Timeout]
+    D --&gt; E[System Reset]
+    E --&gt; F[Check MCUCSR]
+    F --&gt; G[Recovery]
+    
+    style D fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<h3>Applications</h3>
+<ul><li>Autonomous systems (remote sensors, dataloggers)</li><li>Safety-critical embedded systems</li><li>Unattended operation (no manual reset available)</li><li>Error recovery (automatic restart after crash)</li><li>Watchdog as wake-up source (low-power applications)</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 13: Practice Exercises</h2>
+<h3>Exercise 1: Basic Watchdog</h3>
+<p><strong>Goal</strong>: Enable and reset watchdog in main loop</p>
+<ul><li>Enable watchdog with 1 second timeout</li><li>Blink LED every 500ms</li><li>Call wdt_reset() after each blink</li><li>Verify system doesn&#x27;t reset</li></ul>
+<h3>Exercise 2: Timeout Test</h3>
+<p><strong>Goal</strong>: Intentionally trigger watchdog reset</p>
+<ul><li>Enable watchdog (1 second)</li><li>Enter loop WITHOUT calling wdt_reset()</li><li>Observe system reset</li><li>Check MCUCSR for WDRF flag</li></ul>
+<h3>Exercise 3: Reset Counter</h3>
+<p><strong>Goal</strong>: Track watchdog resets</p>
+<ul><li>Use .noinit variable for reset count</li><li>Increment on watchdog reset</li><li>Display count on UART</li><li>Reset counter on normal boot</li></ul>
+<h3>Exercise 4: Long Task Protection</h3>
+<p><strong>Goal</strong>: Reset watchdog during long operations</p>
+<ul><li>Simulate 5-second processing task</li><li>Enable watchdog (1 second)</li><li>Reset watchdog every 500ms within task</li><li>Verify no system reset occurs</li></ul>
+<h3>Exercise 5: Safe Mode Recovery</h3>
+<p><strong>Goal</strong>: Implement failsafe after multiple resets</p>
+<ul><li>Track consecutive watchdog resets</li><li>After 3 resets: enter safe mode</li><li>Safe mode: disable non-essential features</li><li>Display diagnostic info on LCD</li></ul>
+</section>
+<section class="slide">
+<h1>End of Slides</h1>
+<p><strong>Questions?</strong></p>
+<p>For more information, see:</p>
+<ul><li><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> (Watchdog: pages 43-47)</li><li>Project source code in <code>Watchdog_System_Reset/</code></li><li>Shared libraries: <code>_uart.h</code></li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:21_Watchdog_Reset', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:21_Watchdog_Reset') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

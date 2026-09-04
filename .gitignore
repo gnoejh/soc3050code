@@ -1,0 +1,41 @@
+# MINIMAL .gitignore - Include everything for complete portable system
+# Students get exact working copy with zero setup required
+
+# Build artifacts and temporary files in project directories only
+# (Preserve all toolchain and library files for portable system)
+projects/**/*.elf
+projects/**/*.hex
+projects/**/*.map
+projects/**/*.o
+projects/**/*.obj
+projects/**/*.lst
+projects/**/*.lss
+projects/**/*.sym
+projects/**/*.eep
+projects/**/*.bin
+
+# Debugging and disassembly files
+disasm.txt
+*.dump
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Temporary test files
+*_Test.c
+*_ELPM_Test.*
+
+# IDE temporary files
+.vs/
+*.tmp
+
+# NO EXCLUSIONS for portable system components:
+# Everything else is INCLUDED for complete portable system:
+# - Python virtual environments (.venv/, venv/, __pycache__/)
+# - All executable files (*.exe, *.dll)
+# - All toolchain binaries and libraries
+# - Complete SimulIDE installations
+# - All Python packages and dependencies
+# - Complete AVR toolchain with all components

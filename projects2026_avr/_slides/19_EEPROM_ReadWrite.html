@@ -1,0 +1,302 @@
+<title>Internal EEPROM</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Internal EEPROM</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> — Section 4, EEPROM Data Memory</p>
+</section>
+<section class="slide">
+<h2>Slide 1: Three Kinds of Memory</h2>
+<p>The ATmega128 has three memory spaces, and they are good at different things.</p>
+<table><thead><tr><th></th><th>Flash</th><th>SRAM</th><th><strong>EEPROM</strong></th></tr></thead><tbody><tr><td>Size</td><td>128 KB</td><td>4 KB</td><td><strong>4 KB</strong></td></tr><tr><td>Holds your</td><td>program</td><td>variables</td><td><strong>settings</strong></td></tr><tr><td>Survives power off</td><td>yes</td><td><strong>no</strong></td><td><strong>yes</strong></td></tr><tr><td>Written at run time</td><td>rarely</td><td>constantly</td><td><strong>occasionally</strong></td></tr><tr><td>Write speed</td><td>slow, in pages</td><td>1 cycle</td><td><strong>3.4 ms per byte</strong></td></tr><tr><td>Endurance</td><td>10,000 erase cycles</td><td>unlimited</td><td><strong>100,000 writes per byte</strong></td></tr></tbody></table>
+<p>EEPROM fills the gap between the other two: it remembers across a power cut like<br>Flash, but you can change one byte at a time like SRAM. That makes it the place<br>for calibration constants, user preferences, a serial number, an hours-run<br>meter — anything the device should still know tomorrow.</p>
+<h3>What it is not</h3>
+<p>It is not general storage. At 3.4 ms per byte it is roughly <strong>50,000 times<br>slower</strong> than SRAM, and each cell wears out. Writing a variable to EEPROM inside<br>your main loop will destroy the chip in an afternoon — Slide 6 does that<br>arithmetic.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Hardware Registers</h2>
+<p>Four registers, and a strict order of operations.</p>
+<table><thead><tr><th>Register</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>EEARH:EEARL</strong></td><td>Address, 12 bits, so 0 to 4095</td></tr><tr><td><strong>EEDR</strong></td><td>Data byte, in or out</td></tr><tr><td><strong>EECR</strong></td><td>Control: <code>EERE</code>, <code>EEWE</code>, <code>EEMWE</code>, <code>EERIE</code></td></tr></tbody></table>
+<h3>Reading is simple</h3>
+<pre class="lang-c"><code>uint8_t eeprom_read(uint16_t addr)
+{
+    while (EECR &amp; (1 &lt;&lt; EEWE))     // a write in progress blocks reads
+        ;
+    EEAR = addr;
+    EECR |= (1 &lt;&lt; EERE);           // strobe read enable
+    return EEDR;                   // data is ready on the very next cycle
+}</code></pre>
+<h3>Writing has a timed sequence</h3>
+<pre class="lang-c"><code>void eeprom_write(uint16_t addr, uint8_t data)
+{
+    while (EECR &amp; (1 &lt;&lt; EEWE))
+        ;
+    EEAR = addr;
+    EEDR = data;
+
+    uint8_t sreg = SREG;
+    cli();                         // the next two lines must not be split
+    EECR |= (1 &lt;&lt; EEMWE);          // master write enable: opens a 4-cycle window
+    EECR |= (1 &lt;&lt; EEWE);           // and start the write
+    SREG = sreg;
+}</code></pre>
+<p><strong><code>EEMWE</code> must be set within four clock cycles of <code>EEWE</code>.</strong> That is the hardware<br>guarding against an accidental write from a runaway program — a single stray<br>store cannot corrupt your settings, it takes a deliberate two-step. An interrupt<br>landing between those two lines misses the window and the write silently does<br>nothing, which is why interrupts are disabled across them.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Using avr-libc Instead</h2>
+<p>You will almost never write those sequences by hand. <code>&lt;avr/eeprom.h&gt;</code> provides<br>tested versions:</p>
+<pre class="lang-c"><code>#include &lt;avr/eeprom.h&gt;
+
+/* single values */
+uint8_t  b = eeprom_read_byte  ((uint8_t  *)0x10);
+uint16_t w = eeprom_read_word  ((uint16_t *)0x12);
+uint32_t d = eeprom_read_dword ((uint32_t *)0x14);
+
+eeprom_write_byte  ((uint8_t  *)0x10, 0xAA);
+eeprom_write_word  ((uint16_t *)0x12, 1234);
+eeprom_write_dword ((uint32_t *)0x14, 100000UL);
+
+/* blocks */
+eeprom_read_block  (dest_in_ram, (const void *)0x20, length);
+eeprom_write_block (src_in_ram,  (void *)0x20,       length);
+
+/* write only if the value differs - saves an erase cycle */
+eeprom_update_byte ((uint8_t *)0x10, 0xAA);</code></pre>
+<h3>That cast is not a real pointer</h3>
+<p><code>(uint8_t *)0x10</code> is an <em>EEPROM</em> address, not an SRAM address. It is written as a<br>pointer only because that is the interface avr-libc chose. Dereferencing it<br>directly would read SRAM location 0x10 and give you nonsense.</p>
+<h3>Prefer the <code>_update_</code> family</h3>
+<p><code>eeprom_update_byte</code> reads first and skips the write when the byte already holds<br>that value. Settings usually do not change, so this can eliminate almost every<br>write in a save routine — and every write avoided is an erase cycle not spent.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Writing Takes Time</h2>
+<p>A byte write takes <strong>3.4 ms</strong> and the EEPROM is unavailable throughout. The<br>library&#x27;s write functions already poll <code>EEWE</code> on entry, so back-to-back calls are<br>safe. The lesson code adds explicit delays as well:</p>
+<pre class="lang-c"><code>eeprom_write_byte((uint8_t *)0x10, 0xAA);
+_delay_ms(10);                      // belt and braces</code></pre>
+<p>Those delays are not strictly required — they are there so that the timing is<br>visible to you while learning. In production, let the library&#x27;s <code>EEWE</code> poll do<br>the waiting, and spend the time on something useful.</p>
+<h3>Timing to expect</h3>
+<table><thead><tr><th>Operation</th><th>Time</th></tr></thead><tbody><tr><td>Read a byte</td><td>under 1 µs</td></tr><tr><td>Write a byte</td><td>3.4 ms</td></tr><tr><td>Write 16 bytes</td><td>about 55 ms</td></tr><tr><td>Write the whole 4 KB</td><td>about 14 seconds</td></tr></tbody></table>
+<h3>The brown-out trap</h3>
+<p>A write interrupted by a falling supply can leave the byte half-programmed —<br>neither the old value nor the new one. This is the most common cause of<br>mysteriously corrupted settings in the field. <strong>Enable brown-out detection</strong> via<br>the <code>BODEN</code>/<code>BODLEVEL</code> fuses so the chip is held in reset before the supply drops<br>below the level where a write can go wrong.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Laying Out the Address Space</h2>
+<p>4096 bytes, addresses 0x000 to 0xFFF. Nothing organises them for you, so decide<br>a map and write it down.</p>
+<p>The map this lesson uses:</p>
+<table><thead><tr><th>Address</th><th>Size</th><th>Contents</th></tr></thead><tbody><tr><td>0x10 – 0x11</td><td>2</td><td>byte-access demo</td></tr><tr><td>0x20 – 0x3F</td><td>32</td><td>block-access demo, a string</td></tr><tr><td>0x40 – 0x43</td><td>4</td><td>boot counter, a 32-bit value</td></tr><tr><td>0x50 – 0x5F</td><td>16</td><td>erase-test scratch area</td></tr></tbody></table>
+<h3>Two conventions worth adopting</h3>
+<p><strong>Leave address 0 alone.</strong> A pointer that gets corrupted to zero is common, and<br>address 0 is where it will write. Losing a byte you never used is better than<br>losing your calibration constant.</p>
+<p><strong>Version your layout.</strong> Put a magic number and a version at a fixed address:</p>
+<pre class="lang-c"><code>#define CONFIG_MAGIC   0xA5
+#define CONFIG_VERSION 2
+
+if (eeprom_read_byte((uint8_t *)0) != CONFIG_MAGIC ||
+    eeprom_read_byte((uint8_t *)1) != CONFIG_VERSION)
+{
+    load_defaults();
+    save_config();          /* first boot, or a firmware upgrade */
+}</code></pre>
+<p>Without this, new firmware reads an old layout as though it were the new one and<br>starts with garbage.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Endurance, and the Arithmetic That Matters</h2>
+<p>Each EEPROM cell is rated for <strong>100,000 write cycles</strong>. Reads are unlimited and<br>do not wear anything.</p>
+<pre><code>writes once per second   -&gt; 100000 s        -&gt; about 28 hours
+writes once per minute   -&gt; 100000 min      -&gt; about 69 days
+writes once per hour     -&gt; 100000 hours    -&gt; about 11 years
+writes once per power-up -&gt; effectively forever</code></pre>
+<p>A logger that saves a reading every second destroys that byte in <strong>just over one<br>day</strong>. This is the single most important number in the lesson.</p>
+<h3>Wear levelling</h3>
+<p>When you genuinely must write often, spread the writes over many cells. Store a<br>record plus a sequence number, and rotate through a block:</p>
+<pre><code>slot 0: [seq=5][value]      &lt;- oldest
+slot 1: [seq=6][value]
+slot 2: [seq=7][value]      &lt;- newest, highest sequence number
+slot 3: [seq=4][value]</code></pre>
+<p>On boot, scan for the highest sequence number to find the current value; write<br>to the next slot each time. Sixteen slots multiply the life of the data by<br>sixteen, at the cost of a scan at start-up.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: The Lesson Program</h2>
+<p>Four demos on a serial menu.</p>
+<p><strong>1. Byte access</strong> — write <code>0xAA</code> to 0x10 and <code>0x55</code> to 0x11, read them back,<br>print both. The simplest possible round trip.</p>
+<p><strong>2. Block access</strong> — write the string <code>&quot;Hello EEPROM!&quot;</code> to 0x20 with<br><code>eeprom_write_block</code>, read it back into RAM, print it.</p>
+<pre class="lang-c"><code>char write_data[] = &quot;Hello EEPROM!&quot;;
+char read_data[32] = {0};
+
+eeprom_write_block(write_data, (void *)0x20, sizeof(write_data));
+eeprom_read_block(read_data,  (void *)0x20, sizeof(write_data));</code></pre>
+<p><code>sizeof(write_data)</code> is 14, not 13 — it counts the terminating <code>&#x27;\0&#x27;</code>. That is<br>what makes the string safe to print after reading it back.</p>
+<p><strong>3. Power-on counter</strong> — the demo that shows why EEPROM exists:</p>
+<pre class="lang-c"><code>uint32_t counter = eeprom_read_dword((uint32_t *)0x40);
+counter++;
+eeprom_write_dword((uint32_t *)0x40, counter);</code></pre>
+<p>Reset the simulated board and the count carries on from where it was. Nothing<br>else in the system can do that.</p>
+<p><strong>4. Erase test</strong> — write <code>0xFF</code> to sixteen bytes and verify. &quot;Erased&quot; for<br>EEPROM means all bits set, which is also what a factory-fresh chip reads.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Running It</h2>
+<pre><code>cd projects2026_avr\19_EEPROM_ReadWrite
+build.bat
+simulate.bat</code></pre>
+<p>In SimulIDE:</p>
+<ol><li>Press <strong>Play</strong>.</li><li>Open the <strong>Serial Monitor</strong> at 9600 baud.</li><li>Send <code>1</code>, <code>2</code>, <code>3</code> or <code>4</code> to pick a demo.</li><li>The LED on PB7 toggles after each one.</li></ol>
+<h3>Making the counter demo convincing</h3>
+<p>Run demo 3, note the count, then <strong>reset the MCU</strong> (right-click the MCU, or stop<br>and start the simulation) and run it again. The count continues.</p>
+<p>The board&#x27;s MCU has <code>saveEepr=&quot;true&quot;</code>, so SimulIDE keeps EEPROM contents in the<br>circuit file between runs, exactly as the real chip keeps them between power<br>cycles.</p>
+<h3>If every read returns 0xFF</h3>
+<p>That is a blank EEPROM — the write did not happen. Check that the write call<br>comes before the read, and that nothing cleared the EEPROM between them.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Exercises</h2>
+<ol><li><strong>Write your own driver.</strong> Implement <code>eeprom_read</code>/<code>eeprom_write</code> with the raw registers from Slide 2 and confirm they match the library&#x27;s results.</li><li><strong>Break the four-cycle window.</strong> Remove the <code>cli()</code> from the write sequence and run a busy Timer0 interrupt at the same time. Report how often writes fail.</li><li><strong>Time it.</strong> Toggle a pin around a byte write and measure the pulse on the board&#x27;s oscilloscope. How close is it to 3.4 ms?</li><li><strong>Versioned settings.</strong> Add the magic-number-and-version check from Slide 5, and demonstrate that changing <code>CONFIG_VERSION</code> triggers a reload of defaults.</li><li><strong><code>update</code> versus <code>write</code>.</strong> Save the same settings block 100 times with each, and count the actual writes performed. Explain the difference.</li><li><strong>Wear levelling.</strong> Implement the 16-slot rotating counter from Slide 6 and verify that the correct value survives a reset at any point in the cycle.</li><li><strong>Checksum.</strong> Add a one-byte XOR checksum to the settings block and reject the block if it fails. Corrupt a byte deliberately to show the check working.</li></ol>
+</section>
+<section class="slide">
+<h2>Summary</h2>
+<h3>Key Points</h3>
+<p>✓ <strong>EEPROM is non-volatile, byte-writable and slow</strong> — 4 KB on the ATmega128<br>✓ <strong>Writing takes 3.4 ms per byte</strong> and blocks further EEPROM access<br>✓ <strong><code>EEMWE</code> must precede <code>EEWE</code> within four cycles</strong>, with interrupts disabled<br>✓ <strong>Use <code>&lt;avr/eeprom.h&gt;</code></strong> rather than hand-rolling the sequence<br>✓ <strong><code>eeprom_update_*</code> skips unchanged bytes</strong> and saves erase cycles<br>✓ <strong>100,000 writes per cell</strong> — write once a second and it lasts a day<br>✓ <strong>Enable brown-out detection</strong>, or a dying supply will corrupt a write</p>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>EEARH:EEARL</strong></td><td>12-bit EEPROM address</td></tr><tr><td><strong>EEDR</strong></td><td>Data register</td></tr><tr><td><strong>EECR</strong> <code>EERE</code></td><td>Read enable</td></tr><tr><td><strong>EECR</strong> <code>EEWE</code></td><td>Write enable / busy flag</td></tr><tr><td><strong>EECR</strong> <code>EEMWE</code></td><td>Master write enable, self-clearing after four cycles</td></tr><tr><td><strong>EECR</strong> <code>EERIE</code></td><td>Interrupt when the EEPROM becomes ready</td></tr></tbody></table>
+<h3>Best Practices</h3>
+<ol><li><strong>Map the address space</strong> and keep the map in a header</li><li><strong>Never use address 0</strong> for anything you care about</li><li><strong>Version your layout</strong> with a magic number, and reload defaults on mismatch</li><li><strong>Prefer <code>update</code> over <code>write</code></strong> everywhere</li><li><strong>Checksum anything whose corruption would be dangerous</strong></li><li><strong>Level the wear</strong> if writes happen more often than once a minute</li></ol>
+<h3>Next Steps</h3>
+<ul><li><strong>External I2C or SPI EEPROM</strong> — the same ideas at megabyte scale</li><li><strong>Data logging</strong> — ring buffers in non-volatile memory</li><li><strong>Watchdog and brown-out</strong> — protecting a write from a failing supply</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, Section 4 &quot;EEPROM Data Memory&quot; — registers and timing</li><li>ATmega128 Datasheet, &quot;Preventing EEPROM Corruption&quot; — the brown-out discussion</li><li>avr-libc manual, <code>&lt;avr/eeprom.h&gt;</code> — the full function list</li></ul>
+<h3>Related Lessons</h3>
+<ul><li><code>21_Watchdog_Reset</code> — surviving a failure without losing stored state</li><li><code>20_Power_Sleep_Modes</code> — brown-out detection and supply behaviour</li><li><code>15_SPI_Master_Basic</code> — reaching a much larger external memory</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR101 — high-endurance EEPROM storage</li><li>AVR Application Note AVR100 — accessing the EEPROM from C and assembly</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:19_EEPROM_ReadWrite', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:19_EEPROM_ReadWrite') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

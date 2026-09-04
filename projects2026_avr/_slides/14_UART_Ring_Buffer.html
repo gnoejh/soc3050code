@@ -1,0 +1,314 @@
+<title>Interrupt-Driven UART and the Ring Buffer</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 1rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div id="deck">
+<section class="slide">
+<h1>Interrupt-Driven UART and the Ring Buffer</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a> — Section 19, USART</p>
+</section>
+<section class="slide">
+<h2>Slide 1: The Problem With Polled Receive</h2>
+<p>The previous lesson received a byte like this:</p>
+<pre class="lang-c"><code>while (!(UCSR1A &amp; (1 &lt;&lt; RXC1)))
+    ;                        // stand here until a byte arrives
+char c = UDR1;</code></pre>
+<p>That is correct and it is useless for a real program, because while it stands<br>there nothing else happens. Worse, the USART holds only <strong>two</strong> received bytes:<br>one in the shift register and one in the receive buffer. Miss the window and the<br>third byte overwrites the second, and it is gone with no way to recover it.</p>
+<h3>How long is the window?</h3>
+<p>At 9600 baud a character takes ten bit-times:</p>
+<pre><code>10 bits / 9600 bits per second = 1.04 ms per character</code></pre>
+<p>At 16 MHz that is <strong>16,600 clock cycles</strong> — enormous. But a <code>_delay_ms(10)</code><br>somewhere in your main loop is ten characters long, and a slow GLCD redraw is<br>worse. The moment your program does anything substantial, polled receive starts<br>dropping data.</p>
+<h3>The fix, in two parts</h3>
+<ol><li>An <strong>interrupt</strong> takes the byte out of the hardware the instant it lands.</li><li>A <strong>ring buffer</strong> holds it until the main program is ready.</li></ol>
+</section>
+<section class="slide">
+<h2>Slide 2: What a Ring Buffer Is</h2>
+<p>An array plus two indices, where &quot;the end&quot; wraps round to &quot;the beginning&quot;.</p>
+<pre><code>        write here                     read here
+            |                              |
+            v                              v
+   +----+----+----+----+----+----+----+----+
+   |    |    | E  | L  | L  | O  |    |    |
+   +----+----+----+----+----+----+----+----+
+     0    1    2    3    4    5    6    7
+            ^                        ^
+          head                      tail        (indices wrap at 8)</code></pre>
+<ul><li><strong>head</strong> — where the <em>producer</em> (the ISR) will write next</li><li><strong>tail</strong> — where the <em>consumer</em> (main) will read next</li><li><strong>head == tail</strong> — the buffer is empty</li><li><strong>head + 1 == tail</strong> — the buffer is full</li></ul>
+<p>Nothing is ever moved. Adding and removing a byte are both constant-time, which<br>is what makes this safe to do inside an interrupt handler.</p>
+<h3>Why one slot is sacrificed</h3>
+<p>With <code>head == tail</code> meaning empty, a completely full buffer would also have<br><code>head == tail</code> and the two states would be indistinguishable. Declaring &quot;full&quot;<br>one slot early keeps them apart. A 128-byte array therefore holds 127 bytes.<br>Spending one byte to avoid an ambiguity is a good trade.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Receive Interrupt</h2>
+<pre class="lang-c"><code>#define BUFFER_SIZE 128
+volatile uint8_t rx_buffer[BUFFER_SIZE];
+volatile uint8_t rx_head = 0, rx_tail = 0;
+
+ISR(USART1_RX_vect)
+{
+    uint8_t data = UDR1;                          // always read UDR1
+    uint8_t next = (rx_head + 1) % BUFFER_SIZE;
+
+    if (next != rx_tail)                          // room for one more?
+    {
+        rx_buffer[rx_head] = data;
+        rx_head = next;
+    }
+    /* else: buffer full, byte discarded */
+}</code></pre>
+<h3>Read <code>UDR1</code> unconditionally</h3>
+<p>Reading <code>UDR1</code> is what clears <code>RXC1</code> and dismisses the interrupt. If you skip<br>the read when the buffer is full, the flag stays set, the ISR is re-entered<br>immediately, and the program locks up in an interrupt storm. Take the byte out<br>of the hardware first, <em>then</em> decide whether to keep it.</p>
+<h3>Publish the data before the index</h3>
+<p><code>rx_buffer[rx_head] = data;</code> comes before <code>rx_head = next;</code>. Main code decides<br>there is data by comparing the indices, so the byte must already be in place<br>when <code>head</code> moves. Doing it the other way round exposes a slot that has not been<br>written yet.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Enabling It</h2>
+<pre class="lang-c"><code>void usart_init_rb(void)
+{
+    uint16_t ubrr = (F_CPU / (16UL * BAUD)) - 1;
+    UBRR1H = ubrr &gt;&gt; 8;
+    UBRR1L = ubrr;
+    UCSR1B = (1 &lt;&lt; RXEN1) | (1 &lt;&lt; TXEN1) | (1 &lt;&lt; RXCIE1);
+    UCSR1C = (1 &lt;&lt; UCSZ11) | (1 &lt;&lt; UCSZ10);   /* 8 data bits, no parity, 1 stop */
+    sei();
+}</code></pre>
+<table><thead><tr><th>Bit</th><th>Register</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>RXEN1</strong></td><td>UCSR1B</td><td>Enable the receiver</td></tr><tr><td><strong>TXEN1</strong></td><td>UCSR1B</td><td>Enable the transmitter</td></tr><tr><td><strong>RXCIE1</strong></td><td>UCSR1B</td><td><strong>Interrupt when a byte has been received</strong></td></tr><tr><td><strong>UDRIE1</strong></td><td>UCSR1B</td><td>Interrupt when the transmit register is free</td></tr><tr><td><strong>UCSZ11:10</strong></td><td>UCSR1C</td><td>8-bit character size</td></tr></tbody></table>
+<p><code>RXCIE1</code> is the one line that turns polling into interrupt-driven receive.</p>
+<h3>The baud rate figure</h3>
+<p>At 16 MHz with <code>U2X</code> off, <code>UBRR = 16000000 / (16 x 9600) - 1 = 103.17</code>, which<br>truncates to 103. That gives an actual 9615 baud — a <strong>0.16 % error</strong>, well<br>inside the roughly 2 % a UART frame tolerates. If you ever need exactness,<br>7.3728 MHz divides perfectly; 16 MHz is chosen here because it matches the MCU<br>frequency on the shared SimulIDE board.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Reading From the Buffer</h2>
+<pre class="lang-c"><code>uint8_t rb_available(void)
+{
+    return (rx_head - rx_tail + BUFFER_SIZE) % BUFFER_SIZE;
+}
+
+uint8_t rb_read(void)
+{
+    uint8_t data = rx_buffer[rx_tail];
+    rx_tail = (rx_tail + 1) % BUFFER_SIZE;
+    return data;
+}</code></pre>
+<h3>The <code>+ BUFFER_SIZE</code> in the count</h3>
+<p>When <code>head</code> has wrapped and <code>tail</code> has not, <code>head - tail</code> is negative. Adding<br><code>BUFFER_SIZE</code> before the modulo makes it positive without a branch.</p>
+<h3>Why no <code>cli()</code> is needed here</h3>
+<p>There is exactly one producer (the ISR) and one consumer (main). The ISR only<br>ever writes <code>head</code>; main only ever writes <code>tail</code>. Each index has a single writer,<br>and on an 8-bit AVR a byte-sized load or store is a single instruction and<br>cannot be interrupted halfway. That makes this particular arrangement safe<br>without disabling interrupts.</p>
+<p><strong>This guarantee is narrow.</strong> Add a second consumer, make the indices 16-bit<br>(<code>BUFFER_SIZE</code> above 256), or have main modify <code>head</code>, and it evaporates — then<br>you need an <code>ATOMIC_BLOCK</code>.</p>
+<h3>Always check before reading</h3>
+<p><code>rb_read</code> does not check for an empty buffer. Calling it when <code>rb_available()</code><br>is zero returns a stale byte and corrupts <code>tail</code>. The caller must ask first.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Transmit Stays Polled — And Why That Is Fine Here</h2>
+<pre class="lang-c"><code>void rb_write(char c)
+{
+    while (!(UCSR1A &amp; (1 &lt;&lt; UDRE1)))
+        ;
+    UDR1 = c;
+}</code></pre>
+<p>This blocks, but the blocking is bounded: at most one character time, about<br>1 ms, because the transmitter is never asked for more than it can take. Receive<br>is the side with a hard deadline — a byte you fail to collect is lost forever —<br>whereas a byte you are slow to <em>send</em> merely leaves later.</p>
+<h3>When transmit needs a buffer too</h3>
+<p>As soon as your program sends long strings while something time-critical is<br>running, add a second ring buffer driven by <code>UDRIE1</code>:</p>
+<pre class="lang-c"><code>ISR(USART1_UDRE_vect)
+{
+    if (tx_head == tx_tail)
+        UCSR1B &amp;= ~(1 &lt;&lt; UDRIE1);    // nothing left: stop asking
+    else
+        UDR1 = tx_buffer[tx_tail++ % BUFFER_SIZE];
+}</code></pre>
+<p>Note the handler must <strong>disable its own interrupt</strong> when the buffer empties.<br><code>UDRE1</code> is set whenever the register is free, which is almost always, so an<br>enabled and unfed UDRE interrupt is another interrupt storm.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Sizing the Buffer</h2>
+<p>Pick the size from the worst-case burst and how long the main loop can look away.</p>
+<pre><code>bytes needed = baud / 10 x longest_blind_interval_seconds</code></pre>
+<p>At 9600 baud the line delivers 960 bytes per second, so:</p>
+<table><thead><tr><th>Main loop is blind for</th><th>Bytes that can arrive</th><th>Sensible size</th></tr></thead><tbody><tr><td>1 ms</td><td>1</td><td>16</td></tr><tr><td>10 ms</td><td>10</td><td>32</td></tr><tr><td>50 ms</td><td>48</td><td>64</td></tr><tr><td>200 ms</td><td>192</td><td>256</td></tr></tbody></table>
+<p>This lesson uses <strong>128</strong>, which covers a blind interval of about 130 ms — ample<br>for a program whose slowest step is a 10 ms delay.</p>
+<h3>Make it a power of two</h3>
+<p><code>% 128</code> on a power-of-two size compiles to a single <code>AND</code> with 127. On a<br>non-power-of-two it becomes a division routine — dozens of cycles, inside an<br>interrupt handler. Always size a ring buffer 16, 32, 64, 128 or 256.</p>
+<h3>Deciding it is too small</h3>
+<p>Count the discards. Add <code>volatile uint16_t rx_dropped;</code> and increment it in the<br><code>else</code> branch of the ISR. A non-zero value after a realistic test means the<br>buffer, the main loop, or the baud rate has to change.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: The Lesson Program</h2>
+<p><strong>Demo 1 — see the buffer work.</strong> Type characters; each is echoed together with<br>the current occupancy. Press <code>q</code> to leave.</p>
+<pre class="lang-c"><code>if (rb_available() &gt; 0)
+{
+    char c = rb_read();
+    if (c == &#x27;q&#x27;) break;
+    sprintf(msg, &quot;Got: &#x27;%c&#x27; | Buffer: %u/%u\r\n&quot;, c, rb_available(), BUFFER_SIZE);
+    rb_puts(msg);
+}
+_delay_ms(10);</code></pre>
+<p>That <code>_delay_ms(10)</code> is the point of the exercise. It makes the main loop blind<br>for ten character times — exactly the situation polled receive cannot survive —<br>and the ring buffer absorbs it without losing a byte.</p>
+<p><strong>Demo 2 — burst handling.</strong> Paste a block of text as fast as the terminal will<br>send it. Every tenth character the program reports its progress, and the count<br>reaching 100 proves nothing was dropped.</p>
+<h3>Try the comparison</h3>
+<p>Comment out <code>RXCIE1</code> in <code>usart_init_rb</code>, replace <code>rb_available()</code> with a direct<br><code>RXC1</code> test, and repeat demo 2. The dropped characters are the whole argument<br>for this lesson.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Running It</h2>
+<pre><code>cd projects2026_avr\14_UART_Ring_Buffer
+build.bat
+simulate.bat</code></pre>
+<p>In SimulIDE:</p>
+<ol><li>Press <strong>Play</strong>.</li><li>Open the <strong>Serial Monitor</strong> at 9600 baud, 8N1.</li><li>Send <code>1</code> for the buffered echo, or <code>2</code> for the burst test.</li><li>In demo 2, paste a long line rather than typing it.</li></ol>
+<h3>If nothing echoes</h3>
+<ul><li><code>sei()</code> missing — <code>usart_init_rb</code> calls it, but check nothing later runs <code>cli()</code></li><li><code>RXCIE1</code> not set, so <code>USART1_RX_vect</code> never fires</li><li>The serial monitor is on the wrong port; the board&#x27;s serial component is wired to <strong>PD2 (RXD1) and PD3 (TXD1)</strong></li></ul>
+<h3>If characters are lost in demo 2</h3>
+<p>Confirm <code>BUFFER_SIZE</code> is 128 and that the ISR&#x27;s full-buffer branch still reads<br><code>UDR1</code>. Losing bytes <em>and</em> locking up points at the missing read.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Exercises</h2>
+<ol><li><strong>Count the drops.</strong> Add <code>rx_dropped</code> and report it. Find a burst size that makes it non-zero with a 16-byte buffer.</li><li><strong>Shrink it.</strong> Set <code>BUFFER_SIZE</code> to 8 and re-run demo 2. Explain the result in terms of the sizing formula.</li><li><strong>Not a power of two.</strong> Set it to 100 and compare the generated code size for the ISR (<code>avr-objdump -d Main.elf</code>). Explain the difference.</li><li><strong>Buffered transmit.</strong> Add a TX ring buffer driven by <code>UDRIE1</code>. Verify that <code>rb_puts</code> returns immediately even for a long string.</li><li><strong>Line assembly.</strong> Buffer incoming bytes until <code>\n</code>, then hand the whole line to the main program. This is the basis of a command parser.</li><li><strong>Break it deliberately.</strong> Remove <code>volatile</code> from <code>rx_head</code> and <code>rx_tail</code>, build with <code>-O2</code>, and describe what happens and why.</li><li><strong>Overrun detection.</strong> Check <code>DOR1</code> in <code>UCSR1A</code> and report hardware overruns separately from buffer overflows. What is the difference?</li></ol>
+</section>
+<section class="slide">
+<h2>Summary</h2>
+<h3>Key Points</h3>
+<p>✓ <strong>The USART holds only two bytes</strong> — collect them or lose them<br>✓ <strong><code>RXCIE1</code> turns receive into an interrupt</strong>, decoupling it from the main loop<br>✓ <strong>A ring buffer is an array plus head and tail</strong>, both wrapping<br>✓ <strong>One slot is sacrificed</strong> so that empty and full stay distinguishable<br>✓ <strong>Always read <code>UDR1</code> in the ISR</strong>, even when discarding, or the interrupt re-fires<br>✓ <strong>Single producer, single consumer, 8-bit indices</strong> is what makes it lock-free<br>✓ <strong>Size it as a power of two</strong>, from the worst-case blind interval</p>
+<h3>Register Summary</h3>
+<table><thead><tr><th>Register</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>UBRR1H/L</strong></td><td>Baud rate divisor</td></tr><tr><td><strong>UCSR1A</strong></td><td>Status: <code>RXC1</code>, <code>UDRE1</code>, <code>DOR1</code> (overrun), <code>FE1</code> (framing error)</td></tr><tr><td><strong>UCSR1B</strong></td><td><code>RXEN1</code>, <code>TXEN1</code>, <code>RXCIE1</code>, <code>UDRIE1</code></td></tr><tr><td><strong>UCSR1C</strong></td><td>Frame format: character size, parity, stop bits</td></tr><tr><td><strong>UDR1</strong></td><td>The data register; reading it clears <code>RXC1</code></td></tr></tbody></table>
+<h3>Best Practices</h3>
+<ol><li><strong>Declare every shared index <code>volatile</code></strong></li><li><strong>Keep the ISR to a read, a bounds test and two stores</strong></li><li><strong>Check <code>rb_available()</code> before every <code>rb_read()</code></strong></li><li><strong>Count discards</strong> rather than assuming the buffer is big enough</li><li><strong>Disable <code>UDRIE1</code> from inside its own handler</strong> when the transmit buffer empties</li></ol>
+<h3>Next Steps</h3>
+<ul><li><strong>Command parsing</strong> — turning a byte stream into structured commands</li><li><strong>SPI and I2C</strong> — the same buffering ideas on synchronous buses</li><li><strong>RTOS</strong> — where the ring buffer becomes a queue between tasks</li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet, Section 19 &quot;USART&quot; — registers, baud tables, error flags</li><li>ATmega128 Datasheet, Table 19-1 — baud rate error at each <code>UBRR</code> value</li><li>avr-libc manual, <code>&lt;avr/interrupt.h&gt;</code> and <code>&lt;util/atomic.h&gt;</code></li></ul>
+<h3>Related Lessons</h3>
+<ul><li><code>13_UART_Basic</code> — the polled version this lesson replaces</li><li><code>05_INT_External_Pins</code> — <code>volatile</code> and the discipline of short handlers</li><li><code>22_RTOS_Scheduler</code> — queues between tasks, built on the same idea</li></ul>
+<h3>Further Reading</h3>
+<ul><li>AVR Application Note AVR306 — using the USART on tinyAVR and megaAVR</li><li>&quot;Lock-free single-producer single-consumer queues&quot; — the general form of this pattern</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:14_UART_Ring_Buffer', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:14_UART_Ring_Buffer') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

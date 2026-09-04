@@ -1,0 +1,13 @@
+# Build output
+Main.elf
+Main.hex
+Main.map
+*.o
+
+# Generated per-lesson copy of the shared board; the maintained one is
+# projects2026_avr/Simulator.simu
+Board.simu
+
+# Python bytecode from the _build scripts
+__pycache__/
+*.pyc
