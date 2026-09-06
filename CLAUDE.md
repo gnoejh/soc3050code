@@ -17,7 +17,7 @@ Self-contained: the AVR toolchain and the SimulIDE simulator are vendored under
 
 ```
 projects/             53 legacy lesson folders (previous edition, SimulIDE 1.1.0-SR1)
-projects2026_avr/     22 curated lessons for SimulIDE 1.1.0-SR2   <-- current edition
+projects2026_avr/     intro + 22 curated lessons, SimulIDE 1.1.0-SR2  <-- current edition
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _eeprom, _pwm, _interrupt ...
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
 tools/simulide/       SimulIDE 0.4.15-SR10 and 1.1.0-SR1 + the original master board
@@ -47,13 +47,17 @@ uses. `tools/simulide200/` (159 MB) remains untracked and unused.
 | Shared board | `projects2026_avr/Simulator.simu` — every component in it is present in the SR2 binary |
 
 **`avr-size` in this toolchain does not support `--format=avr`.** Use the plain
-Berkeley output.
+Berkeley output — but do not read its `data` and `bss` columns. This linker
+marks `.data` read-only, so Berkeley folds it into `text` and reports `data 0`
+and `bss 0` even for a program with hundreds of bytes of string literals in
+SRAM. `avr-size -A` gives the real per-section split, and is what
+`00_Introduction/Slide.md` teaches students to use.
 
 ## 4. Decisions (confirmed 2026-09-05)
 
 | Decision | Choice |
 |---|---|
-| Scope | Curated core set — 22 lessons, one per topic |
+| Scope | Curated core set — 22 lessons, one per topic, plus `00_Introduction` |
 | Circuits | **One shared master board**; each lesson loads it against its own `Main.hex` |
 | Clock | **16 MHz everywhere**, matching the board's `Frequency="16 MHz"` |
 
@@ -141,7 +145,7 @@ the click-by-click instructions.
 
 ## 8. Status
 
-**All 22 lessons build clean and produce valid Intel HEX**, checked by
+**All 23 lessons build clean and produce valid Intel HEX**, checked by
 `projects2026_avr/_build/verify-all.ps1`, which validates hex records rather
 than merely testing that a file exists. SimulIDE 1.1.0-SR2 was launched against
 the board and confirmed to load both circuit and firmware.
@@ -159,6 +163,9 @@ unused-parameter warnings inside `shared_libs` stubs. Those stubs are honest
 | 2026-09-05 | `projects2026_avr/` + this tracker committed and pushed. |
 | 2026-09-05 | System pass: VS Code tasks repaired, verifier and slide renderer added, both READMEs rewritten, `projects/` archived, SimulIDE SR2 committed. |
 | 2026-09-05 | History squashed to a single root commit on `main` and force-pushed; all prior history deleted. See section 12. |
+| 2026-09-06 | `00_Introduction` added for the first class; `gen-readme.py` taught about natively-written lessons; two mangled commands in the 2026 README repaired. See section 9a. |
+| 2026-09-06 | Datasheet link pinned into the rendered deck chrome so it is reachable from every slide, not just slide 1. |
+| 2026-09-06 | Decks published to GitHub Pages, rendered in CI from `Slide.md`. See section 9c. |
 
 ## 9. The system pass (2026-09-05)
 
@@ -178,12 +185,12 @@ around them, legacy tasks relabelled `Legacy:`, and `$gcc` problem matchers
 added so compiler errors become clickable.
 
 ### Added
-- **`_build/verify-all.ps1`** — builds all 22 and validates each `Main.hex` as
+- **`_build/verify-all.ps1`** — builds them all and validates each `Main.hex` as
   real Intel HEX. This exists because of the `echo Build OK -> Main.hex`
   redirect bug: every hex was 13 bytes of the word "Build OK" and every
   `Test-Path` check still passed.
-- **`_build/build-slides.py`** — renders all 22 `Slide.md` into self-contained
-  HTML decks (452 slides) with an index, keyboard navigation, an overview grid
+- **`_build/build-slides.py`** — renders every `Slide.md` into a self-contained
+  HTML deck (23 decks, 487 slides) with an index, keyboard navigation, a grid
   and print-to-PDF. No third-party packages, since `markdown` is not installed
   and the repo promises a clone needs no downloads. Two renderer bugs found and
   fixed while checking output: bold spanning a source line break, and `\|`
@@ -203,8 +210,112 @@ fresh clone can simulate. The five `.zip` files beside it are ignored: one
 duplicates the extracted folder, the other four are SimulIDE 2.x companion apps
 nothing in the course uses. `tools/simulide200/` (159 MB) remains untracked.
 
+## 9a. Lesson 00 (2026-09-06)
+
+`projects2026_avr/00_Introduction/` — the first class. Three parts in one deck
+(28 slides): what an embedded processor is, what the development environment
+does to a `.c` file, and how the ATmega128 is built.
+
+The deck quotes this repository's own build rather than generic figures: the
+real compiler invocation, the real size output, the first record of the real
+`Main.hex` decoded field by field, and the actual disassembly showing
+`OUT`/`SBI` for low I/O registers against `STS` for USART1 in extended I/O.
+Re-derive those numbers with `avr-objdump -d Main.elf` and `avr-size -A` if the
+lesson source ever changes; they are quoted literally on slides 9, 11, 15, 16
+and 21.
+
+`Main.c` links nothing from `shared_libs` on purpose and prints a banner built
+from linker symbols (`__data_start`, `__heap_start`, `RAMEND`), so the memory
+figures on the slides are measured rather than asserted. It walks one LED along
+PORT B and pauses while PD0 is held.
+
+Two support changes went with it:
+
+- **`gen-readme.py` grew a `NATIVE` table.** It took every lesson's title and
+  focus line from `migrate.py`, which only knows lessons that had a legacy
+  source folder. Lesson 00 has none, so it rendered as `# . 00_Introduction`
+  with an empty focus line and picked up a note claiming its LEDs had been
+  remapped off PORT C — a thing that never happened to it. Also fixed there:
+  `"00".lstrip("0")` produced an empty lesson number, and ports reached through
+  the `BTN_` macros were missed the way `LED_WRITE` already was.
+- **Two commands in `projects2026_avr/README.md` were unusable.**
+  `pwsh _build\verify-all.ps1` and `python _build\build-slides.py` held literal
+  VT (0x0B) and BS (0x08) bytes where the backslash had been eaten — the same
+  damage class as section 7's `
+` findings, missed because the characters are
+  invisible in a terminal and in rendered Markdown. A scan of every `.md`,
+  `.bat`, `.ps1`, `.c`, `.h`, `.py` and `.json` under the maintained trees found
+  no others.
+
+## 9b. The datasheet link (2026-09-06)
+
+Every deck's title slide already carried
+`**Reference**: [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf)`,
+but it scrolled away at slide 2 — on a 40-slide deck the reference is out of
+reach for 39 of them.
+
+`build-slides.py` now emits a fixed top bar carrying that link and the deck
+name, so it is on screen for all 487 slides, and the index page links it too.
+It is one constant, `DATASHEET`, at the top of the renderer; **change the URL
+there and re-run, rather than editing 58 Markdown files**. The bar is hidden
+when printing, since a `position: fixed` element does not repeat reliably
+across printed pages.
+
+Two source-side gaps closed at the same time:
+
+- `22_RTOS_Scheduler/Slide.md` was the only deck with no reference line at all.
+  It is CRLF where the rest of the tree is LF, so the line was spliced in with
+  the file's own endings rather than rewriting it.
+- `docs/Atmega128_Reference/Slide.md` pointed at a different mirror of the same
+  document (`.../DataSheets/2467S.pdf`). Both of its links now use the course
+  URL, so all 140 references across the 58 decks are identical.
+
+## 9c. GitHub Pages (2026-09-06)
+
+The decks are published at **https://gnoejh.github.io/soc3050code/** so a class
+can be taught from a machine that does not have this repository, by
+`.github/workflows/pages.yml`.
+
+Two things drove the shape of it:
+
+- **It renders rather than serves.** `_slides/` is committed and generated, so
+  the two can disagree the moment someone edits a `Slide.md` without re-running
+  the renderer. The workflow runs `build-slides.py` in CI and publishes its
+  output, so the site is derived from the deck sources and the committed copy is
+  only for offline use.
+- **It checks out `projects2026_avr/` alone**, via `sparse-checkout` plus
+  `filter: blob:none`. A full clone is ~1 GB, 856 MB of it the vendored
+  toolchain and SimulIDE, none of which the renderer reads. The published
+  artefact is the 820 KB `_slides/` directory.
+
+Publishing from a branch folder was rejected: `/docs` is the only folder option
+besides the repo root, and it already holds 28 unrelated framework Markdown
+files with no index.
+
+Per section 11, the workflow does not trust the renderer's exit code — it
+asserts `index.html` is non-empty and has a `<title>`, and that at least 24 HTML
+files came out, before the artefact is uploaded.
+
+The decks needed no changes to become a website. They are self-contained HTML
+with relative links; the only outbound reference in any of them is the datasheet
+URL from section 9b.
+
+**This publishes slides only.** Building and simulating still needs a clone,
+because the compiler and the simulator are vendored. Closing that gap — a Colab
+notebook that `apt-get`s `gcc-avr`/`avr-libc` to compile the real lesson sources,
+and possibly `simavr` to run the UART-based lessons headless — is section 10
+work and unproven; simavr's ATmega128 core is far less exercised than its
+ATmega328. The LED, keypad and GLCD lessons have no browser story either way
+(avr8js/Wokwi is ATmega328-family only).
+
 ## 10. Next steps
 
+- [ ] **Turn Pages on in the repository settings** — the one step the workflow
+      cannot do for itself. Settings -> Pages -> Source: **GitHub Actions**. The
+      repository must also be public, or on a plan that allows private Pages.
+      Until this is done the workflow's deploy job fails.
+- [ ] **A Colab notebook for lab-less weeks**, per the end of section 9c.
+      Verify `simavr` actually runs an ATmega128 hex before promising it.
 - [ ] **Wire the DS1307 on the shared board** — the one item deliberately not
       automated. Both junction nodes on PD0 and PD1 are already at their
       three-connection limit, so adding the RTC means splicing new nodes into

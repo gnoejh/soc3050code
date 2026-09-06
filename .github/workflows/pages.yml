@@ -1,0 +1,77 @@
+# Publish the lecture decks to GitHub Pages.
+#
+# The site is rendered from the Slide.md sources on every push rather than
+# served from the committed _slides/ directory, so the published decks cannot
+# drift from the lesson text the way two checked-in copies would.
+#
+# Only projects2026_avr/ is checked out. A full clone of this repository pulls
+# ~856 MB of vendored AVR toolchain and SimulIDE that the renderer never reads.
+name: Lecture slides
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects2026_avr/**/Slide.md'
+      - 'projects2026_avr/_build/build-slides.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish; queue rather than cancel, so the published
+# site always corresponds to a commit that was actually rendered.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: projects2026_avr
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # build-slides.py is standard library only, on purpose - see
+      # CLAUDE.md section 9. Nothing to install.
+      - name: Render the decks
+        run: python projects2026_avr/_build/build-slides.py
+
+      # CLAUDE.md section 11: never trust a build's exit code alone on this
+      # project. Check the artefact is a real site before publishing it.
+      - name: Verify the rendered site
+        run: |
+          set -eu
+          out=projects2026_avr/_slides
+          test -s "$out/index.html" || { echo "no index.html"; exit 1; }
+          # One deck per lesson that has a Slide.md, plus the index. Derived
+          # rather than hardcoded so adding a lesson does not need an edit here.
+          lessons=$(find projects2026_avr -mindepth 2 -maxdepth 2 -name Slide.md | wc -l)
+          decks=$(find "$out" -maxdepth 1 -name '*.html' | wc -l)
+          echo "$lessons lesson(s) with a deck, $decks HTML file(s) rendered"
+          test "$lessons" -gt 0 || { echo "no Slide.md found - wrong checkout?"; exit 1; }
+          test "$decks" -eq "$((lessons + 1))"             || { echo "expected $((lessons + 1)) files, got $decks"; exit 1; }
+          grep -q '<title>' "$out/index.html" || { echo "index.html has no title"; exit 1; }
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: projects2026_avr/_slides
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

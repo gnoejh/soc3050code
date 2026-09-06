@@ -20,6 +20,11 @@ import re
 import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# The one reference every lesson leans on. It is pinned into the deck
+# chrome rather than left on the title slide alone, so it is reachable
+# from any slide without going back to the start.
+DATASHEET = "https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf"
 OUT = os.path.join(BASE, "_slides")
 
 
@@ -218,7 +223,7 @@ PAGE = """<title>{title}</title>
   }}
   .slide {{
     display: none; box-sizing: border-box; min-height: 100vh;
-    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
   }}
   .slide.active {{ display: block; }}
   h1 {{ font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }}
@@ -243,6 +248,17 @@ PAGE = """<title>{title}</title>
   th {{ background: var(--th-bg); }}
   strong {{ font-weight: 650; }}
 
+  .topbar {{
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }}
+  .topbar .spacer {{ flex: 1; }}
+  .topbar .deck-name {{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+  .topbar a {{ color: var(--accent); text-decoration: none; font-weight: 600; }}
+  .topbar a:hover {{ text-decoration: underline; }}
+
   .bar {{
     position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
     display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
@@ -265,15 +281,21 @@ PAGE = """<title>{title}</title>
   }}
   body.grid #deck {{
     display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: .8rem; padding: 1rem 1rem 4rem;
+    gap: .8rem; padding: 3rem 1rem 4rem;
   }}
 
   @media print {{
-    .bar {{ display: none; }}
+    .bar, .topbar {{ display: none; }}
     .slide {{ display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }}
     pre, table {{ page-break-inside: avoid; }}
   }}
 </style>
+
+<div class="topbar">
+  <span><a href="{datasheet}" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">{title}</span>
+</div>
 
 <div id="deck">
 {slides}
@@ -353,6 +375,7 @@ INDEX = """<title>SOC3050 Lecture Decks</title>
 <div class="wrap">
   <h1>SOC3050 &mdash; ATmega128 Lecture Decks</h1>
   <p class="sub">{count} decks, 2026 AVR edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
+  <p class="sub"><a href="{datasheet}" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
   <ol>
 {cards}
   </ol>
@@ -375,11 +398,16 @@ def main(argv):
     lessons = sorted(d for d in os.listdir(BASE)
                      if re.match(r"^\d\d_", d)
                      and os.path.isfile(os.path.join(BASE, d, "Slide.md")))
+    # A named lesson limits which decks are *re-rendered*, never which ones the
+    # index lists: rebuilding index.html from one lesson would drop every other
+    # link while leaving those .html files sitting there unreachable.
     if wanted:
-        lessons = [l for l in lessons if l in wanted]
-        if not lessons:
+        rendering = [l for l in lessons if l in wanted]
+        if not rendering:
             print("no matching lesson with a Slide.md")
             return 1
+    else:
+        rendering = lessons
 
     cards = []
     for name in lessons:
@@ -388,14 +416,16 @@ def main(argv):
         chunks = split_slides(text)
         title = deck_title(chunks[0] if chunks else []) or name
 
-        body = "\n".join(
-            '<section class="slide">\n%s\n</section>' % render_blocks(c)
-            for c in chunks)
-        page = PAGE.format(title=html.escape(title), slides=body, key=name)
+        if name in rendering:
+            body = "\n".join(
+                '<section class="slide">\n%s\n</section>' % render_blocks(c)
+                for c in chunks)
+            page = PAGE.format(title=html.escape(title), slides=body,
+                               key=name, datasheet=DATASHEET)
 
-        dest = os.path.join(OUT, name + ".html")
-        with open(dest, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(page)
+            dest = os.path.join(OUT, name + ".html")
+            with open(dest, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(page)
 
         # the focus line the lesson README opens with makes a good subtitle
         focus = ""
@@ -412,13 +442,16 @@ def main(argv):
             '<span class="f">{d}</span></a></li>'.format(
                 f=name, n=name.split("_")[0],
                 t=html.escape(title), d=html.escape(focus)))
-        print("  %-28s %3d slides" % (name, len(chunks)))
+        if name in rendering:
+            print("  %-28s %3d slides" % (name, len(chunks)))
 
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8",
               newline="\n") as fh:
-        fh.write(INDEX.format(count=len(lessons), cards="\n".join(cards)))
+        fh.write(INDEX.format(count=len(lessons), cards="\n".join(cards),
+                              datasheet=DATASHEET))
 
-    print("\n%d decks -> %s" % (len(lessons), os.path.relpath(OUT, BASE)))
+    print("\n%d deck(s) rendered, %d listed in the index -> %s"
+          % (len(rendering), len(lessons), os.path.relpath(OUT, BASE)))
     print("open %s" % os.path.join(os.path.relpath(OUT, BASE), "index.html"))
     return 0
 

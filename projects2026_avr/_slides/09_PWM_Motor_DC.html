@@ -24,7 +24,7 @@
   }
   .slide {
     display: none; box-sizing: border-box; min-height: 100vh;
-    padding: 3.2rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
   }
   .slide.active { display: block; }
   h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
@@ -49,6 +49,17 @@
   th { background: var(--th-bg); }
   strong { font-weight: 650; }
 
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
   .bar {
     position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
     display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
@@ -71,15 +82,21 @@
   }
   body.grid #deck {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: .8rem; padding: 1rem 1rem 4rem;
+    gap: .8rem; padding: 3rem 1rem 4rem;
   }
 
   @media print {
-    .bar { display: none; }
+    .bar, .topbar { display: none; }
     .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
     pre, table { page-break-inside: avoid; }
   }
 </style>
+
+<div class="topbar">
+  <span><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">DC Motor Control with PWM</span>
+</div>
 
 <div id="deck">
 <section class="slide">

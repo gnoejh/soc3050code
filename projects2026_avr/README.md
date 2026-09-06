@@ -1,8 +1,8 @@
 # SOC3050 — ATmega128 Lessons, 2026 AVR Edition
 
-Twenty-two lessons for the ATmega128, each with source, a lecture deck and a
-one-command path into the simulator. Built and verified against
-**SimulIDE 1.1.0-SR2**.
+An introductory first class plus twenty-two lessons for the ATmega128, each
+with source, a lecture deck and a one-command path into the simulator. Built and
+verified against **SimulIDE 1.1.0-SR2**.
 
 This is the successor to `../projects`. It is a curated set — one strong lesson
 per topic rather than every variation — normalised so that every lesson builds
@@ -13,7 +13,7 @@ the same way, runs at the same clock, and works on the same board.
 ## Quick start
 
 ```
-cd 01_Port_Basic
+cd 00_Introduction
 build.bat        compiles Main.c -> Main.hex
 simulate.bat     opens the shared board in SimulIDE 1.1.0-SR2
 ```
@@ -30,6 +30,7 @@ Nothing needs installing. The AVR toolchain and SimulIDE both live under
 
 | # | Lesson | Focus |
 |---|--------|-------|
+| 00 | `00_Introduction` | Embedded processors, the toolchain, ATmega128 architecture |
 | 01 | `01_Port_Basic` | DDR, PORT and PIN; driving LEDs, reading switches |
 | 02 | `02_Port_Button_Debounce` | Pull-ups, contact bounce, software debouncing |
 | 03 | `03_Port_Keypad_Matrix` | Scanning a 4x4 keypad with 8 pins |
@@ -99,7 +100,7 @@ click-by-click instructions. It is left as a manual step on purpose: the
 junction points on PD0 and PD1 are already at their three-connection limit, so
 adding the RTC means splicing new nodes into existing wires. That is
 straightforward in the GUI and risky to do by editing the circuit file, which
-all 22 lessons share.
+every lesson shares.
 
 ---
 
@@ -116,7 +117,7 @@ NN_Topic/
 ```
 
 `build.bat` is three lines. The work is in `_build/build-lesson.bat`, so a change
-to the compile flags happens once for all 22 lessons:
+to the compile flags happens once for every lesson:
 
 ```bat
 set LIBS=_adc _glcd _init _port
@@ -152,7 +153,7 @@ lessons built at 7.3728 MHz while their header claimed 16 MHz.
 | `build-lesson.bat` | The shared compile/link/hex engine |
 | `simulate-lesson.bat` | Places the board next to the lesson's hex and launches SimulIDE |
 | `resolve-libs.py` | Derives each lesson's minimal shared-library set |
-| `verify-all.ps1` | Builds all 22 lessons and validates every `Main.hex` |
+| `verify-all.ps1` | Builds every lesson and validates every `Main.hex` |
 | `build-slides.py` | Renders every `Slide.md` into a presentable HTML deck |
 | `gen-readme.py` | Regenerates every lesson README from its source |
 | `migrate.py` | The one-time importer from `../projects` |
@@ -194,9 +195,9 @@ Every lesson builds clean. The only remaining compiler warnings are
 ## Verifying the whole course
 
 ```
-pwsh _builderify-all.ps1                  # build all 22, validate each hex
-pwsh _builderify-all.ps1 -ShowWarnings    # and list lesson-code warnings
-pwsh _builderify-all.ps1 -Clean           # leave the tree as committed
+pwsh _build\verify-all.ps1                  # build them all, validate each hex
+pwsh _build\verify-all.ps1 -ShowWarnings    # and list lesson-code warnings
+pwsh _build\verify-all.ps1 -Clean           # leave the tree as committed
 ```
 
 It checks more than the exit code. Each `Main.hex` is validated as real Intel
@@ -208,15 +209,18 @@ containing the words "Build OK" while every existence check still passed.
 ## Lecture slides
 
 ```
-python _builduild-slides.py
+python _build\build-slides.py
 ```
 
-Renders all 22 `Slide.md` files into self-contained HTML decks under
-`_slides/`, with an index. Arrow keys or space to move, `o` for an overview
+Renders every `Slide.md` into a self-contained HTML deck under `_slides/`,
+with an index. Arrow keys or space to move, `o` for an overview
 grid, `p` to print or save as PDF. No third-party packages — the Markdown
 subset these decks use is rendered by the script itself.
 
-Re-run it after editing a deck.
+Re-run it after editing a deck. `_slides/` is committed for offline use,
+but the published copy at <https://gnoejh.github.io/soc3050code/> is
+re-rendered from `Slide.md` by `.github/workflows/pages.yml` on every push,
+so an un-regenerated `_slides/` cannot put stale decks in front of a class.
 
 ## Requirements
 

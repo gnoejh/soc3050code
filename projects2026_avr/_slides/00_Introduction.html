@@ -1,0 +1,640 @@
+<title>Embedded Processors and the ATmega128</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Embedded Processors and the ATmega128</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Embedded Processors and the ATmega128</h1>
+<h2>ATmega128 Embedded Systems Course — First Class</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+<p>Three questions, in order:</p>
+<ol><li><strong>What is an embedded processor</strong>, and how is it unlike the computer you write essays on?</li><li><strong>What does the development environment do</strong> to turn your <code>.c</code> file into something a chip executes?</li><li><strong>How is the ATmega128 built</strong>, and where does that shape everything you write for the rest of the course?</li></ol>
+</section>
+<section class="slide">
+<h2>Slide 1: You Already Own Fifty of These</h2>
+<p>Count the processors within three metres of you. Not the phone and the laptop —<br>the other ones.</p>
+<p>The washing machine. The microwave. The car key. The USB charger that<br>negotiates voltage. The wireless earbuds, three of them: one per ear and one in<br>the case. The keyboard you are typing on has a microcontroller scanning its<br>key matrix right now. So does the mouse, the monitor, the router, the smoke<br>alarm, the electric toothbrush, and every one of the fifty-odd modules in a<br>modern car.</p>
+<h3>The scale of it</h3>
+<table><thead><tr><th></th><th>Roughly per year</th><th>Typical price</th></tr></thead><tbody><tr><td>Desktop and laptop CPUs</td><td>260 million</td><td>$100 – $500</td></tr><tr><td>Smartphone application processors</td><td>1.2 billion</td><td>$20 – $150</td></tr><tr><td><strong>Microcontrollers</strong></td><td><strong>25 – 30 billion</strong></td><td><strong>$0.20 – $5</strong></td></tr></tbody></table>
+<p>Well over 90 % of the processors manufactured each year are never seen by the<br>person using them. They have no screen, no keyboard, no operating system to<br>speak of, and they run one program from the moment they are powered until they<br>are thrown away.</p>
+<p><strong>That is the field you are entering.</strong> It is not a smaller version of desktop<br>programming. It is a different discipline with different constraints, and the<br>constraints are the interesting part.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: What Makes a System &quot;Embedded&quot;</h2>
+<p>An <strong>embedded system</strong> is a computer built into a device whose purpose is not<br>computing.</p>
+<p>A laptop&#x27;s purpose is to run whatever program you install. A dishwasher&#x27;s<br>purpose is to wash dishes; the processor inside it is a component, like the<br>pump and the heating element, and it exists to do exactly one job for the life<br>of the appliance.</p>
+<h3>Four properties that follow from that</h3>
+<ul><li><strong>Dedicated function.</strong> The program is fixed at manufacture. Nobody installs an app on a microwave.</li><li><strong>Real-time behaviour.</strong> A late answer is a wrong answer. An airbag controller that decides correctly 20 ms after the crash has failed.</li><li><strong>Resource constraints.</strong> Kilobytes, not gigabytes. Milliwatts, not watts. Cents, not dollars.</li><li><strong>Direct contact with the physical world.</strong> Sensors in, actuators out. The program&#x27;s output is a motor turning, not a window opening.</li></ul>
+<h3>And one that surprises people</h3>
+<p><strong>Reliability without supervision.</strong> There is no user to reboot it, no<br>administrator to patch it, no log file anyone will read. A heating controller<br>must run for ten years and never wedge. That is why lesson 21 covers the<br>watchdog timer, and why &quot;it works on my desk&quot; is not a standard this field<br>accepts.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Microprocessor vs Microcontroller</h2>
+<p>Both contain a CPU. The difference is what else is on the die.</p>
+<pre><code>   MICROPROCESSOR (MPU)                MICROCONTROLLER (MCU)
+   e.g. an x86 or Cortex-A             e.g. the ATmega128
+
+   +---------------+                   +-----------------------------+
+   |   CPU core    |                   |  CPU core                   |
+   |   cache       |                   |  Flash 128 KB   SRAM 4 KB   |
+   +-------+-------+                   |  EEPROM 4 KB                |
+           |  external buses           |  Timers  ADC  UART  SPI TWI |
+   +-------+-------+-------+           |  53 I/O pins                |
+   | RAM  | Flash | I/O    |           +-----------------------------+
+   +------+-------+--------+                    one chip
+     several chips, a circuit
+     board, a power sequence</code></pre>
+<table><thead><tr><th></th><th>Microprocessor</th><th>Microcontroller</th></tr></thead><tbody><tr><td>Memory</td><td>External chips</td><td><strong>On the die</strong></td></tr><tr><td>Peripherals</td><td>External controllers</td><td><strong>On the die</strong></td></tr><tr><td>Boots into</td><td>An operating system</td><td><strong>Your program</strong></td></tr><tr><td>Typical clock</td><td>1 – 5 GHz</td><td>1 – 200 MHz</td></tr><tr><td>Typical RAM</td><td>4 – 64 GB</td><td>1 – 512 KB</td></tr><tr><td>Power</td><td>15 – 150 W</td><td>1 mW – 500 mW</td></tr><tr><td>Cost</td><td>$100 upwards</td><td>$0.20 upwards</td></tr><tr><td>Boot time</td><td>Tens of seconds</td><td><strong>Microseconds</strong></td></tr></tbody></table>
+<p><strong>The ATmega128 is a microcontroller.</strong> Everything it needs is inside it: give<br>it 5 V and a clock, and it runs. That single-chip completeness is why an<br>appliance maker will choose an MCU over a faster part that needs a board around<br>it.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: The Constraints, in Numbers</h2>
+<p>Put the machine you know beside the one you are about to program.</p>
+<table><thead><tr><th></th><th>A 2026 laptop</th><th>ATmega128</th><th>Ratio</th></tr></thead><tbody><tr><td>Clock</td><td>4 GHz, 8 cores</td><td>16 MHz, 1 core</td><td>250x per core</td></tr><tr><td>RAM</td><td>16 GB</td><td><strong>4 KB</strong></td><td>4,000,000x</td></tr><tr><td>Program store</td><td>1 TB SSD</td><td><strong>128 KB Flash</strong></td><td>8,000,000x</td></tr><tr><td>Word size</td><td>64-bit</td><td><strong>8-bit</strong></td><td>8x</td></tr><tr><td>Floating point</td><td>In hardware</td><td><strong>In software, slowly</strong></td><td>—</td></tr><tr><td>Power</td><td>~45 W</td><td>~0.02 W</td><td>2000x</td></tr><tr><td>Price</td><td>$1200</td><td>~$5</td><td>240x</td></tr></tbody></table>
+<h3>What those numbers actually mean when you write code</h3>
+<ul><li><strong>4 KB of RAM</strong> is one 64x64 array of bytes. A single careless <code>char buffer[1024]</code> is a quarter of everything you have.</li><li><strong>8-bit registers</strong> mean a 16-bit addition takes two instructions and a 32-bit multiply takes a subroutine. <code>int</code> arithmetic is not free here.</li><li><strong>No floating-point unit.</strong> <code>float x = a * b;</code> compiles into a call into a software library that takes hundreds of cycles. Lesson 12 shows how to scale integers instead.</li><li><strong>No memory protection.</strong> A pointer bug does not produce a segmentation fault; it silently overwrites something else and the fault appears an hour later somewhere unrelated.</li><li><strong>No <code>printf</code> to a console.</strong> The banner you will see in a moment exists because we configured a serial port and pushed bytes out of it, one at a time.</li></ul>
+<p><strong>None of this makes the work harder than desktop work. It makes it different.</strong><br>You will know where every byte went, which is a luxury desktop programmers gave<br>up long ago.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: The Microcontroller Landscape</h2>
+<p>The ATmega128 is one of hundreds of families. A rough map:</p>
+<table><thead><tr><th>Family</th><th>Bits</th><th>Vendor</th><th>Where you meet it</th></tr></thead><tbody><tr><td><strong>AVR</strong> (ATmega, ATtiny)</td><td>8</td><td>Microchip</td><td>Arduino, hobby, appliances, <strong>this course</strong></td></tr><tr><td>PIC</td><td>8/16/32</td><td>Microchip</td><td>Industrial, automotive, huge installed base</td></tr><tr><td>MSP430</td><td>16</td><td>TI</td><td>Ultra-low-power metering and sensing</td></tr><tr><td><strong>ARM Cortex-M</strong></td><td>32</td><td>many vendors</td><td>The industry default: STM32, nRF, RP2040</td></tr><tr><td>ESP32</td><td>32</td><td>Espressif</td><td>Wi-Fi and Bluetooth for a few dollars</td></tr><tr><td>RISC-V</td><td>32/64</td><td>many</td><td>Open ISA, growing quickly</td></tr></tbody></table>
+<h3>Why start on an 8-bit AVR when industry runs Cortex-M?</h3>
+<p>Because the AVR is small enough to hold in your head, all of it.</p>
+<ul><li><strong>The datasheet is 386 pages</strong>, and you can genuinely read it. An STM32 reference manual is over 1700 pages plus a separate core manual.</li><li><strong>Every register is documented and reachable.</strong> There is no vendor HAL layer between your code and the silicon, so nothing is hidden by &quot;the library handles that&quot;.</li><li><strong>Instructions take a countable number of cycles.</strong> No cache, no branch prediction, no pipeline stall you cannot predict. When you need a 4 µs pulse you can count the cycles and get exactly 4 µs.</li><li><strong>The concepts transfer completely.</strong> A timer is a timer, a UART is a UART, an ADC is an ADC. Moving to a Cortex-M after this course means learning new register names, not new ideas.</li></ul>
+<p>Learn the mechanism on a chip that lets you see it. Then scale up.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Bare Metal — Programming With No Floor Under You</h2>
+<p>On a laptop, your program sits on a stack of things other people wrote.</p>
+<pre><code>   DESKTOP                          BARE METAL (this course)
+
+   your program                     your program
+   -----------------                -----------------------------
+   libraries / runtime              avr-libc (thin: _delay_ms, sprintf)
+   operating system                        (nothing)
+   drivers                                 (nothing)
+   -----------------                -----------------------------
+   hardware                         hardware</code></pre>
+<p>Remove the operating system and several everyday assumptions go with it:</p>
+<table><thead><tr><th>You are used to</th><th>On bare metal</th></tr></thead><tbody><tr><td><code>main</code> returns and the process exits</td><td><strong>Nothing to return to</strong> — <code>main</code> must never end</td></tr><tr><td>The OS schedules your threads</td><td><strong>You</strong> decide what runs, in one loop</td></tr><tr><td><code>malloc</code> from a large heap</td><td>4 KB total; prefer static allocation</td></tr><tr><td>The OS drives the hardware</td><td><strong>You</strong> write to the peripheral registers</td></tr><tr><td>A crash kills one process</td><td>A crash wedges the whole device</td></tr><tr><td><code>printf</code> reaches a terminal</td><td>You configure a UART and send bytes</td></tr></tbody></table>
+<h3>The shape of nearly every bare-metal program</h3>
+<pre class="lang-c"><code>int main(void)
+{
+    hardware_setup();      /* run once: direction registers, clocks, peripherals */
+
+    while (1)              /* run forever: there is nowhere else to go */
+    {
+        read_inputs();
+        decide();
+        drive_outputs();
+    }
+}</code></pre>
+<p>This is the <strong>super loop</strong>, and it is the right structure for a surprising number<br>of real products. Lesson 22 shows what to do when it stops being enough.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: The Peripheral Register Is the API</h2>
+<p>There is one idea underneath the entire course, and it is worth stating plainly<br>before you meet it thirty times.</p>
+<p><strong>Hardware is controlled by writing numbers to addresses.</strong></p>
+<p>A timer is not an object with methods. It is a block of silicon that watches a<br>handful of bytes at fixed addresses and behaves according to the bits in them.<br>Setting a bit in <code>TCCR1B</code> does not <em>ask</em> the timer to start — the bit <em>is</em> the<br>switch, and the counter advances on the next clock edge.</p>
+<pre class="lang-c"><code>DDRB = 0xFF;              /* address 0x37: all 8 PORT B pins become outputs */
+PORTB = 0xFE;             /* address 0x38: drive PB0 low, the rest high     */</code></pre>
+<p><code>DDRB</code> looks like a variable. It is not. <code>avr/io.h</code> defines it as a<br>dereferenced pointer to a fixed address:</p>
+<pre class="lang-c"><code>#define DDRB  (*(volatile uint8_t *) 0x37)</code></pre>
+<h3>Why <code>volatile</code> is not optional</h3>
+<p>It tells the compiler: <strong>this location can change without the program changing<br>it, and writing it has effects you cannot see.</strong> Without <code>volatile</code>, the<br>optimiser would look at</p>
+<pre class="lang-c"><code>while (!(UCSR1A &amp; (1 &lt;&lt; UDRE1)))   /* wait for the transmitter */
+    ;</code></pre>
+<p>conclude that <code>UCSR1A</code> cannot change inside a loop that does not assign to it,<br>and turn the whole thing into an infinite loop. Every register definition in<br><code>avr/io.h</code> is <code>volatile</code> for this reason.</p>
+<p><strong>So: to learn a peripheral, you learn its registers.</strong> That is why every deck<br>in this course has a register table, and why the datasheet is the real textbook.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Cross-Compilation</h2>
+<p>Your PC is an x86-64 machine running Windows. The target is an 8-bit AVR with<br>no operating system. The compiler that produced your PC&#x27;s programs cannot<br>produce this one&#x27;s.</p>
+<p>A <strong>cross-compiler</strong> runs on one architecture and emits code for another. That<br>is <code>avr-gcc</code>: an x86 Windows program that reads C and writes AVR machine code.</p>
+<pre><code>   HOST (your PC, x86-64 Windows)          TARGET (ATmega128, 8-bit AVR)
+
+   Main.c
+     |  avr-gcc  -mmcu=atmega128
+     v
+   Main.elf  (code + symbols + debug info)
+     |  avr-objcopy -O ihex
+     v
+   Main.hex  (just the bytes, as text) ------&gt;  Flash memory
+                                                   |
+                                                   v
+                                              the program runs</code></pre>
+<p>Every tool in the chain is prefixed <code>avr-</code> for exactly this reason: <code>avr-gcc</code>,<br><code>avr-objcopy</code>, <code>avr-size</code>, <code>avr-objdump</code>, <code>avr-nm</code>. They all live in<br><code>tools/avr-toolchain/bin/</code> in this repository, so there is nothing to install.</p>
+<h3>The consequence people trip over</h3>
+<p><strong>The host cannot run what the compiler produced.</strong> You cannot double-click<br><code>Main.hex</code>. To see it work you either program a real chip or run a <strong>simulator</strong> —<br>which is what SimulIDE is, and why this course needs no hardware.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: From Source to Firmware, Step by Step</h2>
+<pre><code>   Main.c   config.h                    what you write
+      |
+      |  [1] PREPROCESSOR      #include pasted in, #define substituted,
+      |                        -DF_CPU=16000000UL injected from the command line
+      v
+   translation unit
+      |
+      |  [2] COMPILER          C  -&gt;  AVR assembly  -&gt;  machine code
+      |                        -Os chooses the smallest code
+      v
+   Main.o  (+ any shared_libs objects)
+      |
+      |  [3] LINKER            joins the objects, pulls what it needs from
+      |                        avr-libc, lays out the 35-entry vector table,
+      |                        assigns every address, discards unused sections
+      v
+   Main.elf     2474 bytes of code + 812 bytes of constants, plus symbols
+      |
+      |  [4] avr-objcopy -O ihex -R .eeprom
+      v
+   Main.hex     the same bytes, as printable Intel HEX text
+      |
+      |  [5] avrdude to a real chip  /  SimulIDE to a simulated one
+      v
+   running firmware</code></pre>
+<h3>The one command that does all of it</h3>
+<p>From <code>_build/build-lesson.bat</code>, unchanged:</p>
+<pre><code>avr-gcc -mmcu=atmega128 -DF_CPU=16000000UL -DBAUD=9600 -Os -Wall -Wextra
+        -ffunction-sections -fdata-sections -I. -I..\..\shared_libs
+        Main.c -Wl,--gc-sections -o Main.elf
+
+avr-objcopy -O ihex -R .eeprom Main.elf Main.hex</code></pre>
+<p><code>avr-gcc</code> runs steps 1 to 3 in one invocation. That is a convenience, not a<br>simplification — the four stages are still there, and the error messages tell<br>you which one failed.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: What Each Flag Is For</h2>
+<p>Not decoration. Each one changes the firmware.</p>
+<table><thead><tr><th>Flag</th><th>Effect</th></tr></thead><tbody><tr><td><code>-mmcu=atmega128</code></td><td>Selects the instruction set, the memory sizes and the <strong>35-entry</strong> vector table. Get this wrong and the code is for a different chip.</td></tr><tr><td><code>-DF_CPU=16000000UL</code></td><td>Defines the clock frequency for the preprocessor. <strong><code>_delay_ms</code> and every baud-rate calculation derive from it.</strong></td></tr><tr><td><code>-DBAUD=9600</code></td><td>The serial bit rate, used to compute <code>UBRR1</code>.</td></tr><tr><td><code>-Os</code></td><td>Optimise for <strong>size</strong>, not speed. Flash is the scarce resource.</td></tr><tr><td><code>-Wall -Wextra</code></td><td>Turn on the warnings. On a chip with no memory protection, a warning you ignored is a bug you will spend an evening on.</td></tr><tr><td><code>-ffunction-sections -fdata-sections</code></td><td>Put every function and object in its own section...</td></tr><tr><td><code>-Wl,--gc-sections</code></td><td>...so the linker can discard the ones nothing calls.</td></tr></tbody></table>
+<h3>F_CPU is the one that bites</h3>
+<p>It is a <em>promise you make to the compiler</em>, not something it can measure.<br><code>_delay_ms(120)</code> becomes a counted busy loop whose length is computed from<br><code>F_CPU</code>. Tell it 8 MHz while the board runs at 16 MHz and every delay is half<br>as long, every baud rate is doubled, and the serial monitor prints garbage.</p>
+<p>This is why the 2026 edition fixes 16 MHz everywhere, and why <code>config.h</code> guards<br>the definition:</p>
+<pre class="lang-c"><code>#ifndef F_CPU
+#define F_CPU 16000000UL     /* only used if the command line did not set it */
+#endif</code></pre>
+<p>An <strong>unguarded</strong> <code>#define F_CPU</code> in a header silently overrides <code>-DF_CPU</code> and<br>reintroduces exactly this bug. Two lessons in the previous edition had one.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Intel HEX — What Actually Reaches the Chip</h2>
+<p><code>Main.hex</code> is a text file. Open it and the first line of the program you just<br>built reads:</p>
+<pre><code>:100000000C9446000C945D000C945D000C945D0013</code></pre>
+<p>Take it apart:</p>
+<table><thead><tr><th>Field</th><th>Bytes</th><th>Meaning</th></tr></thead><tbody><tr><td><code>:</code></td><td>—</td><td>Every record starts with a colon</td></tr><tr><td><code>10</code></td><td>1</td><td>16 data bytes follow</td></tr><tr><td><code>0000</code></td><td>2</td><td>Load them at address 0x0000</td></tr><tr><td><code>00</code></td><td>1</td><td>Record type 00 = data (01 = end of file)</td></tr><tr><td><code>0C9446000C945D00...</code></td><td>16</td><td>The data</td></tr><tr><td><code>13</code></td><td>1</td><td>Checksum: two&#x27;s complement of the sum of all the other bytes</td></tr></tbody></table>
+<p>And the last line of every valid image:</p>
+<pre><code>:00000001FF</code></pre>
+<p>Zero data bytes, type <code>01</code> — end of file.</p>
+<h3>Read the data</h3>
+<p><code>0C 94 46 00</code> is little-endian for the AVR instruction <code>JMP 0x8c</code>. <code>0C 94 5D 00</code><br>is <code>JMP 0xba</code>. Those sixteen bytes are the <strong>first four entries of the interrupt<br>vector table</strong>: reset jumps to the startup code, and the next three jump to<br><code>__bad_interrupt</code> because this program installs no interrupt handlers.</p>
+<h3>Why we check this and not just the exit code</h3>
+<p>This project once had every lesson pass its build with a 13-byte <code>Main.hex</code><br>containing the words &quot;Build OK&quot;, because <code>echo Build OK -&gt; Main.hex</code> inside a<br>batch file is a <strong>redirect</strong>. Every <code>Test-Path</code> check passed. No firmware<br>existed. <code>_build/verify-all.ps1</code> now validates the records themselves.</p>
+<p><strong>Never trust an exit code alone on an embedded project.</strong> Check the artefact.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: The Course Environment</h2>
+<pre><code>soc3050code/
+├── projects2026_avr/          &lt;-- everything you will run this term
+│   ├── 00_Introduction/       &lt;-- you are here
+│   ├── 01_Port_Basic/  ...  22_RTOS_Scheduler/
+│   ├── Simulator.simu         the one shared board, maintained in one place
+│   ├── _build/                the build engine and the verifier
+│   └── _slides/               these decks, rendered to HTML
+├── shared_libs/               _port, _adc, _uart, _timer, _glcd, _eeprom ...
+└── tools/
+    ├── avr-toolchain/         avr-gcc 15.1.0 and friends
+    └── simulide110sr2/        SimulIDE 1.1.0-SR2</code></pre>
+<p><strong>Nothing needs installing.</strong> The compiler and the simulator are both in the<br>repository. A fresh clone builds and simulates.</p>
+<h3>One lesson folder</h3>
+<table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>Main.c</code></td><td>The lesson&#x27;s program</td></tr><tr><td><code>config.h</code></td><td><code>F_CPU</code>, <code>BAUD</code>, and this lesson&#x27;s board map</td></tr><tr><td><code>Slide.md</code></td><td>The deck you are reading</td></tr><tr><td><code>README.md</code></td><td>Ports used, libraries linked, lesson-specific notes</td></tr><tr><td><code>build.bat</code></td><td>Sets <code>LIBS</code>, then calls the shared engine</td></tr><tr><td><code>simulate.bat</code></td><td>Builds if needed, then opens the board in SimulIDE</td></tr></tbody></table>
+<p><code>build.bat</code> is three lines because the real work is shared:</p>
+<pre class="lang-bat"><code>set LIBS=
+call &quot;%~dp0..\_build\build-lesson.bat&quot;</code></pre>
+<p><code>LIBS</code> is per-lesson rather than &quot;link everything&quot; for a concrete reason: several<br>lessons <strong>deliberately write their own ISR</strong> that a shared library also defines.<br>Linking both is a duplicate-symbol error. Lesson 00 links nothing at all.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The Shared Board</h2>
+<p>Every lesson opens the same circuit, <code>Simulator.simu</code>. <code>simulate.bat</code> copies it<br>next to that lesson&#x27;s own <code>Main.hex</code>, and SimulIDE resolves the MCU&#x27;s<br><code>Program=&quot;Main.hex&quot;</code> relative to the circuit file — so one maintained board<br>loads twenty-three different firmwares.</p>
+<p><strong>MCU: ATmega128 at 16 MHz</strong>, matching <code>-DF_CPU=16000000UL</code> exactly.</p>
+<table><thead><tr><th>Port</th><th>Wired to</th></tr></thead><tbody><tr><td><strong>PORTA0–7</strong></td><td>KS0108 graphic LCD data bus</td></tr><tr><td><strong>PORTB0–7</strong></td><td><strong>8 LEDs, active low</strong>; PB0–3 also stepper coils and the SPI bus; PB0 to the scope; PB6–7 to the logic analyser</td></tr><tr><td><strong>PORTC</strong></td><td><strong>nothing at all</strong> — a pin you drive here does nothing visible</td></tr><tr><td><strong>PORTD0, D1, D4–D7</strong></td><td>push buttons, pulled up</td></tr><tr><td><strong>PORTD2, D3</strong></td><td><strong>RXD1 / TXD1</strong> — the serial port, not buttons</td></tr><tr><td><strong>PORTE3</strong></td><td>joystick; <strong>PORTE4–E7</strong> GLCD control (also INT4–INT7)</td></tr><tr><td><strong>PORTF0</strong></td><td>potentiometer (ADC0); <strong>F1, F2</strong> joystick axes</td></tr><tr><td><strong>PORTG1</strong></td><td>GLCD control; <strong>PORTG4</strong> slide switch</td></tr></tbody></table>
+<h3>Active low, and why it matters immediately</h3>
+<p>The LEDs are wired <strong>rail → resistor → anode, cathode → pin</strong>. Current flows<br>when the pin is pulled to ground, so:</p>
+<p><strong>writing a 0 lights the LED; writing a 1 turns it off.</strong></p>
+<p><code>config.h</code> puts that inversion in exactly one place, so lesson code can read the<br>way it looks:</p>
+<pre class="lang-c"><code>#define LED_WRITE(v)  (LED_PORT = (uint8_t)~(uint8_t)(v))
+
+LED_WRITE(0x01);   /* bit 0 set -&gt; PB0 lit.  The macro writes 0xFE. */</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 14: Your First Program</h2>
+<p><code>00_Introduction/Main.c</code>, in full outline. Nothing from <code>shared_libs</code> — every<br>line is one you can read today.</p>
+<pre class="lang-c"><code>#include &quot;config.h&quot;
+
+static void uart_init(void)
+{
+    uint16_t ubrr = (uint16_t)((F_CPU / (16UL * BAUD)) - 1UL);  /* = 103 */
+    UBRR1H = (uint8_t)(ubrr &gt;&gt; 8);
+    UBRR1L = (uint8_t)ubrr;
+    UCSR1B = (1 &lt;&lt; RXEN1) | (1 &lt;&lt; TXEN1);          /* transmitter + receiver */
+    UCSR1C = (1 &lt;&lt; UCSZ11) | (1 &lt;&lt; UCSZ10);        /* 8 data bits, 1 stop    */
+}
+
+static void uart_putc(char c)
+{
+    while (!(UCSR1A &amp; (1 &lt;&lt; UDRE1)))   /* wait until the register is free */
+        ;
+    UDR1 = (uint8_t)c;                 /* writing UDR1 sends the byte */
+}
+
+int main(void)
+{
+    uint8_t position = 0;
+
+    LED_DDR = 0xFF;                    /* all 8 LED pins are outputs */
+    LED_WRITE(0x00);                   /* all off */
+
+    BTN_DDR  &amp;= ~(1 &lt;&lt; BTN_PAUSE);     /* PD0 is an input... */
+    BTN_PORT |=  (1 &lt;&lt; BTN_PAUSE);     /* ...with its pull-up enabled */
+
+    uart_init();
+    report_architecture();             /* prints the banner */
+
+    while (1)
+    {
+        LED_WRITE(1 &lt;&lt; position);      /* one lit LED, walking */
+
+        if (BTN_PRESSED(BTN_PAUSE))    /* pressed reads 0: active low */
+        {
+            uart_puts(&quot;PD0 held - paused\r\n&quot;);
+            while (BTN_PRESSED(BTN_PAUSE))
+                ;
+        }
+
+        _delay_ms(120);
+        position = (position + 1) &amp; 7;
+    }
+}</code></pre>
+<p><strong>Setup once, then loop forever</strong> — the shape from Slide 6, with the two halves<br>of embedded work already present: an output you drive and an input you read.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Running It</h2>
+<pre><code>cd projects2026_avr\00_Introduction
+build.bat        compiles Main.c -&gt; Main.elf -&gt; Main.hex
+simulate.bat     opens the shared board in SimulIDE 1.1.0-SR2</code></pre>
+<p>In VS Code, <strong>Ctrl+Shift+B</strong> runs the same build.</p>
+<p><code>build.bat</code> should end with:</p>
+<pre><code>Building 00_Introduction ...
+
+   text    data     bss     dec     hex  filename
+   3286       0       0    3286     cd6  Main.elf
+
+Build OK: Main.hex created</code></pre>
+<p><strong>3286 bytes</strong> go into Flash — 2.5 % of the 128 KB available. You will watch that<br>number grow all term.</p>
+<h3>Do not trust the <code>data</code> and <code>bss</code> columns here</h3>
+<p>They read 0, and this program certainly does use SRAM. This toolchain marks the<br><code>.data</code> section read-only, so the Berkeley format folds it into <code>text</code>. Ask for<br>the real breakdown instead:</p>
+<pre><code>&gt; avr-size -A Main.elf
+.data     812      &lt;- string literals, COPIED INTO SRAM at reset
+.text    2474      &lt;- the instructions</code></pre>
+<p>812 of your 4096 bytes of RAM are spent holding the banner you are about to<br>read. Slide 18 shows how to get them back.</p>
+<h3>In SimulIDE</h3>
+<ol><li>Press <strong>Play</strong> to start the simulation.</li><li>Open the <strong>Serial Monitor</strong> on the board&#x27;s serial port — <strong>9600 baud, 8N1</strong>.</li><li>The LEDs on PORT B walk one position every 120 ms.</li><li>Click and hold the <strong>PD0</strong> push button: the walk stops and the monitor says so.</li></ol>
+</section>
+<section class="slide">
+<h2>Slide 16: What the Banner Tells You</h2>
+<pre><code>==============================================
+ Hello, ATmega128 - SOC3050, lesson 00
+==============================================
+ Clock          16000000 Hz, 62 ns per cycle
+ Serial         USART1, 9600 baud 8N1, UBRR1 = 103
+ Flash          131072 bytes = 65536 words of 16 bits
+ EEPROM         4096 bytes, in an address space of its own
+ SRAM           4096 bytes at 0x0100 - 0x10FF
+ Statics        0x0100 - 0x042B, 812 bytes
+ Stack          from 0x10FF, growing downwards
+ Free RAM       3284 bytes between the two
+
+ Where some of the registers live:
+  SREG   data 0x005F   I/O 0x3F
+  DDRB   data 0x0037   I/O 0x17
+  PORTB  data 0x0038   I/O 0x18
+  PINB   data 0x0036   I/O 0x16
+  UDR1   data 0x009C   I/O  -  (needs LDS/STS)</code></pre>
+<p>None of those numbers is typed into the program. The addresses come from<br><code>&amp;PORTB</code> and friends, and the memory figures from linker symbols, so the banner<br>reports what was actually built rather than what the slides claim.</p>
+<p><strong>Four things to notice, each of which the rest of this deck explains:</strong></p>
+<ul><li>The stack starts at <strong>0x10FF</strong>, the very last byte of SRAM, and grows <em>downwards</em> towards your variables.</li><li><strong>812 bytes are already gone</strong> before <code>main</code> does anything — that is this banner&#x27;s own text, sitting in RAM. Slide 18 shows why, and how to avoid it.</li><li><code>PORTB</code> is at data address <strong>0x38</strong> and I/O address <strong>0x18</strong> — one register, two numbering schemes, exactly 0x20 apart.</li><li><code>UDR1</code> has <strong>no</strong> I/O address. It lives above 0x5F, which is why the compiler must reach it with a different instruction.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 17: The ATmega128 at a Glance</h2>
+<p><strong>8-bit AVR RISC microcontroller</strong>, introduced 2002, still in production.</p>
+<table><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody><tr><td>Architecture</td><td>8-bit <strong>RISC</strong>, <strong>Harvard</strong>, 2-stage pipeline</td></tr><tr><td>Instructions</td><td><strong>133</strong>, most executing in <strong>one clock cycle</strong></td></tr><tr><td>Working registers</td><td><strong>32 x 8-bit</strong>, all directly connected to the ALU</td></tr><tr><td>Throughput</td><td><strong>up to 16 MIPS at 16 MHz</strong></td></tr><tr><td>Flash</td><td><strong>128 KB</strong>, in-system programmable, 10,000 write cycles</td></tr><tr><td>SRAM</td><td><strong>4 KB</strong> internal (plus up to 64 KB external)</td></tr><tr><td>EEPROM</td><td><strong>4 KB</strong>, 100,000 write cycles</td></tr><tr><td>I/O pins</td><td><strong>53</strong>, in ports A–F (8 bits each) and G (5 bits)</td></tr><tr><td>Package</td><td>64-pin TQFP</td></tr><tr><td>Supply</td><td>4.5 – 5.5 V (2.7 – 5.5 V for the ATmega128L)</td></tr><tr><td>Speed grade</td><td>0 – 16 MHz</td></tr></tbody></table>
+<h3>RISC, and what &quot;one cycle&quot; buys you</h3>
+<p>A <strong>Reduced Instruction Set</strong> means many simple instructions rather than few<br>complex ones. <code>ADD r16, r17</code> does one thing and finishes in one clock. At<br>16 MHz that is <strong>62.5 ns</strong>.</p>
+<p>The pay-off is <em>determinism</em>. Count the instructions in a loop and you know its<br>duration exactly — not on average, not usually. On a desktop CPU, with caches<br>and out-of-order execution, the same loop takes a different time on every run.<br>Half the techniques in this course depend on the AVR&#x27;s predictability.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: Harvard Architecture — Two Memories, Two Buses</h2>
+<pre><code>             +---------------------------+
+   FLASH     |                           |     SRAM
+   128 KB    |        AVR CPU CORE       |     4 KB
+   program   |                           |     data
+      |      |   +-------------------+   |       |
+      +-----&gt;|   | 32 x 8 registers  |   |&lt;-----&gt;+
+   16-bit    |   |  R0 ... R31       |   |    8-bit
+   instr.    |   +---------+---------+   |    data bus
+   bus       |             |             |
+             |          +--v--+          |
+             |          | ALU |          |
+             |          +--+--+          |
+             |             |             |
+             |          +--v---+         |
+             |          | SREG |         |
+             |          +------+         |
+             +---------------------------+
+                  |                 |
+              PERIPHERALS        EEPROM 4 KB
+              timers, ADC,       (a third space,
+              UART, SPI, TWI      reached through
+              ports              its own registers)</code></pre>
+<p><strong>Von Neumann</strong> machines (your laptop) keep code and data in one memory on one<br>bus. <strong>Harvard</strong> machines keep them separate, with separate buses.</p>
+<h3>Why it is faster</h3>
+<p>The CPU can <strong>fetch the next instruction while executing the current one</strong> —<br>they use different buses, so they never contend. That two-stage overlap is what<br>makes single-cycle execution possible.</p>
+<h3>The price you pay</h3>
+<p>Code and data are in <strong>different address spaces</strong>, so <code>0x0100</code> is ambiguous: it<br>means one thing in Flash and another in SRAM. An ordinary C pointer reads SRAM.<br>To read a constant table stored in Flash you need <code>PROGMEM</code> and <code>pgm_read_byte</code>:</p>
+<pre class="lang-c"><code>static const uint8_t table[] PROGMEM = { 1, 2, 4, 8 };
+
+uint8_t v = pgm_read_byte(&amp;table[i]);   /* LPM: a flash-specific instruction */</code></pre>
+<p>Forget the <code>static</code>, or use plain <code>table[i]</code>, and the compiler reads the <em>SRAM</em><br>address that happens to have the same number. It compiles, it runs, it returns<br>garbage. That exact bug was found and fixed in this repository.</p>
+<h3>This is where lesson 00&#x27;s 812 bytes went</h3>
+<p>A string literal is data. By default the linker puts it in <code>.data</code>, which means<br>a copy is made <strong>in SRAM</strong> at reset — even though the text never changes.</p>
+<pre class="lang-c"><code>uart_puts(&quot;Hello, ATmega128
+&quot;);        /* the text lives in RAM */
+
+uart_puts_P(PSTR(&quot;Hello, ATmega128
+&quot;)); /* the text stays in Flash */</code></pre>
+<p><code>PSTR</code> keeps the literal in Flash and hands back a Flash address; the <code>_P</code><br>version of the print routine reads it with <code>pgm_read_byte</code>. Two extra<br>characters per string, and a banner this size costs nothing in RAM. On a chip<br>where RAM is 32 times scarcer than Flash, that trade is almost always right.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: The Register File</h2>
+<p>Thirty-two 8-bit registers, R0 to R31, all wired straight to the ALU. Any two<br>can be an instruction&#x27;s operands, and the result lands in one clock.</p>
+<pre><code>   R0  ..  R15    general purpose
+                  (LDI cannot reach these)
+   ----------------------------------------
+   R16 ..  R25    general purpose
+                  (LDI, ANDI, ORI, SUBI, CPI work here)
+   ----------------------------------------
+   R26 R27  = X   \
+   R28 R29  = Y    &gt;  16-bit pointer pairs for indirect addressing
+   R30 R31  = Z   /   (Z also addresses Flash, for LPM)</code></pre>
+<h3>Two facts that explain a lot of compiler output</h3>
+<ul><li><strong><code>LDI</code> only reaches R16–R31.</strong> Loading an immediate constant into R0–R15 is impossible in one instruction, which is why avr-gcc keeps constants high in the file and why hand-written assembly in lesson 04 always uses R16 and above.</li><li><strong>R1 is kept at zero</strong> by the C calling convention, and R0 is a scratch register. You will see <code>eor r1, r1</code> as the very first instruction after reset: that is the startup code zeroing R1.</li></ul>
+<h3>SREG — the status register, at I/O 0x3F</h3>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Set when</th></tr></thead><tbody><tr><td>7</td><td><strong>I</strong></td><td><strong>Global interrupt enable</strong> — <code>sei()</code> sets it, <code>cli()</code> clears it</td></tr><tr><td>6</td><td>T</td><td>Bit copy storage</td></tr><tr><td>5</td><td>H</td><td>Half carry</td></tr><tr><td>4</td><td>S</td><td>Sign (N xor V)</td></tr><tr><td>3</td><td>V</td><td>Two&#x27;s-complement overflow</td></tr><tr><td>2</td><td>N</td><td>Result negative</td></tr><tr><td>1</td><td><strong>Z</strong></td><td><strong>Result zero</strong></td></tr><tr><td>0</td><td><strong>C</strong></td><td><strong>Carry</strong></td></tr></tbody></table>
+<p>Every conditional branch you write is a test of one of these bits.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: The Memory Map</h2>
+<p>The data space is <strong>one flat 16-bit address range</strong> with the registers, the I/O<br>and the SRAM all inside it.</p>
+<table><thead><tr><th>Address range</th><th>Size</th><th>What lives there</th></tr></thead><tbody><tr><td><code>0x0000 – 0x001F</code></td><td>32</td><td>The <strong>register file</strong>, R0–R31</td></tr><tr><td><code>0x0020 – 0x005F</code></td><td>64</td><td><strong>I/O registers</strong> — reachable by <code>IN</code> / <code>OUT</code></td></tr><tr><td><code>0x0060 – 0x00FF</code></td><td>160</td><td><strong>Extended I/O</strong> — <code>LDS</code> / <code>STS</code> only</td></tr><tr><td><code>0x0100 – 0x10FF</code></td><td>4096</td><td><strong>Internal SRAM</strong> — your variables, heap and stack</td></tr><tr><td><code>0x1100 – 0xFFFF</code></td><td>up to 61 KB</td><td>External SRAM, if any is fitted</td></tr></tbody></table>
+<pre><code>  0x0000 +------------------+
+         |  R0 .. R31       |   32 registers, also addressable as memory
+  0x0020 +------------------+
+         |  I/O registers   |   PORTB is here, at 0x38
+  0x0060 +------------------+
+         |  Extended I/O    |   UDR1 is here, at 0x9C
+  0x0100 +------------------+
+         |  .data           |   initialised globals
+         |  .bss            |   zeroed globals
+         |  heap  |         |   grows up
+         |        v         |
+         |                  |   &lt;-- free RAM: what the banner measured
+         |        ^         |
+         |  stack |         |   grows down
+  0x10FF +------------------+   SP starts here</code></pre>
+<h3>The 4 KB problem</h3>
+<p>In lesson 00, statics occupy 0x0100–0x042B and the stack starts at 0x10FF,<br>leaving 3284 bytes in the middle. The heap grows up into it, the stack grows<br>down into it, and <strong>nothing checks whether they meet</strong>. When they do, a local variable and a heap object occupy the same bytes<br>and the program misbehaves in a way that looks like anything but the real cause.</p>
+<p>This is the strongest argument for the embedded habit of <strong>static allocation</strong>:<br>fixed-size buffers, sized at compile time, so <code>avr-size</code> can tell you before you<br>flash the chip whether it fits.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: I/O and Extended I/O — Seen in the Compiler&#x27;s Output</h2>
+<p>Slide 16 said <code>PORTB</code> has two addresses and <code>UDR1</code> only one. Here is why it<br>matters, taken from the disassembly of the program you just built:</p>
+<pre class="lang-asm"><code>; LED_DDR = 0xFF;  and  LED_WRITE(0x00);   both values are 0xFF
+ 174:   eor  r13, r13
+ 176:   dec  r13            ; r13 = 0xFF, built in two cycles from nothing
+ 178:   out  0x17, r13      ; DDRB  - one instruction, one cycle
+ 17a:   out  0x18, r13      ; PORTB - one instruction, one cycle
+
+; BTN_DDR &amp;= ~(1 &lt;&lt; PD0);  and  BTN_PORT |= (1 &lt;&lt; PD0);
+ 17c:   cbi  0x11, 0        ; DDRD  bit 0 -&gt; input,   one instruction
+ 17e:   sbi  0x12, 0        ; PORTD bit 0 -&gt; pull-up, one instruction
+
+; uart_init(): UBRR1H, UBRR1L, UCSR1B, UCSR1C
+ 180:   sts  0x0098, r1     ; UBRR1H = 0     - two words, two cycles
+ 188:   sts  0x0099, r15    ; UBRR1L = 103
+ 18e:   sts  0x009A, r24    ; UCSR1B = 0x18
+ 196:   sts  0x009D, r24    ; UCSR1C = 0x06</code></pre>
+<table><thead><tr><th></th><th>I/O space (0x00–0x3F)</th><th>Extended I/O (0x60+)</th></tr></thead><tbody><tr><td>Instructions</td><td><code>IN</code>, <code>OUT</code>, <code>SBI</code>, <code>CBI</code>, <code>SBIC</code>, <code>SBIS</code></td><td><code>LDS</code>, <code>STS</code> only</td></tr><tr><td>Size</td><td>1 word</td><td>2 words</td></tr><tr><td>Speed</td><td>1 cycle</td><td>2 cycles</td></tr><tr><td>Single-bit ops</td><td><strong>Yes, atomically</strong></td><td>No — read, modify, write</td></tr></tbody></table>
+<p><strong><code>SBI</code> and <code>CBI</code> set or clear one bit in one uninterruptible instruction.</strong> In<br>extended I/O the same change is three separate steps, and an interrupt landing<br>between them can lose a write. That is a real class of bug, and lesson 05 shows<br>what to do about it.</p>
+<p>Notice also that the compiler recognised <code>PORT |= (1 &lt;&lt; n)</code> on a low-address<br>register and emitted <code>SBI</code> by itself. <strong>Write the clear thing; the optimiser is<br>better at this than you are.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 22: What Is On the Chip</h2>
+<p>Everything below is inside the ATmega128, and each has a lesson.</p>
+<table><thead><tr><th>Peripheral</th><th>What it does</th><th>Lesson</th></tr></thead><tbody><tr><td><strong>Digital I/O</strong>, 53 pins</td><td>Read and drive individual pins</td><td>01, 02, 03</td></tr><tr><td><strong>External interrupts</strong> INT0–INT7</td><td>Run code on a pin edge</td><td>05</td></tr><tr><td><strong>Timer/Counter0</strong>, 8-bit</td><td>Periodic ticks, PWM</td><td>06</td></tr><tr><td><strong>Timer/Counter1</strong>, 16-bit</td><td>Precise frequencies, input capture, 3 compare channels</td><td>07, 08, 09, 10</td></tr><tr><td><strong>Timer/Counter2</strong>, 8-bit</td><td>A second 8-bit timer, asynchronous operation</td><td>20</td></tr><tr><td><strong>Timer/Counter3</strong>, 16-bit</td><td>A second 16-bit timer, identical to Timer1</td><td>—</td></tr><tr><td><strong>PWM</strong>, 6 channels</td><td>Motor speed, servo position, brightness</td><td>09, 10</td></tr><tr><td><strong>ADC</strong>, 8 channels, 10-bit</td><td>Turn a voltage into a number 0–1023</td><td>11, 12</td></tr><tr><td><strong>USART0 / USART1</strong></td><td>Asynchronous serial; the board uses <strong>USART1</strong></td><td>13, 14</td></tr><tr><td><strong>SPI</strong></td><td>Fast synchronous serial to nearby chips</td><td>15</td></tr><tr><td><strong>TWI (I2C)</strong></td><td>Two wires, many devices, addressed</td><td>16</td></tr><tr><td><strong>EEPROM</strong>, 4 KB</td><td>Data that survives power loss</td><td>19</td></tr><tr><td><strong>Analog comparator</strong></td><td>Compare two voltages in hardware</td><td>—</td></tr><tr><td><strong>Watchdog timer</strong></td><td>Reset the chip if the program stops feeding it</td><td>21</td></tr><tr><td><strong>Sleep modes</strong>, 6 of them</td><td>Trade responsiveness for microamps</td><td>20</td></tr></tbody></table>
+<p><strong>All of it for a few dollars, on one chip, with no external components beyond a<br>crystal and a decoupling capacitor.</strong> That density is the whole argument for<br>microcontrollers.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: Interrupts and the Vector Table</h2>
+<p>Polling means asking &quot;has it happened yet?&quot; in a loop. <strong>Interrupts</strong> invert<br>that: the hardware stops the CPU where it stands, runs your handler, and resumes.</p>
+<p>The ATmega128 has <strong>35 vectors</strong>, four bytes each, occupying <code>0x0000</code>–<code>0x0088</code><br>in Flash. Your program&#x27;s very first bytes <em>are</em> that table:</p>
+<table><thead><tr><th>#</th><th>Address</th><th>Source</th><th>avr-libc name</th></tr></thead><tbody><tr><td>1</td><td>0x0000</td><td><strong>RESET</strong></td><td>—</td></tr><tr><td>2</td><td>0x0002</td><td>INT0</td><td><code>INT0_vect</code></td></tr><tr><td>...</td><td>...</td><td>INT1 – INT7</td><td><code>INT1_vect</code> …</td></tr><tr><td>11</td><td>0x0014</td><td>Timer2 overflow</td><td><code>TIMER2_OVF_vect</code></td></tr><tr><td>17</td><td>0x0020</td><td>Timer0 overflow</td><td><code>TIMER0_OVF_vect</code></td></tr><tr><td>31</td><td>0x003C</td><td>USART1 receive complete</td><td><code>USART1_RX_vect</code></td></tr><tr><td>35</td><td>0x0044</td><td>Store program memory ready</td><td><code>SPM_READY_vect</code></td></tr></tbody></table>
+<p>Lower address means <strong>higher priority</strong> when two fire at once. RESET is at<br>0x0000, so a reset always wins.</p>
+<h3>In this program&#x27;s own disassembly</h3>
+<pre class="lang-asm"><code>00000000 &lt;__vectors&gt;:
+   0:  0c 94 46 00   jmp 0x8c    ; RESET -&gt; the startup code
+   4:  0c 94 5d 00   jmp 0xba    ; INT0  -&gt; __bad_interrupt
+   8:  0c 94 5d 00   jmp 0xba    ; INT1  -&gt; __bad_interrupt
+   ...                            ; 35 entries, ending at 0x88</code></pre>
+<p>Lesson 00 installs no handlers, so every vector but RESET points at<br><code>__bad_interrupt</code>, which jumps to 0x0000 — an unhandled interrupt <strong>resets the<br>chip</strong>. Writing <code>ISR(TIMER0_OVF_vect) { ... }</code> replaces one of those entries.</p>
+<p>Two rules from the start: an ISR must be <strong>short</strong>, and any variable it shares<br>with <code>main</code> must be <strong><code>volatile</code></strong>.</p>
+</section>
+<section class="slide">
+<h2>Slide 24: Clock and Timing</h2>
+<p>One clock drives everything. At 16 MHz:</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>One clock cycle</td><td><strong>62.5 ns</strong></td></tr><tr><td>Most instructions</td><td>1 cycle = 62.5 ns</td></tr><tr><td>Multiply, load, store</td><td>2 cycles = 125 ns</td></tr><tr><td><code>CALL</code> / <code>RET</code></td><td>4 cycles = 250 ns</td></tr><tr><td>Timer0 overflow, no prescaler</td><td>256 x 62.5 ns = <strong>16 µs</strong></td></tr><tr><td>Timer0 overflow, prescaler 1024</td><td><strong>16.384 ms</strong></td></tr></tbody></table>
+<h3>Prescalers</h3>
+<p>A peripheral rarely wants the full 16 MHz. A <strong>prescaler</strong> divides the clock<br>before it reaches the counter — /8, /64, /256, /1024 — which is how an 8-bit<br>timer covers microseconds <em>and</em> tens of milliseconds. Every timer lesson begins<br>by choosing one.</p>
+<h3><code>_delay_ms</code> is not a timer</h3>
+<pre class="lang-c"><code>_delay_ms(120);   /* a busy loop, counted out from F_CPU at compile time */</code></pre>
+<p>The CPU executes nothing else for those 120 ms. It cannot respond to a button,<br>service a UART, or update a display. That is acceptable in lesson 00 and<br>unacceptable by lesson 06 — which is exactly why timers and interrupts are the<br>next thing you learn.</p>
+<p>The argument must also be a <strong>compile-time constant</strong>: <code>_delay_ms(n)</code> with a<br>variable <code>n</code> drags in floating-point code and stops being accurate.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: Exercises</h2>
+<ol><li><strong>Read the size line.</strong> Build the lesson and record the <code>text</code> figure. Now change <code>sprintf</code> in <code>report_architecture</code> to plain <code>uart_puts</code> calls with fixed strings, rebuild, and compare. How many bytes does <code>sprintf</code> cost, and why is that worth knowing on a 128 KB chip?</li><li><strong>Break <code>F_CPU</code> deliberately.</strong> Add <code>#define F_CPU 8000000UL</code> <em>above</em> the guard in <code>config.h</code>, rebuild, and run it. Time the LED walk and read the serial output. Explain both symptoms from one cause, then put it back.</li><li><strong>Decode a record.</strong> Take the third line of <code>Main.hex</code>, split it into the six Intel HEX fields, and verify the checksum by hand.</li><li><strong>Find a register.</strong> Using the datasheet, give the data address and the I/O address of <code>TCCR0</code>, <code>ADMUX</code> and <code>SPCR</code>. Which of the three can <code>OUT</code> reach?</li><li><strong>Predict the instruction.</strong> Before compiling, say whether <code>PORTB |= (1 &lt;&lt; PB3);</code> and <code>PORTB |= (1 &lt;&lt; PB3) | (1 &lt;&lt; PB4);</code> produce <code>SBI</code> or a read-modify-write. Check with <code>avr-objdump -d Main.elf</code> and explain the difference.</li><li><strong>Count the vector table.</strong> Confirm from the disassembly that it is 35 entries and ends at 0x88. What would <code>-mmcu=atmega328p</code> have produced instead?</li><li><strong>Measure the free RAM.</strong> Add a <code>char big[2048];</code> global, rebuild, and compare <code>avr-size -A Main.elf</code> with the banner&#x27;s free-RAM line. Then raise it to 4096 and describe exactly what the linker says. At what size does the build stop being <em>safe</em>, as opposed to stop <em>linking</em>?</li><li><strong>Move the strings to Flash.</strong> Convert <code>report_architecture</code> to <code>PSTR</code> and a <code>uart_puts_P</code> helper, as on Slide 18. Report the change in <code>.data</code> and in the banner&#x27;s own free-RAM figure.</li><li><strong>Change the walk.</strong> Make the LEDs bounce back and forth instead of wrapping, and make PD1 reverse the direction rather than pausing.</li></ol>
+</section>
+<section class="slide">
+<h2>Summary</h2>
+<h3>Key Points</h3>
+<p>✓ <strong>Embedded systems are the majority</strong> — 25+ billion MCUs a year, none of them visible<br>✓ <strong>A microcontroller is a whole computer on one die</strong> — CPU, Flash, SRAM, peripherals<br>✓ <strong>Constraints define the discipline</strong> — 4 KB of RAM, 8-bit words, no OS, no safety net<br>✓ <strong>Bare metal means <code>main</code> never returns</strong> — set up once, then loop forever<br>✓ <strong>Peripheral registers are the API</strong> — writing a number to an address <em>is</em> the control<br>✓ <strong>Cross-compilation</strong> — <code>avr-gcc</code> runs on your PC and emits code for the AVR<br>✓ <strong><code>.c</code> → <code>.elf</code> → <code>.hex</code></strong> — and only the <code>.hex</code> reaches the chip<br>✓ <strong><code>F_CPU</code> is a promise, not a measurement</strong> — wrong value, wrong delays and baud rate<br>✓ <strong>The ATmega128 is Harvard 8-bit RISC</strong> — separate code and data spaces, 1 cycle per instruction<br>✓ <strong>Two address schemes for one register</strong> — I/O address = data address − 0x20<br>✓ <strong>35 interrupt vectors</strong> occupy the first 0x88 bytes of Flash</p>
+<h3>Numbers Worth Memorising</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Clock</td><td>16 MHz, 62.5 ns per cycle</td></tr><tr><td>Flash / SRAM / EEPROM</td><td>128 KB / 4 KB / 4 KB</td></tr><tr><td>Registers</td><td>32, of which R16–R31 take immediates</td></tr><tr><td>I/O space</td><td>data 0x20–0x5F, I/O 0x00–0x3F</td></tr><tr><td>SRAM</td><td>0x0100 – 0x10FF, stack starts at the top</td></tr><tr><td>Vectors</td><td>35, from 0x0000 to 0x0088</td></tr><tr><td>Serial</td><td>USART1, 9600 8N1, UBRR1 = 103</td></tr></tbody></table>
+<h3>Best Practices from Day One</h3>
+<ol><li><strong>Read the size output</strong> after every build — <code>text</code> is Flash, <code>bss</code> is RAM</li><li><strong>Validate the artefact, not the exit code</strong> — a green build can produce no firmware</li><li><strong>Keep <code>F_CPU</code> in one place</strong>, guarded, matching the board</li><li><strong>Prefer static allocation</strong> — the heap and the stack share 4 KB and nobody is watching</li><li><strong>Treat warnings as errors</strong> — there is no memory protection to catch what you missed</li><li><strong>The datasheet is the textbook</strong>; these slides are the reading guide</li></ol>
+<h3>Next Steps</h3>
+<ul><li><strong>Lesson 01</strong> — <code>DDR</code>, <code>PORT</code> and <code>PIN</code> properly: driving LEDs, reading switches</li><li><strong>Lesson 02</strong> — inputs, pull-ups and why a mechanical button lies to you</li><li><strong>Lesson 05, 06</strong> — interrupts and timers, and the end of <code>_delay_ms</code></li></ul>
+</section>
+<section class="slide">
+<h2>References and Resources</h2>
+<h3>Documentation</h3>
+<ul><li>ATmega128 Datasheet — the primary reference for the whole course</li><li>Section 5, &quot;AVR CPU Core&quot; — the register file, SREG, the ALU</li><li>Section 6, &quot;Memories&quot; — Flash, SRAM, EEPROM and the memory map</li><li>Section 9, &quot;Interrupts&quot; — Table 23, the 35 vectors</li><li>Section 13, &quot;I/O Ports&quot; — <code>DDRx</code>, <code>PORTx</code>, <code>PINx</code></li><li><a href="https://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf" target="_blank" rel="noopener">AVR Instruction Set Manual</a> — every instruction with its cycle count</li><li><a href="https://www.nongnu.org/avr-libc/user-manual/" target="_blank" rel="noopener">avr-libc manual</a> — <code>avr/io.h</code>, <code>util/delay.h</code>, <code>avr/pgmspace.h</code></li></ul>
+<h3>In This Repository</h3>
+<ul><li><code>projects2026_avr/README.md</code> — the board map and the full lesson list</li><li><code>_build/build-lesson.bat</code> — the exact compiler invocation from Slide 9</li><li><code>_build/verify-all.ps1</code> — the Intel HEX validation from Slide 11</li><li><code>00_Introduction/README.md</code> — running this lesson, and what to do when it does not run</li></ul>
+<h3>Further Reading</h3>
+<ul><li>Elliot Williams, <em>Make: AVR Programming</em> — the AVR peripherals, worked through</li><li>Jack Ganssle, <em>The Embedded Muse</em> — thirty years of field notes on this discipline</li><li>Michael Barr, <em>Embedded C Coding Standard</em> — short, opinionated, and worth the hour</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:00_Introduction', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:00_Introduction') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

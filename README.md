@@ -44,11 +44,11 @@ There are two, and **`projects2026_avr/` is the current one**.
 | | `projects2026_avr/` | `projects/` |
 |---|---|---|
 | Status | **current, maintained** | archived, kept for reference |
-| Lessons | 22, one per topic | 53, with overlaps and variants |
+| Lessons | an introduction plus 22, one per topic | 53, with overlaps and variants |
 | Simulator | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
 | Clock | 16 MHz throughout | mixed 16 MHz / 7.3728 MHz |
 | Build | one shared engine | per-project scripts of several shapes |
-| Slides | all 22 lessons | 34 of 53 |
+| Slides | all 23 lesson folders | 34 of 53 |
 
 Start in `projects2026_avr/`. See [its README](projects2026_avr/README.md) for
 the lesson list and the board map. `projects/` is left in place because a lot of
@@ -59,7 +59,11 @@ supporting material still points at it, but it is not being maintained — see
 
 ## The lessons
 
-Twenty-two, in teaching order:
+**Lesson 00** is the first class: what an embedded processor is, how the
+toolchain turns C into firmware, and how the ATmega128 is built. It is the one
+lesson to read before touching anything else.
+
+Then twenty-two, in teaching order:
 
 | | | | |
 |---|---|---|---|
@@ -77,7 +81,7 @@ Each lesson folder holds `Main.c`, `config.h`, `Slide.md`, `README.md`,
 
 ## Lecture slides
 
-Every lesson has a `Slide.md`. To turn all 22 into presentable HTML decks:
+Every lesson has a `Slide.md`. To turn all 23 into presentable HTML decks:
 
 ```
 python projects2026_avr\_build\build-slides.py
@@ -86,6 +90,21 @@ python projects2026_avr\_build\build-slides.py
 Open `projects2026_avr/_slides/index.html`. Arrow keys or space to move, `o`
 for an overview grid, `p` to print or save as PDF. There is also a
 **Build Slides (2026)** task in VS Code.
+
+### On the web
+
+The same decks are published to GitHub Pages at
+**<https://gnoejh.github.io/soc3050code/>**, for teaching from a machine that
+does not have this repository on it.
+
+`.github/workflows/pages.yml` re-renders the decks from their `Slide.md`
+sources and deploys on every push that touches a deck or the renderer, so the
+published site never lags the lesson text. Nothing else in the repository is
+published — the workflow checks out only `projects2026_avr/` and uploads only
+the rendered `_slides/` directory.
+
+The site carries the slides only. Building and simulating a lesson still needs
+a clone, because the compiler and SimulIDE are vendored under `tools/`.
 
 ---
 
@@ -114,7 +133,7 @@ or program.
 |------|--------------|
 | **Build Current Project** (Ctrl+Shift+B) | Builds the lesson containing the open file |
 | **Simulate Current Project** | Builds if needed, then opens it in SimulIDE |
-| **Verify All Lessons (2026)** | Builds all 22 and validates every `Main.hex` |
+| **Verify All Lessons (2026)** | Builds all 23 and validates every `Main.hex` |
 | **Build Slides (2026)** | Renders all `Slide.md` files into HTML decks |
 | **Show Memory Usage** | `avr-size` for the lesson's `Main.elf` |
 | **Clean Project** | Removes build output from the lesson folder |

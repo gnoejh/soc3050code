@@ -61,6 +61,22 @@ RTC_WIRING = """- **The DS1307 on the board is not wired yet — do this first.*
   splicing new nodes into existing wires. That is safe to do by hand in the GUI
   and risky to do by editing the circuit file, which every lesson shares."""
 
+INTRO_NOTES = """- **Start here.** This lesson exists to prove the toolchain, the board and the
+  serial monitor all work before any of them is load-bearing.
+- It links **nothing** from `shared_libs`, on purpose: every line in `Main.c` is
+  one you can read on the first day.
+- The LEDs are on PORT B and are **active low** - `LED_WRITE` in `config.h`
+  inverts, so a set bit means a lit LED.
+- **If the LEDs walk but no banner appears**, the Serial Monitor is on the wrong
+  settings or the wrong component. It must be 9600 baud, 8N1, on the serial
+  component wired to PD2/PD3.
+- **If the banner is garbage**, `F_CPU` and the board disagree. Both must be
+  16 MHz; `build.bat` passes `-DF_CPU=16000000UL` and the MCU in the circuit is
+  set to `Frequency="16 MHz"`.
+- **If nothing happens at all**, check `Main.hex` exists and starts with `:`.
+  A batch redirect can leave a file that passes an existence check and contains
+  no firmware - see `_build/verify-all.ps1`."""
+
 TEMPLATE = """# {number}. {title}
 
 {focus_sentence}
@@ -114,11 +130,25 @@ SERIAL_NOTE = ("\n\nThis lesson prints to the serial port, so open the "
                "component is wired to PD2 (RXD1) and PD3 (TXD1).")
 
 
+# Lessons written for the 2026 edition rather than imported from projects/.
+# migrate.py only knows about lessons that had a legacy source folder, so their
+# title and focus line live here instead.
+NATIVE = {
+    "00_Introduction": (
+        "Embedded Processors and the ATmega128",
+        "what an embedded processor is, how the toolchain builds firmware, "
+        "and how the ATmega128 is put together"),
+}
+
+
 def lesson_meta():
     """Read the lesson list back out of migrate.py so there is one source."""
     sys.path.insert(0, os.path.join(BASE, "_build"))
     import migrate
-    return {folder: (title, focus) for folder, _, title, focus in migrate.LESSONS}
+    meta = {folder: (title, focus)
+            for folder, _, title, focus in migrate.LESSONS}
+    meta.update(NATIVE)
+    return meta
 
 
 def bullets(items, empty):
@@ -145,6 +175,10 @@ def main():
         if "LED_WRITE" in src and not any("PORTB" in x for x in ports):
             ports.append("**PORTB** - %s, via `LED_WRITE` in config.h"
                          % BOARD["B"])
+        # buttons reached through the BTN_ board-map macros hide PORTD too
+        if "BTN_PRESSED" in src and not any("PORTD" in x for x in ports):
+            ports.append("**PORTD** - %s, via the `BTN_` macros in config.h"
+                         % BOARD["D"])
 
         periph = [name for pat, name in PERIPHERALS if re.search(pat, src)]
 
@@ -158,7 +192,9 @@ def main():
                 extra += "| `%s` | Supporting handout |\n" % fn
 
         notes = []
-        if "LED_WRITE" in src:
+        if folder in NATIVE:
+            pass  # written for this edition; nothing was remapped
+        elif "LED_WRITE" in src:
             notes.append(
                 "- The original lesson drove status LEDs on PORT C, which is "
                 "not connected on this board. They now go through `LED_WRITE` "
@@ -172,11 +208,13 @@ def main():
                 "Watch the serial output instead.")
         if folder == "16_I2C_RTC_DS1307":
             notes.append(RTC_WIRING)
+        if folder == "00_Introduction":
+            notes.append(INTRO_NOTES)
         if not notes:
             notes.append("- Nothing lesson-specific; the shared board covers "
                          "everything this lesson needs.")
 
-        number = folder.split("_")[0].lstrip("0")
+        number = folder.split("_")[0].lstrip("0") or "0"
         focus_sentence = focus[0].upper() + focus[1:] + "." if focus else ""
 
         text = TEMPLATE.format(

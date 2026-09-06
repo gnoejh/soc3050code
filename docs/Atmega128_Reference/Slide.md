@@ -1,7 +1,7 @@
 # ATmega128 Instruction Set Overview
 ## Complete AVR Assembly Instruction Reference
 
-**Reference**: [ATmega128 Datasheet](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf)
+**Reference**: [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf)
 
 ---
 
@@ -629,7 +629,7 @@ graph LR
 **Questions?**
 
 For more information, see:
-- [ATmega128 Datasheet](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/2467S.pdf) (Instruction Set Summary: pages 321-334)
+- [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf) (Instruction Set Summary: pages 321-334)
 - `Instructions.md` (detailed instruction reference)
 - `Peripherals.md` (assembly examples for peripherals)
 - Project source code in `Atmega128_Instructions/`

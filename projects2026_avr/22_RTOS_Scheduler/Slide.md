@@ -2,6 +2,8 @@
 
 ## ATmega128 Educational Project
 
+**Reference**: [ATmega128 Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf)
+
 ---
 
 ## Course Overview
