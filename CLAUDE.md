@@ -166,6 +166,7 @@ unused-parameter warnings inside `shared_libs` stubs. Those stubs are honest
 | 2026-09-06 | `00_Introduction` added for the first class; `gen-readme.py` taught about natively-written lessons; two mangled commands in the 2026 README repaired. See section 9a. |
 | 2026-09-06 | Datasheet link pinned into the rendered deck chrome so it is reachable from every slide, not just slide 1. |
 | 2026-09-06 | Decks published to GitHub Pages, rendered in CI from `Slide.md`. See section 9c. |
+| 2026-09-07 | Pages confirmed live and serving all 23 decks; full rebuild re-verified. See section 9d. |
 
 ## 9. The system pass (2026-09-05)
 
@@ -308,12 +309,31 @@ work and unproven; simavr's ATmega128 core is far less exercised than its
 ATmega328. The LED, keypad and GLCD lessons have no browser story either way
 (avr8js/Wokwi is ATmega328-family only).
 
+## 9d. Pages is live (2026-09-07)
+
+The one step section 10 listed as un-automatable — flipping Settings -> Pages ->
+Source to **GitHub Actions** — has been done, and the site is serving:
+
+- `https://gnoejh.github.io/soc3050code/` returns the index, titled
+  "SOC3050 Lecture Decks", listing all 23 decks.
+- `.../00_Introduction.html` renders as a deck and carries the section 9b top
+  bar with the datasheet link, so the relative links and the fixed chrome both
+  survive the trip through the CI renderer and Pages.
+
+That closes the deploy question: the workflow's build job was never in doubt,
+only whether the deploy job had a Pages target to push to. It does.
+
+A full `verify-all.ps1` run on the same day rebuilt all 23 lessons to valid
+Intel HEX, unchanged from section 8 — 5 warnings in lesson code, 45 in
+`shared_libs`, all of them the known `defined but not used` and
+unused-parameter cases already accounted for there.
+
+Only the index and one deck were fetched, not all 23. The remaining 22 come off
+the same renderer in the same CI run, so a failure confined to one of them is
+unlikely rather than excluded.
+
 ## 10. Next steps
 
-- [ ] **Turn Pages on in the repository settings** — the one step the workflow
-      cannot do for itself. Settings -> Pages -> Source: **GitHub Actions**. The
-      repository must also be public, or on a plan that allows private Pages.
-      Until this is done the workflow's deploy job fails.
 - [ ] **A Colab notebook for lab-less weeks**, per the end of section 9c.
       Verify `simavr` actually runs an ATmega128 hex before promising it.
 - [ ] **Wire the DS1307 on the shared board** — the one item deliberately not
