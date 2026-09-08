@@ -1,0 +1,470 @@
+<title>Building a Game Engine on the GLCD</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Building a Game Engine on the GLCD</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Building a Game Engine on the GLCD</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Why this lesson exists</h2>
+<p>Lesson 18 drew shapes on the GLCD. Every one of them appeared instantly, because<br>nothing was moving.</p>
+<p>A game moves. It must redraw the whole screen 30 to 60 times a second, take input<br>that feels immediate, and never stutter. The library you already have cannot do<br>that — and the reason why is the most useful thing in this lesson.</p>
+<h3>What you will build</h3>
+<ul><li>A <strong>framebuffer</strong>: the screen kept in RAM instead of on the panel</li><li><strong>Dirty-page flushing</strong>: push only what changed</li><li>A <strong>fixed-timestep loop</strong> driven by a timer interrupt</li><li><strong>Edge-detected input</strong> so a button press fires exactly once</li></ul>
+<h3>What you will learn</h3>
+<p>&gt; On a small machine you buy speed with memory,<br>&gt; and you must know exactly what you spent.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The problem, in one function</h2>
+<p>This is the bus write inside <code>shared_libs/_glcd.c</code>, stripped to its delays:</p>
+<pre class="lang-c"><code>static void ks0108_write_byte(uint8_t data, uint8_t rs, uint8_t controller)
+{
+    /* ... put data on the bus, select the controller ... */
+    _delay_us(KS0108_DELAY_SETUP);    //  1 us
+    KS0108_CONTROL_PORT |=  (1 &lt;&lt; KS0108_E_BIT);
+    _delay_us(KS0108_DELAY_ENABLE);   //  1 us
+    KS0108_CONTROL_PORT &amp;= ~(1 &lt;&lt; KS0108_E_BIT);
+    _delay_us(KS0108_DELAY_HOLD);     //  2 us
+    /* ... deselect ... */
+    _delay_us(KS0108_DELAY_COMMAND);  // 10 us
+}</code></pre>
+<p><strong>Add them up: 14 µs for one byte.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 3: What 14 µs costs you</h2>
+<p>The screen is 128 × 64 pixels. Eight vertically-stacked pixels share one byte,<br>so the whole screen is:</p>
+<pre><code>128 columns × 8 pages = 1024 bytes</code></pre>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Bytes in one full screen</td><td>1024</td></tr><tr><td>Cost per byte through <code>_glcd.c</code></td><td>14 µs</td></tr><tr><td><strong>Cost of one full repaint</strong></td><td><strong>~14.3 ms</strong></td></tr><tr><td>Frame budget at 50 frames/second</td><td>20 ms</td></tr><tr><td><strong>Share of the budget spent pushing pixels</strong></td><td><strong>~72%</strong></td></tr></tbody></table>
+<p>That leaves 5.7 ms for physics, collision, input and sound — and any overrun<br>shows up as visible stutter. This is why the game feels broken before you have<br>written any game.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: A true story about that 10 µs</h2>
+<p>The KS0108 datasheet says the settling time is required <strong>after a command</strong> —<br>after you retarget the page or column pointer. It says nothing about needing it<br>between consecutive data bytes, which should proceed at the bus cycle time.</p>
+<p><code>_glcd.c</code> applies it after <em>every</em> byte. That looks like a general-purpose<br>library being conservative, so the first version of this engine dropped it for<br>data writes and ran the bus at <strong>4 µs per byte instead of 14</strong>.</p>
+<h3>The result was a completely blank screen</h3>
+<p>Not a glitch. Not a corrupted corner. Nothing at all — while the firmware<br>compiled cleanly, produced valid hex, reported sensible section sizes, and<br>passed every automated check in the repository.</p>
+<p>The delay is back:</p>
+<pre class="lang-c"><code>#ifndef PANEL_SETTLE_US
+#define PANEL_SETTLE_US 10      /* matches _glcd.c, which demonstrably works */
+#endif</code></pre>
+<h3>Why this is the most useful slide in the deck</h3>
+<p>The datasheet argument was sound. The board disagreed. When those two conflict,<br><strong>the board wins</strong> — and the correct order of work is: match the implementation<br>that is known to work, then optimise with a measurement in your hand.</p>
+<p>&gt; An optimisation you have not measured on the real system<br>&gt; is a guess wearing a lab coat.</p>
+<p>Lowering <code>PANEL_SETTLE_US</code> is now Exercise 3, with the flush time on screen so<br>you can see what you are buying and exactly where it breaks.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: The framebuffer</h2>
+<p>Keep the whole screen in RAM. Drawing becomes plain memory writes — no bus, no<br>delays. Only at the end of the frame do you push it to the panel.</p>
+<pre class="lang-c"><code>static uint8_t fb[GFX_PAGES][GFX_W];   /* 8 × 128 = 1024 bytes */</code></pre>
+<pre class="lang-mermaid"><code>graph LR
+    A[game code&lt;br/&gt;gfx_pixel] --&gt;|nanoseconds| B[framebuffer&lt;br/&gt;1024 bytes RAM]
+    B --&gt;|once per frame| C[KS0108 panel]
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#fff3cd,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<p>Drawing the same pixel a hundred times now costs a hundred memory writes instead<br>of a hundred bus transactions. Overlapping sprites become free.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: What it cost — the honest number</h2>
+<p>The ATmega128 has <strong>4096 bytes of SRAM</strong>. The framebuffer is <strong>1024</strong> of them.</p>
+<pre><code>+--------------------------------------------------+ 4096 bytes SRAM
+|############################|                     |
+|  framebuffer 1024 (25%)    |  everything else    |
++--------------------------------------------------+</code></pre>
+<p><strong>One quarter of the machine&#x27;s memory is a single array.</strong></p>
+<p>That is the trade. You did not make the program faster by being clever; you made<br>it faster by spending memory you will never get back. On a desktop nobody would<br>notice. Here it is a quarter of everything you have.</p>
+<p>&gt; Every optimisation is a trade. Name what you paid.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: How a pixel maps to a byte</h2>
+<p>The KS0108 stores pixels in <strong>pages</strong>: one byte holds eight pixels stacked<br><em>vertically</em>.</p>
+<pre><code>        x=0   x=1   x=2  ...
+page 0   b0    b0    b0     &lt;- y=0   bit 0 of fb[0][x]
+         b1    b1    b1     &lt;- y=1
+         ...
+         b7    b7    b7     &lt;- y=7   bit 7 of fb[0][x]
+page 1   b0    b0    b0     &lt;- y=8</code></pre>
+<p>So the pixel at <code>(x, y)</code> lives at:</p>
+<pre class="lang-c"><code>uint8_t page = y &gt;&gt; 3;              /* y / 8  */
+uint8_t bit  = 1 &lt;&lt; (y &amp; 7);        /* y % 8  */
+fb[page][x] |= bit;                 /* set it */</code></pre>
+<p>Two shifts and a mask — no division, which an 8-bit AVR has no instruction for.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Set, clear, invert</h2>
+<pre class="lang-c"><code>void gfx_pixel(uint8_t x, uint8_t y, uint8_t mode)
+{
+    if (x &gt;= GFX_W || y &gt;= GFX_H)
+        return;                     /* clip, do not wrap */
+
+    uint8_t page = y &gt;&gt; 3;
+    uint8_t bit  = 1 &lt;&lt; (y &amp; 7);
+    uint8_t before = fb[page][x];
+
+    if      (mode == GFX_ON)  fb[page][x] = before |  bit;
+    else if (mode == GFX_OFF) fb[page][x] = before &amp; ~bit;
+    else                      fb[page][x] = before ^  bit;   /* XOR */
+
+    if (fb[page][x] != before)
+        fb_dirty |= (1 &lt;&lt; page);    /* remember this page changed */
+}</code></pre>
+<p><strong>Clipping, not wrapping.</strong> A sprite half off the left edge should vanish, not<br>reappear on the right. One <code>return</code> buys that.</p>
+<p><strong>XOR mode</strong> draws a sprite and erases it with the identical call — the classic<br>trick when you cannot afford to store what was underneath.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Dirty pages</h2>
+<p>Most frames change very little. A ball moving three pixels touches one or two<br>pages out of eight; the other six are already correct on the panel.</p>
+<pre class="lang-c"><code>static uint8_t fb_dirty;            /* one bit per page */</code></pre>
+<pre class="lang-c"><code>uint16_t gfx_flush(void)
+{
+    uint16_t written = 0;
+    for (uint8_t page = 0; page &lt; GFX_PAGES; page++)
+        if (fb_dirty &amp; (1 &lt;&lt; page))
+            written += flush_page(page);
+    fb_dirty = 0;
+    return written;
+}</code></pre>
+<p>A single <code>uint8_t</code> — eight bits for eight pages — typically cuts the bytes sent<br>by <strong>four times or more</strong>.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: One more trick — auto-increment</h2>
+<p>The KS0108 advances its own column counter after each data write. So you set the<br>address <strong>once per page per controller</strong>, then stream:</p>
+<pre class="lang-c"><code>static uint16_t flush_page(uint8_t page)
+{
+    panel_cmd(CMD_SET_PAGE | page, CS_BOTH);
+
+    panel_cmd(CMD_SET_Y | 0, CS_LEFT);
+    for (uint8_t x = 0; x &lt; 64; x++)
+        bus_write(fb[page][x], 1, CS_LEFT);      /* left half  */
+
+    panel_cmd(CMD_SET_Y | 0, CS_RIGHT);
+    for (uint8_t x = 64; x &lt; 128; x++)
+        bus_write(fb[page][x], 1, CS_RIGHT);     /* right half */
+
+    return 128;
+}</code></pre>
+<p>Two controllers, remember: CS1 owns columns 0–63, CS2 owns 64–127.</p>
+<p>Without auto-increment every byte would need its own address command — <strong>three<br>bus transactions per byte instead of one.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 11: The pin the comment forgot</h2>
+<p><code>shared_libs/_glcd.h</code> opens with a pin table. One line of it is wrong:</p>
+<pre><code> * PIN CONNECTIONS (ATmega128):
+ * - RS:     PE4 (Register Select: 0=Command, 1=Data)
+ * - R/W:    GND (Read/Write: tied to ground for write-only)   &lt;-- not on this board</code></pre>
+<p>Trace the circuit file instead of believing the comment:</p>
+<pre><code>Ks0108-237-PinRW   -&gt;   mega128-20-PORTG1</code></pre>
+<p>R/W goes to <strong>PG1</strong>. And <code>_glcd.c</code> never drives it — not once, anywhere.</p>
+<h3>So why does lesson 18 work?</h3>
+<p>By accident. It also links <code>_port.c</code>, whose <code>Port_init()</code> contains:</p>
+<pre class="lang-c"><code>DDRG  = 0xFF;   // configure PORTG as output
+PORTG = 0x00;   // initialize all outputs LOW</code></pre>
+<p>That blanket initialisation has nothing to do with the display, but it leaves<br>R/W low — the write state — as a side effect.</p>
+<h3>Why this engine had to fix it</h3>
+<p>Lesson 23 links only <code>_game</code>. Nothing sets PG1, so it stays an input with no<br>pull-up, floating. The panel reads R/W as a <em>read</em> request, never accepts a<br>byte, and <strong>the screen stays blank</strong> — with no error reported anywhere.</p>
+<pre class="lang-c"><code>PANEL_RW_DDR  |=  (1 &lt;&lt; RW_BIT);   /* PG1 becomes an output   */
+PANEL_RW_PORT &amp;= ~(1 &lt;&lt; RW_BIT);   /* held low: we only write */</code></pre>
+<p>The older <code>_glcd_legacy.c</code> had this right all along:<br><code>ClrBit(PORTG, PORTG1); // RW = 0 (write mode)</code>.</p>
+<p>&gt; A comment is not evidence. The netlist is.<br>&gt; This one cost a blank screen, and only a wiring trace found it.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Measure it yourself</h2>
+<p>Do not take any of this on trust. The program reports its own cost.</p>
+<p><code>Timer3</code> free-runs at prescaler 8 → 2 MHz → <strong>one count is half a microsecond</strong>,<br>and the 16-bit counter spans 32.7 ms, so a 20 ms frame can never silently wrap.</p>
+<pre class="lang-c"><code>static inline void     profile_start(void) { TCNT3 = 0; }
+static inline uint16_t profile_us(void)    { return TCNT3 &gt;&gt; 1; }</code></pre>
+<pre class="lang-c"><code>profile_start();
+last_bytes = flush_dirty_only ? gfx_flush() : gfx_flush_all();
+last_us    = profile_us();</code></pre>
+<p><strong>Press button A (PD0)</strong> to switch between the two, and read the bottom line.<br>The ratio you see is the whole lesson, measured on your own board.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Why the status line is redrawn twice a second</h2>
+<p>A detail worth catching. Look at <code>render()</code>:</p>
+<pre class="lang-c"><code>uint8_t redraw_stats = ((game_ticks() % (TICK_HZ / 2)) == 0);</code></pre>
+<p>The status text sits in page 0 and the profile line in page 7. Rewriting them<br><strong>every</strong> frame would mark both pages dirty every frame — and the saving from<br>dirty-page flushing would quietly collapse from 8 pages down to 4, not down to 2.</p>
+<p>&gt; The optimisation is only as good as the sloppiest thing you draw.</p>
+<p>Try it: change <code>TICK_HZ / 2</code> to <code>1</code> and watch the byte count climb.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: The fixed-timestep loop</h2>
+<p>The wrong way, which every beginner writes first:</p>
+<pre class="lang-c"><code>for (;;) {
+    update();
+    render();
+    _delay_ms(20);          /* WRONG */
+}</code></pre>
+<p>The frame is then <code>20 ms + however long the work took</code> — so the game runs at<br>different speeds on different days, and physics tied to frame count drifts.</p>
+<p>The right way — the timer decides, not the work:</p>
+<pre class="lang-c"><code>for (;;) {
+    if (!game_tick_ready())
+        continue;           /* nothing to do until the timer says so */
+    input_poll();
+    update();
+    render(redraw_stats);
+    gfx_flush();
+}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: The tick, and what to do when you miss one</h2>
+<pre class="lang-c"><code>ISR(TIMER1_COMPA_vect)
+{
+    if (tick_flag)          /* previous tick never consumed */
+        tick_overrun = 1;
+    tick_flag = 1;
+    tick_count++;
+}</code></pre>
+<p>The ISR does almost nothing — set a flag, bump a counter. All the work happens in<br>the main loop, so interrupts stay short.</p>
+<p><strong>The missed tick is dropped, not queued.</strong> That is a deliberate design choice:</p>
+<table><thead><tr><th>Policy</th><th>Behaviour when a frame overruns</th></tr></thead><tbody><tr><td>Queue the missed ticks</td><td>Game lurches forward to catch up</td></tr><tr><td><strong>Drop them</strong> (what we do)</td><td>Game slows down smoothly</td></tr></tbody></table>
+<p>For a game, slowing down is far less unpleasant than teleporting. <code>game_overrun()</code><br>reports it so you can see it happening — the demo lights all eight LEDs.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Timer1 in CTC mode</h2>
+<pre class="lang-c"><code>TCCR1A = 0;
+TCCR1B = (1 &lt;&lt; WGM12) | (1 &lt;&lt; CS12);   /* CTC, prescaler 256 */
+OCR1A  = (62500UL / hz) - 1;
+TIMSK |= (1 &lt;&lt; OCIE1A);
+sei();</code></pre>
+<p>At 16 MHz with prescaler 256 the counter runs at <strong>62 500 Hz</strong>, so:</p>
+<table><thead><tr><th>Rate</th><th><code>OCR1A</code></th></tr></thead><tbody><tr><td>10 Hz</td><td>6249</td></tr><tr><td>50 Hz</td><td>1249</td></tr><tr><td>200 Hz</td><td>311</td></tr></tbody></table>
+<p>All comfortably inside 16 bits. One prescaler covers the whole useful range.</p>
+<p>&gt; <strong>Linking note.</strong> <code>_game.c</code> defines <code>TIMER1_COMPA_vect</code> (<code>__vector_12</code>) — and so<br>&gt; does <code>shared_libs/_timer.c</code>. A lesson may link one or the other, never both.<br>&gt; That is why <code>build.bat</code> says <code>set LIBS=_game</code> and nothing else.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Input that feels right</h2>
+<p>The board wires six buttons to PORT D, each with a pull-up, so <strong>pressed reads<br>LOW</strong>. PD2 and PD3 are missing from the list on purpose: they are RXD1/TXD1.</p>
+<pre class="lang-c"><code>uint8_t raw = (~PIND) &amp; BTN_MASK;      /* invert: now 1 = pressed */
+
+if (raw == btn_raw_last) {             /* two samples agree = settled */
+    btn_prev   = btn_stable;
+    btn_stable = raw;
+    btn_edge   = btn_stable &amp; ~btn_prev;   /* newly pressed */
+}
+btn_raw_last = raw;</code></pre>
+<p>Two ideas in five lines:</p>
+<ul><li><strong>Debounce</strong> — a bounce must survive a whole tick to count. The tick rate <em>is</em> the debounce window: at 50 Hz, 20 ms.</li><li><strong>Edge detection</strong> — <code>stable &amp; ~prev</code> is true only on the tick a button went down. <code>btn_held()</code> is for movement; <code>btn_pressed()</code> is for menus and toggles.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 18: The font goes in flash</h2>
+<p><code>_glcd.c</code> declares its font like this:</p>
+<pre class="lang-c"><code>static const uint8_t ks0108_font[95][5] = { ... };   /* no PROGMEM! */</code></pre>
+<p>On AVR, <code>const</code> alone is not enough. The table is copied into SRAM at startup.<br>Build lesson 18 and look:</p>
+<pre><code>$ avr-size -A 18_GLCD_Graphics/Main.elf
+.data     476      &lt;- 95 glyphs x 5 bytes, sitting in RAM
+.text    1200
+.bss        9</code></pre>
+<p><strong>476 bytes — 11.6% of SRAM — spent on a font before the program does anything.</strong></p>
+<p>The engine uses <code>PROGMEM</code> and reads glyphs with <code>pgm_read_byte()</code>:</p>
+<pre class="lang-c"><code>static const uint8_t font5x7[59][5] PROGMEM = { ... };
+uint8_t bits = pgm_read_byte(&amp;glyph[col]);</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 19: The two builds, side by side</h2>
+<pre><code>18_GLCD_Graphics                 23_Game_Engine_GLCD
+----------------                 -------------------
+.data     476                    .data      30
+.text    1200                    .text    3110
+.bss        9                    .bss     1047
+        -----                            -----
+SRAM      485                    SRAM     1077</code></pre>
+<p>Read it carefully — both directions matter:</p>
+<ul><li><strong><code>.data</code> fell 476 → 30.</strong> The font moved to flash. Free memory, no downside.</li><li><strong><code>.bss</code> rose 9 → 1047.</strong> That is the framebuffer. You chose to spend it.</li><li><strong><code>.text</code> rose 1200 → 3110.</strong> More code: flush logic, input, timer, sound, font.</li></ul>
+<p>Total SRAM is <strong>1077 of 4096 — 26%</strong>, and about 3 KB stays free for the game.</p>
+<p>&gt; Flash is plentiful (128 KB). SRAM is precious (4 KB).<br>&gt; Put constants in flash and spend RAM only where it buys you something.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: Randomness without <code>rand()</code></h2>
+<p><code>rand()</code> from the C library drags in a lot of code and does a division. A 16-bit<br><strong>xorshift</strong> does the same job in three shifts and three XORs:</p>
+<pre class="lang-c"><code>uint16_t game_rand(void)
+{
+    rng_state ^= rng_state &lt;&lt; 7;
+    rng_state ^= rng_state &gt;&gt; 9;
+    rng_state ^= rng_state &lt;&lt; 8;
+    return rng_state;
+}</code></pre>
+<p>It visits all 65 535 non-zero values before repeating — and it can never reach<br>zero, which is why the seed is forced to 1 if you pass 0.</p>
+<p><strong>Deterministic on purpose.</strong> Same seed, same sequence, every run. That is what<br>lets you reproduce a bug — and, in later lessons, score everyone&#x27;s robot on<br>exactly the same course.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: Putting it together</h2>
+<pre class="lang-mermaid"><code>graph TD
+    A[TIMER1_COMPA ISR&lt;br/&gt;50 Hz] --&gt;|tick_flag| B[main loop]
+    B --&gt; C[input_poll&lt;br/&gt;debounce + edges]
+    C --&gt; D[update&lt;br/&gt;physics, collision]
+    D --&gt; E[render&lt;br/&gt;draw into fb]
+    E --&gt; F[gfx_flush&lt;br/&gt;dirty pages only]
+    F --&gt; B
+    style A fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff3cd,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000</code></pre>
+<p>Every game you write from here follows this shape. Only <code>update()</code> and <code>render()</code><br>change.</p>
+<h3>Controls in the demo</h3>
+<table><thead><tr><th>Button</th><th>Pin</th><th>Action</th></tr></thead><tbody><tr><td>Left / Right</td><td>PD4 / PD5</td><td>Move the paddle</td></tr><tr><td>A</td><td>PD0</td><td>Toggle dirty-page flushing</td></tr><tr><td>B</td><td>PD1</td><td>Reset the miss counter</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 22: Exercises</h2>
+<ol><li><strong>Measure the claim.</strong> Note the <code>US</code> reading in both flush modes. What is the ratio? Does it match the 4× you would predict from pages touched?</li></ol>
+<ol><li><strong>Break the optimisation.</strong> Redraw the status line every frame instead of twice a second. Explain the new byte count.</li></ol>
+<ol><li><strong>Push the bus.</strong> Lower <code>PANEL_SETTLE_US</code> in <code>_game.h</code> from 10 towards 0, rebuild, and watch the <code>US</code> reading fall. At what value does the display first corrupt, and what does it look like when it does? Slide 4 explains why this is an exercise and not the default.</li></ol>
+<ol><li><strong>Find the cliff.</strong> Raise <code>TICK_HZ</code> until the overrun LEDs light. What is the highest frame rate this engine sustains? What limits it — the flush, or <code>update()</code>?</li></ol>
+<ol><li><strong>Spend less memory.</strong> The field only occupies pages 1–6. Could the framebuffer be 6 pages instead of 8? What breaks, and how much do you save?</li></ol>
+<ol><li><strong>XOR the ball.</strong> Redraw the ball with <code>GFX_XOR</code> and skip clearing the field. What goes wrong when it crosses the border, and why?</li></ol>
+<ol><li><strong>Add a second ball.</strong> Where does the frame budget go first — flush time, or collision checks?</li></ol>
+</section>
+<section class="slide">
+<h2>Slide 23: What you built</h2>
+<ul><li>A <strong>framebuffer</strong> that trades 1024 bytes of SRAM for freedom from bus delays</li><li><strong>Dirty-page flushing</strong>, and the discipline not to undermine it</li><li>A <strong>fixed-timestep loop</strong> that keeps time even when frames vary</li><li><strong>Debounced, edge-detected input</strong> in five lines</li><li>A font in <strong>flash</strong>, not RAM — 476 bytes reclaimed</li><li>A <strong>deterministic</strong> random generator you will need again</li></ul>
+<h3>The habit worth keeping</h3>
+<p>&gt; You did not optimise this by guessing.<br>&gt; You read the delays, computed the cost, measured the result on the board,<br>&gt; and the program now reports its own performance in microseconds.</p>
+<p><strong>Next:</strong> <code>24_Game_Arcade</code> — Pong, Snake and Breakout on this engine, plus sound.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:23_Game_Engine_GLCD', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:23_Game_Engine_GLCD') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

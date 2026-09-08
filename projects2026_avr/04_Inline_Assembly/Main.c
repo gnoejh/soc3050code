@@ -158,7 +158,9 @@ static void demo_01_basic_inline_assembly(void)
 // 2. Add button input reading with IN instruction
 // 3. Measure execution time difference: C vs assembly
 //
-static void demo_02_gpio_with_assembly(void)
+/* Deliberately not called: main() runs one demo and the rest are here
+ * for students to uncomment. The attribute says so to the compiler. */
+__attribute__((unused)) static void demo_02_gpio_with_assembly(void)
 {
     init_devices();
     uart_print_P(STR_DEMO2);
@@ -258,7 +260,7 @@ static void demo_02_gpio_with_assembly(void)
 // 2. Add 16-bit arithmetic with carry
 // 3. Create assembly function for absolute value
 //
-static void demo_03_arithmetic_operations(void)
+__attribute__((unused)) static void demo_03_arithmetic_operations(void)
 {
     init_devices();
     uart_print_P(STR_DEMO3);
@@ -370,7 +372,7 @@ static void demo_03_arithmetic_operations(void)
 // 2. Create bit reversal function
 // 3. Use shifts for fast multiply/divide by 2, 4, 8
 //
-static void demo_04_bitwise_logic_operations(void)
+__attribute__((unused)) static void demo_04_bitwise_logic_operations(void)
 {
     init_devices();
     uart_print_P(STR_DEMO4);
@@ -488,7 +490,7 @@ static void demo_04_bitwise_logic_operations(void)
 // 2. Use X/Y/Z pointers for array access
 // 3. Implement assembly function with multiple constraints
 //
-static void demo_05_register_constraints(void)
+__attribute__((unused)) static void demo_05_register_constraints(void)
 {
     init_devices();
     uart_print_P(STR_DEMO5);

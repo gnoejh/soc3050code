@@ -257,6 +257,12 @@ void ks0108_init(void)
                              (1 << KS0108_CS1_BIT) | // CS1 = 0
                              (1 << KS0108_CS2_BIT)); // CS2 = 0
 
+    // R/W is on PG1 on this board, not tied to ground - see _glcd.h. Without
+    // this the pin floats, the panel treats every transaction as a read, and
+    // nothing is ever written to display RAM.
+    KS0108_RW_DDR |= (1 << KS0108_RW_BIT);
+    KS0108_RW_PORT &= ~(1 << KS0108_RW_BIT); // R/W = 0 (write)
+
     // Power-up delay for display stabilization
     _delay_ms(100);
 
@@ -298,9 +304,69 @@ void ks0108_data(uint8_t data, uint8_t controller)
 
 uint8_t ks0108_read(uint8_t controller)
 {
-    // Note: Reading not implemented as hardware is write-only (R/W tied to GND)
-    // This function is provided for API completeness
-    return 0;
+    // Reading IS possible on this board. The old comment here claimed the
+    // hardware was write-only because R/W was tied to ground; it is not, it is
+    // on PG1 (see _glcd.h). That mistaken belief is what left ks0108_set_pixel
+    // unable to preserve the other seven pixels in a page byte.
+    //
+    // Reading requires turning the shared data bus around, so the panel drives
+    // it instead of the MCU.
+    uint8_t value;
+    uint8_t cs = (controller & KS0108_LEFT_CONTROLLER)
+                     ? KS0108_LEFT_CONTROLLER
+                     : KS0108_RIGHT_CONTROLLER;
+
+    KS0108_DATA_DDR = 0x00;  // bus to input
+    KS0108_DATA_PORT = 0x00; // no pull-ups: let the panel drive
+
+    KS0108_CONTROL_PORT |= (1 << KS0108_RS_BIT); // RS = 1: display data
+    KS0108_RW_PORT |= (1 << KS0108_RW_BIT);      // R/W = 1: read
+
+    if (cs == KS0108_LEFT_CONTROLLER)
+    {
+        KS0108_CONTROL_PORT |= (1 << KS0108_CS1_BIT);
+        KS0108_CONTROL_PORT &= ~(1 << KS0108_CS2_BIT);
+    }
+    else
+    {
+        KS0108_CONTROL_PORT |= (1 << KS0108_CS2_BIT);
+        KS0108_CONTROL_PORT &= ~(1 << KS0108_CS1_BIT);
+    }
+
+    _delay_us(KS0108_DELAY_SETUP);
+    KS0108_CONTROL_PORT |= (1 << KS0108_E_BIT);
+    _delay_us(KS0108_DELAY_ENABLE);
+    value = KS0108_DATA_PIN; // sample while E is still high
+    KS0108_CONTROL_PORT &= ~(1 << KS0108_E_BIT);
+    _delay_us(KS0108_DELAY_HOLD);
+
+    KS0108_CONTROL_PORT &= ~((1 << KS0108_CS1_BIT) | (1 << KS0108_CS2_BIT));
+
+    // Restore the direction every other function in this library assumes.
+    KS0108_RW_PORT &= ~(1 << KS0108_RW_BIT);
+    KS0108_DATA_DDR = 0xFF;
+    _delay_us(KS0108_DELAY_COMMAND);
+
+    return value;
+}
+
+/**
+ * @brief Fetch the byte currently held at (page, local column).
+ *
+ * The KS0108 read path is pipelined: after the column address is set, the
+ * FIRST read returns the previously latched byte and only the second returns
+ * the byte at the requested address. Each read also auto-increments the column
+ * counter, so the address is re-sent before every access.
+ */
+static uint8_t ks0108_read_at(uint8_t page, uint8_t local_column, uint8_t controller)
+{
+    ks0108_set_page(page, controller);
+
+    ks0108_set_column(local_column, controller);
+    (void)ks0108_read(controller); // discard the pipeline byte
+
+    ks0108_set_column(local_column, controller);
+    return ks0108_read(controller);
 }
 
 void ks0108_set_page(uint8_t page, uint8_t controller)
@@ -434,29 +500,48 @@ void ks0108_set_pixel(uint8_t x, uint8_t y, uint8_t mode)
     uint8_t controller = ks0108_get_controller_for_column(x);
     uint8_t local_x = ks0108_get_local_column(x);
 
-    // Position cursor
-    ks0108_goto_xy(page, x);
-
-    // For pixel operations, we would need to read-modify-write
-    // Since we can't read (R/W tied to GND), we'll use a simple approach
-    uint8_t pixel_data = 0;
+    // Read-modify-write. One byte holds eight vertically stacked pixels, so
+    // setting one pixel means preserving the other seven.
+    //
+    // This function used to write (1 << bit) straight out, which switched the
+    // requested pixel on and ERASED the other seven in the same page column.
+    // Vertical lines kept only their last pixel, overlapping shapes wiped each
+    // other, and XOR mode fell through to writing zero. The stated reason was
+    // that the panel could not be read because R/W was grounded - it is not,
+    // it is on PG1, so the read the old code wanted was available all along.
+    uint8_t current = ks0108_read_at(page, local_x, controller);
 
     if (mode == KS0108_PIXEL_ON)
     {
-        pixel_data = (1 << bit);
+        current |= (uint8_t)(1 << bit);
     }
     else if (mode == KS0108_PIXEL_OFF)
     {
-        pixel_data = 0;
+        current &= (uint8_t) ~(1 << bit);
+    }
+    else // KS0108_PIXEL_XOR
+    {
+        current ^= (uint8_t)(1 << bit);
     }
 
-    ks0108_data(pixel_data, controller);
+    // Reading advanced the column counter; point it back before writing.
+    ks0108_set_column(local_x, controller);
+    ks0108_data(current, controller);
 }
 
 uint8_t ks0108_get_pixel(uint8_t x, uint8_t y)
 {
-    // Not implemented due to hardware limitation (R/W tied to GND)
-    return 0;
+    if (x >= KS0108_WIDTH || y >= KS0108_HEIGHT)
+        return 0;
+
+    uint8_t page = y / 8;
+    uint8_t bit = y % 8;
+    uint8_t controller = ks0108_get_controller_for_column(x);
+    uint8_t local_x = ks0108_get_local_column(x);
+
+    uint8_t current = ks0108_read_at(page, local_x, controller);
+
+    return (current & (uint8_t)(1 << bit)) ? 1 : 0;
 }
 
 void ks0108_draw_hline(uint8_t x, uint8_t y, uint8_t length, uint8_t mode)
@@ -602,16 +687,33 @@ void ks0108_putchar(char c)
     // Position to character location
     ks0108_goto_xy(page, x_start);
 
-    // Write character data
-    for (uint8_t i = 0; i < KS0108_CHAR_WIDTH; i++)
-    {
-        uint8_t controller = ks0108_get_controller_for_column(x_start + i);
-        ks0108_data(ks0108_font[char_index][i], controller);
-    }
+    // Write the five font columns plus one of spacing.
+    //
+    // The controller has to be re-addressed whenever a glyph crosses column 64,
+    // because the two halves keep SEPARATE column counters. This loop used to
+    // pick the controller per byte but address only the one owning x_start, so
+    // a character straddling the boundary sent its last bytes to a chip whose
+    // counter had never been set - they landed wherever it happened to point,
+    // corrupting an unrelated part of the display.
+    uint8_t prev_controller = ks0108_get_controller_for_column(x_start);
 
-    // Write spacing
-    uint8_t controller = ks0108_get_controller_for_column(x_start + KS0108_CHAR_WIDTH);
-    ks0108_data(0x00, controller);
+    for (uint8_t i = 0; i <= KS0108_CHAR_WIDTH; i++)
+    {
+        uint8_t column = (uint8_t)(x_start + i);
+        if (column >= KS0108_WIDTH)
+            break; // ran off the right-hand edge
+
+        uint8_t controller = ks0108_get_controller_for_column(column);
+        if (controller != prev_controller)
+        {
+            ks0108_goto_xy(page, column); // new chip, set its counter
+            prev_controller = controller;
+        }
+
+        // The sixth byte is the inter-character gap.
+        ks0108_data(i < KS0108_CHAR_WIDTH ? ks0108_font[char_index][i] : 0x00,
+                    controller);
+    }
 
     // Advance cursor
     g_text_column++;

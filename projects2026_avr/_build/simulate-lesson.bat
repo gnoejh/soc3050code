@@ -29,10 +29,13 @@ if not exist "%MASTER%" (
     exit /b 1
 )
 
-if not exist "Main.hex" (
-    echo Main.hex missing - building first...
-    call build.bat || exit /b 1
-)
+REM Always rebuild.  This used to be guarded by "if not exist Main.hex", which
+REM meant that once a lesson had been built, no later edit to Main.c, config.h
+REM or anything in shared_libs ever reached the simulator.  You would fix a bug,
+REM launch, and watch the old firmware fail in exactly the same way.  A build
+REM takes a couple of seconds; that is far cheaper than debugging a stale hex.
+echo Building %CD% ...
+call build.bat || exit /b 1
 
 copy /Y "%MASTER%" "Board.simu" >nul
 if errorlevel 1 (

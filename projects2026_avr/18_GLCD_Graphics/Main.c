@@ -446,7 +446,9 @@ static void demo_10_grid(void)
  * USAGE: Use for class introduction or end-of-unit review
  *        Each demo displays for 1-2 seconds before advancing
  */
-static void demo_all_sequential(void)
+/* Deliberately not called: main() runs one demo and the rest are here
+ * for students to uncomment. The attribute says so to the compiler. */
+__attribute__((unused)) static void demo_all_sequential(void)
 {
     demo_01_text_header();
     _delay_ms(1500);

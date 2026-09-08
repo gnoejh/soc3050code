@@ -48,7 +48,7 @@ There are two, and **`projects2026_avr/` is the current one**.
 | Simulator | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
 | Clock | 16 MHz throughout | mixed 16 MHz / 7.3728 MHz |
 | Build | one shared engine | per-project scripts of several shapes |
-| Slides | all 23 lesson folders | 34 of 53 |
+| Slides | all 25 lesson folders | 34 of 53 |
 
 Start in `projects2026_avr/`. See [its README](projects2026_avr/README.md) for
 the lesson list and the board map. `projects/` is left in place because a lot of
@@ -81,7 +81,7 @@ Each lesson folder holds `Main.c`, `config.h`, `Slide.md`, `README.md`,
 
 ## Lecture slides
 
-Every lesson has a `Slide.md`. To turn all 23 into presentable HTML decks:
+Every lesson has a `Slide.md`. To turn all 25 into presentable HTML decks:
 
 ```
 python projects2026_avr\_build\build-slides.py
@@ -133,7 +133,7 @@ or program.
 |------|--------------|
 | **Build Current Project** (Ctrl+Shift+B) | Builds the lesson containing the open file |
 | **Simulate Current Project** | Builds if needed, then opens it in SimulIDE |
-| **Verify All Lessons (2026)** | Builds all 23 and validates every `Main.hex` |
+| **Verify All Lessons (2026)** | Builds all 25 and validates every `Main.hex` |
 | **Build Slides (2026)** | Renders all `Slide.md` files into HTML decks |
 | **Show Memory Usage** | `avr-size` for the lesson's `Main.elf` |
 | **Clean Project** | Removes build output from the lesson folder |

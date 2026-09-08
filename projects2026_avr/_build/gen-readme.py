@@ -138,6 +138,14 @@ NATIVE = {
         "Embedded Processors and the ATmega128",
         "what an embedded processor is, how the toolchain builds firmware, "
         "and how the ATmega128 is put together"),
+    "23_Game_Engine_GLCD": (
+        "Building a Game Engine on the GLCD",
+        "a RAM framebuffer, dirty-page flushing, and a fixed-timestep loop "
+        "driven by a timer interrupt"),
+    "24_Game_Arcade": (
+        "Pong, Snake and Breakout",
+        "game state machines, integer collision, sprites in flash, and "
+        "sound that plays without stopping the frame"),
 }
 
 
@@ -185,6 +193,18 @@ def main():
         build = open(os.path.join(d, "build.bat"), encoding="utf-8").read()
         m = re.search(r"^set LIBS=(.*)$", build, re.M)
         libs = (m.group(1).strip().split() if m else [])
+
+        # The game engine owns the panel bus, the buttons and the frame timer,
+        # so a lesson built on it never names any of them in Main.c.
+        if "_game" in libs:
+            for p in ("A", "D", "E"):
+                if not any(("PORT%s" % p) in x for x in ports):
+                    ports.append("**PORT%s** - %s, via the engine in `_game.c`"
+                                 % (p, BOARD[p]))
+            ports.sort()
+            for name in ("KS0108 graphic LCD", "Timer1"):
+                if name not in periph:
+                    periph.append(name)
 
         extra = ""
         for fn in sorted(os.listdir(d)):

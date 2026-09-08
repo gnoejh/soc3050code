@@ -15,7 +15,7 @@
  * PIN CONNECTIONS (ATmega128):
  * - D0-D7:  PORTA (8-bit data bus)
  * - RS:     PE4 (Register Select: 0=Command, 1=Data)
- * - R/W:    GND (Read/Write: tied to ground for write-only)
+ * - R/W:    PG1 (Read/Write: driven LOW for write-only)
  * - E:      PE5 (Enable: falling edge triggers operation)
  * - CS1:    PE7 (Chip Select 1: left controller, columns 0-63)
  * - CS2:    PE6 (Chip Select 2: right controller, columns 64-127)
@@ -69,6 +69,18 @@
 #define KS0108_E_BIT 5   // PE5 - Enable
 #define KS0108_CS2_BIT 6 // PE6 - Chip Select 2 (right)
 #define KS0108_CS1_BIT 7 // PE7 - Chip Select 1 (left)
+
+/* Read/Write.  This header used to claim R/W was tied to ground; it is not.
+ * Tracing projects2026_avr/Simulator.simu gives
+ *     Ks0108-237-PinRW -> mega128-20-PORTG1
+ * and ks0108_init() did not drive it, so the pin floated.  Lessons that also
+ * linked _port.c survived by luck, because Port_init() sets DDRG = 0xFF and
+ * PORTG = 0x00; a lesson without _port got a permanently blank display and no
+ * error.  ks0108_init() now drives it low, which is what _glcd_legacy.c always
+ * did. */
+#define KS0108_RW_PORT PORTG
+#define KS0108_RW_DDR DDRG
+#define KS0108_RW_BIT 1 // PG1 - Read/Write, held LOW (write)
 
 /* KS0108 Commands */
 #define KS0108_CMD_DISPLAY_OFF 0x3E    // Turn display off

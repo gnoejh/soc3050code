@@ -1,0 +1,374 @@
+<title>Pong, Snake and Breakout</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Pong, Snake and Breakout</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Pong, Snake and Breakout</h1>
+<h2>ATmega128 Embedded Systems Course</h2>
+<p><strong>Reference</strong>: <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/doc2467.pdf" target="_blank" rel="noopener">ATmega128 Datasheet</a></p>
+</section>
+<section class="slide">
+<h2>Slide 1: Three games, one engine</h2>
+<p>Lesson 23 built the machinery: a framebuffer, dirty-page flushing, a fixed<br>timestep, debounced input. None of it was a game.</p>
+<p>This lesson spends it. Three complete games share one engine, one menu and one<br>main loop — and each one teaches a different way to represent a world in a few<br>hundred bytes.</p>
+<table><thead><tr><th>Game</th><th>The idea it teaches</th></tr></thead><tbody><tr><td><strong>Pong</strong></td><td>Continuous motion, and an opponent that must be beatable</td></tr><tr><td><strong>Snake</strong></td><td>A grid world, and a body that outgrows naive storage</td></tr><tr><td><strong>Breakout</strong></td><td>Packing state into bits, and collision by arithmetic</td></tr></tbody></table>
+<h3>The whole program is one state machine</h3>
+<pre class="lang-mermaid"><code>graph LR
+    M[ST_MENU] --&gt;|A| P[ST_PLAY]
+    P --&gt;|B| M
+    P --&gt;|win or lose| O[ST_OVER]
+    O --&gt;|A| M
+    style M fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style P fill:#fff3cd,stroke:#333,stroke-width:2px,color:#000
+    style O fill:#ffe1e1,stroke:#333,stroke-width:2px,color:#000</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 2: The shape of the loop</h2>
+<p>Every frame does the same five things, no matter which state or game is active:</p>
+<pre class="lang-c"><code>for (;;) {
+    if (!game_tick_ready()) continue;   /* the timer sets the pace   */
+    input_poll();                       /* debounce + edges          */
+
+    /* ... dispatch update() by state and game ... */
+
+    gfx_clear();
+    /* ... dispatch render() by state and game ... */
+    gfx_flush();
+}</code></pre>
+<p><strong>Update and render are separate on purpose.</strong> Update changes the world; render<br>only reads it. Keeping them apart means you can skip a render without breaking<br>the physics, draw the same state twice, or — in later lessons — run the update<br>with no screen at all so a robot can be scored headlessly.</p>
+<p>&gt; Never let drawing code change the game state.<br>&gt; The bug it causes is invisible until you draw twice.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Pong — bounce off the walls</h2>
+<p>Motion is integer pixels per tick. No floating point, no trigonometry.</p>
+<pre class="lang-c"><code>pg_bx += pg_vx;
+pg_by += pg_vy;
+
+if (pg_bx &lt;= 0)              { pg_bx = 0;           pg_vx = -pg_vx; }
+if (pg_bx &gt;= 128 - PONG_BALL){ pg_bx = 128-PONG_BALL; pg_vx = -pg_vx; }</code></pre>
+<p><strong>Clamp, then reverse.</strong> Setting the position back to the wall before flipping<br>the velocity matters: without it a fast ball can end up <em>outside</em> the wall, test<br>true again next frame, and flip back and forth forever — stuck, vibrating in the<br>edge. That bug is common enough to have a name: tunnelling.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Pong — collision only while approaching</h2>
+<pre class="lang-c"><code>if (pg_vy &gt; 0 &amp;&amp; pg_by + PONG_BALL &gt;= PONG_PLAYER_Y &amp;&amp; ...)</code></pre>
+<p>The <code>pg_vy &gt; 0</code> is the important part. Without it, a ball that has already<br>slipped past the paddle keeps overlapping it and gets batted <strong>upward from<br>underneath</strong>, which looks like the ball passing through solid matter.</p>
+<p>Testing the direction of travel as well as the overlap costs one comparison and<br>removes a whole class of glitch.</p>
+<p>&gt; Overlap is not collision.<br>&gt; Collision is overlap <em>plus</em> moving towards each other.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Pong — an opponent you can actually beat</h2>
+<pre class="lang-c"><code>#define PONG_AI_SPEED 2   /* the ball also moves 2 px per tick */
+
+if (ai_centre &lt; pg_bx &amp;&amp; ...) pg_ai += PONG_AI_SPEED;
+else if (ai_centre &gt; pg_bx)   pg_ai -= PONG_AI_SPEED;</code></pre>
+<p>The AI is three lines: move towards the ball, capped in speed.</p>
+<p>Cap it <em>below</em> the ball&#x27;s horizontal speed and a sharp angle outruns it. Remove<br>the cap — <code>pg_ai = pg_bx</code> — and the AI becomes perfect, never misses, and the<br>game becomes unplayable.</p>
+<p><strong>A perfect opponent is not a hard game. It is a broken one.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 6: Snake — a grid world</h2>
+<p>Pong works in pixels. Snake works in <strong>cells</strong>, which makes every collision an<br>equality test instead of an overlap test.</p>
+<pre class="lang-c"><code>#define CELL   4          /* 4 x 4 pixels          */
+#define GRID_W 32         /* 128 / 4               */
+#define GRID_H 14         /* (64 - 8 HUD) / 4      */</code></pre>
+<pre><code> x=0  1   2   3  ...  31      &lt;- 32 columns
++---+---+---+---+   +---+
+|   |###|###|   |   |   |     y=0
++---+---+---+---+   +---+
+|   |###| o |   |   |   |     y=1     ### snake   o food
++---+---+---+---+   +---+</code></pre>
+<p>Rendering multiplies back up: <code>gfx_fill_rect(x * CELL, FIELD_TOP + y * CELL, ...)</code>.<br>Cell size 3 rather than 4 leaves a one-pixel gap, so the segments read as a<br>chain instead of a solid bar.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Snake — where the body lives</h2>
+<p>The obvious representation is one entry per segment. The question is how many,<br>and how wide.</p>
+<table><thead><tr><th>Choice</th><th>Cost</th><th>Verdict</th></tr></thead><tbody><tr><td>Every cell of the board, <code>uint16_t</code></td><td>448 × 2 = 896 B</td><td>Too much beside a 1 KB framebuffer</td></tr><tr><td>Capped at 120 segments, packed index</td><td>120 × 2 = 240 B</td><td>Works</td></tr><tr><td><strong>Capped at 120, two byte arrays</strong></td><td><strong>120 + 120 = 240 B</strong></td><td><strong>Same cost, readable</strong></td></tr></tbody></table>
+<pre class="lang-c"><code>static uint8_t sn_x[SNAKE_MAX], sn_y[SNAKE_MAX];   /* 240 bytes */</code></pre>
+<p>Packing <code>x</code> and <code>y</code> into one 16-bit index saves nothing here — both come to 240<br>bytes — so take the version you can read. The cap is the real decision: reaching<br>120 segments counts as winning.</p>
+<p>&gt; Pack bits when it buys you something.<br>&gt; Packing for its own sake costs clarity and buys nothing.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Snake — steering every frame, moving every sixth</h2>
+<pre class="lang-c"><code>if (btn_pressed(BTN_LEFT) &amp;&amp; sn_dir != BTN_RIGHT) sn_dir = BTN_LEFT;
+/* ... the other three ... */
+
+if (++sn_wait &lt; SNAKE_TICKS) return;    /* 6 frames: ~8 moves a second */
+sn_wait = 0;</code></pre>
+<p>Input is read at the full 50 Hz; the snake only steps every sixth frame. If you<br>read input only when the snake moves, a quick tap between steps is silently<br>dropped and the game feels broken even though the code is &quot;correct&quot;.</p>
+<p><strong>The <code>sn_dir != BTN_RIGHT</code> test</strong> stops the snake reversing straight into its<br>own neck, which would be an instant, baffling death.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Snake — the tail cell that is not there</h2>
+<pre class="lang-c"><code>for (uint8_t i = 0; i + 1 &lt; sn_len; i++)      /* note: i + 1 &lt; sn_len */
+    if (sn_x[i] == nx &amp;&amp; sn_y[i] == ny)
+        /* ... dead ... */</code></pre>
+<p>Why skip the last segment?</p>
+<p>Because by the time the head arrives, the tail has already moved out of that<br>cell. Test the full body and the snake dies every time it follows its own tail<br>round a tight corner — a bug that looks like random unfair deaths, and is<br>miserable to find by staring at the code.</p>
+<pre><code>   step N          step N+1
+   H . .           . H .          the head is entering the cell
+   . . T           . . T&#x27;         the tail is leaving it</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 10: Snake — placing food without hanging</h2>
+<p>The tempting version:</p>
+<pre class="lang-c"><code>do { fx = rand() % GRID_W; fy = rand() % GRID_H; } while (on_snake(fx, fy));</code></pre>
+<p>This works beautifully — until the snake covers most of the board. Then almost<br>every guess collides, and the loop can spin for an unbounded time <strong>inside a<br>20 ms frame</strong>. The game freezes at exactly the moment the player is doing well.</p>
+<p>The version in the lesson bounds the gamble and then falls back to certainty:</p>
+<pre class="lang-c"><code>for (attempt = 0; attempt &lt; 40; attempt++) { /* random guess */ }
+for (fy = 0; fy &lt; GRID_H; fy++)
+    for (fx = 0; fx &lt; GRID_W; fx++) { /* first free cell, guaranteed */ }</code></pre>
+<p>&gt; Any loop inside a frame needs a bound you can state out loud.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Breakout — 24 bricks in 3 bytes</h2>
+<pre class="lang-c"><code>static uint8_t brk_rows[BRK_ROWS];   /* one bit per column */</code></pre>
+<p>Eight columns, three rows, one bit each: <strong>24 bricks in 3 bytes</strong>. An array of<br><code>uint8_t</code> flags would be 24 bytes, a struct per brick far more.</p>
+<pre class="lang-c"><code>brk_rows[r] &amp; (1 &lt;&lt; c)          /* is this brick still there? */
+brk_rows[r] &amp;= ~(1 &lt;&lt; c);       /* knock it out               */</code></pre>
+<p>And &quot;are they all gone?&quot; costs three comparisons instead of a loop over 24:</p>
+<pre class="lang-c"><code>if (!brk_rows[0] &amp;&amp; !brk_rows[1] &amp;&amp; !brk_rows[2])   /* cleared */</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: Breakout — collision without searching</h2>
+<p>The bricks sit on a regular grid, so you do not search for the one that was hit.<br>You <strong>compute</strong> it:</p>
+<pre class="lang-c"><code>uint8_t row = (bk_y - BRK_TOP) / BRK_H;
+uint8_t col =  bk_x / BRK_W;
+
+if (row &lt; BRK_ROWS &amp;&amp; col &lt; BRK_COLS &amp;&amp; (brk_rows[row] &amp; (1 &lt;&lt; col))) { ... }</code></pre>
+<table><thead><tr><th>Approach</th><th>Work per frame</th></tr></thead><tbody><tr><td>Loop over every brick</td><td>24 rectangle overlap tests</td></tr><tr><td><strong>Index arithmetic</strong></td><td><strong>two divisions and a bit test</strong></td></tr></tbody></table>
+<p>With 24 bricks the difference is small. With 240 it is the whole frame budget.<br>Recognising that a regular layout makes lookup arithmetic is a habit worth<br>forming early.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The bounce that makes it a game</h2>
+<p>Both Pong and Breakout steer the ball by <strong>where it lands on the paddle</strong>:</p>
+<pre class="lang-c"><code>int16_t hit = bk_x + 1 - (bk_pad + BRK_PAD_W / 2);   /* offset from centre */
+bk_vx = (hit &lt; -6) ? -2 : (hit &gt; 6) ? 2 : bk_vx;</code></pre>
+<p>A paddle that only reverses <code>vy</code> is a wall — the ball follows a fixed path and<br>the player is a spectator. Letting the contact point set the horizontal velocity<br>turns the paddle into a <em>control</em>: aim with the edges, deaden with the middle.</p>
+<p><strong>Three lines are the difference between a demo and a game.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 14: Sound that does not stop the game</h2>
+<p><code>shared_libs/_buzzer.c</code> makes tones by busy-waiting:</p>
+<pre class="lang-c"><code>void Sound(unsigned int ch, unsigned int time) { /* ... blocking delays ... */ }</code></pre>
+<p>At 50 frames a second a 100 ms note would burn <strong>five entire frames</strong>. The game<br>would freeze every time the ball hit anything.</p>
+<p>So the engine toggles the pin from a timer interrupt instead:</p>
+<pre class="lang-c"><code>ISR(TIMER2_COMP_vect)
+{
+    if (tone_toggles) { SPEAKER_PORT ^= (1 &lt;&lt; SPEAKER_BIT); tone_toggles--; }
+    else              { SPEAKER_PORT &amp;= ~(1 &lt;&lt; SPEAKER_BIT);
+                        TIMSK &amp;= ~(1 &lt;&lt; OCIE2); }
+}</code></pre>
+<p><code>sound_tone(hz, ms)</code> sets the period and a toggle count, then <strong>returns<br>immediately</strong>. The note plays while the game keeps running.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Working out the tone</h2>
+<p>There is no hardware path from a timer to PG4 — <code>OC2</code> is PB7 — so the wave is<br>made in software, and the arithmetic has to fit an 8-bit compare register.</p>
+<p>Timer2 at prescaler 256: 16 MHz / 256 = <strong>62 500 Hz</strong>.</p>
+<pre><code>f = 62500 / (2 * (OCR2 + 1))        so    OCR2 = 62500 / (2f) - 1</code></pre>
+<table><thead><tr><th>Tone</th><th><code>OCR2</code></th></tr></thead><tbody><tr><td>200 Hz</td><td>155</td></tr><tr><td>440 Hz</td><td>70</td></tr><tr><td>1000 Hz</td><td>30</td></tr><tr><td>4000 Hz</td><td>6</td></tr></tbody></table>
+<p>Below about 123 Hz <code>OCR2</code> overflows 255, so <code>sound_tone()</code> clamps. Duration is a<br>toggle count: <code>toggles = 2 * hz * ms / 1000</code>.</p>
+<p>&gt; <strong>On the board:</strong> PG4 reaches the speaker through a slide switch.<br>&gt; If a tone plays and nothing is heard, check the switch before the code.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Strings belong in flash too</h2>
+<p>The menu labels never change, so they have no business in SRAM:</p>
+<pre class="lang-c"><code>static const char label_pong[] PROGMEM = &quot;PONG&quot;;
+static const char *const menu_labels[G_COUNT] PROGMEM = { label_pong, ... };</code></pre>
+<p>Note the <strong>two</strong> levels: the strings are in flash, and so is the array of<br>pointers to them. Reading it back needs the matching accessor:</p>
+<pre class="lang-c"><code>const char *label = (const char *)pgm_read_word(&amp;menu_labels[i]);</code></pre>
+<p><code>pgm_read_word</code> for the pointer, <code>pgm_read_byte</code> for each character. Get this<br>wrong — declare <code>PROGMEM</code> but read it as a normal pointer — and the AVR happily<br>fetches from the <em>same numeric address in RAM</em> and prints rubbish. It does not<br>crash, which is what makes the bug so hard to see.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Clearing the screen, cheaply</h2>
+<p>Lesson 23 only cleared the playfield. These games clear everything and redraw,<br>which is far simpler — but a naive <code>gfx_clear()</code> would mark all eight pages<br>dirty and throw away the whole dirty-page optimisation.</p>
+<p>So <code>gfx_clear()</code> skips pages that are already blank:</p>
+<pre class="lang-c"><code>for (page = 0; page &lt; GFX_PAGES; page++) {
+    for (x = 0; x &lt; GFX_W; x++) if (row[x]) { used = 1; break; }
+    if (used) { memset(row, 0, GFX_W); fb_dirty |= (1 &lt;&lt; page); }
+}</code></pre>
+<p>Scanning 1024 bytes of RAM costs tens of microseconds. Flushing one page that<br>did not need it costs 128 bus writes — about half a millisecond. <strong>The scan is<br>cheaper by more than an order of magnitude.</strong></p>
+<p>In Snake, the pages holding no snake stay blank, stay clean, and are never sent.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: What it all costs</h2>
+<pre><code>23_Game_Engine_GLCD              24_Game_Arcade
+-------------------              --------------
+.data      30                    .data      66
+.text    3088                    .text    5402
+.bss     1047                    .bss     1306
+        -----                            -----
+SRAM     1077                    SRAM     1372</code></pre>
+<p><strong>SRAM: 1372 of 4096 — 33%</strong>, up 295 bytes from lesson 23. Ask the linker where<br>they went rather than guessing:</p>
+<pre><code>$ avr-nm -S --size-sort -td Main.elf | grep &#x27; b &#x27;
+...
+08388938 00000003 b brk_rows      &lt;- 24 bricks
+08389066 00000120 b sn_x          &lt;- snake body
+08388946 00000120 b sn_y
+08389212 00001024 b fb            &lt;- the framebuffer, still the giant</code></pre>
+<table><thead><tr><th></th><th>Bytes</th></tr></thead><tbody><tr><td>Snake body, <code>sn_x</code> + <code>sn_y</code></td><td>240</td></tr><tr><td>Pong, Breakout and menu state</td><td>16</td></tr><tr><td>Breakout bricks (24 of them)</td><td>3</td></tr><tr><td><strong><code>.bss</code> growth</strong></td><td><strong>259</strong></td></tr><tr><td><code>.data</code> growth (runtime support)</td><td>36</td></tr></tbody></table>
+<p>Three complete games cost <strong>259 bytes</strong> of game state. The framebuffer is still,<br>by a wide margin, the most expensive thing in the program.</p>
+<p>&gt; Flash grew by 2314 bytes and nobody cares — there is 128 KB of it.<br>&gt; RAM grew by 259 and that is the number worth watching.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: Exercises</h2>
+<ol><li><strong>Break the AI.</strong> Set <code>PONG_AI_SPEED</code> to 3, above the ball&#x27;s speed. Can you still score? What does that tell you about difficulty tuning?</li></ol>
+<ol><li><strong>Reintroduce the tail bug.</strong> Change <code>i + 1 &lt; sn_len</code> to <code>i &lt; sn_len</code> and play until it kills you. Describe exactly the move that does it.</li></ol>
+<ol><li><strong>Fill the board.</strong> Lower <code>SNAKE_MAX</code> to 12 and win. Does the food placement fall through to the linear scan? Add a counter and find out.</li></ol>
+<ol><li><strong>Measure the clear.</strong> Print the bytes returned by <code>gfx_flush()</code> on the HUD. Compare the menu, Snake early on, and Snake at 60 segments. Explain the pattern.</li></ol>
+<ol><li><strong>Add a level.</strong> After Breakout is cleared, refill the bricks and speed the ball up. Where do you store the level number, and what happens at level 20?</li></ol>
+<ol><li><strong>Two-player Pong.</strong> Replace the AI with PD6/PD7. What has to change in <code>pong_update()</code>, and what does that say about how the AI was written?</li></ol>
+</section>
+<section class="slide">
+<h2>Slide 20: What you built</h2>
+<ul><li>A <strong>state machine</strong> that owns the whole program, not three separate programs</li><li><strong>Update and render kept apart</strong>, which later lets a robot run with no screen</li><li>Collision as <strong>integer comparison</strong>, tested with direction as well as overlap</li><li>Three world representations: <strong>pixels</strong>, a <strong>grid</strong>, and <strong>packed bits</strong></li><li><strong>Bounded loops</strong> inside a frame that can never hang</li><li><strong>Sound from an interrupt</strong>, so a beep costs no frames</li><li>Strings and sprites in <strong>flash</strong>, and the accessors that read them back</li></ul>
+<h3>The habit worth keeping</h3>
+<p>&gt; Every one of these games fits in a few hundred bytes because the<br>&gt; representation was chosen before the code was written.<br>&gt; On a 4 KB machine, deciding how the world is stored <em>is</em> the design.</p>
+<p><strong>Next:</strong> the application track leaves the board — your C starts driving robots<br>in a physics simulator, and eventually a joint of a Unitree G1 humanoid.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:24_Game_Arcade', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:24_Game_Arcade') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

@@ -54,6 +54,16 @@ Nothing needs installing. The AVR toolchain and SimulIDE both live under
 | 21 | `21_Watchdog_Reset` | WDT time-outs, safe reset, recovering from a hang |
 | 22 | `22_RTOS_Scheduler` | Task control blocks, tick scheduler, context switching |
 
+### Application track
+
+Where the earlier lessons end in a blinking LED, these end in something you can
+play. They reuse everything above: timers, interrupts, ports and the GLCD.
+
+| # | Lesson | Focus |
+|---|--------|-------|
+| 23 | `23_Game_Engine_GLCD` | RAM framebuffer, dirty-page flushing, fixed-timestep loop |
+| 24 | `24_Game_Arcade` | Pong, Snake and Breakout; integer collision, sound from an ISR |
+
 ---
 
 ## The shared board
