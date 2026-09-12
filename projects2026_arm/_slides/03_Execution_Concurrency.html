@@ -1,0 +1,365 @@
+<title>Execution and Concurrency: When Two Things Run at Once</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Execution and Concurrency: When Two Things Run at Once</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Execution and Concurrency: When Two Things Run at Once</h1>
+<h2>SOC3050 ARM Edition — Part 0, Models</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a></p>
+<p>The last of four lessons with <strong>no code to write</strong>.</p>
+<p>You have the machine, its instructions, and the toolchain. One model is left,<br>and it is the one that produces the hardest bugs in this course: what happens<br>when the hardware interrupts your program.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: Three Ways to Meet the Hardware</h2>
+<p>A peripheral finishes when it finishes. Your program has to find out. There are<br>exactly three arrangements, and every embedded design is built from them.</p>
+<figure class="diagram"><svg viewBox="0 0 560 250" role="img" aria-label="Polling, interrupt and DMA compared">
+  <defs><marker id="c1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <text x="90" y="20" text-anchor="middle" class="lbl">POLL</text>
+  <rect class="box" x="20" y="32" width="140" height="34" rx="5"/>
+  <text x="90" y="49" text-anchor="middle" class="mono">ready yet?</text>
+  <path class="wire" d="M160 49 H178 V86 H20 V66" marker-end="url(#c1)"/>
+  <text x="90" y="112" text-anchor="middle" class="lbl">CPU does nothing else</text>
+  <text x="90" y="130" text-anchor="middle" class="lbl">simplest to get right</text>
+  <text x="280" y="20" text-anchor="middle" class="lbl">INTERRUPT</text>
+  <rect class="box" x="210" y="32" width="140" height="34" rx="5"/>
+  <text x="280" y="49" text-anchor="middle" class="mono">useful work</text>
+  <path class="hi" d="M355 49 V74" marker-end="url(#c1)"/>
+  <rect class="hifill" x="210" y="78" width="140" height="30" rx="5"/>
+  <text x="280" y="93" text-anchor="middle" class="mono">handler</text>
+  <text x="280" y="130" text-anchor="middle" class="lbl">CPU works until told</text>
+  <text x="470" y="20" text-anchor="middle" class="lbl">DMA</text>
+  <rect class="box" x="400" y="32" width="140" height="34" rx="5"/>
+  <text x="470" y="49" text-anchor="middle" class="mono">useful work</text>
+  <rect class="reg" x="400" y="78" width="140" height="30" rx="5"/>
+  <text x="470" y="93" text-anchor="middle" class="lbl">hardware moves bytes</text>
+  <text x="470" y="130" text-anchor="middle" class="lbl">CPU not involved at all</text>
+  <text x="280" y="182" text-anchor="middle" class="lbl">Cost rises left to right in complexity, and falls in CPU time.</text>
+  <text x="280" y="206" text-anchor="middle" class="lbl">Polling is not the beginner option — it is the right answer whenever</text>
+  <text x="280" y="224" text-anchor="middle" class="lbl">the wait is shorter than the cost of being interrupted.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 2: An Interrupt Is a Hardware-Forced Function Call</h2>
+<p>No scheduler, no operating system. The hardware does this between two<br>instructions of whatever was running:</p>
+<figure class="diagram"><svg viewBox="0 0 560 230" role="img" aria-label="Interrupt entry: stack the frame, look up the vector, run the handler, return">
+  <defs><marker id="c2" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="20" y="30" width="150" height="30" rx="4"/>
+  <text x="95" y="45" text-anchor="middle" class="mono">main() running</text>
+  <path class="hi" d="M170 45 H206" marker-end="url(#c2)"/>
+  <text x="188" y="26" text-anchor="middle" class="lbl">event</text>
+  <rect class="hifill" x="210" y="30" width="150" height="30" rx="4"/>
+  <text x="285" y="45" text-anchor="middle" class="lbl">push 8 registers</text>
+  <path class="wire" d="M285 60 V82" marker-end="url(#c2)"/>
+  <rect class="box" x="210" y="82" width="150" height="30" rx="4"/>
+  <text x="285" y="97" text-anchor="middle" class="lbl">read the vector table</text>
+  <path class="wire" d="M285 112 V134" marker-end="url(#c2)"/>
+  <rect class="box" x="210" y="134" width="150" height="30" rx="4"/>
+  <text x="285" y="149" text-anchor="middle" class="mono">handler runs</text>
+  <path class="wire" d="M210 149 H120 V60" marker-end="url(#c2)"/>
+  <text x="150" y="112" text-anchor="middle" class="lbl">pop and resume</text>
+  <text x="450" y="60" class="lbl">R0-R3, R12,</text>
+  <text x="450" y="78" class="lbl">LR, PC, xPSR</text>
+  <text x="450" y="100" class="lbl">stacked by the</text>
+  <text x="450" y="118" class="lbl">hardware itself</text>
+  <text x="280" y="204" text-anchor="middle" class="lbl">Your main program never knows it happened. That is the problem.</text>
+</svg></figure>
+<p>The processor pushes eight registers for you — which is exactly the set AAPCS<br>lets a function clobber, so <strong>an ISR can be an ordinary C function</strong>. No special<br>keyword, no <code>ISR()</code> macro. You simply define a function with the right name and<br>the linker puts it in the vector table.</p>
+<p>&gt; Spell the name wrong and you have written an unused function. It compiles, it<br>&gt; links, it runs, and the interrupt does nothing. No warning, anywhere.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Now You Have Two Programs Sharing One Memory</h2>
+<p>This is the whole reason concurrency is a topic. Before interrupts, your<br>program had one thread of control. After, it has two — and they share every<br>global variable.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Main and ISR contexts sharing a variable">
+  <defs><marker id="c3" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="24" y="30" width="160" height="48" rx="6"/>
+  <text x="104" y="50" text-anchor="middle" class="mono">main()</text>
+  <text x="104" y="68" text-anchor="middle" class="lbl">runs when nothing else does</text>
+  <rect class="hifill" x="376" y="30" width="160" height="48" rx="6"/>
+  <text x="456" y="50" text-anchor="middle" class="mono">handler()</text>
+  <text x="456" y="68" text-anchor="middle" class="lbl">runs whenever it likes</text>
+  <path class="wire" d="M104 78 V116 H256" marker-end="url(#c3)"/>
+  <path class="hi" d="M456 78 V116 H304" marker-end="url(#c3)"/>
+  <rect class="reg" x="228" y="116" width="104" height="40" rx="5"/>
+  <text x="280" y="136" text-anchor="middle" class="mono">counter</text>
+  <text x="280" y="186" text-anchor="middle" class="lbl">Neither one can see what the other is doing.</text>
+</svg></figure>
+<p>Two distinct hazards follow, and they need different fixes. Students routinely<br>apply one fix to the other problem and conclude the language is broken.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Hazard One — the Compiler Does Not Believe You</h2>
+<pre class="lang-c"><code>while (flag == 0) { }        /* wait for the ISR to set it */</code></pre>
+<p>The compiler analyses <code>main()</code> and reasons, correctly by the rules of C: <em>this<br>loop does not modify <code>flag</code>, so <code>flag</code> cannot change; I will read it once and<br>loop on a register.</em> The result is an infinite loop that no amount of staring<br>at the source will explain.</p>
+<p><strong>Fix: <code>volatile</code>.</strong> It tells the compiler this memory changes for reasons<br>outside the program, so every access written must actually happen.</p>
+<pre class="lang-c"><code>volatile uint8_t flag;</code></pre>
+<p><code>volatile</code> is about the <em>compiler</em>. It is not a lock, it does not make anything<br>atomic, and it does not help with the next slide.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Hazard Two — the Interrupt Lands Mid-Update</h2>
+<p>Recall from lesson 01 that touching memory is always three instructions. Here<br>is <code>counter++</code> in <code>main()</code>, interrupted at the worst moment:</p>
+<figure class="diagram"><svg viewBox="0 0 560 250" role="img" aria-label="A lost update when an interrupt occurs between load and store">
+  <text x="14" y="22" class="lbl">main()</text>
+  <rect class="box" x="14" y="32" width="210" height="28" rx="4"/>
+  <text x="119" y="47" text-anchor="middle" class="mono">ldr r0, [counter]   ; 5</text>
+  <rect class="dash" x="14" y="68" width="210" height="28" rx="4"/>
+  <text x="119" y="83" text-anchor="middle" class="lbl">— interrupted here —</text>
+  <rect class="box" x="14" y="146" width="210" height="28" rx="4"/>
+  <text x="119" y="161" text-anchor="middle" class="mono">adds r0, #1         ; 6</text>
+  <rect class="box" x="14" y="182" width="210" height="28" rx="4"/>
+  <text x="119" y="197" text-anchor="middle" class="mono">str r0, [counter]   ; 6</text>
+  <text x="336" y="22" class="lbl">handler()</text>
+  <rect class="hifill" x="336" y="68" width="210" height="28" rx="4"/>
+  <text x="441" y="83" text-anchor="middle" class="mono">ldr  ; reads 5</text>
+  <rect class="hifill" x="336" y="104" width="210" height="28" rx="4"/>
+  <text x="441" y="119" text-anchor="middle" class="mono">adds ; 6</text>
+  <rect class="hifill" x="336" y="140" width="210" height="28" rx="4"/>
+  <text x="441" y="155" text-anchor="middle" class="mono">str  ; writes 6</text>
+  <text x="280" y="234" text-anchor="middle" class="lbl">Two increments happened. The counter went from 5 to 6. One update vanished.</text>
+</svg></figure>
+<p><code>volatile</code> does not help here — every access did happen, in order, exactly as<br>written. The problem is that the <em>sequence</em> was not indivisible.</p>
+<p><strong>Fix: a critical section.</strong> Stop interrupts for the three instructions:</p>
+<pre class="lang-c"><code>__disable_irq();
+counter++;
+__enable_irq();</code></pre>
+<p>Keep it short. Every cycle spent with interrupts off is a cycle in which the<br>chip cannot respond to anything.</p>
+<p>&gt; The two fixes are not interchangeable. <code>volatile</code> makes accesses <em>real</em>;<br>&gt; a critical section makes a sequence <em>indivisible</em>. Most concurrency bugs in<br>&gt; this course come from using the first where the second was needed.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: A Bug That Only Appears Sometimes</h2>
+<p>The diagram above required the interrupt to land in a two-instruction window.<br>On a 48 MHz chip that window is about 40 nanoseconds wide.</p>
+<table><thead><tr><th>If the interrupt fires</th><th>The bug appears</th></tr></thead><tbody><tr><td>1000 times a second</td><td>roughly once every 7 hours</td></tr><tr><td>10000 times a second</td><td>roughly once every 40 minutes</td></tr></tbody></table>
+<p>This is why concurrency bugs have a reputation. They survive your testing,<br>they survive the demo, and they appear in the field. <strong>You cannot find them by<br>running the program more.</strong> You find them by reasoning about which variables<br>are shared, and protecting those.</p>
+<p>&gt; A useful discipline: for every global, write down which contexts touch it.<br>&gt; If the answer is more than one, it needs <code>volatile</code>, and probably a critical<br>&gt; section too.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Not Everything Needs Protecting</h2>
+<p>Turning interrupts off has a cost, so be precise about when it is needed.</p>
+<table><thead><tr><th>Situation</th><th>Safe?</th></tr></thead><tbody><tr><td>ISR writes a <code>uint8_t</code>, main only reads it</td><td><strong>Yes</strong> — single aligned access, one writer</td></tr><tr><td>ISR sets a flag, main reads and clears it</td><td><strong>Usually</strong> — but the clear is read-modify-write</td></tr><tr><td>main does <code>counter++</code>, ISR also increments</td><td><strong>No</strong> — the lost update above</td></tr><tr><td>main reads a <code>uint64_t</code> the ISR writes</td><td><strong>No</strong> — more than one bus access; you can read half</td></tr><tr><td>Either side touches a multi-field struct</td><td><strong>No</strong> — the reader can see it half-updated</td></tr></tbody></table>
+<p>The pattern: <strong>a single aligned word written by exactly one context is safe.</strong><br>Everything else needs thought.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Priority — Which Interrupt Wins</h2>
+<p>Several peripherals can want attention at once. The NVIC decides, by priority,<br>and it can also let a more urgent interrupt preempt a handler already running.</p>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="A higher priority interrupt preempting a running handler">
+  <defs><marker id="c4" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <text x="18" y="36" class="lbl">main</text>
+  <path class="wire" d="M70 30 H160"/>
+  <path class="dash" d="M160 30 H430"/>
+  <path class="wire" d="M430 30 H540"/>
+  <text x="18" y="100" class="lbl">timer</text>
+  <path class="wire" d="M160 94 H230"/>
+  <path class="dash" d="M230 94 H360"/>
+  <path class="wire" d="M360 94 H430"/>
+  <path class="hi" d="M160 36 V88" marker-end="url(#c4)"/>
+  <path class="hi" d="M430 88 V36" marker-end="url(#c4)"/>
+  <text x="18" y="164" class="lbl">uart</text>
+  <rect class="hifill" x="230" y="144" width="130" height="26" rx="4"/>
+  <text x="295" y="158" text-anchor="middle" class="lbl">higher priority</text>
+  <path class="hi" d="M230 100 V140" marker-end="url(#c4)"/>
+  <path class="hi" d="M360 140 V100" marker-end="url(#c4)"/>
+  <text x="280" y="200" text-anchor="middle" class="lbl">The timer handler was itself interrupted. Everything it shares is now at risk too.</text>
+</svg></figure>
+<p>Two consequences worth carrying forward:</p>
+<ul><li><strong>Handlers must be short.</strong> Anything slow in a handler delays every interrupt of equal or lower priority. The usual shape is: set a flag or push to a buffer, return, and let <code>main()</code> do the work.</li><li><strong>Preemption multiplies the sharing problem.</strong> It is not only main-versus-ISR any more; it is ISR-versus-ISR.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 9: The Model, Complete</h2>
+<p>Four lessons, one picture:</p>
+<figure class="diagram"><svg viewBox="0 0 560 240" role="img" aria-label="The complete Part 0 model">
+  <rect class="box" x="30" y="24" width="230" height="88" rx="7"/>
+  <text x="145" y="46" text-anchor="middle">THE MACHINE</text>
+  <text x="145" y="68" text-anchor="middle" class="lbl">one bus, one address space</text>
+  <text x="145" y="86" text-anchor="middle" class="lbl">peripherals = control / status / data</text>
+  <text x="145" y="104" text-anchor="middle" class="lbl">guarded by a clock gate and a mux</text>
+  <rect class="box" x="300" y="24" width="230" height="88" rx="7"/>
+  <text x="415" y="46" text-anchor="middle">THE PROGRAM</text>
+  <text x="415" y="68" text-anchor="middle" class="lbl">load, modify, store</text>
+  <text x="415" y="86" text-anchor="middle" class="lbl">sections placed by a linker</text>
+  <text x="415" y="104" text-anchor="middle" class="lbl">startup code before main()</text>
+  <rect class="hifill" x="30" y="134" width="500" height="56" rx="7"/>
+  <text x="280" y="156" text-anchor="middle">AND THEY MEET ASYNCHRONOUSLY</text>
+  <text x="280" y="178" text-anchor="middle" class="lbl">volatile makes accesses real · critical sections make them indivisible</text>
+  <text x="280" y="222" text-anchor="middle" class="lbl">Everything from here is an instance of this.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 10: What You Should Be Able to Say</h2>
+<ol><li>Name the three ways to meet hardware, and give a case where polling is the right choice.</li><li>Why can an ISR on this processor be an ordinary C function with no special keyword?</li><li>What exactly does <code>volatile</code> prevent? Name one thing it does <strong>not</strong> do.</li><li>Draw the instruction sequence that loses an update to a shared counter.</li><li>A shared variable is a single aligned <code>uint8_t</code>, written only by the ISR and only read by main. Does it need a critical section? Why?</li><li>Why must interrupt handlers be short?</li><li>Your program works for hours, then misbehaves once. What class of bug is this, and why will running it more not help?</li></ol>
+</section>
+<section class="slide">
+<h2>Part 0 is finished. What changes now.</h2>
+<p>From here every lesson has code, and every lesson follows the same three beats:</p>
+<p>&gt; <strong>Model → Map → Measure</strong><br>&gt;<br>&gt; - <strong>Model</strong> — which part of Part 0 is this? <em>(you can already answer this)</em><br>&gt; - <strong>Map</strong> — onto this chip&#x27;s registers, by reading the reference manual<br>&gt; - <strong>Measure</strong> — write it, run it, and watch it work</p>
+<p>The first is <code>04_Startup_And_Linker</code>, where you write the <code>startup.c</code> and<br><code>link.ld</code> that lesson 02 described — and the chip boots because you made it.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:03_Execution_Concurrency', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:03_Execution_Concurrency') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

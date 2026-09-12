@@ -1,0 +1,446 @@
+<title>Instruction Set: What the Processor Actually Does</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Instruction Set: What the Processor Actually Does</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Instruction Set: What the Processor Actually Does</h1>
+<h2>SOC3050 ARM Edition — Part 0, Models</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a></p>
+<p>The second of four lessons with <strong>no code to write</strong>.</p>
+<p>Last lesson: the machine is a CPU, memory and peripherals on one bus, and a<br>register is an address with a side effect. This lesson: what the CPU can<br>actually <em>do</em> with an address.</p>
+<p>Every disassembly and every statistic on these slides is real output from this<br>repository&#x27;s own build — <code>_spike/c031c6/Main.elf</code>, compiled with <code>-Os</code> by the<br>same <code>arm-none-eabi-gcc</code> you will use. Nothing here is illustrative.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: You Will Not Write Assembly. You Will Read It.</h2>
+<p>Nobody in this course writes an application in assembly. But four times a term,<br>something will go wrong in a way that C cannot explain:</p>
+<ul><li>the debugger stops somewhere with no source line</li><li>a variable changes when nothing wrote to it</li><li>a loop that should take 3 µs takes 30</li><li>the optimiser deletes code you needed</li></ul>
+<p>Each of those is answered in one place: <strong>the instructions the compiler<br>actually emitted</strong>. Reading them is a diagnostic skill, like reading a stack<br>trace.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Good News — There Is Not Much to Learn</h2>
+<p>The whole spike program is <strong>2100 instructions</strong> built from just <strong>51 distinct<br>mnemonics</strong>. And they are not evenly used:</p>
+<table><thead><tr><th>Instruction</th><th>Share</th><th>Running total</th></tr></thead><tbody><tr><td><code>movs</code></td><td>15.9%</td><td>15.9%</td></tr><tr><td><code>ldr</code></td><td>15.3%</td><td>31.2%</td></tr><tr><td><code>cmp</code></td><td>8.3%</td><td>39.5%</td></tr><tr><td><code>str</code></td><td>8.0%</td><td>47.5%</td></tr><tr><td><code>adds</code></td><td>5.7%</td><td>53.2%</td></tr><tr><td><code>bl</code></td><td>4.3%</td><td>57.5%</td></tr><tr><td><code>lsls</code></td><td>4.0%</td><td>61.5%</td></tr><tr><td><code>b</code></td><td>3.9%</td><td>65.4%</td></tr><tr><td><code>bne</code></td><td>3.6%</td><td>69.0%</td></tr><tr><td><code>beq</code></td><td>3.5%</td><td>72.5%</td></tr><tr><td><code>subs</code></td><td>2.5%</td><td>75.0%</td></tr><tr><td><code>push</code> / <code>pop</code></td><td>4.6%</td><td><strong>79.6%</strong></td></tr></tbody></table>
+<figure class="diagram"><svg viewBox="0 0 560 150" role="img" aria-label="Thirteen mnemonics account for eighty percent of all instructions">
+  <rect class="reg" x="20" y="40" width="520" height="34" rx="5"/>
+  <rect class="hifill" x="20" y="40" width="414" height="34" rx="5"/>
+  <text x="227" y="58" text-anchor="middle">13 mnemonics = 80% of all code</text>
+  <text x="487" y="58" text-anchor="middle" class="lbl">the other 38</text>
+  <text x="280" y="106" text-anchor="middle" class="lbl">Move things. Add things. Compare things. Jump somewhere.</text>
+  <text x="280" y="126" text-anchor="middle" class="lbl">That is most of what a processor does.</text>
+</svg></figure>
+<p>Learn those thirteen and you can read almost any disassembly on this chip. The<br>next five slides are those thirteen, by job.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Load / Store — the CPU Cannot Touch Memory</h2>
+<p>On x86 you can add directly to a memory location. On ARM you cannot. Memory is<br>reached by exactly two instructions, and everything else works on registers.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Load into a register, operate, store back">
+  <defs><marker id="i1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="14" y="60" width="120" height="56" rx="6"/>
+  <text x="74" y="80" text-anchor="middle">MEMORY</text>
+  <text x="74" y="100" text-anchor="middle" class="lbl mono">0x40021000</text>
+  <path class="hi" d="M134 76 H250" marker-end="url(#i1)"/>
+  <text x="192" y="62" text-anchor="middle" class="lbl mono">LDR — load</text>
+  <path class="hi" d="M250 104 H134" marker-end="url(#i1)"/>
+  <text x="192" y="126" text-anchor="middle" class="lbl mono">STR — store</text>
+  <rect class="hifill" x="254" y="60" width="120" height="56" rx="6"/>
+  <text x="314" y="88" text-anchor="middle" class="mono">register</text>
+  <path class="wire" d="M374 88 H440" marker-end="url(#i1)"/>
+  <rect class="box" x="444" y="60" width="102" height="56" rx="6"/>
+  <text x="495" y="80" text-anchor="middle">ALU</text>
+  <text x="495" y="100" text-anchor="middle" class="lbl">add, and, shift</text>
+  <text x="280" y="176" text-anchor="middle" class="lbl">Three steps, always: load it, change it, store it back.</text>
+</svg></figure>
+<table><thead><tr><th>Instruction</th><th>Moves</th><th>C equivalent</th></tr></thead><tbody><tr><td><code>ldr  r0, [r1]</code></td><td>32 bits, memory → register</td><td><code>x = *p;</code></td></tr><tr><td><code>str  r0, [r1]</code></td><td>32 bits, register → memory</td><td><code>*p = x;</code></td></tr><tr><td><code>ldrb</code> / <code>strb</code></td><td>8 bits</td><td><code>char</code>, <code>uint8_t</code></td></tr><tr><td><code>ldrh</code> / <code>strh</code></td><td>16 bits</td><td><code>uint16_t</code></td></tr><tr><td><code>ldrsh</code></td><td>16 bits, <strong>sign-extended</strong></td><td><code>int16_t</code></td></tr><tr><td><code>movs r0, #7</code></td><td>a constant into a register</td><td><code>x = 7;</code></td></tr><tr><td><code>movs r0, r3</code></td><td>register to register</td><td><code>x = y;</code></td></tr></tbody></table>
+<p>This is why setting one bit in a peripheral register is never one instruction.<br>It is a <strong>read, a modify, and a write</strong> — three separate bus events, with a gap<br>between them. Lesson 03 shows what can go wrong in that gap.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Arithmetic and Logic</h2>
+<p>These operate on registers only, and almost all of them carry an <code>s</code>.</p>
+<table><thead><tr><th>Instruction</th><th>Does</th><th>Note</th></tr></thead><tbody><tr><td><code>adds r0, r1, r2</code></td><td>add</td><td></td></tr><tr><td><code>subs r0, r1, #4</code></td><td>subtract</td><td></td></tr><tr><td><code>negs r0, r1</code></td><td>negate</td><td><code>0 - r1</code></td></tr><tr><td><code>muls r0, r1</code></td><td>multiply</td><td>32×32, low 32 bits kept</td></tr><tr><td><code>adcs</code></td><td>add with carry</td><td>how 64-bit sums are built from 32-bit parts</td></tr><tr><td><code>ands r0, r1</code></td><td>bitwise AND</td><td><code>x &amp;= y</code></td></tr><tr><td><code>orrs r0, r1</code></td><td>bitwise OR</td><td><code>x |= y</code></td></tr><tr><td><code>eors r0, r1</code></td><td>bitwise XOR</td><td><code>x ^= y</code></td></tr><tr><td><code>bics r0, r1</code></td><td><strong>bit clear</strong> — <code>r0 AND NOT r1</code></td><td><code>x &amp;= ~y</code> — the mask-clearing idiom</td></tr></tbody></table>
+<p>&gt; <strong>There is no divide instruction on Cortex-M0+.</strong> <code>a / b</code> becomes a call to a<br>&gt; library routine, <code>__aeabi_uidiv</code>, which is why it is dramatically slower than<br>&gt; multiply. You can see it in the spike: <code>080000b4 &lt;__udivsi3&gt;</code> is linked in<br>&gt; because one line of C divided. Cortex-M3 and above have <code>sdiv</code> and <code>udiv</code> in<br>&gt; hardware.</p>
+<p><strong>Why the <code>s</code> everywhere?</strong> On the 16-bit Thumb encodings the M0+ uses, most<br>data-processing instructions <em>always</em> update the flags — there is no room in<br>the encoding for a choice. So the compiler writes <code>adds</code>, not <code>add</code>. On M3 and<br>above, the 32-bit encodings let you pick.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Shifts — Why <code>lsls</code> Is 4% of All Code</h2>
+<table><thead><tr><th>Instruction</th><th>Does</th></tr></thead><tbody><tr><td><code>lsls r0, r1, #3</code></td><td>logical shift left — multiply by 8</td></tr><tr><td><code>lsrs r0, r1, #3</code></td><td>logical shift right — unsigned divide by 8</td></tr><tr><td><code>asrs r0, r1, #3</code></td><td>arithmetic shift right — <strong>signed</strong> divide, keeps the sign</td></tr><tr><td><code>rors r0, r1</code></td><td>rotate right</td></tr></tbody></table>
+<p>Shifts are everywhere in embedded code for one reason: <strong>bit fields</strong>. Every<br>time you write</p>
+<pre class="lang-c"><code>GPIOA-&gt;MODER |= (2u &lt;&lt; (pin * 2));</code></pre>
+<p>the <code>&lt;&lt;</code> is an <code>lsls</code>. Every peripheral configuration you write this term<br>compiles into shift-and-mask, which is why a shift instruction outranks<br>subtraction in real firmware.</p>
+<p>Note <code>lsrs</code> versus <code>asrs</code>: shifting right is only a division if you pick the<br>one that matches your signedness. Getting it wrong turns a small negative<br>number into a very large positive one.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Flags and Conditional Branches</h2>
+<p>Comparison does not produce a value. It sets four bits in the status register,<br>and the <em>next</em> instruction acts on them.</p>
+<figure class="diagram"><svg viewBox="0 0 560 190" role="img" aria-label="Compare sets flags, branch reads them">
+  <defs><marker id="i3" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="30" y="34" width="150" height="34" rx="5"/>
+  <text x="105" y="51" text-anchor="middle" class="mono">cmp r3, r2</text>
+  <path class="wire" d="M180 51 H226" marker-end="url(#i3)"/>
+  <rect class="hifill" x="230" y="26" width="140" height="50" rx="6"/>
+  <text x="300" y="46" text-anchor="middle" class="mono">N Z C V</text>
+  <text x="300" y="65" text-anchor="middle" class="lbl">flags, in APSR</text>
+  <path class="wire" d="M370 51 H416" marker-end="url(#i3)"/>
+  <rect class="box" x="420" y="34" width="120" height="34" rx="5"/>
+  <text x="480" y="51" text-anchor="middle" class="mono">blt  label</text>
+  <text x="300" y="110" text-anchor="middle" class="lbl">N negative · Z zero · C carry/borrow · V signed overflow</text>
+  <text x="280" y="150" text-anchor="middle" class="lbl">cmp is a subtraction that throws the answer away and keeps the flags.</text>
+  <text x="280" y="170" text-anchor="middle" class="lbl">tst is an AND that does the same.</text>
+</svg></figure>
+<table><thead><tr><th>Branch</th><th>Taken when</th><th>From C</th></tr></thead><tbody><tr><td><code>beq</code></td><td>equal (<code>Z</code>)</td><td><code>if (a == b)</code></td></tr><tr><td><code>bne</code></td><td>not equal</td><td><code>if (a != b)</code></td></tr><tr><td><code>blt</code> / <code>bge</code></td><td>signed less / greater-or-equal</td><td><code>int</code> comparison</td></tr><tr><td><code>bcc</code> / <code>bcs</code></td><td>unsigned lower / higher-or-same</td><td><code>unsigned</code> comparison</td></tr><tr><td><code>bmi</code> / <code>bpl</code></td><td>negative / positive</td><td>sign test</td></tr></tbody></table>
+<p>&gt; <strong><code>blt</code> and <code>bcc</code> are not interchangeable.</strong> The compiler picks based on<br>&gt; whether your variable is signed. A comparison that behaves oddly at the<br>&gt; extremes of a range is very often a signedness bug, and the disassembly shows<br>&gt; it immediately.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Branches, Calls and Returns</h2>
+<table><thead><tr><th>Instruction</th><th>Does</th><th>C</th></tr></thead><tbody><tr><td><code>b   label</code></td><td>jump</td><td><code>goto</code>, loop back, <code>else</code></td></tr><tr><td><code>bne label</code></td><td>jump if condition</td><td><code>if</code>, <code>while</code></td></tr><tr><td><code>bl  func</code></td><td><strong>branch with link</strong> — jump and save the return address in <code>LR</code></td><td><code>f();</code></td></tr><tr><td><code>bx  lr</code></td><td>jump to the address in <code>LR</code></td><td><code>return;</code></td></tr><tr><td><code>push {r4, lr}</code></td><td>save registers on the stack</td><td>function prologue</td></tr><tr><td><code>pop  {r4, pc}</code></td><td>restore — <strong>and popping into <code>PC</code> returns</strong></td><td>function epilogue</td></tr></tbody></table>
+<p>That last row is a neat trick worth recognising. Instead of <code>pop {r4, lr}</code><br>followed by <code>bx lr</code>, the compiler pops the saved <code>LR</code> straight into <code>PC</code>, which<br><em>is</em> a branch. One instruction saved on every function that touches the stack.</p>
+<p>You can see both halves in the spike&#x27;s <code>_write</code>:</p>
+<pre><code> 80002b8:  b5f0    push  {r4, r5, r6, r7, lr}
+   ...
+ 80002c8:  bdf0    pop   {r4, r5, r6, r7, pc}</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 8: How You Reach Memory — Addressing Modes</h2>
+<p><code>ldr</code> and <code>str</code> need an address, and there are only a few ways to build one.<br>Each corresponds to a C construct you write constantly.</p>
+<table><thead><tr><th>Form</th><th>Example</th><th>In C</th><th>Encoding</th></tr></thead><tbody><tr><td>register</td><td><code>ldr r0, [r1]</code></td><td><code>*p</code></td><td>16-bit</td></tr><tr><td><strong>immediate offset</strong></td><td><code>ldr r0, [r4, #28]</code></td><td><code>s-&gt;field</code></td><td>16-bit, small offsets</td></tr><tr><td><strong>register offset</strong></td><td><code>ldrb r6, [r1, r3]</code></td><td><code>buf[i]</code></td><td>16-bit</td></tr><tr><td>SP-relative</td><td><code>ldr r0, [sp, #8]</code></td><td>a local variable</td><td>16-bit</td></tr><tr><td>PC-relative</td><td><code>ldr r2, [pc, #44]</code></td><td>a big constant</td><td>16-bit</td></tr><tr><td>scaled register</td><td><code>ldr r0, [r1, r2, lsl #2]</code></td><td><code>arr[i]</code> for <code>int</code></td><td><strong>32-bit, M3+ only</strong></td></tr><tr><td>pre-indexed</td><td><code>ldr r0, [r1, #4]!</code></td><td><code>*++p</code></td><td><strong>32-bit, M3+ only</strong></td></tr><tr><td>post-indexed</td><td><code>ldr r0, [r1], #4</code></td><td><code>*p++</code></td><td><strong>32-bit, M3+ only</strong></td></tr></tbody></table>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Immediate offset reaches a struct field; register offset reaches an array element">
+  <defs><marker id="i4" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="18" y="30" width="150" height="30" rx="4"/>
+  <text x="93" y="45" text-anchor="middle" class="mono">[r4, #28]</text>
+  <text x="93" y="80" text-anchor="middle" class="lbl">base + FIXED offset</text>
+  <text x="93" y="100" text-anchor="middle" class="lbl">known at compile time</text>
+  <text x="93" y="124" text-anchor="middle" class="mono lbl">USART2-&gt;ISR</text>
+  <rect class="hifill" x="204" y="30" width="150" height="30" rx="4"/>
+  <text x="279" y="45" text-anchor="middle" class="mono">[r1, r3]</text>
+  <text x="279" y="80" text-anchor="middle" class="lbl">base + VARIABLE index</text>
+  <text x="279" y="100" text-anchor="middle" class="lbl">computed at run time</text>
+  <text x="279" y="124" text-anchor="middle" class="mono lbl">buf[i]</text>
+  <rect class="box" x="390" y="30" width="152" height="30" rx="4"/>
+  <text x="466" y="45" text-anchor="middle" class="mono">[sp, #8]</text>
+  <text x="466" y="80" text-anchor="middle" class="lbl">base is the stack</text>
+  <text x="466" y="100" text-anchor="middle" class="lbl">pointer</text>
+  <text x="466" y="124" text-anchor="middle" class="mono lbl">a local</text>
+  <text x="280" y="168" text-anchor="middle" class="lbl">A peripheral register access is literally a struct field access — base register</text>
+  <text x="280" y="186" text-anchor="middle" class="lbl">plus constant offset. That is the whole trick CMSIS uses.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 9: The Offsets Are Small, and You Can See When They Run Out</h2>
+<p>A 16-bit instruction has very little room left for an offset once it has<br>encoded the opcode and two registers. The limits are strict:</p>
+<table><thead><tr><th>Instruction</th><th>Offset field</th><th>Reaches</th></tr></thead><tbody><tr><td><code>ldr  r0, [r1, #n]</code></td><td>5 bits, <strong>scaled by 4</strong></td><td>0 to 124 bytes</td></tr><tr><td><code>ldrh r0, [r1, #n]</code></td><td>5 bits, scaled by 2</td><td>0 to 62 bytes</td></tr><tr><td><code>ldrb r0, [r1, #n]</code></td><td>5 bits, unscaled</td><td>0 to 31 bytes</td></tr><tr><td><code>ldr  r0, [sp, #n]</code></td><td>8 bits, scaled by 4</td><td>0 to 1020 bytes</td></tr></tbody></table>
+<p>Two things follow that you will actually observe:</p>
+<p><strong>Offsets are always positive.</strong> There is no <code>[r1, #-4]</code> in 16-bit Thumb. To<br>step backwards the compiler must adjust the base register first.</p>
+<p><strong>A far field costs an extra instruction.</strong> Reaching offset 28 is free:</p>
+<pre><code> 80002d0:  ldr   r6, [r4, #28]        ; USART2-&gt;ISR, one instruction</code></pre>
+<p>but a field beyond 124 bytes cannot be encoded, so the compiler emits an <code>add</code><br>to move the base, then loads from the new base. <strong>This is why a large<br>peripheral struct can generate visibly worse code at the far end of it</strong>, and<br>why drivers that keep a pointer to the specific register they hammer in a loop<br>are sometimes measurably faster than ones that index from the block base.</p>
+<p>&gt; On Cortex-M3 and above the 32-bit encodings lift most of this: offsets up to<br>&gt; 4095 bytes, negative offsets, scaled register offsets and auto-increment.<br>&gt; Same source code, denser output — another instance of the &quot;one model, many<br>&gt; instances&quot; idea from lesson 00.</p>
+<h2>Slide 10: A Real Function, Disassembled</h2>
+<p>This is <code>SystemInit()</code> from the spike — the code that takes the chip from its<br>12 MHz reset state to 48 MHz. Here is what the processor got:</p>
+<pre><code>0800022c &lt;SystemInit&gt;:
+ 800022c:  2007        movs  r0, #7            ; r0 = the HSIDIV bit mask
+ 800022e:  2301        movs  r3, #1
+ 8000230:  4a0b        ldr   r2, [pc, #44]     ; r2 = 0x40022000  (FLASH base)
+ 8000232:  6811        ldr   r1, [r2, #0]      ; LOAD    FLASH-&gt;ACR
+ 8000234:  4381        bics  r1, r0            ; MODIFY  clear the field
+ 8000236:  430b        orrs  r3, r1            ; MODIFY  set the new value
+ 8000238:  6013        str   r3, [r2, #0]      ; STORE   back to FLASH-&gt;ACR</code></pre>
+<p>Four instructions — <code>ldr</code>, <code>bics</code>, <code>orrs</code>, <code>str</code> — are the load/modify/store of<br>slide 3, and they came from a single line of C:</p>
+<pre class="lang-c"><code>FLASH-&gt;ACR = (FLASH-&gt;ACR &amp; ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;</code></pre>
+<p>One statement, four bus operations. <code>bics</code> is the <code>&amp; ~</code>, <code>orrs</code> is the <code>|</code>.<br>That correspondence is the whole reason to read disassembly.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Where Do Big Constants Live?</h2>
+<p>Look again at <code>ldr r2, [pc, #44]</code>. The CPU is loading from an address computed<br>from <strong>the program counter itself</strong>. Why?</p>
+<figure class="diagram"><svg viewBox="0 0 560 210" role="img" aria-label="A 16-bit instruction cannot hold a 32-bit address, so it is stored nearby">
+  <rect class="reg" x="20" y="30" width="200" height="38" rx="5"/>
+  <text x="120" y="49" text-anchor="middle" class="mono">movs r0, #7</text>
+  <text x="120" y="86" text-anchor="middle" class="lbl">small number: fits inside</text>
+  <text x="120" y="104" text-anchor="middle" class="lbl">the instruction itself</text>
+  <rect class="hifill" x="300" y="30" width="240" height="38" rx="5"/>
+  <text x="420" y="49" text-anchor="middle" class="mono">0x40021000</text>
+  <text x="420" y="86" text-anchor="middle" class="lbl">32 bits — cannot possibly fit in a</text>
+  <text x="420" y="104" text-anchor="middle" class="lbl">16-bit instruction</text>
+  <rect class="box" x="140" y="132" width="280" height="36" rx="5"/>
+  <text x="280" y="150" text-anchor="middle" class="mono">ldr r2, [pc, #44]</text>
+  <text x="280" y="192" text-anchor="middle" class="lbl">So the compiler parks the constant in a "literal pool" just past the
+  code, and loads it relative to PC.</text>
+</svg></figure>
+<p>The pool sits at the end of the function, and every peripheral address the<br>function touches is listed in plain sight:</p>
+<pre><code> 8000260:  40022000   .word  0x40022000    ; FLASH
+ 8000264:  40021000   .word  0x40021000    ; RCC
+ 8000268:  ffffc7ff   .word  0xffffc7ff    ; ~(7 &lt;&lt; 11)  — the HSIDIV mask
+ 800026c:  20000000   .word  0x20000000    ; &amp;SystemCoreClock, in SRAM
+ 8000270:  02dc6c00   .word  0x02dc6c00    ; 48000000</code></pre>
+<p><code>0x02dc6c00</code> is 48,000,000. The clock speed you assigned in C is sitting in<br>flash as a number, and the address it gets written to is <code>0x20000000</code> — the<br>very bottom of SRAM, exactly where lesson 02 will show the linker putting it.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: A Polling Loop, in Four Instructions</h2>
+<p>Lesson 00 described polling as &quot;keep asking&quot;. Here it is literally, waiting for<br>the flash controller to acknowledge the new wait state:</p>
+<pre><code> 800023a:  6813        ldr   r3, [r2, #0]     ; read FLASH-&gt;ACR
+ 800023c:  4003        ands  r3, r0           ; isolate the LATENCY field
+ 800023e:  2b01        cmp   r3, #1           ; is it what we asked for?
+ 8000240:  d1fb        bne.n 800023a          ; no -&gt; go back and read again</code></pre>
+<p>The branch target <code>800023a</code> is the load. That is the loop: <strong>read, test,<br>branch back</strong>. It costs the CPU every cycle until the hardware agrees.</p>
+<p>Note there is no <code>volatile</code> keyword visible in the machine code — but without<br>it in the C source, the compiler would have read <code>FLASH-&gt;ACR</code> <strong>once</strong>, cached<br>it in <code>r3</code>, and looped forever on a value that never changes.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: A Whole C Function, Line by Line</h2>
+<p>This is <code>_write()</code> from the spike — the function that makes <code>printf</code> reach the<br>serial port. Nothing in it is exotic, and every instruction is one you have now<br>met.</p>
+<pre><code>080002b8 &lt;_write&gt;:
+ 80002b8:  push  {r4, r5, r6, r7, lr}   ; prologue
+ 80002ba:  movs  r3, #0                 ; i = 0
+ 80002bc:  movs  r0, #128               ; 0x80 = the TXE flag
+ 80002be:  movs  r5, #13                ; &#x27;\r&#x27;
+ 80002c0:  ldr   r4, [pc, #36]          ; r4 = 0x40004400 = USART2
+ 80002c2:  cmp   r3, r2                 ; i &lt; len ?
+ 80002c4:  db01  blt.n 80002ca          ;   yes -&gt; body
+ 80002c6:  movs  r0, r2                 ; return len
+ 80002c8:  pop   {r4, r5, r6, r7, pc}   ; epilogue + return
+ 80002ca:  ldrb  r6, [r1, r3]           ; c = buf[i]
+ 80002cc:  cmp   r6, #10                ; c == &#x27;\n&#x27; ?
+ 80002ce:  bne.n 80002d8                ;   no -&gt; skip
+ 80002d0:  ldr   r6, [r4, #28]          ; USART2-&gt;ISR
+ 80002d2:  tst   r6, r0                 ; TXE set?
+ 80002d4:  beq.n 80002d0                ;   no -&gt; poll again
+ 80002d6:  str   r5, [r4, #40]          ; USART2-&gt;TDR = &#x27;\r&#x27;
+ 80002d8:  ldrb  r6, [r1, r3]           ; c = buf[i]
+ 80002da:  ldr   r7, [r4, #28]          ; poll again for the real character
+ 80002dc:  tst   r7, r0
+ 80002de:  beq.n 80002da
+ 80002e0:  str   r6, [r4, #40]          ; USART2-&gt;TDR = c
+ 80002e2:  adds  r3, #1                 ; i++
+ 80002e4:  b.n   80002c2                ; loop</code></pre>
+<p>Read the constants and the whole thing decodes itself:</p>
+<table><thead><tr><th>In the code</th><th>Is</th></tr></thead><tbody><tr><td><code>#10</code></td><td><code>&#x27;\n&#x27;</code></td></tr><tr><td><code>#13</code></td><td><code>&#x27;\r&#x27;</code></td></tr><tr><td><code>#128</code></td><td><code>USART_ISR_TXE</code>, bit 7</td></tr><tr><td><code>[r4, #28]</code></td><td><code>USART2-&gt;ISR</code> — offset <code>0x1C</code></td></tr><tr><td><code>[r4, #40]</code></td><td><code>USART2-&gt;TDR</code> — offset <code>0x28</code></td></tr></tbody></table>
+<p><strong>Every <code>for</code> loop you ever write looks like this</strong>: initialise, compare,<br>conditional branch to the body, increment, unconditional branch back.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Thumb-2 — Mostly 16 Bits, Sometimes 32</h2>
+<p>Look at the second column of the disassembly: <code>2007</code>, <code>4a0b</code>, <code>6811</code>. Four hex<br>digits. Two bytes. Most instructions on this chip are <strong>16 bits wide</strong>, which<br>is why 32 KB of flash holds a useful program at all.</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><code>2007</code></td><td>16-bit — <code>movs r0, #7</code></td></tr><tr><td><code>d1fb</code></td><td>16-bit — <code>bne.n</code> (the <code>.n</code> means <em>narrow</em>)</td></tr><tr><td><code>f000 f812</code></td><td>32-bit — a longer branch, when 16 bits cannot reach</td></tr></tbody></table>
+<p>The instruction set is called <strong>Thumb-2</strong>: a 16-bit encoding with 32-bit escapes<br>for what does not fit. You get most of the code density of a compressed<br>instruction set and most of the power of a full one.</p>
+<p>The price is the constraints you have already seen — only eight registers are<br>freely reachable by most 16-bit instructions, constants must be small, and<br>flags are set whether you want them or not.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Who Owns Which Register — the Calling Convention</h2>
+<p>Sixteen registers, one CPU, and every function wanting to use them. The rules<br>are a written standard, <strong>AAPCS</strong>, and the compiler follows it exactly.</p>
+<figure class="diagram"><svg viewBox="0 0 560 210" role="img" aria-label="AAPCS register roles: arguments, callee-saved, special">
+  <rect class="hifill" x="16" y="26" width="150" height="44" rx="5"/>
+  <text x="91" y="42" text-anchor="middle" class="mono">R0 R1 R2 R3</text>
+  <text x="91" y="60" text-anchor="middle" class="lbl">arguments in, result out</text>
+  <rect class="box" x="182" y="26" width="150" height="44" rx="5"/>
+  <text x="257" y="42" text-anchor="middle" class="mono">R4 ... R11</text>
+  <text x="257" y="60" text-anchor="middle" class="lbl">callee must preserve</text>
+  <rect class="box" x="348" y="26" width="196" height="44" rx="5"/>
+  <text x="446" y="42" text-anchor="middle" class="mono">R12  SP  LR  PC</text>
+  <text x="446" y="60" text-anchor="middle" class="lbl">scratch and special</text>
+  <text x="280" y="106" text-anchor="middle" class="lbl">A function returning its answer in R0 is not a convention the compiler invented.</text>
+  <text x="280" y="124" text-anchor="middle" class="lbl">It is why C you compile can call assembly someone else wrote.</text>
+  <rect class="reg" x="140" y="148" width="280" height="34" rx="5"/>
+  <text x="280" y="165" text-anchor="middle" class="mono">push {r4, r5, r6, r7, lr}</text>
+</svg></figure>
+<p>Now <code>_write</code> explains itself. Its arguments arrived in <code>r0</code>, <code>r1</code>, <code>r2</code> — the<br>file descriptor, the buffer and the length. It returns <code>len</code> by putting it in<br><code>r0</code>. And it pushes <code>r4</code>–<code>r7</code> <strong>because AAPCS says it must give them back<br>unchanged</strong> — it wanted them for the USART base and the loop counter.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: The Thumb Bit — an Odd Address That Is Not a Bug</h2>
+<p>Here are the first sixteen bytes of <code>Main.hex</code>, the actual file that would be<br>flashed:</p>
+<pre><code>:1000000000300020750200082902000829020008BB</code></pre>
+<p>Decoded, ignoring the record framing:</p>
+<table><thead><tr><th>Bytes (little-endian)</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><td><code>00300020</code></td><td><code>0x20003000</code></td><td>initial stack pointer — top of 12 KB SRAM</td></tr><tr><td><code>75020008</code></td><td><code>0x08000275</code></td><td>reset vector — <strong>where execution begins</strong></td></tr><tr><td><code>29020008</code></td><td><code>0x08000229</code></td><td>NMI handler</td></tr></tbody></table>
+<p><code>Reset_Handler</code> is at <code>0x08000274</code>, an even address. The vector says<br><code>0x08000275</code>. <strong>The low bit is set on purpose</strong>: on this processor it means<br>&quot;the code at this address is Thumb code&quot;. Every function pointer on the chip<br>is odd.</p>
+<p>&gt; Clear that bit and the CPU faults immediately on reset. A vector table full<br>&gt; of even addresses is a dead chip — and it is a common hand-written-assembly<br>&gt; mistake.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: What the Compiler Is Allowed to Do to You</h2>
+<p>The compiler&#x27;s contract is to preserve the <em>observable behaviour</em> of your<br>program — as defined by the C standard, which has never heard of your<br>peripheral.</p>
+<figure class="diagram"><svg viewBox="0 0 560 180" role="img" aria-label="The compiler may cache or delete accesses unless told otherwise">
+  <rect class="box" x="20" y="26" width="180" height="106" rx="6"/>
+  <text x="110" y="48" text-anchor="middle" class="lbl">you wrote</text>
+  <text x="110" y="74" text-anchor="middle" class="mono">read</text>
+  <text x="110" y="94" text-anchor="middle" class="mono">read</text>
+  <text x="110" y="114" text-anchor="middle" class="mono">read</text>
+  <rect class="hifill" x="360" y="26" width="180" height="106" rx="6"/>
+  <text x="450" y="48" text-anchor="middle" class="lbl">you may get</text>
+  <text x="450" y="84" text-anchor="middle" class="mono">read</text>
+  <text x="450" y="108" text-anchor="middle" class="lbl">(cached in a register)</text>
+  <path class="dash" d="M200 79 H356"/>
+  <text x="278" y="66" text-anchor="middle" class="lbl">-Os</text>
+</svg></figure>
+<p>For ordinary variables this is exactly what you want. For a status register it<br>is catastrophic, and it produces the classic symptom: <strong>code that works at<br><code>-O0</code> and hangs at <code>-Os</code></strong>.</p>
+<p>The keyword that forbids it is <code>volatile</code>, and CMSIS has already applied it —<br>every register in <code>stm32c031xx.h</code> is declared <code>__IO</code>, which is <code>volatile</code>. You<br>inherit the protection; you should still know why it is there.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: What You Should Be Able to Say</h2>
+<ol><li>Roughly how many distinct instructions make up 80% of real firmware?</li><li>Why does setting one bit in a peripheral register take at least three instructions?</li><li>What does <code>bics</code> do, and which C operator produces it?</li><li>Why is <code>lsls</code> more common than <code>subs</code> in embedded code?</li><li><code>cmp</code> computes a subtraction and discards the answer. What is the point?</li><li><code>blt</code> and <code>bcc</code> both mean &quot;less than&quot;. What is the difference, and what bug does confusing them cause?</li><li>What does <code>pop {r4, pc}</code> do that <code>pop {r4, lr}</code> does not?</li><li>Which addressing mode is <code>s-&gt;field</code>? Which is <code>buf[i]</code>?</li><li>Why is there no divide instruction, and how can you tell from a <code>.map</code> file that your code divided?</li><li>The reset vector holds <code>0x08000275</code> but the function is at <code>0x08000274</code>. Why, and what happens if you &quot;fix&quot; it?</li></ol>
+<p><strong>Next:</strong> <em>Development</em> — how a <code>.c</code> file becomes the bytes in that hex record,<br>and what runs before <code>main()</code>.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:01_Instruction_Set', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:01_Instruction_Set') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

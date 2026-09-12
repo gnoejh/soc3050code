@@ -1,0 +1,8 @@
+:name: SOC3050 ARM spike - F446RE, headless
+using sysbus
+mach create "f446re"
+machine LoadPlatformDescription $ORIGIN/nucleo_f446re.repl
+sysbus LoadELF $ORIGIN/Main.elf
+showAnalyzer sysbus.usart2 Antmicro.Renode.Analyzers.LoggingUartAnalyzer
+emulation RunFor "0.5"
+quit

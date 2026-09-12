@@ -1,0 +1,32 @@
+<title>SOC3050 Lecture Decks - ARM</title>
+<style>
+  :root { --bg:#fff; --fg:#1a1c1f; --muted:#5b6270; --rule:#dfe3ea; --accent:#1f5fa8; --card:#f7f9fc; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#14171c; --fg:#e6e9ee; --muted:#9aa3b2; --rule:#2b313b; --accent:#78b4f0; --card:#1b1f26; }
+  }
+  :root[data-theme="dark"] { --bg:#14171c; --fg:#e6e9ee; --muted:#9aa3b2; --rule:#2b313b; --accent:#78b4f0; --card:#1b1f26; }
+  body { background:var(--bg); color:var(--fg); margin:0; padding:3rem 1.5rem 5rem;
+         font:16px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  h1 { font-size:2rem; margin:0 0 .3rem; letter-spacing:-.02em; }
+  .sub { color:var(--muted); margin:0 0 2rem; }
+  ol { list-style:none; padding:0; margin:0; display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.7rem; }
+  a.card { display:block; background:var(--card); border:1px solid var(--rule);
+            border-radius:9px; padding:.85rem 1rem; text-decoration:none; color:inherit; }
+  a.card:hover { border-color:var(--accent); }
+  .n { color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums; }
+  .t { display:block; font-weight:600; margin:.15rem 0 .2rem; }
+  .f { color:var(--muted); font-size:.87rem; }
+</style>
+<div class="wrap">
+  <h1>SOC3050 &mdash; ATmega128 Lecture Decks</h1>
+  <p class="sub">4 decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
+  <p class="sub"><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
+  <ol>
+    <li><a class="card" href="00_Architecture.html"><span class="n">00</span><span class="t">The Programmer&#x27;s Model: What You Can See and Change</span><span class="f"></span></a></li>
+    <li><a class="card" href="01_Instruction_Set.html"><span class="n">01</span><span class="t">Instruction Set: What the Processor Actually Does</span><span class="f"></span></a></li>
+    <li><a class="card" href="02_Development.html"><span class="n">02</span><span class="t">Development: From Text to a Chip That Runs</span><span class="f"></span></a></li>
+    <li><a class="card" href="03_Execution_Concurrency.html"><span class="n">03</span><span class="t">Execution and Concurrency: When Two Things Run at Once</span><span class="f"></span></a></li>
+  </ol>
+</div>

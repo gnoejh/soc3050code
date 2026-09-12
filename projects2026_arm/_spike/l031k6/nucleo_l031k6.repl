@@ -1,0 +1,9 @@
+// Nucleo-L031K6, derived from Renode's stm32l071.repl.
+// Renode ships no L03x board; this is the whole derivation.
+using "platforms/cpus/stm32l071.repl"
+
+flash:
+    size: 0x8000        // 32 KB, not 192 KB
+
+sram:
+    size: 0x2000        // 8 KB, not 20 KB

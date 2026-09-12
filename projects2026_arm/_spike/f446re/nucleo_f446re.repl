@@ -1,0 +1,17 @@
+// Nucleo-F446RE, derived from Renode's own stm32f4.repl.
+// Renode ships no F446 board file; this is the whole derivation.
+using "platforms/cpus/stm32f4.repl"
+
+// The F446RE has half the flash and half the SRAM of the F407 that
+// stm32f4.repl is written for.  Getting these wrong lets a program link
+// against memory the part does not have.
+flash:
+    size: 0x80000       // 512 KB
+
+sram:
+    size: 0x20000       // 128 KB
+
+// The Nucleo user LED, so `showAnalyzer` has something to show besides UART.
+led: Miscellaneous.LED @ gpioPortA 5
+gpioPortA:
+    5 -> led@0

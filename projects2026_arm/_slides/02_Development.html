@@ -1,0 +1,344 @@
+<title>Development: From Text to a Chip That Runs</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Development: From Text to a Chip That Runs</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Development: From Text to a Chip That Runs</h1>
+<h2>SOC3050 ARM Edition — Part 0, Models</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a></p>
+<p>The third of four lessons with <strong>no code to write</strong>.</p>
+<p>You have a model of the machine and of its instructions. This lesson is about<br>the <em>other</em> machine — the toolchain — and it exists because on a desktop you<br>can ignore it for years, and here you cannot ignore it for a week.</p>
+<p>Every figure is real output from this repository&#x27;s build of<br><code>_spike/c031c6/</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: On a PC, an Operating System Hides All of This</h2>
+<p>When you run <code>gcc hello.c</code> on a laptop, something enormous happens that you<br>never see: the OS decides where your program lives in memory, provides a stack,<br>zeroes your globals, opens <code>stdout</code>, and calls <code>main()</code> for you.</p>
+<p><strong>There is no operating system here.</strong> Every one of those jobs still has to be<br>done, and if you do not arrange it, nothing does.</p>
+<p>&gt; The question this lesson answers: between power-on and the first line of<br>&gt; <code>main()</code>, who does the work — and what happens if nobody does?</p>
+</section>
+<section class="slide">
+<h2>Slide 2: Five Stages, Not One</h2>
+<p><code>gcc</code> is not a compiler. It is a driver that runs four or five programs in<br>sequence, and on embedded the last one is the one that bites.</p>
+<figure class="diagram"><svg viewBox="0 0 560 230" role="img" aria-label="Preprocess, compile, assemble, link and locate">
+  <defs><marker id="d1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="14" y="40" width="96" height="40" rx="5"/>
+  <text x="62" y="60" text-anchor="middle" class="mono">main.c</text>
+  <path class="wire" d="M110 60 H140" marker-end="url(#d1)"/>
+  <rect class="box" x="144" y="40" width="96" height="40" rx="5"/>
+  <text x="192" y="55" text-anchor="middle" class="lbl">preprocess</text>
+  <text x="192" y="72" text-anchor="middle" class="lbl">compile</text>
+  <path class="wire" d="M240 60 H270" marker-end="url(#d1)"/>
+  <rect class="box" x="274" y="40" width="96" height="40" rx="5"/>
+  <text x="322" y="60" text-anchor="middle" class="lbl">assemble</text>
+  <path class="wire" d="M370 60 H400" marker-end="url(#d1)"/>
+  <rect class="box" x="404" y="40" width="96" height="40" rx="5"/>
+  <text x="452" y="60" text-anchor="middle" class="mono">main.o</text>
+  <path class="wire" d="M452 80 V116" marker-end="url(#d1)"/>
+  <rect class="hifill" x="180" y="120" width="280" height="44" rx="6"/>
+  <text x="320" y="136" text-anchor="middle">LINK and LOCATE</text>
+  <text x="320" y="154" text-anchor="middle" class="lbl">resolve names, then assign real addresses</text>
+  <path class="hi" d="M180 142 H120 V60 H110" />
+  <rect class="box" x="14" y="120" width="96" height="44" rx="5"/>
+  <text x="62" y="136" text-anchor="middle" class="mono">startup.c</text>
+  <text x="62" y="154" text-anchor="middle" class="mono">link.ld</text>
+  <text x="280" y="200" text-anchor="middle" class="lbl">On a PC the last stage is invisible. Here you write its input by hand.</text>
+</svg></figure>
+<p>Stages 1–3 are ordinary and familiar. <strong>Stage 4, locate, is the embedded one</strong>:<br>deciding that <code>SystemInit</code> lives at <code>0x0800022c</code> and <code>SystemCoreClock</code> at<br><code>0x20000000</code>. On a PC the OS does that at load time. Here it is decided at<br>build time and burned into the image.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Compiler Sees One File at a Time</h2>
+<p>Each <code>.c</code> file is compiled alone, into an <code>.o</code>, knowing nothing about the<br>others. Where it needs a name it does not have, it leaves a hole and a note.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Object files with defined and undefined symbols, resolved by the linker">
+  <rect class="box" x="20" y="24" width="150" height="92" rx="6"/>
+  <text x="95" y="44" text-anchor="middle" class="mono">main.o</text>
+  <text x="95" y="68" text-anchor="middle" class="lbl">defines: main, _write</text>
+  <text x="95" y="90" text-anchor="middle" class="lbl">needs: printf, SystemCoreClock</text>
+  <rect class="box" x="200" y="24" width="150" height="92" rx="6"/>
+  <text x="275" y="44" text-anchor="middle" class="mono">startup.o</text>
+  <text x="275" y="68" text-anchor="middle" class="lbl">defines: Reset_Handler,</text>
+  <text x="275" y="86" text-anchor="middle" class="lbl">SystemCoreClock</text>
+  <text x="275" y="106" text-anchor="middle" class="lbl">needs: main</text>
+  <rect class="box" x="380" y="24" width="160" height="92" rx="6"/>
+  <text x="460" y="44" text-anchor="middle" class="mono">libc_nano.a</text>
+  <text x="460" y="68" text-anchor="middle" class="lbl">defines: printf</text>
+  <text x="460" y="90" text-anchor="middle" class="lbl">needs: _write, _sbrk</text>
+  <path class="dash" d="M95 116 V140 H460 V116"/>
+  <path class="dash" d="M275 116 V140"/>
+  <text x="280" y="168" text-anchor="middle" class="lbl">The linker matches every "needs" to exactly one "defines".</text>
+  <text x="280" y="186" text-anchor="middle" class="lbl">None left over, none duplicated — or it refuses.</text>
+</svg></figure>
+<p>This explains the two errors you will meet most often:</p>
+<ul><li><strong><code>undefined reference to X</code></strong> — somebody needs <code>X</code> and nobody defines it. Real example from building the spike: <code>undefined reference to SystemCoreClock</code>, because ST&#x27;s header <em>declares</em> it but their <code>system_stm32c0xx.c</code> — which we deliberately do not use — <em>defines</em> it.</li><li><strong><code>multiple definition of X</code></strong> — two files both define it, and the linker will not choose for you.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 4: Your Program Is Not One Blob — It Is Sections</h2>
+<p>The compiler sorts everything it emits into named <strong>sections</strong> by what kind of<br>thing it is. This is the real output for the spike:</p>
+<pre><code>section          size    addr
+.isr_vector       180    0x08000000     the vector table
+.text            4792    0x080000b4     code
+.rodata           184    0x08002cac     const data, string literals
+.data              96    0x20000000     initialised variables
+.bss              364    0x20000060     variables that start at zero</code></pre>
+<p>Read the addresses. Two distinct places:</p>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="Sections placed into flash and SRAM">
+  <text x="140" y="22" text-anchor="middle" class="lbl">FLASH — 0x08000000</text>
+  <rect class="box" x="40" y="34" width="200" height="30" rx="4"/>
+  <text x="140" y="49" text-anchor="middle" class="mono">.isr_vector</text>
+  <rect class="box" x="40" y="68" width="200" height="30" rx="4"/>
+  <text x="140" y="83" text-anchor="middle" class="mono">.text</text>
+  <rect class="box" x="40" y="102" width="200" height="30" rx="4"/>
+  <text x="140" y="117" text-anchor="middle" class="mono">.rodata</text>
+  <rect class="hifill" x="40" y="136" width="200" height="30" rx="4"/>
+  <text x="140" y="151" text-anchor="middle" class="mono">.data (a copy)</text>
+  <text x="420" y="22" text-anchor="middle" class="lbl">SRAM — 0x20000000</text>
+  <rect class="hifill" x="320" y="34" width="200" height="30" rx="4"/>
+  <text x="420" y="49" text-anchor="middle" class="mono">.data (the real one)</text>
+  <rect class="box" x="320" y="68" width="200" height="30" rx="4"/>
+  <text x="420" y="83" text-anchor="middle" class="mono">.bss</text>
+  <rect class="reg" x="320" y="102" width="200" height="30" rx="4"/>
+  <text x="420" y="117" text-anchor="middle" class="lbl">heap</text>
+  <rect class="reg" x="320" y="136" width="200" height="30" rx="4"/>
+  <text x="420" y="151" text-anchor="middle" class="lbl">stack (grows down)</text>
+  <path class="hi" d="M240 151 H290 V49 H320"/>
+  <text x="280" y="196" text-anchor="middle" class="lbl">.data exists twice: the values live in flash, the variables live in RAM.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 5: The Awkward One — <code>.data</code></h2>
+<p>A variable like <code>uint32_t SystemCoreClock = 12000000;</code> must be <strong>writable</strong>, so<br>it has to live in RAM. Its initial value must <strong>survive power-off</strong>, so it has<br>to live in flash. Both are true, so it exists in both places.</p>
+<p>Somebody has to copy 96 bytes from flash to RAM before <code>main()</code> runs. On a PC<br>the loader does it. Here, <code>Reset_Handler</code> does — it is four lines of the<br>startup file:</p>
+<pre class="lang-c"><code>src = &amp;_sidata;                                  /* where the values sit in flash */
+for (dst = &amp;_sdata; dst &lt; &amp;_edata; ) { *dst++ = *src++; }
+for (dst = &amp;_sbss;  dst &lt; &amp;_ebss;  ) { *dst++ = 0; }</code></pre>
+<p><code>_sidata</code>, <code>_sdata</code>, <code>_edata</code>, <code>_sbss</code>, <code>_ebss</code> are not variables. <strong>The linker<br>invents them</strong>, and their values are addresses it chose. This is the one place<br>where your C code reads decisions the linker made.</p>
+<p>&gt; Skip the <code>.bss</code> loop and globals start as whatever was in RAM at power-on.<br>&gt; The program works perfectly on a cold boot and misbehaves after a reset.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: The Linker Script Is the Memory Map, Written Down</h2>
+<p>The linker knows nothing about your chip. Everything on the last two slides —<br>where flash starts, how big RAM is, which section goes where — you tell it:</p>
+<pre><code>MEMORY
+{
+  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 32K
+  RAM   (rw) : ORIGIN = 0x20000000, LENGTH = 12K
+}</code></pre>
+<p>Those four numbers come from the datasheet, and they are the difference between<br>firmware that runs and firmware that does not. Get <code>LENGTH</code> wrong and the build<br>succeeds — the failure arrives later, as a stack that quietly walks off the end<br>of memory.</p>
+<p>The build also reports what it used:</p>
+<pre><code>Memory region   Used Size   Region Size   %age Used
+       FLASH:     5260 B        32 KB       16.05%
+         RAM:     2000 B        12 KB       16.28%</code></pre>
+<p><strong>On a 32 KB part that number belongs in every build log.</strong> It is the only<br>early warning you get.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: What Actually Gets Programmed</h2>
+<p>The linker&#x27;s output is an <code>.elf</code> — rich, with symbols and debug info, for the<br>debugger and the simulator. What a programmer writes to flash is stripped down:</p>
+<table><thead><tr><th>File</th><th>What it is</th><th>Used by</th></tr></thead><tbody><tr><td><code>Main.elf</code></td><td>code + addresses + symbols + debug</td><td>debugger, simulator</td></tr><tr><td><code>Main.bin</code></td><td>raw bytes, exactly as in flash</td><td>some programmers</td></tr><tr><td><code>Main.hex</code></td><td>the same bytes as printable text records</td><td>most programmers</td></tr></tbody></table>
+<p>The first two records of the real <code>Main.hex</code>:</p>
+<pre><code>:020000040800F2
+:1000000000300020750200082902000829020008BB</code></pre>
+<table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>:</code></td><td>every record starts with a colon</td></tr><tr><td><code>10</code></td><td>16 data bytes follow</td></tr><tr><td><code>0000</code></td><td>at offset 0x0000</td></tr><tr><td><code>00</code></td><td>record type: data</td></tr><tr><td><code>00300020</code></td><td><code>0x20003000</code> — the initial stack pointer</td></tr><tr><td><code>750200 08</code></td><td><code>0x08000275</code> — the reset vector</td></tr><tr><td><code>BB</code></td><td>checksum</td></tr></tbody></table>
+<p>The first record, <code>:02000004 0800</code>, is an <strong>extended linear address</strong> record —<br>it sets the upper half of the address to <code>0x0800</code>. An 8-bit AVR never needed<br>one, because its whole flash fits in 16 bits of address. Yours does not.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: What Runs Before <code>main()</code></h2>
+<p>Putting it together — the complete path from power to your code:</p>
+<figure class="diagram"><svg viewBox="0 0 560 250" role="img" aria-label="Reset sequence from power-on to main">
+  <defs><marker id="d2" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="160" y="16" width="240" height="30" rx="4"/>
+  <text x="280" y="31" text-anchor="middle">power on / reset</text>
+  <path class="wire" d="M280 46 V62" marker-end="url(#d2)"/>
+  <rect class="hifill" x="160" y="62" width="240" height="30" rx="4"/>
+  <text x="280" y="77" text-anchor="middle">hardware loads SP and PC from vector[0], [1]</text>
+  <path class="wire" d="M280 92 V108" marker-end="url(#d2)"/>
+  <rect class="box" x="160" y="108" width="240" height="30" rx="4"/>
+  <text x="280" y="123" text-anchor="middle" class="mono">Reset_Handler</text>
+  <path class="wire" d="M280 138 V154" marker-end="url(#d2)"/>
+  <rect class="box" x="120" y="154" width="320" height="30" rx="4"/>
+  <text x="280" y="169" text-anchor="middle">copy .data · zero .bss · SystemInit · __libc_init_array</text>
+  <path class="wire" d="M280 184 V200" marker-end="url(#d2)"/>
+  <rect class="hifill" x="200" y="200" width="160" height="30" rx="4"/>
+  <text x="280" y="215" text-anchor="middle" class="mono">main()</text>
+</svg></figure>
+<p>The second box is the only step the hardware does for you, and it is worth<br>being precise: the CPU reads <strong>two 32-bit words from address zero of flash</strong> —<br>the stack pointer and the reset vector — and starts. That is the entire boot<br>process. Everything else is code you can read.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Your Instruments</h2>
+<p>You will be given two tools, and they answer different questions.</p>
+<table><thead><tr><th></th><th>Wokwi</th><th>Renode</th></tr></thead><tbody><tr><td>Where</td><td>a browser tab</td><td>a terminal</td></tr><tr><td>Shows you</td><td>the board: LEDs, displays, wires</td><td>serial output, registers, instruction counts</td></tr><tr><td>Good for</td><td><em>does the circuit behave?</em></td><td><em>does the code behave?</em></td></tr><tr><td>Cost</td><td>free, nothing to install</td><td>free, nothing to install</td></tr></tbody></table>
+<p>Both load the same <code>Main.elf</code> you just built. Neither compiles anything — the<br>compiler runs on your machine, and the simulator only executes.</p>
+<p>&gt; A habit worth forming now: <strong>a thing is not working until you have watched it<br>&gt; work.</strong> A clean build, a valid hex file and a correct-looking register dump<br>&gt; have all, in this repository&#x27;s history, been produced by firmware that drove<br>&gt; nothing at all.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: What You Should Be Able to Say</h2>
+<ol><li>Name the five stages of a build. Which one is the embedded-specific one?</li><li>Where does <code>.data</code> live — flash or RAM? Defend your answer.</li><li>What are <code>_sdata</code> and <code>_ebss</code>, and who creates them?</li><li>What happens if the <code>.bss</code> loop is missing? Why is that bug intermittent?</li><li>Two numbers in the linker script come straight from the datasheet. Which, and what goes wrong if they are too large?</li><li>The hex file begins <code>:02000004 0800</code>. What is that record for, and why did the 8-bit chips in the old course never need one?</li></ol>
+<p><strong>Next:</strong> <em>Execution and Concurrency</em> — what happens when the hardware<br>interrupts <code>main()</code>, and why two pieces of code sharing one variable is the<br>hardest problem in the course.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:02_Development', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:02_Development') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

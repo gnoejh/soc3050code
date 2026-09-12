@@ -39,3 +39,20 @@ disasm.txt
 # - Complete SimulIDE installations
 # - All Python packages and dependencies
 # - Complete AVR toolchain with all components
+
+# Wokwi licence keys are per-user credentials tied to an account and an expiry
+# date. They must never reach a public repository. Keep them outside the tree,
+# or here where git will not pick them up.
+wokwi*licence*
+wokwi*license*
+*.wokwi-license
+
+# Build artefacts in the 2026 trees. The AVR edition tracks none of these and
+# neither should the ARM edition: they are derived from the sources beside
+# them, and _slides/ is the one generated thing kept on purpose (for offline
+# use - see CLAUDE.md section 9c).
+projects2026_arm/**/Main.elf
+projects2026_arm/**/Main.hex
+projects2026_arm/**/Main.bin
+projects2026_arm/**/Main.map
+projects2026_arm/**/*.o

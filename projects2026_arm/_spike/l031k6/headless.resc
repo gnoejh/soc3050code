@@ -1,0 +1,8 @@
+:name: SOC3050 ARM spike - Nucleo L031K6, headless
+using sysbus
+mach create "l031k6"
+machine LoadPlatformDescription $ORIGIN/nucleo_l031k6.repl
+sysbus LoadELF $ORIGIN/Main.elf
+showAnalyzer sysbus.usart2 Antmicro.Renode.Analyzers.LoggingUartAnalyzer
+emulation RunFor "0.5"
+quit

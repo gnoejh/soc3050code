@@ -1,0 +1,6 @@
+:name: SOC3050 ARM spike - Nucleo F446RE
+using sysbus
+mach create "f446re"
+machine LoadPlatformDescription $ORIGIN/nucleo_f446re.repl
+showAnalyzer sysbus.usart2
+sysbus LoadELF $ORIGIN/Main.elf

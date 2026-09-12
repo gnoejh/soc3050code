@@ -1,0 +1,558 @@
+<title>The Programmer&#x27;s Model: What You Can See and Change</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">The Programmer&#x27;s Model: What You Can See and Change</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>The Programmer&#x27;s Model: What You Can See and Change</h1>
+<h2>SOC3050 ARM Edition — Part 0, Models</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a></p>
+<p>This is the first of four lessons with <strong>no code at all</strong>.</p>
+<p>Before you write a line of C for this chip, you need a model of what the chip<br><em>is</em>. Not a list of peripherals to memorise — a model, so that the twenty-five<br>peripherals you meet later are recognisably the same thing wearing different<br>names.</p>
+<p>Three lessons follow this one: the <strong>instruction set</strong>, the <strong>development<br>environment</strong>, and <strong>execution and concurrency</strong>. Then you start building.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: What a Programmer&#x27;s Model Is</h2>
+<p>A microcontroller contains millions of transistors, and you can see almost none<br>of them. What you <em>can</em> see is a deliberately small, published abstraction — a<br>contract that says: <strong>here is the state you may inspect and change, and here is<br>what happens when you do.</strong></p>
+<figure class="diagram"><svg viewBox="0 0 560 240" role="img" aria-label="The programmer's model as a contract over a hidden implementation">
+  <rect class="hifill" x="60" y="24" width="440" height="76" rx="8"/>
+  <text x="280" y="50" text-anchor="middle">THE PROGRAMMER'S MODEL</text>
+  <text x="280" y="74" text-anchor="middle" class="lbl">registers · memory · peripheral registers · modes · exceptions</text>
+  <text x="280" y="90" text-anchor="middle" class="lbl">everything software can name</text>
+  <rect class="reg" x="60" y="124" width="440" height="24" rx="4"/>
+  <text x="280" y="137" text-anchor="middle" class="mono lbl">the contract — documented, stable, the same on every chip of this family</text>
+  <rect class="box" x="60" y="168" width="440" height="52" rx="8"/>
+  <text x="280" y="190" text-anchor="middle" class="lbl">THE IMPLEMENTATION</text>
+  <text x="280" y="208" text-anchor="middle" class="lbl">pipeline · bus matrix · silicon · none of it named by your code</text>
+</svg></figure>
+<p>That contract is what this lesson teaches. It has exactly five parts:</p>
+<ol><li><strong>Registers</strong> — the working state inside the CPU</li><li><strong>Memory</strong> — one flat address space, and what lives where</li><li><strong>Peripheral registers</strong> — the memory-mapped controls of the hardware</li><li><strong>Modes and stacks</strong> — which of two contexts you are running in</li><li><strong>Exceptions</strong> — how the hardware takes control away from you</li></ol>
+<p>Everything in the next thirty lessons is one of those five.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: One Model, Many Instances</h2>
+<p>A course that teaches GPIO, then timers, then ADC, then UART, then SPI, then<br>I2C has taught six things. A course that teaches <strong>one peripheral model</strong> has<br>taught one thing six times — and the seventh peripheral, the one not on the<br>syllabus, the one in the datasheet of whatever you build after you graduate,<br>comes free.</p>
+<p>&gt; Whenever you meet a new peripheral in this course, the first question is not<br>&gt; <em>what does it do</em>. It is <strong>which part of the model is this?</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 3: Visible State, Part One — the Registers</h2>
+<p>The CPU cannot compute on memory. It loads into <strong>registers</strong>, operates there,<br>and stores back. Sixteen of them, and four are special.</p>
+<figure class="diagram"><svg viewBox="0 0 560 190" role="img" aria-label="The ARM register file, R0 to R15 plus xPSR">
+  <text x="10" y="22" class="lbl">general purpose — arguments, locals, scratch</text>
+  <rect class="reg" x="10" y="32" width="58" height="30" rx="4"/><text x="39" y="47" text-anchor="middle" class="mono">R0</text>
+  <rect class="reg" x="74" y="32" width="58" height="30" rx="4"/><text x="103" y="47" text-anchor="middle" class="mono">R1</text>
+  <rect class="reg" x="138" y="32" width="58" height="30" rx="4"/><text x="167" y="47" text-anchor="middle" class="mono">R2</text>
+  <rect class="reg" x="202" y="32" width="58" height="30" rx="4"/><text x="231" y="47" text-anchor="middle" class="mono">R3</text>
+  <rect class="reg" x="266" y="32" width="122" height="30" rx="4"/><text x="327" y="47" text-anchor="middle" class="mono lbl">R4 ... R12</text>
+  <rect class="hifill" x="10" y="86" width="106" height="34" rx="5"/>
+  <text x="63" y="103" text-anchor="middle" class="mono">R13 / SP</text>
+  <rect class="hifill" x="124" y="86" width="106" height="34" rx="5"/>
+  <text x="177" y="103" text-anchor="middle" class="mono">R14 / LR</text>
+  <rect class="hifill" x="238" y="86" width="106" height="34" rx="5"/>
+  <text x="291" y="103" text-anchor="middle" class="mono">R15 / PC</text>
+  <text x="63" y="138" text-anchor="middle" class="lbl">stack pointer</text>
+  <text x="177" y="138" text-anchor="middle" class="lbl">return address</text>
+  <text x="291" y="138" text-anchor="middle" class="lbl">what runs next</text>
+  <rect class="reg" x="362" y="86" width="118" height="34" rx="5"/>
+  <text x="421" y="103" text-anchor="middle" class="mono">xPSR</text>
+  <text x="421" y="138" text-anchor="middle" class="lbl">N Z C V flags, mode</text>
+  <text x="280" y="176" text-anchor="middle" class="lbl">Write to PC and you have branched. It is an ordinary register.</text>
+</svg></figure>
+<p><strong>This is the entire working state of the processor.</strong> Everything else your<br>program owns is in memory. That is a remarkably small amount of state, and it<br>is why an interrupt can save and restore it in a handful of cycles.</p>
+<p>You will rarely name these in C — the compiler does — but the debugger shows<br>them, a crash report is mostly their contents, and lesson 01 lives here.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Visible State, Part Two — One Flat Address Space</h2>
+<p>Everything the CPU can reach, it reaches by <strong>address</strong>. There is no other<br>channel: no separate I/O instructions, no special port space.</p>
+<figure class="diagram"><svg viewBox="0 0 560 300" role="img" aria-label="Cortex-M address regions from code to private peripheral bus">
+  <rect class="box" x="150" y="16" width="230" height="38" rx="5"/>
+  <text x="265" y="30" text-anchor="middle" class="mono">PRIVATE PERIPHERAL BUS</text>
+  <text x="265" y="46" text-anchor="middle" class="lbl">NVIC, SysTick — ARM's own</text>
+  <text x="140" y="36" text-anchor="end" class="mono lbl">0xE0000000</text>
+  <rect class="hifill" x="150" y="76" width="230" height="38" rx="5"/>
+  <text x="265" y="90" text-anchor="middle" class="mono">PERIPHERAL</text>
+  <text x="265" y="106" text-anchor="middle" class="lbl">GPIO, USART, timers — ST's</text>
+  <text x="140" y="96" text-anchor="end" class="mono lbl">0x40000000</text>
+  <rect class="box" x="150" y="136" width="230" height="38" rx="5"/>
+  <text x="265" y="150" text-anchor="middle" class="mono">SRAM</text>
+  <text x="265" y="166" text-anchor="middle" class="lbl">variables, stack, heap</text>
+  <text x="140" y="156" text-anchor="end" class="mono lbl">0x20000000</text>
+  <rect class="box" x="150" y="196" width="230" height="38" rx="5"/>
+  <text x="265" y="210" text-anchor="middle" class="mono">CODE</text>
+  <text x="265" y="226" text-anchor="middle" class="lbl">flash — and aliased at 0</text>
+  <text x="140" y="216" text-anchor="end" class="mono lbl">0x08000000</text>
+  <text x="140" y="246" text-anchor="end" class="mono lbl">0x00000000</text>
+  <path class="dash" d="M265 54 V76"/>
+  <path class="dash" d="M265 114 V136"/>
+  <path class="dash" d="M265 174 V196"/>
+  <text x="398" y="36" class="lbl">fixed by ARM</text>
+  <text x="398" y="96" class="lbl">filled in by ST</text>
+  <text x="398" y="156" class="lbl">size chosen by ST</text>
+  <text x="398" y="216" class="lbl">size chosen by ST</text>
+  <text x="280" y="282" text-anchor="middle" class="lbl">The regions are the same on every Cortex-M. Only the contents change.</text>
+</svg></figure>
+<p>Two details to carry forward:</p>
+<ul><li><strong>Flash appears twice.</strong> It is really at <code>0x08000000</code>, but at reset the chip <em>aliases</em> it to <code>0x00000000</code>, which is how the CPU finds the vector table &quot;at address zero&quot;.</li><li><strong><code>0xE0000000</code> is not ST&#x27;s.</strong> The NVIC and SysTick live there and are identical on a chip from any vendor. That tells you which manual to open.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 5: Visible State, Part Three — a Register Is Not a Variable</h2>
+<p>The peripheral region is where the model stops resembling ordinary programming.<br>This is the single idea that separates embedded C from the C you have written<br>before, and almost every beginner bug traces back to getting it wrong.</p>
+<figure class="diagram"><svg viewBox="0 0 560 170" role="img" aria-label="A store instruction to a peripheral address changes a pin">
+  <defs><marker id="ar2" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="14" y="46" width="96" height="52" rx="6"/>
+  <text x="62" y="72" text-anchor="middle">CPU</text>
+  <path class="wire" d="M110 72 H186" marker-end="url(#ar2)"/>
+  <text x="148" y="56" text-anchor="middle" class="lbl mono">store</text>
+  <rect class="reg" x="192" y="46" width="140" height="52" rx="6"/>
+  <text x="262" y="66" text-anchor="middle" class="mono">0x50000014</text>
+  <text x="262" y="85" text-anchor="middle" class="lbl">just an address</text>
+  <path class="hi" d="M332 72 H416" marker-end="url(#ar2)"/>
+  <rect class="hifill" x="422" y="46" width="120" height="52" rx="6"/>
+  <text x="482" y="66" text-anchor="middle">a pin goes high</text>
+  <text x="482" y="85" text-anchor="middle" class="lbl">a motor turns</text>
+  <text x="280" y="140" text-anchor="middle" class="lbl">The store instruction has a side effect in the physical world.</text>
+  <text x="280" y="158" text-anchor="middle" class="lbl">Nothing in the C language says so.</text>
+</svg></figure>
+<table><thead><tr><th>A variable</th><th>A register</th></tr></thead><tbody><tr><td>Lives in RAM</td><td><strong>Is</strong> a piece of hardware</td></tr><tr><td>Reading it twice gives the same value</td><td>Reading it twice can give different values</td></tr><tr><td>Writing it changes memory</td><td>Writing it <strong>makes something happen</strong></td></tr><tr><td>Reading is free of consequence</td><td>Reading can <strong>clear a flag</strong> or consume a byte</td></tr><tr><td>The compiler may cache, reorder or delete accesses</td><td>Every access must happen, exactly as written</td></tr></tbody></table>
+<p>That last row is why <code>volatile</code> exists. Lesson 03 returns to it.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Every Peripheral Has the Same Three Registers</h2>
+<p>Strip away the names and every peripheral on this chip — and on most chips you<br>will ever meet — is the same shape.</p>
+<figure class="diagram"><svg viewBox="0 0 560 250" role="img" aria-label="Control, status and data registers around a state machine">
+  <defs><marker id="ar3" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="16" y="26" width="130" height="42" rx="6"/>
+  <text x="81" y="41" text-anchor="middle" class="mono">CONTROL</text>
+  <text x="81" y="58" text-anchor="middle" class="lbl">you write: settings</text>
+  <rect class="box" x="16" y="96" width="130" height="42" rx="6"/>
+  <text x="81" y="111" text-anchor="middle" class="mono">STATUS</text>
+  <text x="81" y="128" text-anchor="middle" class="lbl">you read: what happened</text>
+  <rect class="box" x="16" y="166" width="130" height="42" rx="6"/>
+  <text x="81" y="181" text-anchor="middle" class="mono">DATA</text>
+  <text x="81" y="198" text-anchor="middle" class="lbl">the payload, both ways</text>
+  <path class="wire" d="M146 47 H236" marker-end="url(#ar3)"/>
+  <path class="wire" d="M236 117 H146" marker-end="url(#ar3)"/>
+  <path class="wire" d="M146 187 H236" marker-end="url(#ar3)"/>
+  <rect class="hifill" x="240" y="26" width="150" height="182" rx="8"/>
+  <text x="315" y="105" text-anchor="middle">the peripheral</text>
+  <text x="315" y="126" text-anchor="middle" class="lbl">a state machine</text>
+  <path class="hi" d="M390 117 H470" marker-end="url(#ar3)"/>
+  <rect class="reg" x="474" y="92" width="70" height="50" rx="6"/>
+  <text x="509" y="117" text-anchor="middle" class="lbl">pins</text>
+  <text x="280" y="236" text-anchor="middle" class="lbl">Configure with CONTROL. Watch with STATUS. Move bytes through DATA.</text>
+</svg></figure>
+<p>Fill that template in and you have learned a peripheral:</p>
+<table><thead><tr><th>Peripheral</th><th>Control</th><th>Status</th><th>Data</th></tr></thead><tbody><tr><td>USART</td><td><code>CR1</code> — baud, enable, interrupts</td><td><code>ISR</code> — is the buffer empty?</td><td><code>TDR</code> / <code>RDR</code></td></tr><tr><td>SPI</td><td><code>CR1</code> — clock speed, polarity</td><td><code>SR</code> — transfer complete?</td><td><code>DR</code></td></tr><tr><td>ADC</td><td><code>CFGR</code> — which channel, resolution</td><td><code>ISR</code> — conversion done?</td><td><code>DR</code></td></tr><tr><td>Timer</td><td><code>CR1</code>, <code>PSC</code>, <code>ARR</code></td><td><code>SR</code> — did it overflow?</td><td><code>CNT</code>, <code>CCR</code></td></tr><tr><td>GPIO</td><td><code>MODER</code>, <code>PUPDR</code></td><td><code>IDR</code> — what are the pins?</td><td><code>ODR</code>, <code>BSRR</code></td></tr></tbody></table>
+<p>The names move between chips. <strong>The three roles never do.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 7: Two Kinds of Peripheral, Two Manuals</h2>
+<p>Your chip contains peripherals from <strong>two different companies</strong>, and knowing<br>which is which tells you where to look things up.</p>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="ARM core peripherals versus ST vendor peripherals and their headers">
+  <rect class="hifill" x="24" y="24" width="230" height="120" rx="7"/>
+  <text x="139" y="46" text-anchor="middle">ARM supplies</text>
+  <text x="139" y="70" text-anchor="middle" class="mono">NVIC · SysTick · SCB · MPU</text>
+  <text x="139" y="94" text-anchor="middle" class="lbl">same on every Cortex-M,</text>
+  <text x="139" y="110" text-anchor="middle" class="lbl">any vendor</text>
+  <text x="139" y="132" text-anchor="middle" class="mono lbl">core_cm0plus.h</text>
+  <rect class="box" x="306" y="24" width="230" height="120" rx="7"/>
+  <text x="421" y="46" text-anchor="middle">ST supplies</text>
+  <text x="421" y="70" text-anchor="middle" class="mono">GPIO · USART · TIM · ADC · RCC</text>
+  <text x="421" y="94" text-anchor="middle" class="lbl">different on every vendor,</text>
+  <text x="421" y="110" text-anchor="middle" class="lbl">and between ST families</text>
+  <text x="421" y="132" text-anchor="middle" class="mono lbl">stm32c031xx.h</text>
+  <text x="280" y="180" text-anchor="middle" class="lbl">Knowledge of the left box transfers to every ARM microcontroller you ever use.</text>
+  <text x="280" y="200" text-anchor="middle" class="lbl">Knowledge of the right box transfers to the next STM32 — and no further.</text>
+</svg></figure>
+<p>A question about interrupt priorities is answered in ARM&#x27;s <em>Cortex-M Generic<br>User Guide</em>. A question about which pin USART2 comes out on is answered in ST&#x27;s<br>reference manual. Opening the wrong document is the commonest way to lose an<br>hour.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Visible State, Part Four — Modes and Stacks</h2>
+<p>The processor is always in one of two modes, and it switches without being<br>asked.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Thread mode and handler mode with main and process stack pointers">
+  <defs><marker id="ar9" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="40" y="30" width="180" height="70" rx="7"/>
+  <text x="130" y="54" text-anchor="middle">THREAD mode</text>
+  <text x="130" y="74" text-anchor="middle" class="lbl">your main() runs here</text>
+  <text x="130" y="91" text-anchor="middle" class="lbl mono">MSP, or PSP</text>
+  <rect class="hifill" x="340" y="30" width="180" height="70" rx="7"/>
+  <text x="430" y="54" text-anchor="middle">HANDLER mode</text>
+  <text x="430" y="74" text-anchor="middle" class="lbl">every interrupt runs here</text>
+  <text x="430" y="91" text-anchor="middle" class="lbl mono">always MSP</text>
+  <path class="hi" d="M220 54 H336" marker-end="url(#ar9)"/>
+  <text x="278" y="44" text-anchor="middle" class="lbl">interrupt</text>
+  <path class="wire" d="M336 84 H224" marker-end="url(#ar9)"/>
+  <text x="278" y="106" text-anchor="middle" class="lbl">return</text>
+  <text x="280" y="154" text-anchor="middle" class="lbl">Handler mode is always privileged. Thread mode need not be —</text>
+  <text x="280" y="172" text-anchor="middle" class="lbl">which is how an RTOS keeps one task from corrupting another.</text>
+</svg></figure>
+<p>Until the RTOS lesson, one stack (<code>MSP</code>) serves everything and you can ignore<br>the distinction. It matters later for two reasons: an RTOS gives each task its<br>own stack on <code>PSP</code>, and a fault handler runs in Handler mode, which is how it<br>still works when the faulting code has wrecked everything else.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Visible State, Part Five — the Exception Model</h2>
+<p>An interrupt is a <strong>hardware-forced function call</strong>. The NVIC does not search<br>for your handler; it indexes a table of addresses at the start of flash.</p>
+<figure class="diagram"><svg viewBox="0 0 560 230" role="img" aria-label="Vector table indexed by exception number to find the handler address">
+  <defs><marker id="ara" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="hifill" x="20" y="80" width="110" height="46" rx="6"/>
+  <text x="75" y="98" text-anchor="middle" class="lbl">USART2 fires</text>
+  <text x="75" y="116" text-anchor="middle" class="mono">IRQ 28</text>
+  <path class="wire" d="M130 103 H176" marker-end="url(#ara)"/>
+  <text x="290" y="26" text-anchor="middle" class="lbl">the vector table, at 0x08000000</text>
+  <rect class="reg" x="180" y="36" width="220" height="26" rx="4"/>
+  <text x="290" y="49" text-anchor="middle" class="mono lbl">[0]  initial stack pointer</text>
+  <rect class="reg" x="180" y="66" width="220" height="26" rx="4"/>
+  <text x="290" y="79" text-anchor="middle" class="mono lbl">[1]  Reset_Handler</text>
+  <rect class="reg" x="180" y="96" width="220" height="26" rx="4"/>
+  <text x="290" y="109" text-anchor="middle" class="mono lbl">...</text>
+  <rect class="hifill" x="180" y="126" width="220" height="26" rx="4"/>
+  <text x="290" y="139" text-anchor="middle" class="mono">[16+28] USART2_IRQHandler</text>
+  <path class="hi" d="M400 139 H452" marker-end="url(#ara)"/>
+  <rect class="box" x="456" y="116" width="90" height="46" rx="6"/>
+  <text x="501" y="134" text-anchor="middle" class="lbl">your</text>
+  <text x="501" y="151" text-anchor="middle" class="lbl">function</text>
+  <text x="280" y="196" text-anchor="middle" class="lbl">The first 16 slots are ARM's — reset and faults. Vendor interrupts start at 16.</text>
+  <text x="280" y="216" text-anchor="middle" class="lbl">Put the wrong address in a slot and the chip jumps there anyway.</text>
+</svg></figure>
+<p><strong>The table is built by your own code</strong> — you will write one in the first<br>coding lesson. There is no registration call; a handler is connected because<br>its address sits in the right slot.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: The Data Model — Width, Alignment, Byte Order</h2>
+<p>Three rules that produce puzzling bugs when violated.</p>
+<p><strong>Everything is 32 bits wide.</strong> The registers, the ALU, the bus. A <code>uint8_t</code> is<br>not cheaper than a <code>uint32_t</code> here — it is often more expensive, because the<br>compiler must mask and shift. <em>Do not</em> reach for <code>uint8_t</code> out of AVR habit.</p>
+<p><strong>Accesses must be aligned.</strong> A 32-bit load wants an address divisible by four.</p>
+<table><thead><tr><th></th><th>Unaligned access</th></tr></thead><tbody><tr><td>Cortex-M0+</td><td><strong>faults immediately</strong> — HardFault</td></tr><tr><td>Cortex-M3 / M4</td><td>works for ordinary loads and stores, slower</td></tr></tbody></table>
+<p>This bites when you cast a <code>uint8_t*</code> buffer to a <code>uint32_t*</code> — a favourite<br>trick when parsing packets, and a reliable crash on an M0+.</p>
+<p><strong>Little-endian.</strong> <code>0x12345678</code> stored at address 0 puts <code>0x78</code> at byte 0.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Your Responsibilities — Two Gates You Must Open</h2>
+<p>The model says a peripheral has registers. It does not promise they answer.<br>Two gates are shut at power-on, and <strong>opening them is your job</strong>.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Clock gate and pin multiplexer guarding a peripheral">
+  <defs><marker id="ar4" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="14" y="66" width="92" height="46" rx="6"/>
+  <text x="60" y="89" text-anchor="middle">clock</text>
+  <path class="wire" d="M106 89 H156" marker-end="url(#ar4)"/>
+  <rect class="hifill" x="160" y="60" width="96" height="58" rx="6"/>
+  <text x="208" y="82" text-anchor="middle" class="lbl">GATE</text>
+  <text x="208" y="102" text-anchor="middle" class="mono">RCC</text>
+  <path class="wire" d="M256 89 H306" marker-end="url(#ar4)"/>
+  <rect class="box" x="310" y="60" width="96" height="58" rx="6"/>
+  <text x="358" y="89" text-anchor="middle">peripheral</text>
+  <path class="wire" d="M406 89 H452" marker-end="url(#ar4)"/>
+  <rect class="hifill" x="456" y="60" width="90" height="58" rx="6"/>
+  <text x="501" y="82" text-anchor="middle" class="lbl">MUX</text>
+  <text x="501" y="102" text-anchor="middle" class="mono">pin</text>
+  <text x="208" y="150" text-anchor="middle" class="lbl">off by default</text>
+  <text x="501" y="150" text-anchor="middle" class="lbl">one pin, many owners</text>
+  <text x="280" y="184" text-anchor="middle" class="lbl">A peripheral with no clock reads back as zero and ignores every write.</text>
+</svg></figure>
+<p><strong>The clock gate.</strong> Every peripheral powers up <em>switched off</em>, to save energy.<br>Write to its control register first and the write goes nowhere — no error, the<br>register simply reads back zero. The single most common first-week failure.</p>
+<p><strong>The pin multiplexer.</strong> More peripherals than pins, so each pin is shared and<br>you must say which owner it belongs to. Choose wrong and the pin is<br>electrically healthy and carries no signal.</p>
+<p>&gt; Both look identical from outside: correct code that does nothing. Neither<br>&gt; produces an error message. Suspect them first.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Your Responsibilities — the Clock Is Yours Too</h2>
+<p>Every timed thing on the chip derives from one oscillator by division. Nothing<br>picks the divisions for you.</p>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Oscillator through divider to CPU, fast bus and slow bus">
+  <defs><marker id="ar5" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="10" y="76" width="96" height="44" rx="6"/>
+  <text x="58" y="92" text-anchor="middle">oscillator</text>
+  <text x="58" y="110" text-anchor="middle" class="lbl mono">48 MHz</text>
+  <path class="wire" d="M106 98 H150" marker-end="url(#ar5)"/>
+  <rect class="hifill" x="154" y="76" width="90" height="44" rx="6"/>
+  <text x="199" y="98" text-anchor="middle" class="mono">divider</text>
+  <path class="wire" d="M244 98 H278"/>
+  <path class="wire" d="M278 42 V154"/>
+  <path class="wire" d="M278 42 H300" marker-end="url(#ar5)"/>
+  <path class="wire" d="M278 98 H300" marker-end="url(#ar5)"/>
+  <path class="wire" d="M278 154 H300" marker-end="url(#ar5)"/>
+  <rect class="reg" x="304" y="24" width="128" height="36" rx="5"/>
+  <text x="368" y="42" text-anchor="middle" class="lbl">CPU core</text>
+  <rect class="reg" x="304" y="80" width="128" height="36" rx="5"/>
+  <text x="368" y="98" text-anchor="middle" class="lbl">fast bus — GPIO, DMA</text>
+  <rect class="reg" x="304" y="136" width="128" height="36" rx="5"/>
+  <text x="368" y="154" text-anchor="middle" class="lbl">slow bus — USART, timers</text>
+  <text x="494" y="90" text-anchor="middle" class="lbl">each with its</text>
+  <text x="494" y="108" text-anchor="middle" class="lbl">own prescaler</text>
+</svg></figure>
+<ul><li><strong>A baud rate is a division.</strong> The USART does not know what 115200 means; you give it a divisor computed from <em>its own bus clock</em>, not the CPU clock. Get that wrong and the output is garbage while the code is perfect.</li><li><strong>A delay is a count.</strong> There is no <code>sleep()</code>. One millisecond means counting a known number of ticks.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 13: Where the Implementation Leaks Through</h2>
+<p>The model is an abstraction, and abstractions leak. Three places where the<br>hardware underneath becomes visible in code you write — these are the <em>only</em><br>implementation details this course asks you to care about.</p>
+<figure class="diagram"><svg viewBox="0 0 560 240" role="img" aria-label="Three places the implementation becomes programmer-visible">
+  <rect class="box" x="16" y="24" width="168" height="104" rx="7"/>
+  <text x="100" y="46" text-anchor="middle" class="lbl">PIPELINE</text>
+  <text x="100" y="70" text-anchor="middle" class="lbl">instructions overlap</text>
+  <text x="100" y="94" text-anchor="middle" class="mono">PC reads ahead</text>
+  <text x="100" y="114" text-anchor="middle" class="lbl">branches cost extra</text>
+  <rect class="box" x="196" y="24" width="168" height="104" rx="7"/>
+  <text x="280" y="46" text-anchor="middle" class="lbl">TWO BUSES</text>
+  <text x="280" y="70" text-anchor="middle" class="lbl">fast AHB, slow APB</text>
+  <text x="280" y="94" text-anchor="middle" class="mono">RCC-&gt;AHBENR</text>
+  <text x="280" y="112" text-anchor="middle" class="mono">RCC-&gt;APBENR1</text>
+  <rect class="hifill" x="376" y="24" width="168" height="104" rx="7"/>
+  <text x="460" y="46" text-anchor="middle" class="lbl">FLASH IS SLOW</text>
+  <text x="460" y="70" text-anchor="middle" class="lbl">the core outruns it</text>
+  <text x="460" y="94" text-anchor="middle" class="mono">FLASH-&gt;ACR</text>
+  <text x="460" y="112" text-anchor="middle" class="lbl">wait states</text>
+  <text x="280" y="170" text-anchor="middle" class="lbl">You cannot name the pipeline or the bus matrix in C. But you must name</text>
+  <text x="280" y="188" text-anchor="middle" class="lbl">the register that enables a clock on the right bus, and the one that</text>
+  <text x="280" y="206" text-anchor="middle" class="lbl">sets the flash wait state — before you raise the clock, never after.</text>
+</svg></figure>
+<p>That last clause is the first of many <strong>ordering requirements the compiler<br>knows nothing about</strong>. The code compiles identically either way round; only one<br>order works.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: The Implementation, Once</h2>
+<p>For completeness — here is what is actually under the model. You will not<br>program any of this directly, but it explains the leaks on the previous slide.</p>
+<figure class="diagram"><svg viewBox="0 0 620 300" role="img" aria-label="Block diagram of core, bus matrix, memory and peripherals">
+  <defs><marker id="ov" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="hifill" x="12" y="20" width="150" height="112" rx="8"/>
+  <text x="87" y="40" text-anchor="middle">Cortex-M core</text>
+  <rect class="reg" x="24" y="52" width="126" height="22" rx="4"/>
+  <text x="87" y="63" text-anchor="middle" class="mono lbl">R0-R15</text>
+  <rect class="reg" x="24" y="78" width="126" height="22" rx="4"/>
+  <text x="87" y="89" text-anchor="middle" class="mono lbl">NVIC</text>
+  <rect class="reg" x="24" y="104" width="126" height="22" rx="4"/>
+  <text x="87" y="115" text-anchor="middle" class="mono lbl">SysTick</text>
+  <rect class="box" x="12" y="150" width="150" height="36" rx="6"/>
+  <text x="87" y="172" text-anchor="middle" class="lbl">oscillators</text>
+  <rect class="hifill" x="186" y="20" width="52" height="166" rx="6"/>
+  <text x="212" y="94" text-anchor="middle" class="lbl">BUS</text>
+  <text x="212" y="112" text-anchor="middle" class="lbl">MATRIX</text>
+  <path class="wire" d="M162 76 H182" marker-end="url(#ov)"/>
+  <rect class="box" x="266" y="20" width="150" height="38" rx="6"/>
+  <text x="341" y="34" text-anchor="middle" class="mono">FLASH</text>
+  <text x="341" y="50" text-anchor="middle" class="lbl">+ wait states</text>
+  <rect class="box" x="266" y="66" width="150" height="34" rx="6"/>
+  <text x="341" y="87" text-anchor="middle" class="mono">SRAM</text>
+  <path class="wire" d="M238 40 H262" marker-end="url(#ov)"/>
+  <path class="wire" d="M238 83 H262" marker-end="url(#ov)"/>
+  <rect class="box" x="266" y="108" width="150" height="42" rx="6"/>
+  <text x="341" y="124" text-anchor="middle" class="mono">AHB — fast</text>
+  <text x="341" y="141" text-anchor="middle" class="lbl">GPIO, DMA, RCC</text>
+  <path class="wire" d="M238 129 H262" marker-end="url(#ov)"/>
+  <rect class="reg" x="266" y="160" width="150" height="26" rx="5"/>
+  <text x="341" y="176" text-anchor="middle" class="lbl">APB bridge</text>
+  <rect class="box" x="266" y="196" width="150" height="42" rx="6"/>
+  <text x="341" y="212" text-anchor="middle" class="mono">APB — slow</text>
+  <text x="341" y="229" text-anchor="middle" class="lbl">USART, SPI, I2C, TIM, ADC</text>
+  <path class="wire" d="M212 186 V210 H262" marker-end="url(#ov)"/>
+  <rect class="hifill" x="446" y="108" width="66" height="130" rx="6"/>
+  <text x="479" y="166" text-anchor="middle" class="lbl">PIN</text>
+  <text x="479" y="184" text-anchor="middle" class="lbl">MUX</text>
+  <path class="wire" d="M416 129 H442" marker-end="url(#ov)"/>
+  <path class="wire" d="M416 217 H442" marker-end="url(#ov)"/>
+  <rect class="reg" x="540" y="108" width="66" height="130" rx="6"/>
+  <text x="573" y="173" text-anchor="middle" class="lbl">pins</text>
+  <path class="hi" d="M512 173 H536" marker-end="url(#ov)"/>
+  <text x="310" y="272" text-anchor="middle" class="lbl">Left of the matrix is ARM's, identical on every Cortex-M. Right of it is ST's.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 15: What Changed, Coming From 8 Bits</h2>
+<p>Many of you have met an 8-bit AVR. Two differences change how you write code.</p>
+<table><thead><tr><th></th><th>AVR (8-bit)</th><th>Cortex-M (32-bit)</th></tr></thead><tbody><tr><td>Registers</td><td>32 × 8-bit</td><td>16 × 32-bit</td></tr><tr><td>Reaching a peripheral</td><td>a <strong>separate I/O space</strong>, own instructions (<code>IN</code>, <code>OUT</code>)</td><td>ordinary addresses, ordinary <code>LDR</code>/<code>STR</code></td></tr><tr><td>Code and data</td><td>Harvard — separate spaces, <code>LPM</code> to read flash</td><td><strong>one space</strong>; a pointer reaches anything</td></tr><tr><td>Interrupt vectors</td><td>fixed table of jump instructions</td><td>table of <strong>addresses</strong>, built by your code</td></tr></tbody></table>
+<p>On AVR, <code>PORTB</code> was a special kind of thing needing special instructions. Here<br>there is no such category — and that uniformity is both the gift and the trap.<br>Nothing stops a stray pointer landing on a peripheral.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: The Programmer&#x27;s Model, Complete</h2>
+<figure class="diagram"><svg viewBox="0 0 560 250" role="img" aria-label="Summary: five parts of the programmer's model">
+  <rect class="hifill" x="20" y="20" width="250" height="80" rx="7"/>
+  <text x="145" y="42" text-anchor="middle">STATE YOU OWN</text>
+  <text x="145" y="64" text-anchor="middle" class="lbl">16 registers + xPSR</text>
+  <text x="145" y="84" text-anchor="middle" class="lbl">one flat address space</text>
+  <rect class="box" x="290" y="20" width="250" height="80" rx="7"/>
+  <text x="415" y="42" text-anchor="middle">STATE THE CHIP OWNS</text>
+  <text x="415" y="64" text-anchor="middle" class="lbl">peripheral registers:</text>
+  <text x="415" y="84" text-anchor="middle" class="lbl">control · status · data</text>
+  <rect class="box" x="20" y="116" width="250" height="72" rx="7"/>
+  <text x="145" y="138" text-anchor="middle">WHO IS RUNNING</text>
+  <text x="145" y="160" text-anchor="middle" class="lbl">thread or handler mode</text>
+  <text x="145" y="178" text-anchor="middle" class="lbl">MSP or PSP</text>
+  <rect class="box" x="290" y="116" width="250" height="72" rx="7"/>
+  <text x="415" y="138" text-anchor="middle">HOW CONTROL IS TAKEN</text>
+  <text x="415" y="160" text-anchor="middle" class="lbl">vector table, NVIC</text>
+  <text x="415" y="178" text-anchor="middle" class="lbl">an address in a slot</text>
+  <text x="280" y="222" text-anchor="middle" class="lbl">Five parts. Everything in the next thirty lessons is an instance of one of them.</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 17: What You Should Be Able to Say</h2>
+<ol><li>What does a <em>programmer&#x27;s model</em> include, and what does it deliberately leave out?</li><li>Name the five parts of this one.</li><li>The CPU has one mechanism for reaching anything outside itself. What is it?</li><li>Give three ways a register behaves differently from a variable.</li><li>A peripheral&#x27;s registers fall into three roles. Name them, and say who writes each.</li><li>Which peripherals are ARM&#x27;s and which are ST&#x27;s? Why does it decide which manual you open?</li><li>Your code configures a peripheral and it reads back as zero. First suspect?</li><li>Your serial output is garbage but the code is right. Name two causes from this lesson.</li><li>You cast a <code>uint8_t*</code> to a <code>uint32_t*</code> and the chip HardFaults. Why — and would a Cortex-M3 fault too?</li><li>Name the three places the implementation leaks into code you must write.</li><li>How does the hardware find the function you wrote for USART2?</li></ol>
+<p><strong>Next:</strong> <em>Instruction Set</em> — what this state looks like to the processor, and<br>how your C becomes something it can execute.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:00_Architecture', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:00_Architecture') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>
