@@ -1,28 +1,28 @@
 # Publish the lecture decks to GitHub Pages.
 #
 # The site is rendered from the Slide.md sources on every push rather than
-# served from the committed _slides/ directories, so the published decks cannot
-# drift from the lesson text the way checked-in copies would.
+# served from the committed _slides/ directory, so the published decks cannot
+# drift from the lesson text the way a checked-in copy would.
 #
-# TWO INDEPENDENT TREES. projects2026_avr/ is the finished 2026 AVR edition and
-# is frozen; projects2026_arm/ is the live STM32 edition. Each owns its own
-# renderer and neither imports from the other, so each is rendered by its own
-# build-slides.py.
+# WHAT IS PUBLISHED: the ARM edition, and only the ARM edition.
+# https://gnoejh.github.io/soc3050code/ is the STM32 course.
 #
-# LAYOUT. The AVR decks publish at the site root, exactly where they have
-# always been, so URLs such as .../00_Introduction.html that students may have
-# bookmarked keep working. The ARM decks publish under /arm/.
+# The AVR edition was published here until 2026-09-14. It is frozen, it is
+# still in the repository under projects2026_avr/, and its committed
+# _slides/index.html still opens from a clone - it is simply no longer put
+# online. Every root URL it used to answer on (.../18_GLCD_Graphics.html and
+# the rest) now 404s; that is the intended consequence of taking it down, not
+# an oversight. To bring it back, render projects2026_avr/_build/build-slides.py
+# in the build job and copy its _slides/ into a subdirectory of _site.
 #
-# Only the two lesson trees are checked out. A full clone pulls ~856 MB of
-# vendored toolchain and simulator that no renderer reads.
+# Only the ARM tree is checked out. A full clone pulls ~856 MB of vendored
+# toolchain and simulator that the renderer never reads.
 name: Lecture slides
 
 on:
   push:
     branches: [main]
     paths:
-      - 'projects2026_avr/**/Slide.md'
-      - 'projects2026_avr/_build/build-slides.py'
       - 'projects2026_arm/**/Slide.md'
       - 'projects2026_arm/_build/build-slides.py'
       - '.github/workflows/pages.yml'
@@ -45,68 +45,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: |
-            projects2026_avr
-            projects2026_arm
+          sparse-checkout: projects2026_arm
           filter: blob:none
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # Both renderers are standard library only, on purpose - see CLAUDE.md
+      # The renderer is standard library only, on purpose - see CLAUDE.md
       # section 9. Nothing to install.
-      - name: Render the AVR decks
-        run: python projects2026_avr/_build/build-slides.py
-
       - name: Render the ARM decks
         run: python projects2026_arm/_build/build-slides.py
 
       # CLAUDE.md section 11: never trust a build's exit code alone on this
-      # project. Check each artefact is a real site before publishing it.
+      # project. Check the artefact is a real site before publishing it.
       # The expected deck count is DERIVED from the number of Slide.md files,
       # so adding a lesson never needs an edit here.
-      - name: Verify both rendered sites
+      - name: Verify the rendered site
         run: |
           set -eu
-          for tree in projects2026_avr projects2026_arm; do
-            out="$tree/_slides"
-            test -s "$out/index.html" || { echo "$tree: no index.html"; exit 1; }
-            lessons=$(find "$tree" -mindepth 2 -maxdepth 2 -name Slide.md | wc -l)
-            decks=$(find "$out" -maxdepth 1 -name '*.html' | wc -l)
-            echo "$tree: $lessons lesson(s), $decks HTML file(s)"
-            test "$lessons" -gt 0 || { echo "$tree: no Slide.md - wrong checkout?"; exit 1; }
-            test "$decks" -eq "$((lessons + 1))" || { echo "$tree: expected $((lessons + 1)) files, got $decks"; exit 1; }
-            grep -q '<title>' "$out/index.html" || { echo "$tree: index has no title"; exit 1; }
-          done
+          out=projects2026_arm/_slides
+          test -s "$out/index.html" || { echo "no index.html"; exit 1; }
+          lessons=$(find projects2026_arm -mindepth 2 -maxdepth 2 -name Slide.md | wc -l)
+          decks=$(find "$out" -maxdepth 1 -name '*.html' | wc -l)
+          echo "$lessons lesson(s), $decks HTML file(s)"
+          test "$lessons" -gt 0 || { echo "no Slide.md - wrong checkout?"; exit 1; }
+          test "$decks" -eq "$((lessons + 1))" || { echo "expected $((lessons + 1)) files, got $decks"; exit 1; }
+          grep -q '<title>' "$out/index.html" || { echo "index has no title"; exit 1; }
+          # the root must be the ARM index, not a leftover AVR one
+          grep -q 'STM32 Lecture Decks' "$out/index.html" \
+            || { echo "index is not the ARM edition"; exit 1; }
 
-      # Assemble one site: AVR at the root, ARM under /arm/.
       - name: Assemble the site
         run: |
           set -eu
           mkdir -p _site
-          cp -r projects2026_avr/_slides/. _site/
-          mkdir -p _site/arm
-          cp -r projects2026_arm/_slides/. _site/arm/
-          # Add a cross-link to the root index. This edits the STAGED copy
-          # only - projects2026_avr/ is frozen and is never modified.
-          python - <<'EOF'
-          import pathlib
-          p = pathlib.Path("_site/index.html")
-          s = p.read_text(encoding="utf-8")
-          link = ('<p style="margin:1rem 0"><a href="arm/index.html">'
-                  'SOC3050 ARM edition (STM32) &rarr;</a></p>')
-          if "arm/index.html" not in s:
-              i = s.find("</h1>")
-              j = s.find(">", i) + 1 if i >= 0 else -1
-              s = (s[:j] + link + s[j:]) if j > 0 else s.replace("<body>", "<body>" + link, 1)
-              p.write_text(s, encoding="utf-8")
-              print("cross-link added to the staged root index")
-          EOF
+          cp -r projects2026_arm/_slides/. _site/
           test -s _site/index.html
-          test -s _site/arm/index.html
           echo "root: $(find _site -maxdepth 1 -name '*.html' | wc -l) file(s)"
-          echo "arm:  $(find _site/arm -maxdepth 1 -name '*.html' | wc -l) file(s)"
 
       - uses: actions/upload-pages-artifact@v3
         with:

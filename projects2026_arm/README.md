@@ -8,6 +8,7 @@ The live edition. `projects2026_avr/` is the finished 2026 AVR edition and is
 ```
 _build/build-slides.py    the renderer (this tree's own copy)
 _slides/                  generated decks - do not edit, re-render instead
+_notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
 01_Instruction_Set/       Part 0 - Thumb-2, what the CPU does
 02_Development/           Part 0 - toolchain, sections, linking, boot
@@ -18,7 +19,11 @@ _spike/                   Phase 0 proof of concept - throwaway, see below
 ## The slides
 
 Read them at `_slides/index.html`, or online once pushed:
-**https://gnoejh.github.io/soc3050code/arm/**
+**https://gnoejh.github.io/soc3050code/**
+
+That is the site root. This edition took it over from the AVR edition on
+2026-09-14; `.github/workflows/pages.yml` now renders and publishes this tree
+alone, and the AVR decks are no longer online anywhere.
 
 Arrow keys move, `o` gives an overview grid, `p` prints or saves as PDF.
 
@@ -29,6 +34,28 @@ python projects2026_arm/_build/build-slides.py
 ```
 
 `_slides/` is generated. Edit the `Slide.md`, never the HTML.
+
+## The Colab notebook
+
+Every deck's top bar carries an **Open in Colab** link, next to the reference
+manual. It opens one shared notebook, `_notebooks/SOC3050_ARM.ipynb`, straight
+from GitHub - Colab renders any notebook GitHub can serve, so the URL is just
+this repository's path with `colab.research.google.com/github/` in front.
+
+The notebook gives a student with no toolchain the **build half** of the course:
+it `apt-get`s a real `arm-none-eabi-gcc`, sparse-clones this tree and the CMSIS
+headers, builds the C031C6 target, and then walks the Part 0 material against
+real output - sections and the memory map, the vector table read out of
+`Main.bin`, Thumb-2 disassembly, and the `volatile` and read-modify-write
+experiments from lesson 03.
+
+It cannot flash a board or run the firmware; Colab has no USB, and Renode and
+Wokwi stay local steps. That boundary is stated on the notebook's first screen
+so nobody goes looking for a blinking LED.
+
+The link is one constant, `COLAB`, at the top of `build-slides.py` - **change it
+there and re-render**, rather than editing the decks. The notebook itself is
+maintained by hand; it is not generated from anything.
 
 ### Writing diagrams
 

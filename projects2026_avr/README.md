@@ -227,10 +227,14 @@ with an index. Arrow keys or space to move, `o` for an overview
 grid, `p` to print or save as PDF. No third-party packages — the Markdown
 subset these decks use is rendered by the script itself.
 
-Re-run it after editing a deck. `_slides/` is committed for offline use,
-but the published copy at <https://gnoejh.github.io/soc3050code/> is
-re-rendered from `Slide.md` by `.github/workflows/pages.yml` on every push,
-so an un-regenerated `_slides/` cannot put stale decks in front of a class.
+Re-run it after editing a deck. `_slides/` is committed, and since
+2026-09-14 it is the **only** copy of these decks: GitHub Pages now publishes
+the ARM edition at <https://gnoejh.github.io/soc3050code/> and nothing
+republishes this tree. Open `_slides/index.html` from a clone.
+
+That makes the committed `_slides/` load-bearing again. Re-run the renderer
+after editing any `Slide.md`, or the deck you teach from will be stale — the
+CI re-render that used to catch that no longer covers this tree.
 
 ## Requirements
 

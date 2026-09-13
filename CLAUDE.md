@@ -17,7 +17,8 @@ Self-contained: the AVR toolchain and the SimulIDE simulator are vendored under
 
 ```
 projects/             53 legacy lesson folders (previous edition, SimulIDE 1.1.0-SR1)
-projects2026_avr/     intro + 24 curated lessons, SimulIDE 1.1.0-SR2  <-- current edition
+projects2026_avr/     intro + 24 curated lessons, SimulIDE 1.1.0-SR2  <-- frozen, complete
+projects2026_arm/     STM32 edition, Part 0 so far  <-- live; owns the website
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _game, _eeprom, _pwm ...
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
 tools/simulide/       SimulIDE 0.4.15-SR10 and 1.1.0-SR1 + the original master board
@@ -26,6 +27,11 @@ tools/simulide200/    SimulIDE 2.x (R260501) — not targeted this cycle
 python_projects/      separate Python track (out of scope here)
 docs/                 framework + SimulIDE documentation
 ```
+
+**This tracker documents the AVR edition.** `projects2026_arm/` arrived on
+2026-09-13, is independent of everything below, and carries its own
+`README.md`; only its effect on the published site is recorded here, in
+section 9g.
 
 `tools/simulide110sr2/SimulIDE_1.1.0-SR2_Win64/` is committed, so a fresh clone
 can simulate. The `.zip` files beside it are ignored - one duplicates the
@@ -215,6 +221,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-07 | Pages confirmed live and serving all 23 decks; full rebuild re-verified. See section 9d. |
 | 2026-09-08 | Application track started: `_game` engine plus lessons 23 and 24. All 25 build clean. See section 9e. |
 | 2026-09-09 | GLCD debugging: R/W (PG1) was floating, `_glcd.c`'s `set_pixel` was destructive, `putchar` corrupted glyphs at column 64, and `_game.c` had dropped a settling delay the board needs. All fixed; warnings 5/45 → 0/9. SITL C-to-Python link proven. See sections 6 and 9e. |
+| 2026-09-14 | GitHub Pages switched to the ARM edition; the AVR decks are no longer published. Colab link added to the ARM decks. See section 9g. |
 
 ## 9. The system pass (2026-09-05)
 
@@ -321,6 +328,11 @@ Two source-side gaps closed at the same time:
 
 ## 9c. GitHub Pages (2026-09-06)
 
+> **Superseded 2026-09-14 — see section 9g.** The site root now serves the
+> **ARM edition** from `projects2026_arm/`, and these AVR decks are no longer
+> published at all. The design notes below still describe how the workflow
+> works; only which tree it renders has changed.
+
 The decks are published at **https://gnoejh.github.io/soc3050code/** so a class
 can be taught from a machine that does not have this repository, by
 `.github/workflows/pages.yml`.
@@ -358,6 +370,10 @@ ATmega328. The LED, keypad and GLCD lessons have no browser story either way
 (avr8js/Wokwi is ATmega328-family only).
 
 ## 9d. Pages is live (2026-09-07)
+
+> **The URLs in this section no longer resolve.** They were accurate when
+> written; since 2026-09-14 the root is the ARM index and the AVR decks are off
+> the web. See section 9g.
 
 The one step section 10 listed as un-automatable — flipping Settings -> Pages ->
 Source to **GitHub Actions** — has been done, and the site is serving:
@@ -628,6 +644,44 @@ once the GLCD questions in this section are closed.
 precisely the damage class section 9a describes, reproduced live. Write `.bat`
 files with a quoted heredoc (`<<'EOF'`), never `printf`, and scan afterwards —
 all 50 lesson `.bat` files were checked clean with an `od`-based detector.
+
+## 9g. The site is the ARM edition now (2026-09-14)
+
+`projects2026_arm/` (the live STM32 edition, started 2026-09-13) took over
+**https://gnoejh.github.io/soc3050code/**. `.github/workflows/pages.yml` now
+checks out, renders and publishes that tree alone.
+
+**The AVR decks are no longer published anywhere.** They are still in the
+repository, still committed under `projects2026_avr/_slides/`, and still open
+from `_slides/index.html` in a clone — but every root URL they used to answer
+on now 404s. An intermediate layout that kept them under `/avr/` with redirect
+stubs at the old root URLs was written and then dropped on instruction; the
+workflow header records how to bring them back if that is ever wanted.
+
+One consequence worth holding on to: **the committed `projects2026_avr/_slides/`
+is load-bearing again.** While CI re-rendered that tree on every push, a stale
+committed deck could not reach a class. Now nothing re-renders it, so an
+un-regenerated `_slides/` is exactly what someone will teach from. The AVR
+README says so at the renderer's description.
+
+The ARM decks also carry an **Open in Colab** link in the top bar, beside the
+reference manual, pointing at `projects2026_arm/_notebooks/SOC3050_ARM.ipynb`
+— one shared notebook that `apt-get`s `arm-none-eabi-gcc` on Colab's Ubuntu,
+sparse-clones this tree plus the CMSIS headers, and runs the Part 0 material
+against real build output. It is the "lab-less weeks" idea from the end of
+section 9c, finally built — for ARM rather than AVR, where it is easier:
+`gcc-arm-none-eabi` is an Ubuntu package, and Part 0 is about reading the
+build, so nothing has to execute. The link is one constant, `COLAB`, at the top
+of the ARM `build-slides.py`; change it there and re-render.
+
+**Not verified:** nobody has run the notebook on Colab. The JSON, the rendered
+links and the workflow's verify/assemble steps were checked locally; the
+`apt-get` and the build inside Colab have not been. Section 11's rule applies
+squarely — this is exactly the kind of artefact that passes every check here
+and does nothing there.
+
+Note that this tracker still documents the AVR edition only. `projects2026_arm/`
+has its own `README.md` and is not described here.
 
 ## 10. Next steps
 

@@ -25,6 +25,15 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # chrome rather than left on the title slide alone, so it is reachable
 # from any slide without going back to the start.
 DATASHEET = "https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf"
+
+# The course notebook, pinned beside the reference manual. One shared notebook
+# serves every deck: it installs arm-none-eabi-gcc on Colab's Ubuntu, clones
+# this tree, and runs the builds and disassembly the Part 0 slides quote, so a
+# student with no toolchain can still follow along. Colab renders any notebook
+# that GitHub can serve, so this URL is just the repository path with
+# colab.research.google.com/github/ in front - change the constant, re-render.
+COLAB = ("https://colab.research.google.com/github/gnoejh/soc3050code/blob/"
+         "main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb")
 OUT = os.path.join(BASE, "_slides")
 
 
@@ -324,6 +333,7 @@ PAGE = """<title>{title}</title>
 
 <div class="topbar">
   <span><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="{colab}" target="_blank" rel="noopener">Open in Colab</a></span>
   <span class="spacer"></span>
   <span class="deck-name">{title}</span>
 </div>
@@ -404,9 +414,10 @@ INDEX = """<title>SOC3050 Lecture Decks - ARM</title>
   .f {{ color:var(--muted); font-size:.87rem; }}
 </style>
 <div class="wrap">
-  <h1>SOC3050 &mdash; ATmega128 Lecture Decks</h1>
+  <h1>SOC3050 &mdash; STM32 Lecture Decks</h1>
   <p class="sub">{count} decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
   <p class="sub"><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
+  <p class="sub"><a href="{colab}" target="_blank" rel="noopener">Open the course notebook in Colab</a> &mdash; a real <code>arm-none-eabi-gcc</code> in the browser, with no toolchain to install. Builds, sections and disassembly; it cannot flash or run a board.</p>
   <ol>
 {cards}
   </ol>
@@ -452,7 +463,8 @@ def main(argv):
                 '<section class="slide">\n%s\n</section>' % render_blocks(c)
                 for c in chunks)
             page = PAGE.format(title=html.escape(title), slides=body,
-                               key=name, datasheet=DATASHEET)
+                               key=name, datasheet=DATASHEET,
+                               colab=COLAB)
 
             dest = os.path.join(OUT, name + ".html")
             with open(dest, "w", encoding="utf-8", newline="\n") as fh:
@@ -479,7 +491,7 @@ def main(argv):
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8",
               newline="\n") as fh:
         fh.write(INDEX.format(count=len(lessons), cards="\n".join(cards),
-                              datasheet=DATASHEET))
+                              datasheet=DATASHEET, colab=COLAB))
 
     print("\n%d deck(s) rendered, %d listed in the index -> %s"
           % (len(rendering), len(lessons), os.path.relpath(OUT, BASE)))

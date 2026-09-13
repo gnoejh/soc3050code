@@ -1,8 +1,14 @@
-# SOC3050 — ATmega128 Embedded Systems
+# SOC3050 — Embedded Systems
 
-A self-contained teaching framework for the ATmega128. Every lesson ships with
-source, a lecture deck and a simulator circuit, and the whole toolchain is
-vendored — clone the repository and it works, with nothing to install.
+A self-contained teaching framework. Every lesson ships with source, a lecture
+deck and a simulator circuit, and the whole toolchain is vendored — clone the
+repository and it works, with nothing to install.
+
+Two editions live here. **`projects2026_avr/` (ATmega128) is finished and
+frozen; `projects2026_arm/` (STM32) is the live one**, and it is what
+<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition is early —
+four theory lessons, no build system of its own yet — so the AVR tree is still
+where you go for something that compiles and simulates today.
 
 ---
 
@@ -39,20 +45,27 @@ pwsh projects2026_avr\_build\verify-all.ps1
 
 ## Which lesson tree to use
 
-There are two, and **`projects2026_avr/` is the current one**.
+There are three. They are independent; none imports from another.
 
-| | `projects2026_avr/` | `projects/` |
-|---|---|---|
-| Status | **current, maintained** | archived, kept for reference |
-| Lessons | an introduction plus 22, one per topic | 53, with overlaps and variants |
-| Simulator | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
-| Clock | 16 MHz throughout | mixed 16 MHz / 7.3728 MHz |
-| Build | one shared engine | per-project scripts of several shapes |
-| Slides | all 25 lesson folders | 34 of 53 |
+| | `projects2026_arm/` | `projects2026_avr/` | `projects/` |
+|---|---|---|---|
+| Chip | STM32C031 (Cortex-M0+) | ATmega128 | ATmega128 |
+| Status | **live, being written** | finished, frozen | archived |
+| Lessons | 4 (Part 0, theory only) | an introduction plus 24 | 53, with overlaps |
+| Build | none yet — `arm-none-eabi-gcc` by hand | one shared engine | per-project scripts |
+| Run it | Renode / Wokwi, local | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
+| Slides | all 4, **published online** | all 25, offline only | 34 of 53 |
 
-Start in `projects2026_avr/`. See [its README](projects2026_avr/README.md) for
-the lesson list and the board map. `projects/` is left in place because a lot of
-supporting material still points at it, but it is not being maintained — see
+**To teach or study a topic today, start in `projects2026_avr/`** — see
+[its README](projects2026_avr/README.md) for the lesson list and the board map.
+It is frozen, not abandoned: everything in it builds, simulates and is verified.
+
+**`projects2026_arm/`** is where new work goes. Its Part 0 is four decks on the
+programmer's model, the instruction set, the toolchain and concurrency, with no
+`Main.c` yet on purpose — see [its README](projects2026_arm/README.md).
+
+`projects/` is left in place because a lot of supporting material still points
+at it, but it is not being maintained — see
 [projects/ARCHIVED.md](projects/ARCHIVED.md).
 
 ---
@@ -93,14 +106,18 @@ for an overview grid, `p` to print or save as PDF. There is also a
 
 ### On the web
 
-The same decks are published to GitHub Pages at
-**<https://gnoejh.github.io/soc3050code/>**, for teaching from a machine that
-does not have this repository on it.
+**<https://gnoejh.github.io/soc3050code/>** publishes the **ARM edition**
+(`projects2026_arm/`), for teaching from a machine that does not have this
+repository on it.
 
-`.github/workflows/pages.yml` re-renders the decks from their `Slide.md`
+The AVR decks above are **not** published. They were the site until
+2026-09-14; they are still here and still open from `_slides/index.html` in a
+clone, but nothing serves them on the web now, so their old root URLs 404.
+
+`.github/workflows/pages.yml` re-renders the ARM decks from their `Slide.md`
 sources and deploys on every push that touches a deck or the renderer, so the
 published site never lags the lesson text. Nothing else in the repository is
-published — the workflow checks out only `projects2026_avr/` and uploads only
+published — the workflow checks out only `projects2026_arm/` and uploads only
 the rendered `_slides/` directory.
 
 The site carries the slides only. Building and simulating a lesson still needs
