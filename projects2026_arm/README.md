@@ -10,7 +10,7 @@ _build/build-slides.py    the renderer (this tree's own copy)
 _slides/                  generated decks - do not edit, re-render instead
 _notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
-01_Instruction_Set/       Part 0 - Thumb-2, what the CPU does
+01_Instruction_Set/       Part 0 - Thumb vs ARM, what the CPU does
 02_Development/           Part 0 - toolchain, sections, linking, boot
 03_Execution_Concurrency/ Part 0 - interrupts, volatile, atomicity
 _spike/                   Phase 0 proof of concept - throwaway, see below
@@ -88,6 +88,16 @@ Part 0 slides quote **real output from this repository's own build** (real
 disassembly, real section sizes, a real Intel HEX record decoded field by
 field). That is evidence, not student coding.
 
+**No toolchain is vendored yet, so that promise has to be checkable without
+one.** Everything a Part 0 deck quotes must be reproducible from the committed
+spike artefacts - `_spike/c031c6/Main.bin`, `Main.hex` and `Main.map` - by
+reading bytes and symbols out of them. Lesson 01 had one row that was not:
+a 32-bit encoding `f000 f812` that appears nowhere in the image. It is now
+`f7ff ffcf`, the `bl SystemInit` at `0x0800028a`, decoded from `Main.bin` and
+checked against the symbol addresses in `Main.map`. **Check a quoted encoding
+against the image before adding it**, the same way the AVR edition checks a
+hex file rather than trusting that a build ran.
+
 From Part 1 onward every lesson has code and follows three beats:
 
 > **Model → Map → Measure**
@@ -150,6 +160,10 @@ instead of a browser tab. **Students pay nothing and need no account.**
 ## Conventions
 
 - `_slides/` is generated. Re-run the renderer; never edit the HTML.
+- **A `---` line is what starts a slide.** A heading alone does not; two
+  sections merge silently and the deck still renders, so check the slide count
+  the renderer prints after editing. Lesson 01 shipped with slides 9 and 10
+  fused this way.
 - **Never touch `projects2026_avr/`.** `git status projects2026_avr` should
   always be empty.
 - **Never rely on a backslash escape surviving a heredoc** when generating

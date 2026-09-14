@@ -136,7 +136,40 @@
 <p>Each of those is answered in one place: <strong>the instructions the compiler<br>actually emitted</strong>. Reading them is a diagnostic skill, like reading a stack<br>trace.</p>
 </section>
 <section class="slide">
-<h2>Slide 2: The Good News — There Is Not Much to Learn</h2>
+<h2>Slide 2: Thumb — the Only Instruction Set This Chip Has</h2>
+<p>Before reading a single mnemonic, know which language it is written in. ARM<br>designs <strong>two</strong> instruction sets, and this processor can execute exactly one of<br>them.</p>
+<table><thead><tr><th></th><th><strong>ARM (A32)</strong></th><th><strong>Thumb (T32)</strong></th></tr></thead><tbody><tr><td>Instruction width</td><td>always 32 bits</td><td>16 bits, widening to 32 only when it must</td></tr><tr><td>Same program, code size</td><td>baseline</td><td><strong>roughly 30% smaller</strong></td></tr><tr><td>Conditional execution</td><td>on every instruction</td><td>on branches</td></tr><tr><td>Registers in one instruction</td><td>all 16, always</td><td>R0–R7 in most 16-bit forms</td></tr><tr><td>Arrived</td><td>1985, the original</td><td>1994, in the ARM7<strong>T</strong>DMI</td></tr><tr><td>Executed by</td><td>Cortex-A, Cortex-R</td><td>Cortex-A, Cortex-R, <strong>and every Cortex-M</strong></td></tr></tbody></table>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="ARM instructions are always 32 bits; Thumb is mostly 16 bits; Cortex-M has only Thumb">
+  <text x="138" y="26" text-anchor="middle" class="lbl">ARM (A32) — four instructions</text>
+  <rect class="reg" x="20" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="80" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="140" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="200" y="38" width="55" height="26" rx="3"/>
+  <text x="138" y="82" text-anchor="middle" class="lbl">16 bytes</text>
+  <text x="422" y="26" text-anchor="middle" class="lbl">Thumb (T32) — the same four</text>
+  <rect class="hifill" x="305" y="38" width="27" height="26" rx="3"/>
+  <rect class="hifill" x="337" y="38" width="27" height="26" rx="3"/>
+  <rect class="hifill" x="369" y="38" width="55" height="26" rx="3"/>
+  <rect class="hifill" x="429" y="38" width="27" height="26" rx="3"/>
+  <text x="396" y="82" text-anchor="middle" class="lbl">10 bytes</text>
+  <text x="504" y="56" text-anchor="middle" class="lbl">one widened</text>
+  <path class="dash" d="M280 30 V92"/>
+  <rect class="box" x="60" y="112" width="200" height="46" rx="6"/>
+  <text x="160" y="130" text-anchor="middle">Cortex-A, Cortex-R</text>
+  <text x="160" y="148" text-anchor="middle" class="lbl">both, switched at run time</text>
+  <rect class="hifill" x="300" y="112" width="200" height="46" rx="6"/>
+  <text x="400" y="130" text-anchor="middle">Cortex-M — this chip</text>
+  <text x="400" y="148" text-anchor="middle" class="lbl">Thumb only. No ARM state exists.</text>
+  <text x="280" y="192" text-anchor="middle" class="lbl">A third less flash for the same program is worth more to a 32 KB part</text>
+  <text x="280" y="210" text-anchor="middle" class="lbl">than anything the wider encoding was buying.</text>
+</svg></figure>
+<p>A phone&#x27;s Cortex-A holds both and switches between them as it runs. <strong>A<br>Cortex-M has no ARM state to switch to.</strong> Thumb is not a mode you opt into<br>here; it is the only thing the decoder understands.</p>
+<p>You do not have to take that on faith — the build says so. This is the<br>runtime library the linker actually pulled in, straight out of <code>Main.map</code>:</p>
+<pre><code>.../lib/gcc/arm-none-eabi/15.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)</code></pre>
+<p>Three directory names, three decisions: <strong><code>thumb</code></strong> the instruction set,<br><strong><code>v6-m</code></strong> the architecture, <strong><code>nofp</code></strong> no floating-point unit. GCC ships a<br>separate copy of its runtime for each combination, and that is the copy your<br>chip got.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Good News — There Is Not Much to Learn</h2>
 <p>The whole spike program is <strong>2100 instructions</strong> built from just <strong>51 distinct<br>mnemonics</strong>. And they are not evenly used:</p>
 <table><thead><tr><th>Instruction</th><th>Share</th><th>Running total</th></tr></thead><tbody><tr><td><code>movs</code></td><td>15.9%</td><td>15.9%</td></tr><tr><td><code>ldr</code></td><td>15.3%</td><td>31.2%</td></tr><tr><td><code>cmp</code></td><td>8.3%</td><td>39.5%</td></tr><tr><td><code>str</code></td><td>8.0%</td><td>47.5%</td></tr><tr><td><code>adds</code></td><td>5.7%</td><td>53.2%</td></tr><tr><td><code>bl</code></td><td>4.3%</td><td>57.5%</td></tr><tr><td><code>lsls</code></td><td>4.0%</td><td>61.5%</td></tr><tr><td><code>b</code></td><td>3.9%</td><td>65.4%</td></tr><tr><td><code>bne</code></td><td>3.6%</td><td>69.0%</td></tr><tr><td><code>beq</code></td><td>3.5%</td><td>72.5%</td></tr><tr><td><code>subs</code></td><td>2.5%</td><td>75.0%</td></tr><tr><td><code>push</code> / <code>pop</code></td><td>4.6%</td><td><strong>79.6%</strong></td></tr></tbody></table>
 <figure class="diagram"><svg viewBox="0 0 560 150" role="img" aria-label="Thirteen mnemonics account for eighty percent of all instructions">
@@ -150,7 +183,7 @@
 <p>Learn those thirteen and you can read almost any disassembly on this chip. The<br>next five slides are those thirteen, by job.</p>
 </section>
 <section class="slide">
-<h2>Slide 3: Load / Store — the CPU Cannot Touch Memory</h2>
+<h2>Slide 4: Load / Store — the CPU Cannot Touch Memory</h2>
 <p>On x86 you can add directly to a memory location. On ARM you cannot. Memory is<br>reached by exactly two instructions, and everything else works on registers.</p>
 <figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Load into a register, operate, store back">
   <defs><marker id="i1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
@@ -174,14 +207,14 @@
 <p>This is why setting one bit in a peripheral register is never one instruction.<br>It is a <strong>read, a modify, and a write</strong> — three separate bus events, with a gap<br>between them. Lesson 03 shows what can go wrong in that gap.</p>
 </section>
 <section class="slide">
-<h2>Slide 4: Arithmetic and Logic</h2>
+<h2>Slide 5: Arithmetic and Logic</h2>
 <p>These operate on registers only, and almost all of them carry an <code>s</code>.</p>
 <table><thead><tr><th>Instruction</th><th>Does</th><th>Note</th></tr></thead><tbody><tr><td><code>adds r0, r1, r2</code></td><td>add</td><td></td></tr><tr><td><code>subs r0, r1, #4</code></td><td>subtract</td><td></td></tr><tr><td><code>negs r0, r1</code></td><td>negate</td><td><code>0 - r1</code></td></tr><tr><td><code>muls r0, r1</code></td><td>multiply</td><td>32×32, low 32 bits kept</td></tr><tr><td><code>adcs</code></td><td>add with carry</td><td>how 64-bit sums are built from 32-bit parts</td></tr><tr><td><code>ands r0, r1</code></td><td>bitwise AND</td><td><code>x &amp;= y</code></td></tr><tr><td><code>orrs r0, r1</code></td><td>bitwise OR</td><td><code>x |= y</code></td></tr><tr><td><code>eors r0, r1</code></td><td>bitwise XOR</td><td><code>x ^= y</code></td></tr><tr><td><code>bics r0, r1</code></td><td><strong>bit clear</strong> — <code>r0 AND NOT r1</code></td><td><code>x &amp;= ~y</code> — the mask-clearing idiom</td></tr></tbody></table>
 <p>&gt; <strong>There is no divide instruction on Cortex-M0+.</strong> <code>a / b</code> becomes a call to a<br>&gt; library routine, <code>__aeabi_uidiv</code>, which is why it is dramatically slower than<br>&gt; multiply. You can see it in the spike: <code>080000b4 &lt;__udivsi3&gt;</code> is linked in<br>&gt; because one line of C divided. Cortex-M3 and above have <code>sdiv</code> and <code>udiv</code> in<br>&gt; hardware.</p>
-<p><strong>Why the <code>s</code> everywhere?</strong> On the 16-bit Thumb encodings the M0+ uses, most<br>data-processing instructions <em>always</em> update the flags — there is no room in<br>the encoding for a choice. So the compiler writes <code>adds</code>, not <code>add</code>. On M3 and<br>above, the 32-bit encodings let you pick.</p>
+<p><strong>Why the <code>s</code> everywhere?</strong> On the 16-bit Thumb encodings the M0+ uses, most<br>data-processing instructions <em>always</em> update the flags — there is no room in<br>the encoding for a choice. So the compiler writes <code>adds</code>, not <code>add</code>. On M3 and<br>above, the 32-bit encodings let you pick. Slide 15 has the rest of that<br>difference, generation by generation.</p>
 </section>
 <section class="slide">
-<h2>Slide 5: Shifts — Why <code>lsls</code> Is 4% of All Code</h2>
+<h2>Slide 6: Shifts — Why <code>lsls</code> Is 4% of All Code</h2>
 <table><thead><tr><th>Instruction</th><th>Does</th></tr></thead><tbody><tr><td><code>lsls r0, r1, #3</code></td><td>logical shift left — multiply by 8</td></tr><tr><td><code>lsrs r0, r1, #3</code></td><td>logical shift right — unsigned divide by 8</td></tr><tr><td><code>asrs r0, r1, #3</code></td><td>arithmetic shift right — <strong>signed</strong> divide, keeps the sign</td></tr><tr><td><code>rors r0, r1</code></td><td>rotate right</td></tr></tbody></table>
 <p>Shifts are everywhere in embedded code for one reason: <strong>bit fields</strong>. Every<br>time you write</p>
 <pre class="lang-c"><code>GPIOA-&gt;MODER |= (2u &lt;&lt; (pin * 2));</code></pre>
@@ -189,7 +222,7 @@
 <p>Note <code>lsrs</code> versus <code>asrs</code>: shifting right is only a division if you pick the<br>one that matches your signedness. Getting it wrong turns a small negative<br>number into a very large positive one.</p>
 </section>
 <section class="slide">
-<h2>Slide 6: Flags and Conditional Branches</h2>
+<h2>Slide 7: Flags and Conditional Branches</h2>
 <p>Comparison does not produce a value. It sets four bits in the status register,<br>and the <em>next</em> instruction acts on them.</p>
 <figure class="diagram"><svg viewBox="0 0 560 190" role="img" aria-label="Compare sets flags, branch reads them">
   <defs><marker id="i3" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
@@ -211,7 +244,7 @@
 <p>&gt; <strong><code>blt</code> and <code>bcc</code> are not interchangeable.</strong> The compiler picks based on<br>&gt; whether your variable is signed. A comparison that behaves oddly at the<br>&gt; extremes of a range is very often a signedness bug, and the disassembly shows<br>&gt; it immediately.</p>
 </section>
 <section class="slide">
-<h2>Slide 7: Branches, Calls and Returns</h2>
+<h2>Slide 8: Branches, Calls and Returns</h2>
 <table><thead><tr><th>Instruction</th><th>Does</th><th>C</th></tr></thead><tbody><tr><td><code>b   label</code></td><td>jump</td><td><code>goto</code>, loop back, <code>else</code></td></tr><tr><td><code>bne label</code></td><td>jump if condition</td><td><code>if</code>, <code>while</code></td></tr><tr><td><code>bl  func</code></td><td><strong>branch with link</strong> — jump and save the return address in <code>LR</code></td><td><code>f();</code></td></tr><tr><td><code>bx  lr</code></td><td>jump to the address in <code>LR</code></td><td><code>return;</code></td></tr><tr><td><code>push {r4, lr}</code></td><td>save registers on the stack</td><td>function prologue</td></tr><tr><td><code>pop  {r4, pc}</code></td><td>restore — <strong>and popping into <code>PC</code> returns</strong></td><td>function epilogue</td></tr></tbody></table>
 <p>That last row is a neat trick worth recognising. Instead of <code>pop {r4, lr}</code><br>followed by <code>bx lr</code>, the compiler pops the saved <code>LR</code> straight into <code>PC</code>, which<br><em>is</em> a branch. One instruction saved on every function that touches the stack.</p>
 <p>You can see both halves in the spike&#x27;s <code>_write</code>:</p>
@@ -220,7 +253,7 @@
  80002c8:  bdf0    pop   {r4, r5, r6, r7, pc}</code></pre>
 </section>
 <section class="slide">
-<h2>Slide 8: How You Reach Memory — Addressing Modes</h2>
+<h2>Slide 9: How You Reach Memory — Addressing Modes</h2>
 <p><code>ldr</code> and <code>str</code> need an address, and there are only a few ways to build one.<br>Each corresponds to a C construct you write constantly.</p>
 <table><thead><tr><th>Form</th><th>Example</th><th>In C</th><th>Encoding</th></tr></thead><tbody><tr><td>register</td><td><code>ldr r0, [r1]</code></td><td><code>*p</code></td><td>16-bit</td></tr><tr><td><strong>immediate offset</strong></td><td><code>ldr r0, [r4, #28]</code></td><td><code>s-&gt;field</code></td><td>16-bit, small offsets</td></tr><tr><td><strong>register offset</strong></td><td><code>ldrb r6, [r1, r3]</code></td><td><code>buf[i]</code></td><td>16-bit</td></tr><tr><td>SP-relative</td><td><code>ldr r0, [sp, #8]</code></td><td>a local variable</td><td>16-bit</td></tr><tr><td>PC-relative</td><td><code>ldr r2, [pc, #44]</code></td><td>a big constant</td><td>16-bit</td></tr><tr><td>scaled register</td><td><code>ldr r0, [r1, r2, lsl #2]</code></td><td><code>arr[i]</code> for <code>int</code></td><td><strong>32-bit, M3+ only</strong></td></tr><tr><td>pre-indexed</td><td><code>ldr r0, [r1, #4]!</code></td><td><code>*++p</code></td><td><strong>32-bit, M3+ only</strong></td></tr><tr><td>post-indexed</td><td><code>ldr r0, [r1], #4</code></td><td><code>*p++</code></td><td><strong>32-bit, M3+ only</strong></td></tr></tbody></table>
 <figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Immediate offset reaches a struct field; register offset reaches an array element">
@@ -246,7 +279,7 @@
 </svg></figure>
 </section>
 <section class="slide">
-<h2>Slide 9: The Offsets Are Small, and You Can See When They Run Out</h2>
+<h2>Slide 10: The Offsets Are Small, and You Can See When They Run Out</h2>
 <p>A 16-bit instruction has very little room left for an offset once it has<br>encoded the opcode and two registers. The limits are strict:</p>
 <table><thead><tr><th>Instruction</th><th>Offset field</th><th>Reaches</th></tr></thead><tbody><tr><td><code>ldr  r0, [r1, #n]</code></td><td>5 bits, <strong>scaled by 4</strong></td><td>0 to 124 bytes</td></tr><tr><td><code>ldrh r0, [r1, #n]</code></td><td>5 bits, scaled by 2</td><td>0 to 62 bytes</td></tr><tr><td><code>ldrb r0, [r1, #n]</code></td><td>5 bits, unscaled</td><td>0 to 31 bytes</td></tr><tr><td><code>ldr  r0, [sp, #n]</code></td><td>8 bits, scaled by 4</td><td>0 to 1020 bytes</td></tr></tbody></table>
 <p>Two things follow that you will actually observe:</p>
@@ -255,7 +288,9 @@
 <pre><code> 80002d0:  ldr   r6, [r4, #28]        ; USART2-&gt;ISR, one instruction</code></pre>
 <p>but a field beyond 124 bytes cannot be encoded, so the compiler emits an <code>add</code><br>to move the base, then loads from the new base. <strong>This is why a large<br>peripheral struct can generate visibly worse code at the far end of it</strong>, and<br>why drivers that keep a pointer to the specific register they hammer in a loop<br>are sometimes measurably faster than ones that index from the block base.</p>
 <p>&gt; On Cortex-M3 and above the 32-bit encodings lift most of this: offsets up to<br>&gt; 4095 bytes, negative offsets, scaled register offsets and auto-increment.<br>&gt; Same source code, denser output — another instance of the &quot;one model, many<br>&gt; instances&quot; idea from lesson 00.</p>
-<h2>Slide 10: A Real Function, Disassembled</h2>
+</section>
+<section class="slide">
+<h2>Slide 11: A Real Function, Disassembled</h2>
 <p>This is <code>SystemInit()</code> from the spike — the code that takes the chip from its<br>12 MHz reset state to 48 MHz. Here is what the processor got:</p>
 <pre><code>0800022c &lt;SystemInit&gt;:
  800022c:  2007        movs  r0, #7            ; r0 = the HSIDIV bit mask
@@ -265,12 +300,12 @@
  8000234:  4381        bics  r1, r0            ; MODIFY  clear the field
  8000236:  430b        orrs  r3, r1            ; MODIFY  set the new value
  8000238:  6013        str   r3, [r2, #0]      ; STORE   back to FLASH-&gt;ACR</code></pre>
-<p>Four instructions — <code>ldr</code>, <code>bics</code>, <code>orrs</code>, <code>str</code> — are the load/modify/store of<br>slide 3, and they came from a single line of C:</p>
+<p>Four instructions — <code>ldr</code>, <code>bics</code>, <code>orrs</code>, <code>str</code> — are the load/modify/store of<br>slide 4, and they came from a single line of C:</p>
 <pre class="lang-c"><code>FLASH-&gt;ACR = (FLASH-&gt;ACR &amp; ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;</code></pre>
 <p>One statement, four bus operations. <code>bics</code> is the <code>&amp; ~</code>, <code>orrs</code> is the <code>|</code>.<br>That correspondence is the whole reason to read disassembly.</p>
 </section>
 <section class="slide">
-<h2>Slide 11: Where Do Big Constants Live?</h2>
+<h2>Slide 12: Where Do Big Constants Live?</h2>
 <p>Look again at <code>ldr r2, [pc, #44]</code>. The CPU is loading from an address computed<br>from <strong>the program counter itself</strong>. Why?</p>
 <figure class="diagram"><svg viewBox="0 0 560 210" role="img" aria-label="A 16-bit instruction cannot hold a 32-bit address, so it is stored nearby">
   <rect class="reg" x="20" y="30" width="200" height="38" rx="5"/>
@@ -295,7 +330,7 @@
 <p><code>0x02dc6c00</code> is 48,000,000. The clock speed you assigned in C is sitting in<br>flash as a number, and the address it gets written to is <code>0x20000000</code> — the<br>very bottom of SRAM, exactly where lesson 02 will show the linker putting it.</p>
 </section>
 <section class="slide">
-<h2>Slide 12: A Polling Loop, in Four Instructions</h2>
+<h2>Slide 13: A Polling Loop, in Four Instructions</h2>
 <p>Lesson 00 described polling as &quot;keep asking&quot;. Here it is literally, waiting for<br>the flash controller to acknowledge the new wait state:</p>
 <pre><code> 800023a:  6813        ldr   r3, [r2, #0]     ; read FLASH-&gt;ACR
  800023c:  4003        ands  r3, r0           ; isolate the LATENCY field
@@ -305,7 +340,7 @@
 <p>Note there is no <code>volatile</code> keyword visible in the machine code — but without<br>it in the C source, the compiler would have read <code>FLASH-&gt;ACR</code> <strong>once</strong>, cached<br>it in <code>r3</code>, and looped forever on a value that never changes.</p>
 </section>
 <section class="slide">
-<h2>Slide 13: A Whole C Function, Line by Line</h2>
+<h2>Slide 14: A Whole C Function, Line by Line</h2>
 <p>This is <code>_write()</code> from the spike — the function that makes <code>printf</code> reach the<br>serial port. Nothing in it is exotic, and every instruction is one you have now<br>met.</p>
 <pre><code>080002b8 &lt;_write&gt;:
  80002b8:  push  {r4, r5, r6, r7, lr}   ; prologue
@@ -336,14 +371,26 @@
 <p><strong>Every <code>for</code> loop you ever write looks like this</strong>: initialise, compare,<br>conditional branch to the body, increment, unconditional branch back.</p>
 </section>
 <section class="slide">
-<h2>Slide 14: Thumb-2 — Mostly 16 Bits, Sometimes 32</h2>
-<p>Look at the second column of the disassembly: <code>2007</code>, <code>4a0b</code>, <code>6811</code>. Four hex<br>digits. Two bytes. Most instructions on this chip are <strong>16 bits wide</strong>, which<br>is why 32 KB of flash holds a useful program at all.</p>
-<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><code>2007</code></td><td>16-bit — <code>movs r0, #7</code></td></tr><tr><td><code>d1fb</code></td><td>16-bit — <code>bne.n</code> (the <code>.n</code> means <em>narrow</em>)</td></tr><tr><td><code>f000 f812</code></td><td>32-bit — a longer branch, when 16 bits cannot reach</td></tr></tbody></table>
-<p>The instruction set is called <strong>Thumb-2</strong>: a 16-bit encoding with 32-bit escapes<br>for what does not fit. You get most of the code density of a compressed<br>instruction set and most of the power of a full one.</p>
-<p>The price is the constraints you have already seen — only eight registers are<br>freely reachable by most 16-bit instructions, constants must be small, and<br>flags are set whether you want them or not.</p>
+<h2>Slide 15: Thumb-1 and Thumb-2 — Two Generations</h2>
+<p>Look at the second column of the disassembly: <code>2007</code>, <code>4a0b</code>, <code>6811</code>. Four hex<br>digits. Two bytes. Almost every instruction on this chip is <strong>16 bits wide</strong>,<br>which is why 32 KB of flash holds a useful program at all.</p>
+<p>Thumb was not always able to do anything else:</p>
+<ul><li><strong>Thumb-1</strong> (1994) — 16-bit encodings, and nothing else. Compact, and correspondingly restricted.</li><li><strong>Thumb-2</strong> (2003, ARMv6T2) — keeps every 16-bit encoding and adds 32-bit ones <strong>beside</strong> them, in the same instruction stream. There is no mode switch: the decoder reads a halfword, and if its top five bits are <code>11101</code>, <code>11110</code> or <code>11111</code>, a second halfword belongs to it.</li></ul>
+<p>So &quot;Thumb&quot; on its own does not tell you what a core can do. The generation<br>does:</p>
+<table><thead><tr><th></th><th><strong>Cortex-M0 / M0+</strong></th><th><strong>Cortex-M3</strong></th><th><strong>Cortex-M4 / M7</strong></th></tr></thead><tbody><tr><td>Architecture</td><td>ARMv6-M</td><td>ARMv7-M</td><td>ARMv7E-M</td></tr><tr><td>Instruction set</td><td>Thumb-1, plus six</td><td>full Thumb-2</td><td>full Thumb-2 + DSP</td></tr><tr><td>Divide</td><td><strong>none</strong> — calls <code>__aeabi_uidiv</code></td><td><code>sdiv</code> / <code>udiv</code></td><td><code>sdiv</code> / <code>udiv</code></td></tr><tr><td>Flags</td><td>most 16-bit forms always set them</td><td><code>add</code> <strong>or</strong> <code>adds</code>, your choice</td><td>same</td></tr><tr><td>Conditional execution</td><td>branches only</td><td><code>IT</code> blocks, up to 4 instructions</td><td>same</td></tr><tr><td><code>ldr</code> offset</td><td>0–124 bytes, positive only</td><td>±4095, pre- and post-indexed</td><td>same</td></tr><tr><td>Registers</td><td>R0–R7 in most 16-bit forms</td><td>32-bit forms reach all 16</td><td>same</td></tr><tr><td>Immediates</td><td>8 bits, 0–255</td><td>12-bit modified constants, <code>movw</code> / <code>movt</code></td><td>same</td></tr><tr><td>Floating point</td><td>none</td><td>none</td><td>M4F and M7: hardware FPU</td></tr></tbody></table>
+<p>Every core in that table is Thumb-only — not one of them can execute an ARM<br>instruction. The only question is <em>which</em> Thumb.</p>
 </section>
 <section class="slide">
-<h2>Slide 15: Who Owns Which Register — the Calling Convention</h2>
+<h2>Slide 16: Which Thumb This Is — &quot;Thumb-1, Plus Six&quot;</h2>
+<p>The M0+ column says <em>Thumb-1, plus six</em>, and the six are worth memorising,<br>because they are the <strong>only</strong> 32-bit instructions this chip has:</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><code>bl</code></td><td>call a function anywhere in the address space</td></tr><tr><td><code>mrs</code> / <code>msr</code></td><td>read and write the special registers (<code>PRIMASK</code>, <code>CONTROL</code>, <code>PSP</code>)</td></tr><tr><td><code>dsb</code> / <code>dmb</code> / <code>isb</code></td><td>memory and instruction barriers</td></tr></tbody></table>
+<p>Everything else an M0+ executes is two bytes. Here is one of the six, decoded<br>out of the real image — the call in <code>Reset_Handler</code> that runs the clock setup<br>from slide 11:</p>
+<pre><code> 800028a:  f7ff ffcf   bl  800022c &lt;SystemInit&gt;</code></pre>
+<p>Four bytes, because a 16-bit branch reaches about ±2 KB and a call has to<br>reach anywhere. <strong>That is the whole rule for when Thumb widens</strong>: not when 32<br>bits would be convenient, but when 16 bits cannot do the job at all.</p>
+<p><strong><code>.n</code> and <code>.w</code>.</strong> objdump has been writing <code>bne.n</code>, <code>blt.n</code> and <code>b.n</code><br>throughout this deck. <code>.n</code> is <em>narrow</em>, 16 bits; <code>.w</code> is <em>wide</em>, 32. On this<br>chip there is nothing to choose and the suffix is only objdump being explicit.<br>On M3 and above the assembler picks the smallest encoding that reaches, and<br><code>.w</code> forces the wide one — which is how you write a branch that crosses a<br>large flash.</p>
+<p>&gt; <strong>Now re-read the last dozen slides.</strong> The <code>s</code> on every <code>adds</code>, the missing<br>&gt; divide, the 5-bit positive-only offsets, the eight reachable registers, the<br>&gt; literal pool full of addresses — <strong>none of those are ARM. They are<br>&gt; Thumb-1.</strong> Compile the same C for a Cortex-M4 and you get <code>add</code> that leaves<br>&gt; the flags alone, <code>sdiv</code> instead of a library call, <code>ldr r0, [r1, #2000]</code> in<br>&gt; one instruction, and far fewer literal pools, because <code>movw</code> / <code>movt</code> build a<br>&gt; 32-bit constant inline. Same source, same instruction set family — a<br>&gt; different instance of the model from lesson 00.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Who Owns Which Register — the Calling Convention</h2>
 <p>Sixteen registers, one CPU, and every function wanting to use them. The rules<br>are a written standard, <strong>AAPCS</strong>, and the compiler follows it exactly.</p>
 <figure class="diagram"><svg viewBox="0 0 560 210" role="img" aria-label="AAPCS register roles: arguments, callee-saved, special">
   <rect class="hifill" x="16" y="26" width="150" height="44" rx="5"/>
@@ -363,16 +410,49 @@
 <p>Now <code>_write</code> explains itself. Its arguments arrived in <code>r0</code>, <code>r1</code>, <code>r2</code> — the<br>file descriptor, the buffer and the length. It returns <code>len</code> by putting it in<br><code>r0</code>. And it pushes <code>r4</code>–<code>r7</code> <strong>because AAPCS says it must give them back<br>unchanged</strong> — it wanted them for the USART base and the loop counter.</p>
 </section>
 <section class="slide">
-<h2>Slide 16: The Thumb Bit — an Odd Address That Is Not a Bug</h2>
+<h2>Slide 18: The Thumb Bit — an Odd Address That Is Not a Bug</h2>
 <p>Here are the first sixteen bytes of <code>Main.hex</code>, the actual file that would be<br>flashed:</p>
 <pre><code>:1000000000300020750200082902000829020008BB</code></pre>
 <p>Decoded, ignoring the record framing:</p>
 <table><thead><tr><th>Bytes (little-endian)</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><td><code>00300020</code></td><td><code>0x20003000</code></td><td>initial stack pointer — top of 12 KB SRAM</td></tr><tr><td><code>75020008</code></td><td><code>0x08000275</code></td><td>reset vector — <strong>where execution begins</strong></td></tr><tr><td><code>29020008</code></td><td><code>0x08000229</code></td><td>NMI handler</td></tr></tbody></table>
 <p><code>Reset_Handler</code> is at <code>0x08000274</code>, an even address. The vector says<br><code>0x08000275</code>. <strong>The low bit is set on purpose</strong>: on this processor it means<br>&quot;the code at this address is Thumb code&quot;. Every function pointer on the chip<br>is odd.</p>
+<p>The bit exists because on a Cortex-A it is a genuine question — that core<br>has both instruction sets and this is how a branch says which one it is<br>landing in. On a Cortex-M, per slide 2, the answer is always Thumb, so the<br>bit is always 1 and the hardware still insists on being told.</p>
 <p>&gt; Clear that bit and the CPU faults immediately on reset. A vector table full<br>&gt; of even addresses is a dead chip — and it is a common hand-written-assembly<br>&gt; mistake.</p>
 </section>
 <section class="slide">
-<h2>Slide 17: What the Compiler Is Allowed to Do to You</h2>
+<h2>Slide 19: <code>LR</code> Is Odd Too — Reading a Return Address</h2>
+<p>Stop the debugger anywhere inside a function and <code>LR</code> ends in an odd digit.<br>It is the same bit as the vector table&#x27;s, and it is the first thing in an ARM<br>debugging session that looks like an off-by-one.</p>
+<p>Here is a real call, and the instruction it must come back to:</p>
+<pre><code> 800028a:  f7ff ffcf   bl  800022c &lt;SystemInit&gt;
+ 800028e:  f000 fb31   bl  80008f4</code></pre>
+<p><code>bl</code> is four bytes wide, so the return address is <code>0x0800028e</code>. What the<br>processor puts in <code>LR</code> is not that:</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>address of the instruction after the <code>bl</code></td><td><code>0x0800028e</code></td></tr><tr><td>Thumb bit, set by <code>bl</code></td><td><code>| 1</code></td></tr><tr><td><strong><code>LR</code> becomes</strong></td><td><strong><code>0x0800028f</code></strong></td></tr></tbody></table>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="bl stores the return address with bit 0 set; returning clears it again">
+  <defs><marker id="i5" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="12" y="44" width="140" height="34" rx="5"/>
+  <text x="82" y="61" text-anchor="middle" class="mono">bl 800022c</text>
+  <path class="hi" d="M152 61 H206" marker-end="url(#i5)"/>
+  <text x="179" y="36" text-anchor="middle" class="lbl">next | 1</text>
+  <rect class="hifill" x="210" y="36" width="150" height="50" rx="6"/>
+  <text x="285" y="56" text-anchor="middle" class="mono">LR = 0800028f</text>
+  <text x="285" y="75" text-anchor="middle" class="lbl">odd — on purpose</text>
+  <path class="hi" d="M360 61 H414" marker-end="url(#i5)"/>
+  <text x="387" y="36" text-anchor="middle" class="lbl">&amp; ~1</text>
+  <rect class="box" x="418" y="44" width="130" height="34" rx="5"/>
+  <text x="483" y="61" text-anchor="middle" class="mono">PC = 0800028e</text>
+  <text x="285" y="112" text-anchor="middle" class="lbl">bx lr · pop {pc} · both take bit 0 as "which instruction set", then drop it</text>
+  <text x="280" y="152" text-anchor="middle" class="lbl">The odd value was never an address. It is an address plus a one-bit answer</text>
+  <text x="280" y="172" text-anchor="middle" class="lbl">to a question this processor only has one answer to.</text>
+</svg></figure>
+<p>Returning undoes it. <code>bx lr</code> — and the <code>pop {r4, r5, r6, r7, pc}</code> from slide 8,<br>which is the same branch in disguise — read bit 0 as <em>the instruction set to<br>resume in</em>, then branch to the address with that bit <strong>cleared</strong>:</p>
+<pre><code>PC  &lt;-  LR &amp; ~1  =  0x0800028e</code></pre>
+<p>So execution continues at <code>0x0800028e</code>, the instruction immediately after the<br>call. <strong>Nothing is skipped and nothing is off by one.</strong> One bit is doing the<br>job of a processor mode flag, which is why it rides along inside the address<br>rather than living in a register of its own — and it is why <code>pop {pc}</code> can<br>return at all: the Thumb bit was saved with <code>LR</code> and comes back with it.</p>
+<p>&gt; <strong>When it bites.</strong> The bit is only ever 1 on a Cortex-M, so it is a trap<br>&gt; rather than a feature. Branch to an address with bit 0 <strong>clear</strong> and the core<br>&gt; faults — it has been told to execute ARM instructions, and it has none. A<br>&gt; <code>HardFault</code> whose stacked <code>PC</code> or <code>LR</code> looks like a perfectly sensible <em>even</em><br>&gt; address usually means a function pointer that was computed rather than<br>&gt; assigned, or hand-written assembly that returned with <code>mov pc, lr</code> instead of<br>&gt; <code>bx lr</code>.</p>
+<p>The one place <code>LR</code> is not a return address at all is inside an exception<br>handler: the core loads a magic <code>EXC_RETURN</code> value there instead<br>(<code>0xFFFFFFF9</code>, <code>0xFFFFFFFD</code>), and branching to it is what unstacks the frame<br>lesson 03 draws.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: What the Compiler Is Allowed to Do to You</h2>
 <p>The compiler&#x27;s contract is to preserve the <em>observable behaviour</em> of your<br>program — as defined by the C standard, which has never heard of your<br>peripheral.</p>
 <figure class="diagram"><svg viewBox="0 0 560 180" role="img" aria-label="The compiler may cache or delete accesses unless told otherwise">
   <rect class="box" x="20" y="26" width="180" height="106" rx="6"/>
@@ -391,8 +471,8 @@
 <p>The keyword that forbids it is <code>volatile</code>, and CMSIS has already applied it —<br>every register in <code>stm32c031xx.h</code> is declared <code>__IO</code>, which is <code>volatile</code>. You<br>inherit the protection; you should still know why it is there.</p>
 </section>
 <section class="slide">
-<h2>Slide 18: What You Should Be Able to Say</h2>
-<ol><li>Roughly how many distinct instructions make up 80% of real firmware?</li><li>Why does setting one bit in a peripheral register take at least three instructions?</li><li>What does <code>bics</code> do, and which C operator produces it?</li><li>Why is <code>lsls</code> more common than <code>subs</code> in embedded code?</li><li><code>cmp</code> computes a subtraction and discards the answer. What is the point?</li><li><code>blt</code> and <code>bcc</code> both mean &quot;less than&quot;. What is the difference, and what bug does confusing them cause?</li><li>What does <code>pop {r4, pc}</code> do that <code>pop {r4, lr}</code> does not?</li><li>Which addressing mode is <code>s-&gt;field</code>? Which is <code>buf[i]</code>?</li><li>Why is there no divide instruction, and how can you tell from a <code>.map</code> file that your code divided?</li><li>The reset vector holds <code>0x08000275</code> but the function is at <code>0x08000274</code>. Why, and what happens if you &quot;fix&quot; it?</li></ol>
+<h2>Slide 21: What You Should Be Able to Say</h2>
+<ol><li>Roughly how many distinct instructions make up 80% of real firmware?</li><li>Why does setting one bit in a peripheral register take at least three instructions?</li><li>What does <code>bics</code> do, and which C operator produces it?</li><li>Why is <code>lsls</code> more common than <code>subs</code> in embedded code?</li><li><code>cmp</code> computes a subtraction and discards the answer. What is the point?</li><li><code>blt</code> and <code>bcc</code> both mean &quot;less than&quot;. What is the difference, and what bug does confusing them cause?</li><li>What does <code>pop {r4, pc}</code> do that <code>pop {r4, lr}</code> does not?</li><li>Which addressing mode is <code>s-&gt;field</code>? Which is <code>buf[i]</code>?</li><li>Why is there no divide instruction, and how can you tell from a <code>.map</code> file that your code divided?</li><li>ARM designs two instruction sets. What is the other one called, and under what circumstances does a Cortex-M switch into it?</li><li>Name three things a Cortex-M4 does in one instruction that this M0+ cannot.</li><li>The reset vector holds <code>0x08000275</code> but the function is at <code>0x08000274</code>. Why, and what happens if you &quot;fix&quot; it?</li><li>You break inside a function and <code>LR</code> reads <code>0x0800028f</code>. Which instruction will run when it returns, and what would an <strong>even</strong> <code>LR</code> tell you?</li></ol>
 <p><strong>Next:</strong> <em>Development</em> — how a <code>.c</code> file becomes the bytes in that hex record,<br>and what runs before <code>main()</code>.</p>
 </section>
 </div>

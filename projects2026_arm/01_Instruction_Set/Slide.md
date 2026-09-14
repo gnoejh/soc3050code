@@ -31,7 +31,67 @@ trace.
 
 ---
 
-## Slide 2: The Good News — There Is Not Much to Learn
+## Slide 2: Thumb — the Only Instruction Set This Chip Has
+
+Before reading a single mnemonic, know which language it is written in. ARM
+designs **two** instruction sets, and this processor can execute exactly one of
+them.
+
+| | **ARM (A32)** | **Thumb (T32)** |
+|---|---|---|
+| Instruction width | always 32 bits | 16 bits, widening to 32 only when it must |
+| Same program, code size | baseline | **roughly 30% smaller** |
+| Conditional execution | on every instruction | on branches |
+| Registers in one instruction | all 16, always | R0–R7 in most 16-bit forms |
+| Arrived | 1985, the original | 1994, in the ARM7**T**DMI |
+| Executed by | Cortex-A, Cortex-R | Cortex-A, Cortex-R, **and every Cortex-M** |
+
+```svg
+<svg viewBox="0 0 560 220" role="img" aria-label="ARM instructions are always 32 bits; Thumb is mostly 16 bits; Cortex-M has only Thumb">
+  <text x="138" y="26" text-anchor="middle" class="lbl">ARM (A32) — four instructions</text>
+  <rect class="reg" x="20" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="80" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="140" y="38" width="55" height="26" rx="3"/>
+  <rect class="reg" x="200" y="38" width="55" height="26" rx="3"/>
+  <text x="138" y="82" text-anchor="middle" class="lbl">16 bytes</text>
+  <text x="422" y="26" text-anchor="middle" class="lbl">Thumb (T32) — the same four</text>
+  <rect class="hifill" x="305" y="38" width="27" height="26" rx="3"/>
+  <rect class="hifill" x="337" y="38" width="27" height="26" rx="3"/>
+  <rect class="hifill" x="369" y="38" width="55" height="26" rx="3"/>
+  <rect class="hifill" x="429" y="38" width="27" height="26" rx="3"/>
+  <text x="396" y="82" text-anchor="middle" class="lbl">10 bytes</text>
+  <text x="504" y="56" text-anchor="middle" class="lbl">one widened</text>
+  <path class="dash" d="M280 30 V92"/>
+  <rect class="box" x="60" y="112" width="200" height="46" rx="6"/>
+  <text x="160" y="130" text-anchor="middle">Cortex-A, Cortex-R</text>
+  <text x="160" y="148" text-anchor="middle" class="lbl">both, switched at run time</text>
+  <rect class="hifill" x="300" y="112" width="200" height="46" rx="6"/>
+  <text x="400" y="130" text-anchor="middle">Cortex-M — this chip</text>
+  <text x="400" y="148" text-anchor="middle" class="lbl">Thumb only. No ARM state exists.</text>
+  <text x="280" y="192" text-anchor="middle" class="lbl">A third less flash for the same program is worth more to a 32 KB part</text>
+  <text x="280" y="210" text-anchor="middle" class="lbl">than anything the wider encoding was buying.</text>
+</svg>
+```
+
+A phone's Cortex-A holds both and switches between them as it runs. **A
+Cortex-M has no ARM state to switch to.** Thumb is not a mode you opt into
+here; it is the only thing the decoder understands.
+
+You do not have to take that on faith — the build says so. This is the
+runtime library the linker actually pulled in, straight out of `Main.map`:
+
+```
+.../lib/gcc/arm-none-eabi/15.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+```
+
+Three directory names, three decisions: **`thumb`** the instruction set,
+**`v6-m`** the architecture, **`nofp`** no floating-point unit. GCC ships a
+separate copy of its runtime for each combination, and that is the copy your
+chip got.
+
+---
+
+## Slide 3: The Good News — There Is Not Much to Learn
 
 The whole spike program is **2100 instructions** built from just **51 distinct
 mnemonics**. And they are not evenly used:
@@ -67,7 +127,7 @@ next five slides are those thirteen, by job.
 
 ---
 
-## Slide 3: Load / Store — the CPU Cannot Touch Memory
+## Slide 4: Load / Store — the CPU Cannot Touch Memory
 
 On x86 you can add directly to a memory location. On ARM you cannot. Memory is
 reached by exactly two instructions, and everything else works on registers.
@@ -109,7 +169,7 @@ between them. Lesson 03 shows what can go wrong in that gap.
 
 ---
 
-## Slide 4: Arithmetic and Logic
+## Slide 5: Arithmetic and Logic
 
 These operate on registers only, and almost all of them carry an `s`.
 
@@ -134,11 +194,12 @@ These operate on registers only, and almost all of them carry an `s`.
 **Why the `s` everywhere?** On the 16-bit Thumb encodings the M0+ uses, most
 data-processing instructions *always* update the flags — there is no room in
 the encoding for a choice. So the compiler writes `adds`, not `add`. On M3 and
-above, the 32-bit encodings let you pick.
+above, the 32-bit encodings let you pick. Slide 15 has the rest of that
+difference, generation by generation.
 
 ---
 
-## Slide 5: Shifts — Why `lsls` Is 4% of All Code
+## Slide 6: Shifts — Why `lsls` Is 4% of All Code
 
 | Instruction | Does |
 |---|---|
@@ -164,7 +225,7 @@ number into a very large positive one.
 
 ---
 
-## Slide 6: Flags and Conditional Branches
+## Slide 7: Flags and Conditional Branches
 
 Comparison does not produce a value. It sets four bits in the status register,
 and the *next* instruction acts on them.
@@ -203,7 +264,7 @@ and the *next* instruction acts on them.
 
 ---
 
-## Slide 7: Branches, Calls and Returns
+## Slide 8: Branches, Calls and Returns
 
 | Instruction | Does | C |
 |---|---|---|
@@ -228,7 +289,7 @@ You can see both halves in the spike's `_write`:
 
 ---
 
-## Slide 8: How You Reach Memory — Addressing Modes
+## Slide 9: How You Reach Memory — Addressing Modes
 
 `ldr` and `str` need an address, and there are only a few ways to build one.
 Each corresponds to a C construct you write constantly.
@@ -270,7 +331,7 @@ Each corresponds to a C construct you write constantly.
 
 ---
 
-## Slide 9: The Offsets Are Small, and You Can See When They Run Out
+## Slide 10: The Offsets Are Small, and You Can See When They Run Out
 
 A 16-bit instruction has very little room left for an offset once it has
 encoded the opcode and two registers. The limits are strict:
@@ -304,7 +365,9 @@ are sometimes measurably faster than ones that index from the block base.
 > Same source code, denser output — another instance of the "one model, many
 > instances" idea from lesson 00.
 
-## Slide 10: A Real Function, Disassembled
+---
+
+## Slide 11: A Real Function, Disassembled
 
 This is `SystemInit()` from the spike — the code that takes the chip from its
 12 MHz reset state to 48 MHz. Here is what the processor got:
@@ -321,7 +384,7 @@ This is `SystemInit()` from the spike — the code that takes the chip from its
 ```
 
 Four instructions — `ldr`, `bics`, `orrs`, `str` — are the load/modify/store of
-slide 3, and they came from a single line of C:
+slide 4, and they came from a single line of C:
 
 ```c
 FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;
@@ -332,7 +395,7 @@ That correspondence is the whole reason to read disassembly.
 
 ---
 
-## Slide 11: Where Do Big Constants Live?
+## Slide 12: Where Do Big Constants Live?
 
 Look again at `ldr r2, [pc, #44]`. The CPU is loading from an address computed
 from **the program counter itself**. Why?
@@ -371,7 +434,7 @@ very bottom of SRAM, exactly where lesson 02 will show the linker putting it.
 
 ---
 
-## Slide 12: A Polling Loop, in Four Instructions
+## Slide 13: A Polling Loop, in Four Instructions
 
 Lesson 00 described polling as "keep asking". Here it is literally, waiting for
 the flash controller to acknowledge the new wait state:
@@ -392,7 +455,7 @@ it in `r3`, and looped forever on a value that never changes.
 
 ---
 
-## Slide 13: A Whole C Function, Line by Line
+## Slide 14: A Whole C Function, Line by Line
 
 This is `_write()` from the spike — the function that makes `printf` reach the
 serial port. Nothing in it is exotic, and every instruction is one you have now
@@ -440,29 +503,83 @@ conditional branch to the body, increment, unconditional branch back.
 
 ---
 
-## Slide 14: Thumb-2 — Mostly 16 Bits, Sometimes 32
+## Slide 15: Thumb-1 and Thumb-2 — Two Generations
 
 Look at the second column of the disassembly: `2007`, `4a0b`, `6811`. Four hex
-digits. Two bytes. Most instructions on this chip are **16 bits wide**, which
-is why 32 KB of flash holds a useful program at all.
+digits. Two bytes. Almost every instruction on this chip is **16 bits wide**,
+which is why 32 KB of flash holds a useful program at all.
 
-| | |
-|---|---|
-| `2007` | 16-bit — `movs r0, #7` |
-| `d1fb` | 16-bit — `bne.n` (the `.n` means *narrow*) |
-| `f000 f812` | 32-bit — a longer branch, when 16 bits cannot reach |
+Thumb was not always able to do anything else:
 
-The instruction set is called **Thumb-2**: a 16-bit encoding with 32-bit escapes
-for what does not fit. You get most of the code density of a compressed
-instruction set and most of the power of a full one.
+- **Thumb-1** (1994) — 16-bit encodings, and nothing else. Compact, and
+  correspondingly restricted.
+- **Thumb-2** (2003, ARMv6T2) — keeps every 16-bit encoding and adds 32-bit
+  ones **beside** them, in the same instruction stream. There is no mode
+  switch: the decoder reads a halfword, and if its top five bits are `11101`,
+  `11110` or `11111`, a second halfword belongs to it.
 
-The price is the constraints you have already seen — only eight registers are
-freely reachable by most 16-bit instructions, constants must be small, and
-flags are set whether you want them or not.
+So "Thumb" on its own does not tell you what a core can do. The generation
+does:
+
+| | **Cortex-M0 / M0+** | **Cortex-M3** | **Cortex-M4 / M7** |
+|---|---|---|---|
+| Architecture | ARMv6-M | ARMv7-M | ARMv7E-M |
+| Instruction set | Thumb-1, plus six | full Thumb-2 | full Thumb-2 + DSP |
+| Divide | **none** — calls `__aeabi_uidiv` | `sdiv` / `udiv` | `sdiv` / `udiv` |
+| Flags | most 16-bit forms always set them | `add` **or** `adds`, your choice | same |
+| Conditional execution | branches only | `IT` blocks, up to 4 instructions | same |
+| `ldr` offset | 0–124 bytes, positive only | ±4095, pre- and post-indexed | same |
+| Registers | R0–R7 in most 16-bit forms | 32-bit forms reach all 16 | same |
+| Immediates | 8 bits, 0–255 | 12-bit modified constants, `movw` / `movt` | same |
+| Floating point | none | none | M4F and M7: hardware FPU |
+
+Every core in that table is Thumb-only — not one of them can execute an ARM
+instruction. The only question is *which* Thumb.
 
 ---
 
-## Slide 15: Who Owns Which Register — the Calling Convention
+## Slide 16: Which Thumb This Is — "Thumb-1, Plus Six"
+
+The M0+ column says *Thumb-1, plus six*, and the six are worth memorising,
+because they are the **only** 32-bit instructions this chip has:
+
+| | |
+|---|---|
+| `bl` | call a function anywhere in the address space |
+| `mrs` / `msr` | read and write the special registers (`PRIMASK`, `CONTROL`, `PSP`) |
+| `dsb` / `dmb` / `isb` | memory and instruction barriers |
+
+Everything else an M0+ executes is two bytes. Here is one of the six, decoded
+out of the real image — the call in `Reset_Handler` that runs the clock setup
+from slide 11:
+
+```
+ 800028a:  f7ff ffcf   bl  800022c <SystemInit>
+```
+
+Four bytes, because a 16-bit branch reaches about ±2 KB and a call has to
+reach anywhere. **That is the whole rule for when Thumb widens**: not when 32
+bits would be convenient, but when 16 bits cannot do the job at all.
+
+**`.n` and `.w`.** objdump has been writing `bne.n`, `blt.n` and `b.n`
+throughout this deck. `.n` is *narrow*, 16 bits; `.w` is *wide*, 32. On this
+chip there is nothing to choose and the suffix is only objdump being explicit.
+On M3 and above the assembler picks the smallest encoding that reaches, and
+`.w` forces the wide one — which is how you write a branch that crosses a
+large flash.
+
+> **Now re-read the last dozen slides.** The `s` on every `adds`, the missing
+> divide, the 5-bit positive-only offsets, the eight reachable registers, the
+> literal pool full of addresses — **none of those are ARM. They are
+> Thumb-1.** Compile the same C for a Cortex-M4 and you get `add` that leaves
+> the flags alone, `sdiv` instead of a library call, `ldr r0, [r1, #2000]` in
+> one instruction, and far fewer literal pools, because `movw` / `movt` build a
+> 32-bit constant inline. Same source, same instruction set family — a
+> different instance of the model from lesson 00.
+
+---
+
+## Slide 17: Who Owns Which Register — the Calling Convention
 
 Sixteen registers, one CPU, and every function wanting to use them. The rules
 are a written standard, **AAPCS**, and the compiler follows it exactly.
@@ -492,7 +609,7 @@ unchanged** — it wanted them for the USART base and the loop counter.
 
 ---
 
-## Slide 16: The Thumb Bit — an Odd Address That Is Not a Bug
+## Slide 18: The Thumb Bit — an Odd Address That Is Not a Bug
 
 Here are the first sixteen bytes of `Main.hex`, the actual file that would be
 flashed:
@@ -514,13 +631,90 @@ Decoded, ignoring the record framing:
 "the code at this address is Thumb code". Every function pointer on the chip
 is odd.
 
+The bit exists because on a Cortex-A it is a genuine question — that core
+has both instruction sets and this is how a branch says which one it is
+landing in. On a Cortex-M, per slide 2, the answer is always Thumb, so the
+bit is always 1 and the hardware still insists on being told.
+
 > Clear that bit and the CPU faults immediately on reset. A vector table full
 > of even addresses is a dead chip — and it is a common hand-written-assembly
 > mistake.
 
 ---
 
-## Slide 17: What the Compiler Is Allowed to Do to You
+## Slide 19: `LR` Is Odd Too — Reading a Return Address
+
+Stop the debugger anywhere inside a function and `LR` ends in an odd digit.
+It is the same bit as the vector table's, and it is the first thing in an ARM
+debugging session that looks like an off-by-one.
+
+Here is a real call, and the instruction it must come back to:
+
+```
+ 800028a:  f7ff ffcf   bl  800022c <SystemInit>
+ 800028e:  f000 fb31   bl  80008f4
+```
+
+`bl` is four bytes wide, so the return address is `0x0800028e`. What the
+processor puts in `LR` is not that:
+
+| | |
+|---|---|
+| address of the instruction after the `bl` | `0x0800028e` |
+| Thumb bit, set by `bl` | `\| 1` |
+| **`LR` becomes** | **`0x0800028f`** |
+
+```svg
+<svg viewBox="0 0 560 200" role="img" aria-label="bl stores the return address with bit 0 set; returning clears it again">
+  <defs><marker id="i5" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="12" y="44" width="140" height="34" rx="5"/>
+  <text x="82" y="61" text-anchor="middle" class="mono">bl 800022c</text>
+  <path class="hi" d="M152 61 H206" marker-end="url(#i5)"/>
+  <text x="179" y="36" text-anchor="middle" class="lbl">next | 1</text>
+  <rect class="hifill" x="210" y="36" width="150" height="50" rx="6"/>
+  <text x="285" y="56" text-anchor="middle" class="mono">LR = 0800028f</text>
+  <text x="285" y="75" text-anchor="middle" class="lbl">odd — on purpose</text>
+  <path class="hi" d="M360 61 H414" marker-end="url(#i5)"/>
+  <text x="387" y="36" text-anchor="middle" class="lbl">&amp; ~1</text>
+  <rect class="box" x="418" y="44" width="130" height="34" rx="5"/>
+  <text x="483" y="61" text-anchor="middle" class="mono">PC = 0800028e</text>
+  <text x="285" y="112" text-anchor="middle" class="lbl">bx lr · pop {pc} · both take bit 0 as "which instruction set", then drop it</text>
+  <text x="280" y="152" text-anchor="middle" class="lbl">The odd value was never an address. It is an address plus a one-bit answer</text>
+  <text x="280" y="172" text-anchor="middle" class="lbl">to a question this processor only has one answer to.</text>
+</svg>
+```
+
+Returning undoes it. `bx lr` — and the `pop {r4, r5, r6, r7, pc}` from slide 8,
+which is the same branch in disguise — read bit 0 as *the instruction set to
+resume in*, then branch to the address with that bit **cleared**:
+
+```
+PC  <-  LR & ~1  =  0x0800028e
+```
+
+So execution continues at `0x0800028e`, the instruction immediately after the
+call. **Nothing is skipped and nothing is off by one.** One bit is doing the
+job of a processor mode flag, which is why it rides along inside the address
+rather than living in a register of its own — and it is why `pop {pc}` can
+return at all: the Thumb bit was saved with `LR` and comes back with it.
+
+> **When it bites.** The bit is only ever 1 on a Cortex-M, so it is a trap
+> rather than a feature. Branch to an address with bit 0 **clear** and the core
+> faults — it has been told to execute ARM instructions, and it has none. A
+> `HardFault` whose stacked `PC` or `LR` looks like a perfectly sensible *even*
+> address usually means a function pointer that was computed rather than
+> assigned, or hand-written assembly that returned with `mov pc, lr` instead of
+> `bx lr`.
+
+The one place `LR` is not a return address at all is inside an exception
+handler: the core loads a magic `EXC_RETURN` value there instead
+(`0xFFFFFFF9`, `0xFFFFFFFD`), and branching to it is what unstacks the frame
+lesson 03 draws.
+
+---
+
+## Slide 20: What the Compiler Is Allowed to Do to You
 
 The compiler's contract is to preserve the *observable behaviour* of your
 program — as defined by the C standard, which has never heard of your
@@ -552,7 +746,7 @@ inherit the protection; you should still know why it is there.
 
 ---
 
-## Slide 18: What You Should Be Able to Say
+## Slide 21: What You Should Be Able to Say
 
 1. Roughly how many distinct instructions make up 80% of real firmware?
 2. Why does setting one bit in a peripheral register take at least three
@@ -566,8 +760,13 @@ inherit the protection; you should still know why it is there.
 8. Which addressing mode is `s->field`? Which is `buf[i]`?
 9. Why is there no divide instruction, and how can you tell from a `.map` file
    that your code divided?
-10. The reset vector holds `0x08000275` but the function is at `0x08000274`.
+10. ARM designs two instruction sets. What is the other one called, and under
+    what circumstances does a Cortex-M switch into it?
+11. Name three things a Cortex-M4 does in one instruction that this M0+ cannot.
+12. The reset vector holds `0x08000275` but the function is at `0x08000274`.
     Why, and what happens if you "fix" it?
+13. You break inside a function and `LR` reads `0x0800028f`. Which instruction
+    will run when it returns, and what would an **even** `LR` tell you?
 
 **Next:** *Development* — how a `.c` file becomes the bytes in that hex record,
 and what runs before `main()`.
