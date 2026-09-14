@@ -7,6 +7,7 @@ The live edition. `projects2026_avr/` is the finished 2026 AVR edition and is
 
 ```
 _build/build-slides.py    the renderer (this tree's own copy)
+_build/disasm.py          disassemble an ELF without the toolchain
 _slides/                  generated decks - do not edit, re-render instead
 _notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
@@ -130,6 +131,35 @@ then `_spike/README.md` has the exact commands and the versions used.
 > **This tree cannot repeat the AVR edition's "a clone needs no installs"
 > promise.** The student simulator is hosted. Say so plainly rather than
 > discovering it in week one.
+
+## Seeing the assembly
+
+Every Part 0 deck quotes disassembly, and until the toolchain is vendored
+nobody with a fresh clone can reproduce it. `_build/disasm.py` closes that gap
+by reading the ELF itself:
+
+```
+pip install capstone
+python _build/disasm.py _spike/c031c6/Main.elf -f _write
+python _build/disasm.py _spike/c031c6/Main.elf            # the whole image
+python _build/disasm.py _spike/c031c6/Main.hex            # no symbols - see below
+```
+
+capstone is a 3 MB wheel rather than a 335 MB toolchain download. The script
+follows the ELF's `$t` / `$d` **mapping symbols**, so literal pools print as
+`.word` instead of being rendered as invented instructions, and it labels
+branch targets with the function they land in. Its output for `_write` was
+compared line by line with lesson 01 slide 14 - 23 instructions, every encoding
+and every mnemonic identical.
+
+A `.hex` or `.bin` carries neither symbols nor mapping symbols, so it is
+disassembled as one long Thumb run and the vector table at the front comes out
+as nonsense. That is worth showing a class exactly once: it is what "the ELF is
+not just the bytes" means.
+
+**`arm-none-eabi-objdump -d` remains the real answer** - richer output, source
+interleaving with `-S`, and no second implementation to trust. The Colab
+notebook already runs it. This is the offline stopgap, not a replacement.
 
 ## Simulation, and what it costs
 
