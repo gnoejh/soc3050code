@@ -194,7 +194,7 @@ These operate on registers only, and almost all of them carry an `s`.
 **Why the `s` everywhere?** On the 16-bit Thumb encodings the M0+ uses, most
 data-processing instructions *always* update the flags — there is no room in
 the encoding for a choice. So the compiler writes `adds`, not `add`. On M3 and
-above, the 32-bit encodings let you pick. Slide 15 has the rest of that
+above, the 32-bit encodings let you pick. Slide 16 has the rest of that
 difference, generation by generation.
 
 ---
@@ -458,34 +458,54 @@ it in `r3`, and looped forever on a value that never changes.
 ## Slide 14: A Whole C Function, Line by Line
 
 This is `_write()` from the spike — the function that makes `printf` reach the
-serial port. Nothing in it is exotic, and every instruction is one you have now
-met.
+serial port. Eleven lines of C:
+
+```c
+static void uart2_putc(char c)
+{
+    while (!(USART2->ISR & USART_ISR_TXE_TXFNF)) { }
+    USART2->TDR = (uint8_t)c;
+}
+
+int _write(int fd, const char *buf, int len)
+{
+    (void)fd;
+    for (int i = 0; i < len; i++) {
+        if (buf[i] == '\n') { uart2_putc('\r'); }
+        uart2_putc(buf[i]);
+    }
+    return len;
+}
+```
+
+And here is what the processor got. Nothing in it is exotic, and every
+instruction is one you have now met:
 
 ```
 080002b8 <_write>:
- 80002b8:  push  {r4, r5, r6, r7, lr}   ; prologue
- 80002ba:  movs  r3, #0                 ; i = 0
- 80002bc:  movs  r0, #128               ; 0x80 = the TXE flag
- 80002be:  movs  r5, #13                ; '\r'
- 80002c0:  ldr   r4, [pc, #36]          ; r4 = 0x40004400 = USART2
- 80002c2:  cmp   r3, r2                 ; i < len ?
- 80002c4:  db01  blt.n 80002ca          ;   yes -> body
- 80002c6:  movs  r0, r2                 ; return len
- 80002c8:  pop   {r4, r5, r6, r7, pc}   ; epilogue + return
- 80002ca:  ldrb  r6, [r1, r3]           ; c = buf[i]
- 80002cc:  cmp   r6, #10                ; c == '\n' ?
- 80002ce:  bne.n 80002d8                ;   no -> skip
- 80002d0:  ldr   r6, [r4, #28]          ; USART2->ISR
- 80002d2:  tst   r6, r0                 ; TXE set?
- 80002d4:  beq.n 80002d0                ;   no -> poll again
- 80002d6:  str   r5, [r4, #40]          ; USART2->TDR = '\r'
- 80002d8:  ldrb  r6, [r1, r3]           ; c = buf[i]
- 80002da:  ldr   r7, [r4, #28]          ; poll again for the real character
- 80002dc:  tst   r7, r0
- 80002de:  beq.n 80002da
- 80002e0:  str   r6, [r4, #40]          ; USART2->TDR = c
- 80002e2:  adds  r3, #1                 ; i++
- 80002e4:  b.n   80002c2                ; loop
+ 80002b8:  b5f0    push  {r4, r5, r6, r7, lr}   ; prologue
+ 80002ba:  2300    movs  r3, #0                 ; i = 0
+ 80002bc:  2080    movs  r0, #128               ; 0x80 = the TXE flag
+ 80002be:  250d    movs  r5, #13                ; '\r'
+ 80002c0:  4c09    ldr   r4, [pc, #36]          ; r4 = 0x40004400 = USART2
+ 80002c2:  4293    cmp   r3, r2                 ; i < len ?
+ 80002c4:  db01    blt.n 80002ca                ;   yes -> body
+ 80002c6:  0010    movs  r0, r2                 ; return len
+ 80002c8:  bdf0    pop   {r4, r5, r6, r7, pc}   ; epilogue + return
+ 80002ca:  5cce    ldrb  r6, [r1, r3]           ; c = buf[i]
+ 80002cc:  2e0a    cmp   r6, #10                ; c == '\n' ?
+ 80002ce:  d103    bne.n 80002d8                ;   no -> skip
+ 80002d0:  69e6    ldr   r6, [r4, #28]          ; USART2->ISR
+ 80002d2:  4206    tst   r6, r0                 ; TXE set?
+ 80002d4:  d0fc    beq.n 80002d0                ;   no -> poll again
+ 80002d6:  62a5    str   r5, [r4, #40]          ; USART2->TDR = '\r'
+ 80002d8:  5cce    ldrb  r6, [r1, r3]           ; c = buf[i]
+ 80002da:  69e7    ldr   r7, [r4, #28]          ; poll again for the real character
+ 80002dc:  4207    tst   r7, r0
+ 80002de:  d0fc    beq.n 80002da
+ 80002e0:  62a6    str   r6, [r4, #40]          ; USART2->TDR = c
+ 80002e2:  3301    adds  r3, #1                 ; i++
+ 80002e4:  e7ed    b.n   80002c2                ; loop
 ```
 
 Read the constants and the whole thing decodes itself:
@@ -498,12 +518,107 @@ Read the constants and the whole thing decodes itself:
 | `[r4, #28]` | `USART2->ISR` — offset `0x1C` |
 | `[r4, #40]` | `USART2->TDR` — offset `0x28` |
 
+---
+
+## Slide 15: The Same Function, in One Picture
+
+Twenty-two instructions, and only five things happening. Follow the arrows:
+
+```svg
+<svg viewBox="0 0 560 430" role="img" aria-label="Control flow of _write: setup once, the loop test, the character load, the carriage-return branch, the send, and the jump back to the test">
+  <defs><marker id="i6" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+
+  <rect class="box" x="56" y="16" width="240" height="46" rx="6"/>
+  <text x="176" y="34" text-anchor="middle" class="mono">80002b8 - c0</text>
+  <text x="176" y="52" text-anchor="middle" class="lbl">push, i = 0, masks, r4 = USART2</text>
+  <text x="306" y="42" class="lbl">runs once</text>
+  <path class="wire" d="M176 62 V76" marker-end="url(#i6)"/>
+
+  <rect class="reg" x="56" y="80" width="240" height="34" rx="5"/>
+  <text x="176" y="100" text-anchor="middle" class="mono">80002c2   i &lt; len ?</text>
+  <path class="wire" d="M296 97 H330" marker-end="url(#i6)"/>
+  <text x="313" y="88" text-anchor="middle" class="lbl">no</text>
+  <rect class="box" x="336" y="80" width="184" height="34" rx="5"/>
+  <text x="428" y="100" text-anchor="middle" class="mono">80002c6  return len</text>
+
+  <path class="wire" d="M176 114 V132" marker-end="url(#i6)"/>
+  <text x="168" y="128" text-anchor="end" class="lbl">yes</text>
+  <rect class="box" x="56" y="138" width="240" height="34" rx="5"/>
+  <text x="176" y="158" text-anchor="middle" class="mono">80002ca   c = buf[i]</text>
+  <path class="wire" d="M176 172 V190" marker-end="url(#i6)"/>
+
+  <rect class="reg" x="56" y="196" width="240" height="34" rx="5"/>
+  <text x="176" y="216" text-anchor="middle" class="mono">80002cc   c == '\n' ?</text>
+  <path class="wire" d="M296 213 H330" marker-end="url(#i6)"/>
+  <text x="313" y="204" text-anchor="middle" class="lbl">yes</text>
+
+  <rect class="hifill" x="336" y="190" width="184" height="52" rx="6"/>
+  <text x="428" y="210" text-anchor="middle" class="mono">80002d0 - d6</text>
+  <text x="428" y="228" text-anchor="middle" class="lbl">wait for TXE, send '\r'</text>
+  <path class="hi" d="M520 202 C544 202 544 230 522 230" marker-end="url(#i6)"/>
+  <text x="538" y="248" text-anchor="middle" class="lbl">poll</text>
+
+  <path class="wire" d="M176 230 V276" marker-end="url(#i6)"/>
+  <text x="168" y="256" text-anchor="end" class="lbl">no</text>
+  <path class="wire" d="M428 242 V288 H304" marker-end="url(#i6)"/>
+
+  <rect class="hifill" x="56" y="282" width="240" height="52" rx="6"/>
+  <text x="176" y="302" text-anchor="middle" class="mono">80002d8 - e0</text>
+  <text x="176" y="320" text-anchor="middle" class="lbl">reload c, wait for TXE, send c</text>
+  <path class="hi" d="M296 296 C320 296 320 324 298 324" marker-end="url(#i6)"/>
+  <text x="314" y="342" text-anchor="middle" class="lbl">poll</text>
+
+  <path class="wire" d="M176 334 V352" marker-end="url(#i6)"/>
+  <rect class="box" x="56" y="358" width="240" height="32" rx="5"/>
+  <text x="176" y="377" text-anchor="middle" class="mono">80002e2   i++</text>
+
+  <path class="wire" d="M56 374 H26 V97 H50" marker-end="url(#i6)"/>
+  <text x="18" y="240" text-anchor="middle" class="lbl mono" transform="rotate(-90 18 240)">80002e4   b</text>
+
+  <text x="280" y="414" text-anchor="middle" class="lbl">Two send blocks, one source line each: uart2_putc was inlined, so there is no bl here at all.</text>
+</svg>
+```
+
+Every address in the listing belongs to one line of the C:
+
+| C | Became |
+|---|---|
+| `int _write(...)` | `80002b8` — `push` |
+| `(void)fd;` | **nothing** — `r0` arrived holding `fd` and is reused at `80002bc` |
+| `int i = 0`, and the hoisted constants | `80002ba` – `80002c0` |
+| `i < len` | `80002c2` – `80002c4` |
+| `buf[i] == '\n'` | `80002ca` – `80002ce` |
+| `uart2_putc('\r')` | `80002d0` – `80002d6` |
+| `uart2_putc(buf[i])` | `80002d8` – `80002e0` |
+| `i++`, and the jump back | `80002e2` – `80002e4` |
+| `return len` | `80002c6` – `80002c8` — **in the middle** |
+
+Three things the compiler did that the source does not show:
+
+- **Hoisting.** `#128`, `#13` and the USART2 base are set up once, before the
+  loop, although the C mentions them inside it. Anything that cannot change is
+  lifted out.
+- **Inlining, twice.** `uart2_putc` is a function in the source and is nowhere
+  in the machine code — its three instructions appear once for `'\r'` and again
+  for the character. `_write` contains no `bl` at all.
+- **Rotation.** The `for` test sits at the top, so the exit is the *fall
+  through*, and `return len` lands in the middle of the address range at
+  `0x080002c6`. **Address order is not source order**, which is why a debugger
+  stepping through optimised code appears to jump around.
+
+> One more, worth chasing: `buf[i]` is loaded **twice**, at `80002ca` and again
+> at `80002d8`. The compiler may not keep it in a register across the store to
+> `USART2->TDR`, because a `char` object is allowed to alias anything, so as
+> far as the standard is concerned that store might have changed `buf[i]`.
+> Slide 21 is the same rule seen from the other side.
+
 **Every `for` loop you ever write looks like this**: initialise, compare,
 conditional branch to the body, increment, unconditional branch back.
 
 ---
 
-## Slide 15: Thumb-1 and Thumb-2 — Two Generations
+## Slide 16: Thumb-1 and Thumb-2 — Two Generations
 
 Look at the second column of the disassembly: `2007`, `4a0b`, `6811`. Four hex
 digits. Two bytes. Almost every instruction on this chip is **16 bits wide**,
@@ -538,7 +653,7 @@ instruction. The only question is *which* Thumb.
 
 ---
 
-## Slide 16: Which Thumb This Is — "Thumb-1, Plus Six"
+## Slide 17: Which Thumb This Is — "Thumb-1, Plus Six"
 
 The M0+ column says *Thumb-1, plus six*, and the six are worth memorising,
 because they are the **only** 32-bit instructions this chip has:
@@ -579,7 +694,7 @@ large flash.
 
 ---
 
-## Slide 17: Who Owns Which Register — the Calling Convention
+## Slide 18: Who Owns Which Register — the Calling Convention
 
 Sixteen registers, one CPU, and every function wanting to use them. The rules
 are a written standard, **AAPCS**, and the compiler follows it exactly.
@@ -609,7 +724,7 @@ unchanged** — it wanted them for the USART base and the loop counter.
 
 ---
 
-## Slide 18: The Thumb Bit — an Odd Address That Is Not a Bug
+## Slide 19: The Thumb Bit — an Odd Address That Is Not a Bug
 
 Here are the first sixteen bytes of `Main.hex`, the actual file that would be
 flashed:
@@ -642,7 +757,7 @@ bit is always 1 and the hardware still insists on being told.
 
 ---
 
-## Slide 19: `LR` Is Odd Too — Reading a Return Address
+## Slide 20: `LR` Is Odd Too — Reading a Return Address
 
 Stop the debugger anywhere inside a function and `LR` ends in an odd digit.
 It is the same bit as the vector table's, and it is the first thing in an ARM
@@ -714,7 +829,7 @@ lesson 03 draws.
 
 ---
 
-## Slide 20: What the Compiler Is Allowed to Do to You
+## Slide 21: What the Compiler Is Allowed to Do to You
 
 The compiler's contract is to preserve the *observable behaviour* of your
 program — as defined by the C standard, which has never heard of your
@@ -746,7 +861,7 @@ inherit the protection; you should still know why it is there.
 
 ---
 
-## Slide 21: What You Should Be Able to Say
+## Slide 22: What You Should Be Able to Say
 
 1. Roughly how many distinct instructions make up 80% of real firmware?
 2. Why does setting one bit in a peripheral register take at least three
