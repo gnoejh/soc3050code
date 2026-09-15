@@ -77,6 +77,16 @@ A phone's Cortex-A holds both and switches between them as it runs. **A
 Cortex-M has no ARM state to switch to.** Thumb is not a mode you opt into
 here; it is the only thing the decoder understands.
 
+**The general idea behind all of this is code density** — how much program you
+get per byte of memory — and it is a standing tension in instruction-set design.
+Wide fixed-length instructions decode trivially and waste space; variable-length
+ones (x86 runs from 1 to 15 bytes) pack tightly and make the decoder's first job
+*working out where the next instruction starts*. The compromise most RISC
+families reached is a **compressed instruction set**: a narrow encoding of the
+common cases, sitting beside the full-width one. Thumb is ARM's; MIPS16 was
+MIPS's; RISC-V calls its version the **"C" extension**. Every one of them exists
+because memory, not arithmetic, is what a small system runs out of first.
+
 You do not have to take that on faith — the build says so. This is the
 runtime library the linker actually pulled in, straight out of `Main.map`:
 
@@ -296,8 +306,24 @@ number into a very large positive one.
 
 ## Slide 7: Flags and Conditional Branches
 
-Comparison does not produce a value. It sets four bits in the status register,
-and the *next* instruction acts on them.
+**The general idea: how does a machine remember the result of a comparison?**
+Two families, and you can tell them apart in one glance at any disassembly.
+
+- **Condition-code machines** keep a few flag bits in a status register.
+  A compare *sets* them, a later branch *reads* them, and the two instructions
+  are coupled by invisible state. ARM, x86, AVR and the 68000 all work this way.
+- **Compare-and-branch machines** have no flags register at all. The comparison
+  and the branch are one instruction — RISC-V writes `blt a0, a1, label`
+  directly, and MIPS does the same. Nothing is carried between instructions.
+
+Flags buy density: one `cmp` can feed several branches. They cost a hidden
+dependency that every instruction in between must preserve, which is awkward for
+a deeply pipelined or out-of-order machine — the main reason the newer designs
+dropped them.
+
+**This chip is a condition-code machine.** Comparison does not produce a value.
+It sets four bits in the status register, and the *next* instruction acts on
+them.
 
 ```svg
 <svg viewBox="0 0 560 190" role="img" aria-label="Compare sets flags, branch reads them">
@@ -344,7 +370,22 @@ and the *next* instruction acts on them.
 | `push {r4, lr}` | save registers on the stack | function prologue |
 | `pop  {r4, pc}` | restore — **and popping into `PC` returns** | function epilogue |
 
-That last row is a neat trick worth recognising. Instead of `pop {r4, lr}`
+**The general idea: where does a call put the return address?** Again two
+answers, and this one you will see in every function on the chip.
+
+| | Where the return address goes | Machines |
+|---|---|---|
+| **Stack-based** | `call` pushes it to memory; `ret` pops it | x86, 68000, **AVR** (`rcall` / `ret`) |
+| **Link register** | the call writes it to a register; return branches to that register | **ARM**, RISC-V (`ra`), MIPS (`$ra`), PowerPC |
+
+A link register makes a **leaf** call — one that calls nothing else — touch
+memory not at all: `bl` in, `bx lr` out, no stack traffic either way. The cost
+is that `LR` holds exactly one return address, so a function that calls anything
+must save it before it is overwritten. **That is precisely what `push {lr}` in
+every non-leaf prologue is for**, and why leaf functions on this chip often have
+no prologue at all.
+
+That last table row is a neat trick worth recognising. Instead of `pop {r4, lr}`
 followed by `bx lr`, the compiler pops the saved `LR` straight into `PC`, which
 *is* a branch. One instruction saved on every function that touches the stack.
 
@@ -485,6 +526,17 @@ from **the program counter itself**. Why?
   code, and loads it relative to PC.</text>
 </svg>
 ```
+
+**This is a general consequence of fixed-width encoding, not an ARM quirk.** An
+instruction that is itself only 16 or 32 bits wide cannot carry an arbitrary
+32-bit constant inside it, so every fixed-width machine needs an answer:
+
+| Machine | How a 32-bit constant reaches a register |
+|---|---|
+| x86 | the instruction simply grows — the constant is embedded, variable length |
+| **ARM / Thumb** | **a literal pool near the code, loaded PC-relative** |
+| RISC-V | built in two halves, `lui` then `addi` |
+| AArch64 | built in halves too, `movz` then `movk` |
 
 The pool sits at the end of the function, and every peripheral address the
 function touches is listed in plain sight:
@@ -765,8 +817,24 @@ large flash.
 
 ## Slide 18: Who Owns Which Register — the Calling Convention
 
-Sixteen registers, one CPU, and every function wanting to use them. The rules
-are a written standard, **AAPCS**, and the compiler follows it exactly.
+**The general idea: an ABI.** Sixteen registers, one CPU, and every function
+wanting all of them. Some agreement has to say where arguments go, where the
+result comes back, and which registers a function may destroy. That agreement is
+a **calling convention**, part of the **Application Binary Interface**, and
+every platform has one: SysV AMD64 on Linux, the RISC-V and MIPS conventions,
+ARM's **AAPCS** here.
+
+The universal shape of it is the same everywhere — registers are split into
+
+- **caller-saved** (*volatile*, *scratch*): a function may destroy them, so the
+  caller saves anything it still wants;
+- **callee-saved** (*non-volatile*): a function must give them back untouched,
+  so it saves them on entry and restores them on exit.
+
+It exists because of separate compilation: your C has to call a library compiled
+years ago by a different compiler, possibly written in assembly, and neither
+side can see the other's source. **This chip's answer is AAPCS**, and the
+compiler follows it exactly.
 
 ```svg
 <svg viewBox="0 0 560 210" role="img" aria-label="AAPCS register roles: arguments, callee-saved, special">
@@ -951,6 +1019,14 @@ inherit the protection; you should still know why it is there.
     Why, and what happens if you "fix" it?
 13. You break inside a function and `LR` reads `0x0800028f`. Which instruction
     will run when it returns, and what would an **even** `LR` tell you?
+14. Name the two instruction-set models. Which one is this, which one is x86,
+    and which one was the AVR?
+15. RISC-V has no flags register. How does it write `if (a < b) goto L`, and
+    what does ARM gain by having one?
+16. Two ways exist to remember a return address. Name both, say which this chip
+    uses, and explain what `push {lr}` is really for.
+17. Why can a 16-bit instruction not load `0x40021000`? Give ARM's answer and
+    one other machine's.
 
 **Next:** *Development* — how a `.c` file becomes the bytes in that hex record,
 and what runs before `main()`.

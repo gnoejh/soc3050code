@@ -163,7 +163,10 @@
   <text x="62" y="154" text-anchor="middle" class="mono">link.ld</text>
   <text x="280" y="200" text-anchor="middle" class="lbl">On a PC the last stage is invisible. Here you write its input by hand.</text>
 </svg></figure>
-<p>Stages 1–3 are ordinary and familiar. <strong>Stage 4, locate, is the embedded one</strong>:<br>deciding that <code>SystemInit</code> lives at <code>0x0800022c</code> and <code>SystemCoreClock</code> at<br><code>0x20000000</code>. On a PC the OS does that at load time. Here it is decided at<br>build time and burned into the image.</p>
+<p>Stages 1–3 are ordinary and familiar. <strong>Stage 4, locate, is the embedded one</strong>:<br>deciding that <code>SystemInit</code> lives at <code>0x0800022c</code> and <code>SystemCoreClock</code> at<br><code>0x20000000</code>.</p>
+<p><strong>The general idea is address binding</strong> — at what moment does a name in your<br>source acquire a real address? An operating-systems text will give you three<br>possible moments, and every system picks one:</p>
+<table><thead><tr><th>Bound at</th><th>What that means</th><th>Where you meet it</th></tr></thead><tbody><tr><td><strong>compile time</strong></td><td>the address is fixed when the code is built, and cannot move</td><td><strong>this chip</strong> — and MS-DOS <code>.com</code> files</td></tr><tr><td><strong>load time</strong></td><td>the loader picks a base when the program starts</td><td>classic relocatable executables</td></tr><tr><td><strong>run time</strong></td><td>addresses move while the program runs, translated by an MMU</td><td>every desktop and phone OS</td></tr></tbody></table>
+<p>A desktop binds late, which is why the same binary runs at a different address<br>every launch and why two programs can both believe they own address <code>0x400000</code>.<br><strong>Here there is no loader and no MMU, so binding happens at build time and is<br>burned into the image.</strong> That single fact is why an embedded build needs a stage<br>a desktop build does not, and why you will write its input by hand.</p>
 </section>
 <section class="slide">
 <h2>Slide 3: The Compiler Sees One File at a Time</h2>
@@ -192,7 +195,8 @@
 </section>
 <section class="slide">
 <h2>Slide 4: Your Program Is Not One Blob — It Is Sections</h2>
-<p>The compiler sorts everything it emits into named <strong>sections</strong> by what kind of<br>thing it is. This is the real output for the spike:</p>
+<p><strong>The general idea: an object file is sorted by what things need, not by the<br>order you wrote them.</strong> Code must be executable and never changes; string<br>literals never change either but need no execution; globals with a starting<br>value must be writable <em>and</em> remembered; globals that start at zero need no<br>stored value at all. Four different sets of requirements, so the compiler emits<br>four <strong>sections</strong> — and the names below are the same on Linux, on macOS and in<br>any ELF file you ever open. <code>.bss</code> is even older than that: the name is an<br>assembler directive from the 1950s.</p>
+<p>This is the real output for the spike:</p>
 <pre><code>section          size    addr
 .isr_vector       180    0x08000000     the vector table
 .text            4792    0x080000b4     code
@@ -226,6 +230,7 @@
 <section class="slide">
 <h2>Slide 5: The Awkward One — <code>.data</code></h2>
 <p>A variable like <code>uint32_t SystemCoreClock = 12000000;</code> must be <strong>writable</strong>, so<br>it has to live in RAM. Its initial value must <strong>survive power-off</strong>, so it has<br>to live in flash. Both are true, so it exists in both places.</p>
+<p><code>.bss</code> is the opposite case and explains itself once you see it beside <code>.data</code>:<br>a global that starts at <strong>zero</strong> has no value worth storing, so the image<br>records only <em>how many bytes to clear</em>. That is why 364 bytes of <code>.bss</code> cost<br>nothing in flash while 96 bytes of <code>.data</code> cost 96. The trade is universal —<br>your desktop&#x27;s C runtime does exactly the same thing — but here you can see the<br>loop that does it.</p>
 <p>Somebody has to copy 96 bytes from flash to RAM before <code>main()</code> runs. On a PC<br>the loader does it. Here, <code>Reset_Handler</code> does — it is four lines of the<br>startup file:</p>
 <pre class="lang-c"><code>src = &amp;_sidata;                                  /* where the values sit in flash */
 for (dst = &amp;_sdata; dst &lt; &amp;_edata; ) { *dst++ = *src++; }
@@ -280,6 +285,8 @@ for (dst = &amp;_sbss;  dst &lt; &amp;_ebss;  ) { *dst++ = 0; }</code></pre>
   <text x="280" y="215" text-anchor="middle" class="mono">main()</text>
 </svg></figure>
 <p>The second box is the only step the hardware does for you, and it is worth<br>being precise: the CPU reads <strong>two 32-bit words from address zero of flash</strong> —<br>the stack pointer and the reset vector — and starts. That is the entire boot<br>process. Everything else is code you can read.</p>
+<p><strong>The general idea is bootstrapping</strong>, and every computer ever built does the<br>same thing: on reset the hardware can only do one fixed, dumb act, and that act<br>has to be enough to start software that is progressively less dumb. A PC&#x27;s CPU<br>begins executing at a fixed address near the top of its address space, runs<br>firmware, which loads a bootloader, which loads a kernel, which starts your<br>program — four handoffs and several seconds.</p>
+<p><strong>This chip&#x27;s chain has one link.</strong> Two words, then your code. That is the real<br>difference between the two worlds: not that embedded booting is stranger, but<br>that it is short enough to read in full — and short enough that if you get one<br>of those two words wrong, nothing else exists to catch it.</p>
 </section>
 <section class="slide">
 <h2>Slide 9: Your Instruments</h2>
@@ -290,7 +297,7 @@ for (dst = &amp;_sbss;  dst &lt; &amp;_ebss;  ) { *dst++ = 0; }</code></pre>
 </section>
 <section class="slide">
 <h2>Slide 10: What You Should Be Able to Say</h2>
-<ol><li>Name the five stages of a build. Which one is the embedded-specific one?</li><li>Where does <code>.data</code> live — flash or RAM? Defend your answer.</li><li>What are <code>_sdata</code> and <code>_ebss</code>, and who creates them?</li><li>What happens if the <code>.bss</code> loop is missing? Why is that bug intermittent?</li><li>Two numbers in the linker script come straight from the datasheet. Which, and what goes wrong if they are too large?</li><li>The hex file begins <code>:02000004 0800</code>. What is that record for, and why did the 8-bit chips in the old course never need one?</li></ol>
+<ol><li>Name the five stages of a build. Which one is the embedded-specific one?</li><li>Where does <code>.data</code> live — flash or RAM? Defend your answer.</li><li>What are <code>_sdata</code> and <code>_ebss</code>, and who creates them?</li><li>What happens if the <code>.bss</code> loop is missing? Why is that bug intermittent?</li><li>Two numbers in the linker script come straight from the datasheet. Which, and what goes wrong if they are too large?</li><li>The hex file begins <code>:02000004 0800</code>. What is that record for, and why did the 8-bit chips in the old course never need one?</li><li>Name the three moments at which a name can be bound to an address. Which does this chip use, which does your laptop use, and what hardware does your laptop need to do it that way?</li><li>Why does 364 bytes of <code>.bss</code> cost nothing in flash while 96 bytes of <code>.data</code> costs 96?</li><li>Describe the boot chain of a PC and the boot chain of this chip. How many handoffs does each have?</li></ol>
 <p><strong>Next:</strong> <em>Execution and Concurrency</em> — what happens when the hardware<br>interrupts <code>main()</code>, and why two pieces of code sharing one variable is the<br>hardest problem in the course.</p>
 </section>
 </div>

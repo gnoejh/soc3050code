@@ -211,7 +211,9 @@
 <h2>Slide 4: Hazard One — the Compiler Does Not Believe You</h2>
 <pre class="lang-c"><code>while (flag == 0) { }        /* wait for the ISR to set it */</code></pre>
 <p>The compiler analyses <code>main()</code> and reasons, correctly by the rules of C: <em>this<br>loop does not modify <code>flag</code>, so <code>flag</code> cannot change; I will read it once and<br>loop on a register.</em> The result is an infinite loop that no amount of staring<br>at the source will explain.</p>
-<p><strong>Fix: <code>volatile</code>.</strong> It tells the compiler this memory changes for reasons<br>outside the program, so every access written must actually happen.</p>
+<p><strong>The general idea is the as-if rule.</strong> A C compiler is not required to do what<br>you wrote; it is required to produce a program that <em>behaves</em> as if it had,<br>judged only by the observable behaviour the language defines. Everything else —<br>how many times memory is read, in what order, whether a variable exists at all —<br>it may change freely. That licence is where optimisation comes from, and it is<br>not an embedded matter: the same rule governs the compiler on your laptop.</p>
+<p>What differs here is that <strong>the hardware is an observer the language does not<br>know about.</strong> A pin that changes, a status bit that clears when read, another<br>context writing a variable — none of these are in C&#x27;s account of what is<br>observable, so the compiler is free to optimise them away and is not<br>misbehaving when it does.</p>
+<p><strong>Fix: <code>volatile</code>.</strong> It is C&#x27;s way of extending the definition of observable:<br>this object changes for reasons outside the program, so every access written<br>must actually happen, all of them, in the order written.</p>
 <pre class="lang-c"><code>volatile uint8_t flag;</code></pre>
 <p><code>volatile</code> is about the <em>compiler</em>. It is not a lock, it does not make anything<br>atomic, and it does not help with the next slide.</p>
 </section>
@@ -238,7 +240,11 @@
   <text x="280" y="234" text-anchor="middle" class="lbl">Two increments happened. The counter went from 5 to 6. One update vanished.</text>
 </svg></figure>
 <p><code>volatile</code> does not help here — every access did happen, in order, exactly as<br>written. The problem is that the <em>sequence</em> was not indivisible.</p>
-<p><strong>Fix: a critical section.</strong> Stop interrupts for the three instructions:</p>
+<p><strong>These are the standard names, and they are not embedded-specific.</strong> What you<br>just watched is a <strong>race condition</strong>: the result depends on the relative timing<br>of two contexts. The region of code that must not be interleaved is a<br><strong>critical section</strong>; the guarantee you need over it is <strong>mutual exclusion</strong> —<br>at most one context inside at a time. A sequence that cannot be observed<br>half-done is <strong>atomic</strong>. Every concurrent system in computing is built from<br>those four words, whether the two contexts are an ISR and <code>main()</code>, two threads<br>on a laptop, or two processes writing one file.</p>
+<p>What changes between systems is only <strong>how</strong> mutual exclusion is obtained:</p>
+<table><thead><tr><th>Contexts</th><th>How you get mutual exclusion</th></tr></thead><tbody><tr><td>ISR vs <code>main()</code>, one core</td><td><strong>turn interrupts off</strong> — the other context cannot run if it cannot start</td></tr><tr><td>two threads, one OS</td><td>a mutex, which asks the scheduler not to switch</td></tr><tr><td>two cores</td><td>neither of the above works — an atomic read-modify-write instruction is required</td></tr></tbody></table>
+<p>The third row is worth noticing. Masking interrupts stops the <em>other context on<br>this core</em>; it does nothing to a second core, which is still running. Larger ARM<br>cores provide <code>ldrex</code>/<code>strex</code> for that, and x86 has <code>lock cmpxchg</code>. <strong>A Cortex-M0+<br>is single-core and has neither</strong>, which is exactly why interrupt masking is the<br>right tool here and would be the wrong tool on a phone.</p>
+<p><strong>This chip&#x27;s answer: a critical section by masking.</strong> Stop interrupts for the<br>three instructions:</p>
 <pre class="lang-c"><code>__disable_irq();
 counter++;
 __enable_irq();</code></pre>
@@ -257,6 +263,7 @@ __enable_irq();</code></pre>
 <p>Turning interrupts off has a cost, so be precise about when it is needed.</p>
 <table><thead><tr><th>Situation</th><th>Safe?</th></tr></thead><tbody><tr><td>ISR writes a <code>uint8_t</code>, main only reads it</td><td><strong>Yes</strong> — single aligned access, one writer</td></tr><tr><td>ISR sets a flag, main reads and clears it</td><td><strong>Usually</strong> — but the clear is read-modify-write</td></tr><tr><td>main does <code>counter++</code>, ISR also increments</td><td><strong>No</strong> — the lost update above</td></tr><tr><td>main reads a <code>uint64_t</code> the ISR writes</td><td><strong>No</strong> — more than one bus access; you can read half</td></tr><tr><td>Either side touches a multi-field struct</td><td><strong>No</strong> — the reader can see it half-updated</td></tr></tbody></table>
 <p>The pattern: <strong>a single aligned word written by exactly one context is safe.</strong><br>Everything else needs thought.</p>
+<p>The failure in rows four and five has a name — <strong>tearing</strong>. A reader that needs<br>two bus accesses to collect one logical value can be interrupted between them<br>and walk away with half of the old value and half of the new: a number that was<br>never stored by anybody. It is the same hazard that makes a 64-bit counter<br>unsafe on a 32-bit machine in any language, on any operating system, and the<br>same reason a shared struct needs protecting even when each field is small.</p>
 </section>
 <section class="slide">
 <h2>Slide 8: Priority — Which Interrupt Wins</h2>
@@ -283,6 +290,7 @@ __enable_irq();</code></pre>
 </svg></figure>
 <p>Two consequences worth carrying forward:</p>
 <ul><li><strong>Handlers must be short.</strong> Anything slow in a handler delays every interrupt of equal or lower priority. The usual shape is: set a flag or push to a buffer, return, and let <code>main()</code> do the work.</li><li><strong>Preemption multiplies the sharing problem.</strong> It is not only main-versus-ISR any more; it is ISR-versus-ISR.</li></ul>
+<p>The vocabulary here is shared with operating-system scheduling, because it is<br>the same problem. <strong>Preemption</strong> is one runnable context displacing another<br>mid-execution; <strong>interrupt latency</strong> is the gap between the hardware event and<br>the first instruction of your handler, and the longest critical section anywhere<br>in your program sets its worst case. There is even an inherited failure mode —<br><strong>priority inversion</strong>, where a high-priority task waits on something a<br>low-priority one holds. It grounded a spacecraft once: Mars Pathfinder kept<br>resetting on the surface in 1997 for exactly this reason.</p>
 </section>
 <section class="slide">
 <h2>Slide 9: The Model, Complete</h2>
@@ -306,7 +314,7 @@ __enable_irq();</code></pre>
 </section>
 <section class="slide">
 <h2>Slide 10: What You Should Be Able to Say</h2>
-<ol><li>Name the three ways to meet hardware, and give a case where polling is the right choice.</li><li>Why can an ISR on this processor be an ordinary C function with no special keyword?</li><li>What exactly does <code>volatile</code> prevent? Name one thing it does <strong>not</strong> do.</li><li>Draw the instruction sequence that loses an update to a shared counter.</li><li>A shared variable is a single aligned <code>uint8_t</code>, written only by the ISR and only read by main. Does it need a critical section? Why?</li><li>Why must interrupt handlers be short?</li><li>Your program works for hours, then misbehaves once. What class of bug is this, and why will running it more not help?</li></ol>
+<ol><li>Name the three ways to meet hardware, and give a case where polling is the right choice.</li><li>Why can an ISR on this processor be an ordinary C function with no special keyword?</li><li>What exactly does <code>volatile</code> prevent? Name one thing it does <strong>not</strong> do.</li><li>Draw the instruction sequence that loses an update to a shared counter.</li><li>A shared variable is a single aligned <code>uint8_t</code>, written only by the ISR and only read by main. Does it need a critical section? Why?</li><li>Why must interrupt handlers be short?</li><li>Your program works for hours, then misbehaves once. What class of bug is this, and why will running it more not help?</li><li>State the as-if rule in one sentence, and say why hardware breaks the assumption it rests on.</li><li>Define <em>race condition</em>, <em>critical section</em>, <em>mutual exclusion</em> and <em>atomic</em> without mentioning ARM.</li><li>Why would <code>__disable_irq()</code> be an insufficient lock on a dual-core chip, and what mechanism replaces it there?</li><li>What is <em>tearing</em>, and which two rows of the table on slide 7 are instances of it?</li></ol>
 </section>
 <section class="slide">
 <h2>Part 0 is finished. What changes now.</h2>

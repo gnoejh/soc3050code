@@ -128,8 +128,22 @@ loop does not modify `flag`, so `flag` cannot change; I will read it once and
 loop on a register.* The result is an infinite loop that no amount of staring
 at the source will explain.
 
-**Fix: `volatile`.** It tells the compiler this memory changes for reasons
-outside the program, so every access written must actually happen.
+**The general idea is the as-if rule.** A C compiler is not required to do what
+you wrote; it is required to produce a program that *behaves* as if it had,
+judged only by the observable behaviour the language defines. Everything else —
+how many times memory is read, in what order, whether a variable exists at all —
+it may change freely. That licence is where optimisation comes from, and it is
+not an embedded matter: the same rule governs the compiler on your laptop.
+
+What differs here is that **the hardware is an observer the language does not
+know about.** A pin that changes, a status bit that clears when read, another
+context writing a variable — none of these are in C's account of what is
+observable, so the compiler is free to optimise them away and is not
+misbehaving when it does.
+
+**Fix: `volatile`.** It is C's way of extending the definition of observable:
+this object changes for reasons outside the program, so every access written
+must actually happen, all of them, in the order written.
 
 ```c
 volatile uint8_t flag;
@@ -170,7 +184,31 @@ is `counter++` in `main()`, interrupted at the worst moment:
 `volatile` does not help here — every access did happen, in order, exactly as
 written. The problem is that the *sequence* was not indivisible.
 
-**Fix: a critical section.** Stop interrupts for the three instructions:
+**These are the standard names, and they are not embedded-specific.** What you
+just watched is a **race condition**: the result depends on the relative timing
+of two contexts. The region of code that must not be interleaved is a
+**critical section**; the guarantee you need over it is **mutual exclusion** —
+at most one context inside at a time. A sequence that cannot be observed
+half-done is **atomic**. Every concurrent system in computing is built from
+those four words, whether the two contexts are an ISR and `main()`, two threads
+on a laptop, or two processes writing one file.
+
+What changes between systems is only **how** mutual exclusion is obtained:
+
+| Contexts | How you get mutual exclusion |
+|---|---|
+| ISR vs `main()`, one core | **turn interrupts off** — the other context cannot run if it cannot start |
+| two threads, one OS | a mutex, which asks the scheduler not to switch |
+| two cores | neither of the above works — an atomic read-modify-write instruction is required |
+
+The third row is worth noticing. Masking interrupts stops the *other context on
+this core*; it does nothing to a second core, which is still running. Larger ARM
+cores provide `ldrex`/`strex` for that, and x86 has `lock cmpxchg`. **A Cortex-M0+
+is single-core and has neither**, which is exactly why interrupt masking is the
+right tool here and would be the wrong tool on a phone.
+
+**This chip's answer: a critical section by masking.** Stop interrupts for the
+three instructions:
 
 ```c
 __disable_irq();
@@ -223,6 +261,13 @@ Turning interrupts off has a cost, so be precise about when it is needed.
 The pattern: **a single aligned word written by exactly one context is safe.**
 Everything else needs thought.
 
+The failure in rows four and five has a name — **tearing**. A reader that needs
+two bus accesses to collect one logical value can be interrupted between them
+and walk away with half of the old value and half of the new: a number that was
+never stored by anybody. It is the same hazard that makes a 64-bit counter
+unsafe on a 32-bit machine in any language, on any operating system, and the
+same reason a shared struct needs protecting even when each field is small.
+
 ---
 
 ## Slide 8: Priority — Which Interrupt Wins
@@ -260,6 +305,15 @@ Two consequences worth carrying forward:
   buffer, return, and let `main()` do the work.
 - **Preemption multiplies the sharing problem.** It is not only main-versus-ISR
   any more; it is ISR-versus-ISR.
+
+The vocabulary here is shared with operating-system scheduling, because it is
+the same problem. **Preemption** is one runnable context displacing another
+mid-execution; **interrupt latency** is the gap between the hardware event and
+the first instruction of your handler, and the longest critical section anywhere
+in your program sets its worst case. There is even an inherited failure mode —
+**priority inversion**, where a high-priority task waits on something a
+low-priority one holds. It grounded a spacecraft once: Mars Pathfinder kept
+resetting on the surface in 1997 for exactly this reason.
 
 ---
 
@@ -301,6 +355,14 @@ Four lessons, one picture:
 6. Why must interrupt handlers be short?
 7. Your program works for hours, then misbehaves once. What class of bug is
    this, and why will running it more not help?
+8. State the as-if rule in one sentence, and say why hardware breaks the
+   assumption it rests on.
+9. Define *race condition*, *critical section*, *mutual exclusion* and *atomic*
+   without mentioning ARM.
+10. Why would `__disable_irq()` be an insufficient lock on a dual-core chip, and
+    what mechanism replaces it there?
+11. What is *tearing*, and which two rows of the table on slide 7 are instances
+    of it?
 
 ---
 

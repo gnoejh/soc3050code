@@ -63,8 +63,23 @@ sequence, and on embedded the last one is the one that bites.
 
 Stages 1–3 are ordinary and familiar. **Stage 4, locate, is the embedded one**:
 deciding that `SystemInit` lives at `0x0800022c` and `SystemCoreClock` at
-`0x20000000`. On a PC the OS does that at load time. Here it is decided at
-build time and burned into the image.
+`0x20000000`.
+
+**The general idea is address binding** — at what moment does a name in your
+source acquire a real address? An operating-systems text will give you three
+possible moments, and every system picks one:
+
+| Bound at | What that means | Where you meet it |
+|---|---|---|
+| **compile time** | the address is fixed when the code is built, and cannot move | **this chip** — and MS-DOS `.com` files |
+| **load time** | the loader picks a base when the program starts | classic relocatable executables |
+| **run time** | addresses move while the program runs, translated by an MMU | every desktop and phone OS |
+
+A desktop binds late, which is why the same binary runs at a different address
+every launch and why two programs can both believe they own address `0x400000`.
+**Here there is no loader and no MMU, so binding happens at build time and is
+burned into the image.** That single fact is why an embedded build needs a stage
+a desktop build does not, and why you will write its input by hand.
 
 ---
 
@@ -108,8 +123,16 @@ This explains the two errors you will meet most often:
 
 ## Slide 4: Your Program Is Not One Blob — It Is Sections
 
-The compiler sorts everything it emits into named **sections** by what kind of
-thing it is. This is the real output for the spike:
+**The general idea: an object file is sorted by what things need, not by the
+order you wrote them.** Code must be executable and never changes; string
+literals never change either but need no execution; globals with a starting
+value must be writable *and* remembered; globals that start at zero need no
+stored value at all. Four different sets of requirements, so the compiler emits
+four **sections** — and the names below are the same on Linux, on macOS and in
+any ELF file you ever open. `.bss` is even older than that: the name is an
+assembler directive from the 1950s.
+
+This is the real output for the spike:
 
 ```
 section          size    addr
@@ -154,6 +177,13 @@ Read the addresses. Two distinct places:
 A variable like `uint32_t SystemCoreClock = 12000000;` must be **writable**, so
 it has to live in RAM. Its initial value must **survive power-off**, so it has
 to live in flash. Both are true, so it exists in both places.
+
+`.bss` is the opposite case and explains itself once you see it beside `.data`:
+a global that starts at **zero** has no value worth storing, so the image
+records only *how many bytes to clear*. That is why 364 bytes of `.bss` cost
+nothing in flash while 96 bytes of `.data` cost 96. The trade is universal —
+your desktop's C runtime does exactly the same thing — but here you can see the
+loop that does it.
 
 Somebody has to copy 96 bytes from flash to RAM before `main()` runs. On a PC
 the loader does it. Here, `Reset_Handler` does — it is four lines of the
@@ -269,6 +299,18 @@ being precise: the CPU reads **two 32-bit words from address zero of flash** —
 the stack pointer and the reset vector — and starts. That is the entire boot
 process. Everything else is code you can read.
 
+**The general idea is bootstrapping**, and every computer ever built does the
+same thing: on reset the hardware can only do one fixed, dumb act, and that act
+has to be enough to start software that is progressively less dumb. A PC's CPU
+begins executing at a fixed address near the top of its address space, runs
+firmware, which loads a bootloader, which loads a kernel, which starts your
+program — four handoffs and several seconds.
+
+**This chip's chain has one link.** Two words, then your code. That is the real
+difference between the two worlds: not that embedded booting is stranger, but
+that it is short enough to read in full — and short enough that if you get one
+of those two words wrong, nothing else exists to catch it.
+
 ---
 
 ## Slide 9: Your Instruments
@@ -302,6 +344,13 @@ compiler runs on your machine, and the simulator only executes.
    and what goes wrong if they are too large?
 6. The hex file begins `:02000004 0800`. What is that record for, and why did
    the 8-bit chips in the old course never need one?
+7. Name the three moments at which a name can be bound to an address. Which does
+   this chip use, which does your laptop use, and what hardware does your laptop
+   need to do it that way?
+8. Why does 364 bytes of `.bss` cost nothing in flash while 96 bytes of `.data`
+   costs 96?
+9. Describe the boot chain of a PC and the boot chain of this chip. How many
+   handoffs does each have?
 
 **Next:** *Execution and Concurrency* — what happens when the hardware
 interrupts `main()`, and why two pieces of code sharing one variable is the

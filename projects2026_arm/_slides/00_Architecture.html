@@ -151,10 +151,16 @@
 <h2>Slide 2: One Model, Many Instances</h2>
 <p>A course that teaches GPIO, then timers, then ADC, then UART, then SPI, then<br>I2C has taught six things. A course that teaches <strong>one peripheral model</strong> has<br>taught one thing six times — and the seventh peripheral, the one not on the<br>syllabus, the one in the datasheet of whatever you build after you graduate,<br>comes free.</p>
 <p>&gt; Whenever you meet a new peripheral in this course, the first question is not<br>&gt; <em>what does it do</em>. It is <strong>which part of the model is this?</strong></p>
+<p>The same applies one level up, and it shapes every slide that follows. <strong>Almost<br>every mechanism in these four lessons has a general name and a small number of<br>known alternatives</strong>, and this chip picked one of them. A vector table, a flat<br>address space, a link register, a critical section — none are ARM inventions,<br>and the choice ARM made is only interesting once you know what it was chosen<br><em>against</em>.</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>The general idea</strong></td><td>the name you would find in any architecture text, and what the alternatives are</td></tr><tr><td><strong>This chip&#x27;s answer</strong></td><td>which one was picked here, and what it costs</td></tr></tbody></table>
+<p>Learn the left column and you can read the datasheet of a processor this course<br>never mentions. The right column is what you need this term.</p>
 </section>
 <section class="slide">
 <h2>Slide 3: Visible State, Part One — the Registers</h2>
-<p>The CPU cannot compute on memory. It loads into <strong>registers</strong>, operates there,<br>and stores back. Sixteen of them, and four are special.</p>
+<p><strong>The general idea: a register file.</strong> Memory is slow and far away, so every<br>processor keeps a few storage locations <em>inside</em> the CPU, named by a handful of<br>bits in the instruction instead of by a 32-bit address. How many to provide is<br>one of the oldest design choices in computing, and real machines sit all over<br>the range:</p>
+<table><thead><tr><th>Machine</th><th>Working registers</th></tr></thead><tbody><tr><td>6502, 8051</td><td><strong>one</strong> accumulator — every result passes through it</td></tr><tr><td>JVM, Forth</td><td><strong>none</strong> — operands sit on a stack</td></tr><tr><td>ATmega128</td><td>32 × 8-bit</td></tr><tr><td><strong>Cortex-M</strong></td><td><strong>16 × 32-bit, of which 13 are freely yours</strong></td></tr><tr><td>x86-64</td><td>16 × 64-bit</td></tr><tr><td>RISC-V</td><td>32 × 32-bit, one of them hardwired to zero</td></tr></tbody></table>
+<p>Too few and the compiler spills to memory constantly. Too many and every<br>instruction needs more bits to name one, and every interrupt has more state to<br>save. <strong>This chip&#x27;s answer: sixteen, and four of those have a fixed job.</strong></p>
+<p>The CPU cannot compute on memory. It loads into <strong>registers</strong>, operates there,<br>and stores back.</p>
 <figure class="diagram"><svg viewBox="0 0 560 190" role="img" aria-label="The ARM register file, R0 to R15 plus xPSR">
   <text x="10" y="22" class="lbl">general purpose — arguments, locals, scratch</text>
   <rect class="reg" x="10" y="32" width="58" height="30" rx="4"/><text x="39" y="47" text-anchor="middle" class="mono">R0</text>
@@ -181,7 +187,13 @@
 </section>
 <section class="slide">
 <h2>Slide 4: Visible State, Part Two — One Flat Address Space</h2>
-<p>Everything the CPU can reach, it reaches by <strong>address</strong>. There is no other<br>channel: no separate I/O instructions, no special port space.</p>
+<p><strong>The general idea, one: how does software reach a device?</strong> Two answers, both<br>as old as the minicomputer.</p>
+<ul><li><strong>Port-mapped I/O</strong> (also called <em>isolated I/O</em>). Devices get an address space of their own, reachable only by dedicated instructions. x86 has <code>in</code> and <code>out</code> and a separate 64 K port space. <strong>The AVR you came from works this way</strong> — <code>IN</code> and <code>OUT</code> reach an I/O space that ordinary arithmetic cannot.</li><li><strong>Memory-mapped I/O.</strong> Devices are given ordinary addresses in the ordinary memory map, and ordinary loads and stores reach them. No new instructions exist, because none are needed.</li></ul>
+<p><strong>This chip&#x27;s answer is memory-mapped I/O, with no port space at all.</strong> A GPIO<br>register and a global variable are reached by the same <code>ldr</code>; the only thing<br>telling them apart is the address.</p>
+<p><strong>The general idea, two: one address space, or two?</strong></p>
+<ul><li><strong>Harvard.</strong> Code and data live in <em>separate</em> address spaces. Address <code>0x100</code> means two different things depending on which one you meant, so reading a constant out of program memory needs its own instruction. This is why the AVR had <code>LPM</code>, and why you had to write <code>PROGMEM</code>.</li><li><strong>von Neumann.</strong> One address space holds both, and a pointer can reach anything in it.</li></ul>
+<p><strong>This chip&#x27;s answer is one unified address space.</strong> <code>PROGMEM</code> has no equivalent<br>here and needs none — a <code>const</code> array in flash is read by the same <code>ldr</code> as<br>anything else. (Some Cortex-M cores fetch code and data over separate <em>buses</em><br>for speed. That is an implementation choice underneath; the address map stays<br>single, and your code cannot tell.)</p>
+<p>So everything the CPU can reach, it reaches by <strong>address</strong>. There is no other<br>channel.</p>
 <figure class="diagram"><svg viewBox="0 0 560 300" role="img" aria-label="Cortex-M address regions from code to private peripheral bus">
   <rect class="box" x="150" y="16" width="230" height="38" rx="5"/>
   <text x="265" y="30" text-anchor="middle" class="mono">PRIVATE PERIPHERAL BUS</text>
@@ -288,6 +300,8 @@
 </section>
 <section class="slide">
 <h2>Slide 8: Visible State, Part Four — Modes and Stacks</h2>
+<p><strong>The general idea: privilege.</strong> Nearly every processor built since the 1960s<br>runs at two or more levels of trust — a supervisor level that may touch<br>anything, and a lower one that may not. On a desktop these are <em>kernel mode</em> and<br><em>user mode</em>, and they are what stops one program from overwriting another. The<br>enforcement hardware is normally an <strong>MMU</strong>, which also hands each program a<br>private, virtual view of memory.</p>
+<p><strong>This chip has the two levels and none of the virtual memory.</strong> There is one<br>real address space and everything shares it; where a chip fits the optional<br><strong>MPU</strong>, the separation is a set of permission rules over real addresses rather<br>than a private map. That is why a stray pointer here quietly reaches a<br>peripheral instead of earning a segmentation fault.</p>
 <p>The processor is always in one of two modes, and it switches without being<br>asked.</p>
 <figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Thread mode and handler mode with main and process stack pointers">
   <defs><marker id="ar9" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
@@ -311,7 +325,10 @@
 </section>
 <section class="slide">
 <h2>Slide 9: Visible State, Part Five — the Exception Model</h2>
-<p>An interrupt is a <strong>hardware-forced function call</strong>. The NVIC does not search<br>for your handler; it indexes a table of addresses at the start of flash.</p>
+<p>An interrupt is a <strong>hardware-forced function call</strong>. But how does the hardware<br>find the function?</p>
+<p><strong>The general idea: vectored versus non-vectored dispatch.</strong></p>
+<ul><li><strong>Non-vectored.</strong> Every interrupt enters at one fixed address, and that code&#x27;s first job is to interrogate the hardware to discover who called. Cheap silicon, slower and wordier software.</li><li><strong>Vectored.</strong> The source has a number, the number indexes a table, and the hardware goes straight to the right handler. Nearly everything modern does this; machines differ in what the table <em>holds</em>. The AVR&#x27;s slots hold <strong>jump instructions</strong>; x86&#x27;s hold descriptors; <strong>this one&#x27;s hold plain addresses</strong>.</li></ul>
+<p>So the NVIC does not search for your handler; it indexes a table of addresses at<br>the start of flash.</p>
 <figure class="diagram"><svg viewBox="0 0 560 230" role="img" aria-label="Vector table indexed by exception number to find the handler address">
   <defs><marker id="ara" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
     <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
@@ -340,11 +357,11 @@
 <section class="slide">
 <h2>Slide 10: The Data Model — Width, Alignment, Byte Order</h2>
 <p>Three rules that produce puzzling bugs when violated.</p>
-<p><strong>Everything is 32 bits wide.</strong> The registers, the ALU, the bus. A <code>uint8_t</code> is<br>not cheaper than a <code>uint32_t</code> here — it is often more expensive, because the<br>compiler must mask and shift. <em>Do not</em> reach for <code>uint8_t</code> out of AVR habit.</p>
-<p><strong>Accesses must be aligned.</strong> A 32-bit load wants an address divisible by four.</p>
+<p><strong>Everything is 32 bits wide.</strong> The general term is the machine&#x27;s <strong>word size</strong><br>— the width its registers, ALU and bus all agree on. Anything narrower is<br>emulated on top of it, so a <code>uint8_t</code> is not cheaper than a <code>uint32_t</code> here; it<br>is often more expensive, because the compiler must mask and shift. <em>Do not</em><br>reach for <code>uint8_t</code> out of AVR habit.</p>
+<p><strong>Accesses must be aligned.</strong> The general rule is <strong>natural alignment</strong>: a bus<br>that moves 32 bits at a time moves them between 4-byte boundaries, so an<br><code>n</code>-byte access wants an address divisible by <code>n</code>. What a machine does when you<br>break the rule is the part that varies — x86 permits it and charges cycles,<br>classic SPARC refuses outright, and ARM depends on the core:</p>
 <table><thead><tr><th></th><th>Unaligned access</th></tr></thead><tbody><tr><td>Cortex-M0+</td><td><strong>faults immediately</strong> — HardFault</td></tr><tr><td>Cortex-M3 / M4</td><td>works for ordinary loads and stores, slower</td></tr></tbody></table>
 <p>This bites when you cast a <code>uint8_t*</code> buffer to a <code>uint32_t*</code> — a favourite<br>trick when parsing packets, and a reliable crash on an M0+.</p>
-<p><strong>Little-endian.</strong> <code>0x12345678</code> stored at address 0 puts <code>0x78</code> at byte 0.</p>
+<p><strong>Little-endian.</strong> <code>0x12345678</code> stored at address 0 puts <code>0x78</code> at byte 0 —<br>least significant byte first. <strong>Big-endian</strong> machines do the opposite, and both<br>have shipped in volume: the 68000 and classic SPARC were big-endian, and every<br>protocol header on the internet still is, which is what &quot;network byte order&quot; and<br><code>htonl()</code> are about. ARM can be built either way; <strong>every STM32 is<br>little-endian</strong>, and the other convention reaches you only when bytes arrive<br>from somewhere else.</p>
 </section>
 <section class="slide">
 <h2>Slide 11: Your Responsibilities — Two Gates You Must Open</h2>
@@ -425,6 +442,7 @@
   <text x="280" y="206" text-anchor="middle" class="lbl">sets the flash wait state — before you raise the clock, never after.</text>
 </svg></figure>
 <p>That last clause is the first of many <strong>ordering requirements the compiler<br>knows nothing about</strong>. The code compiles identically either way round; only one<br>order works.</p>
+<p>Two of those three leaks have general names worth keeping. <strong>Pipelining</strong> —<br>overlapping the fetch, decode and execute of consecutive instructions — is why<br>the PC reads ahead of the instruction being executed, and why a taken branch<br>throws away work already started. <strong>The processor–memory speed gap</strong> is why<br>flash needs wait states at all: the core will run at 48 MHz and the flash will<br>not. Large machines answer that gap with <strong>caches</strong>; a 32 KB microcontroller<br>cannot spend the transistors, so it answers with wait states and a prefetch<br>buffer — and hands you the register that sets them.</p>
 </section>
 <section class="slide">
 <h2>Slide 14: The Implementation, Once</h2>
@@ -477,7 +495,7 @@
 <section class="slide">
 <h2>Slide 15: What Changed, Coming From 8 Bits</h2>
 <p>Many of you have met an 8-bit AVR. Two differences change how you write code.</p>
-<table><thead><tr><th></th><th>AVR (8-bit)</th><th>Cortex-M (32-bit)</th></tr></thead><tbody><tr><td>Registers</td><td>32 × 8-bit</td><td>16 × 32-bit</td></tr><tr><td>Reaching a peripheral</td><td>a <strong>separate I/O space</strong>, own instructions (<code>IN</code>, <code>OUT</code>)</td><td>ordinary addresses, ordinary <code>LDR</code>/<code>STR</code></td></tr><tr><td>Code and data</td><td>Harvard — separate spaces, <code>LPM</code> to read flash</td><td><strong>one space</strong>; a pointer reaches anything</td></tr><tr><td>Interrupt vectors</td><td>fixed table of jump instructions</td><td>table of <strong>addresses</strong>, built by your code</td></tr></tbody></table>
+<table><thead><tr><th></th><th>AVR (8-bit)</th><th>Cortex-M (32-bit)</th></tr></thead><tbody><tr><td>Registers</td><td>32 × 8-bit</td><td>16 × 32-bit</td></tr><tr><td>Reaching a peripheral</td><td><strong>port-mapped I/O</strong> — its own space, its own instructions (<code>IN</code>, <code>OUT</code>)</td><td><strong>memory-mapped I/O</strong> — ordinary addresses, ordinary <code>LDR</code>/<code>STR</code></td></tr><tr><td>Code and data</td><td><strong>Harvard</strong> — separate spaces, <code>LPM</code> and <code>PROGMEM</code> to read flash</td><td><strong>von Neumann</strong> — one space; a pointer reaches anything</td></tr><tr><td>Interrupt vectors</td><td>vectored: a fixed table of jump instructions</td><td>vectored: a table of <strong>addresses</strong>, built by your code</td></tr></tbody></table>
 <p>On AVR, <code>PORTB</code> was a special kind of thing needing special instructions. Here<br>there is no such category — and that uniformity is both the gift and the trap.<br>Nothing stops a stray pointer landing on a peripheral.</p>
 </section>
 <section class="slide">
@@ -504,7 +522,7 @@
 </section>
 <section class="slide">
 <h2>Slide 17: What You Should Be Able to Say</h2>
-<ol><li>What does a <em>programmer&#x27;s model</em> include, and what does it deliberately leave out?</li><li>Name the five parts of this one.</li><li>The CPU has one mechanism for reaching anything outside itself. What is it?</li><li>Give three ways a register behaves differently from a variable.</li><li>A peripheral&#x27;s registers fall into three roles. Name them, and say who writes each.</li><li>Which peripherals are ARM&#x27;s and which are ST&#x27;s? Why does it decide which manual you open?</li><li>Your code configures a peripheral and it reads back as zero. First suspect?</li><li>Your serial output is garbage but the code is right. Name two causes from this lesson.</li><li>You cast a <code>uint8_t*</code> to a <code>uint32_t*</code> and the chip HardFaults. Why — and would a Cortex-M3 fault too?</li><li>Name the three places the implementation leaks into code you must write.</li><li>How does the hardware find the function you wrote for USART2?</li></ol>
+<ol><li>What does a <em>programmer&#x27;s model</em> include, and what does it deliberately leave out?</li><li>Name the five parts of this one.</li><li>The CPU has one mechanism for reaching anything outside itself. What is it?</li><li>Give three ways a register behaves differently from a variable.</li><li>A peripheral&#x27;s registers fall into three roles. Name them, and say who writes each.</li><li>Which peripherals are ARM&#x27;s and which are ST&#x27;s? Why does it decide which manual you open?</li><li>Your code configures a peripheral and it reads back as zero. First suspect?</li><li>Your serial output is garbage but the code is right. Name two causes from this lesson.</li><li>You cast a <code>uint8_t*</code> to a <code>uint32_t*</code> and the chip HardFaults. Why — and would a Cortex-M3 fault too?</li><li>Name the three places the implementation leaks into code you must write.</li><li>How does the hardware find the function you wrote for USART2?</li><li>Name the two ways a processor can let software reach a device. Which did the AVR use, and which does this chip use?</li><li>What does <em>Harvard</em> mean, and which AVR keyword existed only because of it?</li><li>A desktop stops a bad pointer with a segmentation fault. Name the hardware that does that, say what this chip has instead, and predict what a bad pointer does here.</li></ol>
 <p><strong>Next:</strong> <em>Instruction Set</em> — what this state looks like to the processor, and<br>how your C becomes something it can execute.</p>
 </section>
 </div>
