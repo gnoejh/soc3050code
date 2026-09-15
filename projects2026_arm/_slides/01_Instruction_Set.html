@@ -183,28 +183,55 @@
 <p>Learn those thirteen and you can read almost any disassembly on this chip. The<br>next five slides are those thirteen, by job.</p>
 </section>
 <section class="slide">
-<h2>Slide 4: Load / Store — the CPU Cannot Touch Memory</h2>
-<p>On x86 you can add directly to a memory location. On ARM you cannot. Memory is<br>reached by exactly two instructions, and everything else works on registers.</p>
-<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Load into a register, operate, store back">
-  <defs><marker id="i1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+<h2>Slide 4: Load / Store — Two Machine Models, and Which One This Is</h2>
+<p>Every instruction set answers one question early and never revisits it: <strong>may an<br>arithmetic instruction name a memory address?</strong> There are two answers, and both<br>have names you will meet in any architecture text.</p>
+<p><strong>Register–memory.</strong> x86, the 68000, the IBM S/360. An operand may be an<br>address, so one instruction fetches, computes and writes back:</p>
+<pre><code>add  dword [counter], 1        ; x86 — one instruction, memory += 1</code></pre>
+<p><strong>Load–store.</strong> ARM, RISC-V, MIPS — and the AVR you already know. The ALU sees<br>registers and nothing else. Memory is reached only by instructions whose entire<br>job is moving a word across the boundary:</p>
+<pre><code>ldr   r0, [r1]                 @ Cortex-M — the same job, in three
+adds  r0, r0, #1
+str   r0, [r1]</code></pre>
+<p>Both fragments increment the same counter. The second says out loud what the<br>first one hides.</p>
+<figure class="diagram"><svg viewBox="0 0 560 258" role="img" aria-label="Register-memory lets one instruction span memory and the ALU; load-store puts a boundary between them that only LDR and STR cross">
+  <defs><marker id="m4" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
     <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
-  <rect class="box" x="14" y="60" width="120" height="56" rx="6"/>
-  <text x="74" y="80" text-anchor="middle">MEMORY</text>
-  <text x="74" y="100" text-anchor="middle" class="lbl mono">0x40021000</text>
-  <path class="hi" d="M134 76 H250" marker-end="url(#i1)"/>
-  <text x="192" y="62" text-anchor="middle" class="lbl mono">LDR — load</text>
-  <path class="hi" d="M250 104 H134" marker-end="url(#i1)"/>
-  <text x="192" y="126" text-anchor="middle" class="lbl mono">STR — store</text>
-  <rect class="hifill" x="254" y="60" width="120" height="56" rx="6"/>
-  <text x="314" y="88" text-anchor="middle" class="mono">register</text>
-  <path class="wire" d="M374 88 H440" marker-end="url(#i1)"/>
-  <rect class="box" x="444" y="60" width="102" height="56" rx="6"/>
-  <text x="495" y="80" text-anchor="middle">ALU</text>
-  <text x="495" y="100" text-anchor="middle" class="lbl">add, and, shift</text>
-  <text x="280" y="176" text-anchor="middle" class="lbl">Three steps, always: load it, change it, store it back.</text>
+
+  <text x="14" y="16" class="lbl">REGISTER–MEMORY — x86, 68000</text>
+  <rect class="dash" x="10" y="26" width="540" height="64" rx="7"/>
+  <rect class="box" x="26" y="39" width="104" height="38" rx="5"/>
+  <text x="78" y="58" text-anchor="middle">memory</text>
+  <path class="wire" d="M134 49 H222" marker-end="url(#m4)"/>
+  <path class="wire" d="M222 67 H134" marker-end="url(#m4)"/>
+  <rect class="box" x="226" y="39" width="84" height="38" rx="5"/>
+  <text x="268" y="58" text-anchor="middle">ALU</text>
+  <text x="330" y="50" class="mono lbl">add dword [counter], 1</text>
+  <text x="330" y="68" class="lbl">one instruction spans the whole dashed box</text>
+
+  <text x="14" y="116" class="lbl">LOAD–STORE — ARM, RISC-V, AVR</text>
+  <rect class="box" x="26" y="130" width="96" height="38" rx="5"/>
+  <text x="74" y="149" text-anchor="middle">memory</text>
+  <path class="dash" d="M152 114 V214"/>
+  <text x="152" y="228" text-anchor="middle" class="lbl">only ldr / str cross here</text>
+  <path class="hi" d="M124 140 H230" marker-end="url(#m4)"/>
+  <text x="177" y="128" text-anchor="middle" class="mono lbl">ldr</text>
+  <path class="hi" d="M230 158 H124" marker-end="url(#m4)"/>
+  <text x="177" y="172" text-anchor="middle" class="mono lbl">str</text>
+  <rect class="hifill" x="234" y="130" width="96" height="38" rx="5"/>
+  <text x="282" y="149" text-anchor="middle">registers</text>
+  <path class="wire" d="M334 140 H420" marker-end="url(#m4)"/>
+  <path class="wire" d="M420 158 H334" marker-end="url(#m4)"/>
+  <rect class="box" x="424" y="130" width="84" height="38" rx="5"/>
+  <text x="466" y="149" text-anchor="middle">ALU</text>
+  <text x="372" y="192" text-anchor="middle" class="lbl">arithmetic never sees an address</text>
+  <text x="280" y="248" text-anchor="middle" class="lbl">Same work either way. Only one of them makes you write it down.</text>
 </svg></figure>
+<table><thead><tr><th></th><th>Register–memory</th><th>Load–store</th></tr></thead><tbody><tr><td>Found in</td><td>x86, 68000, S/360</td><td><strong>ARM</strong>, RISC-V, MIPS, <strong>AVR</strong></td></tr><tr><td>An ALU operand may be</td><td>a register <strong>or</strong> memory</td><td>a register only</td></tr><tr><td>Memory is touched by</td><td>most instructions</td><td><code>ldr</code> / <code>str</code>, and nothing else</td></tr><tr><td>Instruction length</td><td>variable — x86 is 1 to 15 bytes</td><td>fixed — Thumb is 2 or 4</td></tr><tr><td><code>counter++</code> costs</td><td>1 instruction</td><td>3 instructions</td></tr><tr><td>…and bus accesses</td><td>2</td><td>2</td></tr></tbody></table>
+<p>Read those last two rows together, because they are the whole trade:<br><strong>load–store costs instructions, not memory traffic.</strong> The bus does identical<br>work either way; the only difference is whether the instruction stream admits<br>it. What the admission buys is a fixed-length encoding, a decoder that never has<br>to ask how long an instruction is before it can find the next one, and a<br>pipeline whose stages are the same depth for every opcode. A 48 MHz part with no<br>cache is built out of exactly those properties. This is most of what &quot;RISC&quot; and<br>&quot;CISC&quot; ever meant. (The VAX went further than x86 in the other direction —<br><em>both</em> operands could be memory. Nobody builds those any more.)</p>
+<p><strong>The AVR was load–store too, with one deliberate crack.</strong> <code>sbi PORTB, 0</code> sets a<br>bit in a low I/O register in a single uninterruptible instruction, no <code>lds</code>/<code>sts</code><br>around it — which is why <code>PORTB |= (1 &lt;&lt; 0)</code> was something you never had to<br>think about. <strong>Cortex-M0+ has no <code>sbi</code>.</strong> Every peripheral register here is<br>ordinary memory at an ordinary address, reached the ordinary way. The<br>convenience comes back as <em>hardware</em> instead: STM32&#x27;s GPIO has a set/reset<br>register, <code>BSRR</code>, that turns a bit-set back into one <code>str</code> — lesson 02.</p>
+<h3>Crossing the boundary, on this chip</h3>
 <table><thead><tr><th>Instruction</th><th>Moves</th><th>C equivalent</th></tr></thead><tbody><tr><td><code>ldr  r0, [r1]</code></td><td>32 bits, memory → register</td><td><code>x = *p;</code></td></tr><tr><td><code>str  r0, [r1]</code></td><td>32 bits, register → memory</td><td><code>*p = x;</code></td></tr><tr><td><code>ldrb</code> / <code>strb</code></td><td>8 bits</td><td><code>char</code>, <code>uint8_t</code></td></tr><tr><td><code>ldrh</code> / <code>strh</code></td><td>16 bits</td><td><code>uint16_t</code></td></tr><tr><td><code>ldrsh</code></td><td>16 bits, <strong>sign-extended</strong></td><td><code>int16_t</code></td></tr><tr><td><code>movs r0, #7</code></td><td>a constant into a register</td><td><code>x = 7;</code></td></tr><tr><td><code>movs r0, r3</code></td><td>register to register</td><td><code>x = y;</code></td></tr></tbody></table>
-<p>This is why setting one bit in a peripheral register is never one instruction.<br>It is a <strong>read, a modify, and a write</strong> — three separate bus events, with a gap<br>between them. Lesson 03 shows what can go wrong in that gap.</p>
+<p>The last two rows are there for contrast: <code>movs</code> is the one that never touches<br>memory at all. Everything else in the deck operates on what <code>ldr</code> brought in.</p>
+<p>So setting one bit in a peripheral register is never one instruction here. It is<br>a <strong>read, a modify and a write</strong> — three instructions, two bus events, and a gap<br>in between that belongs to whatever the processor does next. Lesson 03 shows<br>what goes wrong in that gap.</p>
 </section>
 <section class="slide">
 <h2>Slide 5: Arithmetic and Logic</h2>
