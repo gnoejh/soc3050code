@@ -96,15 +96,26 @@ Part 0 slides quote **real output from this repository's own build** (real
 disassembly, real section sizes, a real Intel HEX record decoded field by
 field). That is evidence, not student coding.
 
-**No toolchain is vendored yet, so that promise has to be checkable without
-one.** Everything a Part 0 deck quotes must be reproducible from the committed
-spike artefacts - `_spike/c031c6/Main.bin`, `Main.hex` and `Main.map` - by
-reading bytes and symbols out of them. Lesson 01 had one row that was not:
-a 32-bit encoding `f000 f812` that appears nowhere in the image. It is now
-`f7ff ffcf`, the `bl SystemInit` at `0x0800028a`, decoded from `Main.bin` and
-checked against the symbol addresses in `Main.map`. **Check a quoted encoding
-against the image before adding it**, the same way the AVR edition checks a
-hex file rather than trusting that a build ran.
+**Everything a Part 0 deck quotes must be reproducible from the image**, by
+reading bytes and symbols out of `_spike/c031c6/Main.elf`, `Main.bin`,
+`Main.hex` and `Main.map`. Lesson 01 had one row that was not: a 32-bit
+encoding `f000 f812` that appears nowhere in the image. It is now `f7ff ffcf`,
+the `bl SystemInit` at `0x0800028a`, checked against the symbol addresses in
+`Main.map`. **Check a quoted encoding against the image before adding it**, the
+same way the AVR edition checks a hex file rather than trusting that a build
+ran.
+
+> **Those artefacts are committed** (2026-09-19). They were described as
+> committed long before they were: `.gitignore` excluded
+> `projects2026_arm/**/Main.elf` and friends, so a fresh clone had none of
+> them, every encoding above was uncheckable there, and the documented
+> `disasm.py _spike/c031c6/Main.elf` example could not run. The ignore rule now
+> carries an explicit exception for `_spike/`, which is a record rather than a
+> lesson. ~2 MB.
+
+With the toolchain vendored you can also just regenerate them — `_spike/README.md`
+has the exact command, and it reproduces the committed figures (FLASH 5260 B,
+RAM 2000 B) section for section.
 
 From Part 1 onward every lesson has code and follows three beats:
 

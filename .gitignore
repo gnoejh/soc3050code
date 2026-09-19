@@ -56,3 +56,13 @@ projects2026_arm/**/Main.hex
 projects2026_arm/**/Main.bin
 projects2026_arm/**/Main.map
 projects2026_arm/**/*.o
+
+# ...except the Phase 0 spike's own artefacts.  They are evidence, not build
+# output: the Part 0 decks quote encodings and section sizes decoded straight
+# out of them, projects2026_arm/README.md makes reproducing those a rule, and
+# _build/disasm.py documents reading Main.elf directly.  Ignoring them made
+# every one of those uncheckable on a fresh clone.  ~2 MB, committed once.
+!projects2026_arm/_spike/**/Main.elf
+!projects2026_arm/_spike/**/Main.bin
+!projects2026_arm/_spike/**/Main.hex
+!projects2026_arm/_spike/**/Main.map

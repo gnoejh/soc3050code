@@ -1,0 +1,965 @@
+Archive member included to satisfy reference by file (symbol)
+
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o (atexit)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o (exit)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o) (__stdio_exit_handler)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o) (_fwalk_sglue)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+                              C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o (printf)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+                              C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o (puts)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o) (__sread)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o) (__swbuf_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o) (__swsetup_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o (memset)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o) (_close_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o) (errno)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o) (_impure_ptr)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o) (_lseek_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o) (_read_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o) (_write_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o (__libc_init_array)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o (__libc_fini_array)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o) (__retarget_lock_init_recursive)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o) (__register_exitproc)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o) (__call_exitprocs)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o) (_free_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o) (_malloc_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o) (__malloc_lock)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o) (_vfprintf_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o) (_printf_i)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o) (_fflush_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o) (__sfvwrite_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o) (__smakebuf_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o) (memmove)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o) (_fstat_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o) (_isatty_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o) (_sbrk_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o) (memchr)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o) (memcpy)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o) (_realloc_r)
+C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+                              C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o) (_malloc_usable_size_r)
+
+Discarded input sections
+
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .rodata.all_implied_fbits
+                0x00000000       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .data.__dso_handle
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .text          0x00000000       0x70 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .ARM.extab     0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .ARM.exidx     0x00000000       0x10 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .ARM.attributes
+                0x00000000       0x20 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .text          0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .data          0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .bss           0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .group         0x00000000        0xc C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .text          0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .data          0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .bss           0x00000000        0x0 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .text._exit    0x00000000        0x2 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .text._kill    0x00000000        0x2 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .text._getpid  0x00000000        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000      0xaea C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x22 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x56 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x51 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000      0x103 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x6a C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000      0x1df C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x28 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x40 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x10 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x58 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000      0x26d C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000       0x28 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000     0x11ae C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000      0x11f C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00000000    0x1675e C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .text.atexit   0x00000000        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atexit.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .text.exit     0x00000000       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-exit.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__fp_lock
+                0x00000000       0x18 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__fp_unlock
+                0x00000000       0x18 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__sfp    0x00000000       0xa4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__fp_lock_all
+                0x00000000       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__fp_unlock_all
+                0x00000000       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+ .text._printf_r
+                0x00000000       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+ .text.__seofread
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+ .text.__swbuf  0x00000000       0x10 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+ .text._reclaim_reent
+                0x00000000       0xbc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .text.__libc_fini_array
+                0x00000000       0x28 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fini.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_init
+                0x00000000        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_close
+                0x00000000        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_close_recursive
+                0x00000000        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_acquire
+                0x00000000        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_try_acquire
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_try_acquire_recursive
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text.__retarget_lock_release
+                0x00000000        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___arc4random_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___dd_hash_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___tz_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___env_recursive_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___at_quick_exit_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .bss.__lock___atexit_recursive_mutex
+                0x00000000        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .text.__register_exitproc
+                0x00000000       0xb4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .bss.__atexit0
+                0x00000000       0x8c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .data.__atexit_dummy
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__atexit.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .text.__call_exitprocs
+                0x00000000       0xd4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .bss.__atexit  0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .data.__atexit_recursive_mutex
+                0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-__call_atexit.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .text.__sprint_r
+                0x00000000       0x1a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .text.vfprintf
+                0x00000000       0x14 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+ .text.fflush   0x00000000       0x28 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .text.__sfvwrite_r
+                0x00000000      0x2a0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fvwrite.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .text.memmove  0x00000000       0x32 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memmove.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+ .ARM.extab     0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .text.memcpy   0x00000000       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .text._realloc_r
+                0x00000000       0x5c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reallocr.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .text._malloc_usable_size_r
+                0x00000000       0x10 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-msizer.o)
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .rodata.all_implied_fbits
+                0x00000000       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .eh_frame      0x00000000        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .comment       0x00000000       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .ARM.attributes
+                0x00000000       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+ .text          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+ .data          0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+ .bss           0x00000000        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x08000000         0x00080000         xr
+RAM              0x20000000         0x00020000         rw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/crt0.o
+LOAD C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+LOAD C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+START GROUP
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard\libgcc.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a
+END GROUP
+START GROUP
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard\libgcc.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libnosys.a
+END GROUP
+START GROUP
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard\libgcc.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libnosys.a
+END GROUP
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtend.o
+LOAD C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+                0x20020000                        _estack = (ORIGIN (RAM) + LENGTH (RAM))
+                0x00000400                        _Min_Heap_Size = 0x400
+                0x00000800                        _Min_Stack_Size = 0x800
+
+.isr_vector     0x08000000       0xdc
+                0x08000000                        . = ALIGN (0x4)
+ *(.isr_vector)
+ .isr_vector    0x08000000       0xdc C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                0x08000000                vectors
+                0x080000dc                        . = ALIGN (0x4)
+
+.text           0x080000e0     0x120c
+                0x080000e0                        . = ALIGN (0x4)
+ *(.text)
+ .text          0x080000e0       0xa0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+                0x080000e0                memchr
+ *(.text*)
+ .text.__do_global_dtors_aux
+                0x08000180       0x28 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .text.frame_dummy
+                0x080001a8       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .text.Default_Handler
+                0x080001c4        0x2 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                0x080001c4                DebugMon_Handler
+                0x080001c4                HardFault_Handler
+                0x080001c4                SysTick_Handler
+                0x080001c4                PendSV_Handler
+                0x080001c4                NMI_Handler
+                0x080001c4                UsageFault_Handler
+                0x080001c4                Default_Handler
+                0x080001c4                MemManage_Handler
+                0x080001c4                SVC_Handler
+                0x080001c4                TIM2_IRQHandler
+                0x080001c4                USART2_IRQHandler
+                0x080001c4                BusFault_Handler
+ *fill*         0x080001c6        0x2 
+ .text.SystemInit
+                0x080001c8       0x24 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                0x080001c8                SystemInit
+ .text.Reset_Handler
+                0x080001ec       0x48 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                0x080001ec                Reset_Handler
+ .text._write   0x08000234       0x38 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x08000234                _write
+ .text._read    0x0800026c        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x0800026c                _read
+ .text._close   0x08000270        0x6 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x08000270                _close
+ .text._isatty  0x08000276        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x08000276                _isatty
+ .text._lseek   0x0800027a        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x0800027a                _lseek
+ .text._fstat   0x0800027e        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x0800027e                _fstat
+ *fill*         0x08000282        0x2 
+ .text._sbrk    0x08000284       0x1c C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x08000284                _sbrk
+ .text.startup.main
+                0x080002a0      0x120 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                0x080002a0                main
+ .text.std      0x080003c0       0x6c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.stdio_exit_handler
+                0x0800042c       0x18 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.cleanup_stdio
+                0x08000444       0x40 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.global_stdio_init.part.0
+                0x08000484       0x40 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .text.__sfp_lock_acquire
+                0x080004c4        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x080004c4                __sfp_lock_acquire
+ .text.__sfp_lock_release
+                0x080004d0        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x080004d0                __sfp_lock_release
+ .text.__sinit  0x080004dc       0x30 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x080004dc                __sinit
+ .text._fwalk_sglue
+                0x0800050c       0x3a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+                0x0800050c                _fwalk_sglue
+ *fill*         0x08000546        0x2 
+ .text.printf   0x08000548       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+                0x08000548                iprintf
+                0x08000548                printf
+ .text._puts_r  0x0800056c       0xaa C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+                0x0800056c                _puts_r
+ *fill*         0x08000616        0x2 
+ .text.puts     0x08000618       0x10 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+                0x08000618                puts
+ .text.__sread  0x08000628       0x22 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                0x08000628                __sread
+ .text.__swrite
+                0x0800064a       0x38 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                0x0800064a                __swrite
+ .text.__sseek  0x08000682       0x26 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                0x08000682                __sseek
+ .text.__sclose
+                0x080006a8        0x8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                0x080006a8                __sclose
+ .text.__swbuf_r
+                0x080006b0       0x7a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+                0x080006b0                __swbuf_r
+ *fill*         0x0800072a        0x2 
+ .text.__swsetup_r
+                0x0800072c       0xa8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+                0x0800072c                __swsetup_r
+ .text.memset   0x080007d4       0x10 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+                0x080007d4                memset
+ .text._close_r
+                0x080007e4       0x20 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+                0x080007e4                _close_r
+ .text._lseek_r
+                0x08000804       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+                0x08000804                _lseek_r
+ .text._read_r  0x08000828       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+                0x08000828                _read_r
+ .text._write_r
+                0x0800084c       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+                0x0800084c                _write_r
+ .text.__libc_init_array
+                0x08000870       0x48 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+                0x08000870                __libc_init_array
+ .text.__retarget_lock_init_recursive
+                0x080008b8        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                0x080008b8                __retarget_lock_init_recursive
+ .text.__retarget_lock_acquire_recursive
+                0x080008ba        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                0x080008ba                __retarget_lock_acquire_recursive
+ .text.__retarget_lock_release_recursive
+                0x080008bc        0x2 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                0x080008bc                __retarget_lock_release_recursive
+ *fill*         0x080008be        0x2 
+ .text._free_r  0x080008c0       0x98 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+                0x080008c0                _free_r
+ .text.sbrk_aligned
+                0x08000958       0x44 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+ .text._malloc_r
+                0x0800099c       0xf8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+                0x0800099c                _malloc_r
+ .text.__malloc_lock
+                0x08000a94        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+                0x08000a94                __malloc_lock
+ .text.__malloc_unlock
+                0x08000aa0        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+                0x08000aa0                __malloc_unlock
+ .text.__sfputc_r
+                0x08000aac       0x2a C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .text.__sfputs_r
+                0x08000ad6       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+                0x08000ad6                __sfputs_r
+ *fill*         0x08000afa        0x2 
+ .text._vfprintf_r
+                0x08000afc      0x228 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+                0x08000afc                _vfprintf_r
+                0x08000afc                _vfiprintf_r
+ .text._printf_common
+                0x08000d24       0xea C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+                0x08000d24                _printf_common
+ *fill*         0x08000e0e        0x2 
+ .text._printf_i
+                0x08000e10      0x254 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+                0x08000e10                _printf_i
+ .text.__sflush_r
+                0x08001064      0x100 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+                0x08001064                __sflush_r
+ .text._fflush_r
+                0x08001164       0x50 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+                0x08001164                _fflush_r
+ .text.__swhatbuf_r
+                0x080011b4       0x48 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+                0x080011b4                __swhatbuf_r
+ .text.__smakebuf_r
+                0x080011fc       0x72 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+                0x080011fc                __smakebuf_r
+ *fill*         0x0800126e        0x2 
+ .text._fstat_r
+                0x08001270       0x24 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+                0x08001270                _fstat_r
+ .text._isatty_r
+                0x08001294       0x20 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+                0x08001294                _isatty_r
+ .text._sbrk_r  0x080012b4       0x20 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+                0x080012b4                _sbrk_r
+ *(.glue_7)
+ .glue_7        0x080012d4        0x0 linker stubs
+ *(.glue_7t)
+ .glue_7t       0x080012d4        0x0 linker stubs
+ *(.eh_frame)
+ .eh_frame      0x080012d4        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ *(.init)
+ .init          0x080012d4        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+                0x080012d4                _init
+ .init          0x080012d8        0x8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+ *(.fini)
+ .fini          0x080012e0        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+                0x080012e0                _fini
+ .fini          0x080012e4        0x8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+                0x080012ec                        . = ALIGN (0x4)
+                0x080012ec                        _etext = .
+
+.vfp11_veneer   0x080012ec        0x0
+ .vfp11_veneer  0x080012ec        0x0 linker stubs
+
+.v4_bx          0x080012ec        0x0
+ .v4_bx         0x080012ec        0x0 linker stubs
+
+.iplt           0x080012ec        0x0
+ .iplt          0x080012ec        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+
+.rodata         0x080012ec       0xd8
+                0x080012ec                        . = ALIGN (0x4)
+ *(.rodata)
+ *(.rodata*)
+ .rodata.main.str1.1
+                0x080012ec       0xd5 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                                 0xa2 (size before relaxing)
+ .rodata._vfprintf_r.str1.1
+                0x080013c1        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+                                 0x11 (size before relaxing)
+ .rodata._printf_i.str1.1
+                0x080013c1        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+                                 0x22 (size before relaxing)
+                0x080013c4                        . = ALIGN (0x4)
+ *fill*         0x080013c1        0x3 
+
+.ARM.extab
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+
+.ARM            0x080013c4        0x8
+                0x080013c4                        __exidx_start = .
+ *(.ARM.exidx*)
+ .ARM.exidx     0x080013c4        0x8 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+                0x080013cc                        __exidx_end = .
+
+.preinit_array  0x080013cc        0x0
+                0x080013cc                        PROVIDE (__preinit_array_start = .)
+ *(.preinit_array*)
+                0x080013cc                        PROVIDE (__preinit_array_end = .)
+
+.init_array     0x080013cc        0x4
+                0x080013cc                        PROVIDE (__init_array_start = .)
+ *(SORT_BY_NAME(.init_array.*))
+ *(.init_array*)
+ .init_array    0x080013cc        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+                0x080013d0                        PROVIDE (__init_array_end = .)
+
+.fini_array     0x080013d0        0x4
+                0x080013d0                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_NAME(.fini_array.*))
+ *(.fini_array*)
+ .fini_array    0x080013d0        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+                0x080013d4                        PROVIDE (__fini_array_end = .)
+                0x080013d4                        _sidata = LOADADDR (.data)
+
+.rel.dyn        0x080013d4        0x0
+ .rel.iplt      0x080013d4        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+
+.data           0x20000000       0x60 load address 0x080013d4
+                0x20000000                        . = ALIGN (0x4)
+                0x20000000                        _sdata = .
+ *(.data)
+ *(.data*)
+ .data.SystemCoreClock
+                0x20000000        0x4 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                0x20000000                SystemCoreClock
+ .data.__sglue  0x20000004        0xc C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x20000004                __sglue
+ .data._impure_ptr
+                0x20000010        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+                0x20000010                _impure_ptr
+ .data._impure_data
+                0x20000014       0x4c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+                0x20000014                _impure_data
+                0x20000060                        . = ALIGN (0x4)
+                0x20000060                        _edata = .
+
+.igot.plt       0x20000060        0x0 load address 0x08001434
+ .igot.plt      0x20000060        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+                0x20000060                        . = ALIGN (0x4)
+
+.bss            0x20000060      0x16c load address 0x08001434
+                0x20000060                        _sbss = .
+                0x20000060                        __bss_start__ = _sbss
+ *(.bss)
+ *(.bss*)
+ .bss.completed.1
+                0x20000060        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ *fill*         0x20000061        0x3 
+ .bss.object.0  0x20000064       0x18 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .bss.brk.0     0x2000007c        0x4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .bss.__sf      0x20000080      0x138 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x20000080                __sf
+ .bss.__stdio_exit_handler
+                0x200001b8        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                0x200001b8                __stdio_exit_handler
+ .bss.errno     0x200001bc        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+                0x200001bc                errno
+ .bss.__lock___malloc_recursive_mutex
+                0x200001c0        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                0x200001c0                __lock___malloc_recursive_mutex
+ .bss.__lock___sfp_recursive_mutex
+                0x200001c1        0x1 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                0x200001c1                __lock___sfp_recursive_mutex
+ *fill*         0x200001c2        0x2 
+ .bss.__malloc_sbrk_start
+                0x200001c4        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+                0x200001c4                __malloc_sbrk_start
+ .bss.__malloc_free_list
+                0x200001c8        0x4 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+                0x200001c8                __malloc_free_list
+ *(COMMON)
+                0x200001cc                        . = ALIGN (0x4)
+                0x200001cc                        _ebss = .
+                0x200001cc                        __bss_end__ = _ebss
+
+._user_heap_stack
+                0x200001cc      0xc04 load address 0x08001434
+                0x200001d0                        . = ALIGN (0x8)
+ *fill*         0x200001cc        0x4 
+                0x200001d0                        PROVIDE (end = .)
+                [!provide]                        PROVIDE (_end = .)
+                0x200005d0                        . = (. + _Min_Heap_Size)
+ *fill*         0x200001d0      0x400 
+                0x20000dd0                        . = (. + _Min_Stack_Size)
+ *fill*         0x200005d0      0x800 
+                0x20000dd0                        . = ALIGN (0x8)
+
+.ARM.attributes
+                0x00000000       0x30
+ *(.ARM.attributes)
+ .ARM.attributes
+                0x00000000       0x22 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crti.o
+ .ARM.attributes
+                0x00000022       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+ .ARM.attributes
+                0x00000056       0x34 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .ARM.attributes
+                0x0000008a       0x34 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .ARM.attributes
+                0x000000be       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+ .ARM.attributes
+                0x000000f2       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+ .ARM.attributes
+                0x00000126       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+ .ARM.attributes
+                0x0000015a       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+ .ARM.attributes
+                0x0000018e       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+ .ARM.attributes
+                0x000001c2       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+ .ARM.attributes
+                0x000001f6       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+ .ARM.attributes
+                0x0000022a       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+ .ARM.attributes
+                0x0000025e       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+ .ARM.attributes
+                0x00000292       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+ .ARM.attributes
+                0x000002c6       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+ .ARM.attributes
+                0x000002fa       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+ .ARM.attributes
+                0x0000032e       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+ .ARM.attributes
+                0x00000362       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+ .ARM.attributes
+                0x00000396       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+ .ARM.attributes
+                0x000003ca       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+ .ARM.attributes
+                0x000003fe       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+ .ARM.attributes
+                0x00000432       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+ .ARM.attributes
+                0x00000466       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+ .ARM.attributes
+                0x0000049a       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+ .ARM.attributes
+                0x000004ce       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+ .ARM.attributes
+                0x00000502       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+ .ARM.attributes
+                0x00000536       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+ .ARM.attributes
+                0x0000056a       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+ .ARM.attributes
+                0x0000059e       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+ .ARM.attributes
+                0x000005d2       0x34 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+ .ARM.attributes
+                0x00000606       0x1c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
+ .ARM.attributes
+                0x00000622       0x22 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtn.o
+OUTPUT(Main.elf elf32-littlearm)
+LOAD linker stubs
+
+.comment        0x00000000       0x39
+ .comment       0x00000000       0x39 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/thumb/v7e-m+fp/hard/crtbegin.o
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-findfp.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fwalk.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-printf.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-puts.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-stdio.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wbuf.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-wsetup.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memset.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-closer.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-reent.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-impure.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lseekr.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-readr.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-writer.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-init.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-lock.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-freer.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mallocr.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-mlock.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfprintf_i.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fflush.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-makebuf.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-fstatr.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-isattyr.o)
+                                 0x3a (size before relaxing)
+ .comment       0x00000039        0x0 C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sbrkr.o)
+                                 0x3a (size before relaxing)
+
+.debug_info     0x00000000      0xb44
+ .debug_info    0x00000000      0x386 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_info    0x00000386      0x7be C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_abbrev   0x00000000      0x425
+ .debug_abbrev  0x00000000      0x173 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_abbrev  0x00000173      0x2b2 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_loclists
+                0x00000000      0x1e1
+ .debug_loclists
+                0x00000000       0x6b C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_loclists
+                0x0000006b      0x176 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_aranges  0x00000000       0xa0
+ .debug_aranges
+                0x00000000       0x30 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_aranges
+                0x00000030       0x70 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_rnglists
+                0x00000000       0xae
+ .debug_rnglists
+                0x00000000       0x1f C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_rnglists
+                0x0000001f       0x8f C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_macro    0x00000000    0x199d5
+ .debug_macro   0x00000000       0xde C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x000000de      0xaea C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000bc8       0x22 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000bea       0x56 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000c40       0x51 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000c91      0x103 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000d94       0x6a C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000dfe      0x1df C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00000fdd       0x28 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00001005       0x40 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00001045       0x10 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00001055       0x58 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x000010ad      0x26d C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x0000131a       0x28 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00001342     0x11ae C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x000024f0      0x11f C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x0000260f    0x1675e C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_macro   0x00018d6d      0x1c7 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00018f34       0x61 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00018f95       0x2a C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00018fbf       0x43 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019002       0x34 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019036       0x16 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x0001904c       0x9e C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x000190ea      0x364 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x0001944e      0x112 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019560       0x10 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019570       0x16 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019586       0x4a C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x000195d0       0x34 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019604       0x10 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019614       0x58 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x0001966c       0x8e C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x000196fa       0x1c C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019716      0x17e C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x00019894       0x16 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x000198aa       0x16 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_macro   0x000198c0      0x115 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_line     0x00000000      0xfdc
+ .debug_line    0x00000000      0x638 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_line    0x00000638      0x9a4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+
+.debug_str      0x00000000    0x8f61c
+ .debug_str     0x00000000    0x8f61c C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+                              0x8bcc8 (size before relaxing)
+ .debug_str     0x0008f61c        0x0 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+                              0x8f72c (size before relaxing)
+
+.debug_frame    0x00000000      0x168
+ .debug_frame   0x00000000       0x48 C:\Users\hjeong\AppData\Local\Temp\ccnUmKkk.o
+ .debug_frame   0x00000048       0xd4 C:\Users\hjeong\AppData\Local\Temp\ccUutiAP.o
+ .debug_frame   0x0000011c       0x4c C:/Users/hjeong/AppData/Local/Temp/claude/w--soc3050code/a559e7a7-84e8-4ace-bbb4-6c9199cf5364/scratchpad/xpack-arm-none-eabi-gcc-15.2.1-1.1/bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memchr.o)
