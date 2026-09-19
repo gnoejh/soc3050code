@@ -128,19 +128,28 @@ a clone, because the compiler and SimulIDE are vendored under `tools/`.
 ## What is included
 
 ```
-projects2026_avr/     the 22 current lessons + the shared board + _build tooling
+projects2026_arm/     the live STM32 edition - Part 0 + lesson 04, owns the website
+projects2026_avr/     the finished AVR edition: 25 lessons + the shared board
 projects/             the archived 53-project edition
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _eeprom, _pwm, _interrupt
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
-tools/simulide110sr2/ SimulIDE 1.1.0-SR2 — the simulator the current edition targets
+tools/arm-toolchain/  arm-none-eabi-gcc 15.2.1 + gdb, pruned to 227 MB
+tools/cmsis/          CMSIS 6 core headers + ST's STM32C0xx device headers
+tools/simulide110sr2/ SimulIDE 1.1.0-SR2 — the simulator the AVR edition targets
 tools/simulide/       SimulIDE 1.1.0-SR1 and 0.4.15, for the archived tree
 tools/cli/            build, program and analysis scripts
 docs/                 framework, hardware and SimulIDE documentation
 python_projects/      a separate Python track — see PYTHON_PROJECTS_GUIDE.md
 ```
 
-No external downloads and no internet connection are needed to build, simulate
-or program.
+**Nothing needs installing to build, on either edition.** Both compilers are
+vendored, and so is SimulIDE.
+
+The one difference: the **AVR** edition also vendors its simulator, so it needs
+no internet at all. The **ARM** edition's simulator is
+[wokwi.com](https://wokwi.com) in a browser — free, no account, no licence, but
+it is a web page rather than a file in this repository. Students build locally
+and upload `Main.elf` to it.
 
 ---
 

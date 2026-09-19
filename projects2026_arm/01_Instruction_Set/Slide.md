@@ -435,7 +435,7 @@ Each corresponds to a C construct you write constantly.
   <text x="466" y="100" text-anchor="middle" class="lbl">pointer</text>
   <text x="466" y="124" text-anchor="middle" class="mono lbl">a local</text>
   <text x="280" y="168" text-anchor="middle" class="lbl">A peripheral register access is literally a struct field access — base register</text>
-  <text x="280" y="186" text-anchor="middle" class="lbl">plus constant offset. That is the whole trick CMSIS uses.</text>
+  <text x="280" y="186" text-anchor="middle" class="lbl">plus constant offset. That is the whole trick the CMSIS headers use.</text>
 </svg>
 ```
 
@@ -992,9 +992,11 @@ For ordinary variables this is exactly what you want. For a status register it
 is catastrophic, and it produces the classic symptom: **code that works at
 `-O0` and hangs at `-Os`**.
 
-The keyword that forbids it is `volatile`, and CMSIS has already applied it —
-every register in `stm32c031xx.h` is declared `__IO`, which is `volatile`. You
-inherit the protection; you should still know why it is there.
+The keyword that forbids it is `volatile`, and it has already been applied for
+you by **CMSIS** — the *Common Microcontroller Software Interface Standard*,
+ARM's vendor-neutral set of headers for Cortex-M. Every register in
+`stm32c031xx.h` is declared `__IO`, which is simply `volatile`. You inherit the
+protection; you should still know why it is there.
 
 ---
 

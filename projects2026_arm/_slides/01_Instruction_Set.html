@@ -115,6 +115,7 @@
 
 <div class="topbar">
   <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
   <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
   <span class="spacer"></span>
   <span class="deck-name">Instruction Set: What the Processor Actually Does</span>
@@ -309,7 +310,7 @@ str   r0, [r1]</code></pre>
   <text x="466" y="100" text-anchor="middle" class="lbl">pointer</text>
   <text x="466" y="124" text-anchor="middle" class="mono lbl">a local</text>
   <text x="280" y="168" text-anchor="middle" class="lbl">A peripheral register access is literally a struct field access — base register</text>
-  <text x="280" y="186" text-anchor="middle" class="lbl">plus constant offset. That is the whole trick CMSIS uses.</text>
+  <text x="280" y="186" text-anchor="middle" class="lbl">plus constant offset. That is the whole trick the CMSIS headers use.</text>
 </svg></figure>
 </section>
 <section class="slide">
@@ -585,7 +586,7 @@ int _write(int fd, const char *buf, int len)
   <text x="278" y="66" text-anchor="middle" class="lbl">-Os</text>
 </svg></figure>
 <p>For ordinary variables this is exactly what you want. For a status register it<br>is catastrophic, and it produces the classic symptom: <strong>code that works at<br><code>-O0</code> and hangs at <code>-Os</code></strong>.</p>
-<p>The keyword that forbids it is <code>volatile</code>, and CMSIS has already applied it —<br>every register in <code>stm32c031xx.h</code> is declared <code>__IO</code>, which is <code>volatile</code>. You<br>inherit the protection; you should still know why it is there.</p>
+<p>The keyword that forbids it is <code>volatile</code>, and it has already been applied for<br>you by <strong>CMSIS</strong> — the <em>Common Microcontroller Software Interface Standard</em>,<br>ARM&#x27;s vendor-neutral set of headers for Cortex-M. Every register in<br><code>stm32c031xx.h</code> is declared <code>__IO</code>, which is simply <code>volatile</code>. You inherit the<br>protection; you should still know why it is there.</p>
 </section>
 <section class="slide">
 <h2>Slide 22: What You Should Be Able to Say</h2>

@@ -6,16 +6,23 @@ The live edition. `projects2026_avr/` is the finished 2026 AVR edition and is
 ## What is here now
 
 ```
+_build/build-lesson.bat   the build engine - lessons call it, nobody runs it
 _build/build-slides.py    the renderer (this tree's own copy)
 _build/disasm.py          disassemble an ELF without the toolchain
+_targets/c031c6.bat       per-chip flags, include paths and memory sizes
 _slides/                  generated decks - do not edit, re-render instead
 _notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
 01_Instruction_Set/       Part 0 - Thumb vs ARM, what the CPU does
 02_Development/           Part 0 - toolchain, sections, linking, boot
 03_Execution_Concurrency/ Part 0 - interrupts, volatile, atomicity
+04_Startup_And_LinkerScript/  Part 1 - the first lesson with code
 _spike/                   Phase 0 proof of concept - throwaway, see below
 ```
+
+**Every lesson folder carries both a `Slide.md` (the lecture) and, from
+lesson 04 onward, a `Lab.md` (the lab handout), so one week's teaching is one
+directory.** Part 0's four lessons are theory and have no `Lab.md`.
 
 ## The slides
 
@@ -124,13 +131,55 @@ Each carries the three files that replace what avr-libc did for free:
 
 ## Building
 
-**Nothing is vendored yet.** The toolchain, CMSIS headers and Renode currently
-live in a scratch directory; moving them into `tools/` is Phase 1 work. Until
-then `_spike/README.md` has the exact commands and the versions used.
+**The toolchain is vendored** (2026-09-19). A clone compiles with no installs:
 
-> **This tree cannot repeat the AVR edition's "a clone needs no installs"
-> promise.** The student simulator is hosted. Say so plainly rather than
-> discovering it in week one.
+```
+tools/arm-toolchain/   xPack arm-none-eabi-gcc 15.2.1-1.1, pruned to 227 MB
+tools/cmsis/           CMSIS 6 Core headers + ST's STM32C0xx device headers
+                       (CMSIS = Common Microcontroller Software Interface
+                       Standard, ARM's vendor-neutral Cortex-M header set)
+```
+
+The prune keeps three multilibs — `thumb/v6-m/nofp` (M0+, the C031C6 and
+L031K6), `thumb/v7-m/nofp` (M3, the F103C8) and `thumb/v7e-m+fp/hard`
+(M4F, the F446RE) — so all four candidate targets still link. It drops the
+other 36, C++, Fortran, LTO and the bundled Python. `arm-none-eabi-gdb.exe` is
+kept deliberately: both Wokwi and Renode expose a GDB server, and the AVR tree
+never had a source-level debugger at all.
+
+The archive's sha256 was verified against xPack's published `.sha` before
+unpacking, and the vendored compiler was confirmed to rebuild
+`_spike/c031c6/` to **byte-identical** figures (FLASH 5260 B, RAM 2000 B) —
+the same numbers `_spike/FINDINGS.md` recorded under A2.
+
+To build a lesson, run `build.bat` from inside its folder. The engine compiles
+**every `.c` in that folder**, so a lesson is self-sufficient by construction
+with no source list to maintain:
+
+```bat
+set TARGET=c031c6
+set LIBS=
+call "%~dp0..\_build\build-lesson.bat"
+```
+
+A lesson that carries its own `startup.c` and `link.ld` uses them; otherwise
+the engine falls back to the target's defaults.
+
+> **The simulator is still hosted.** The compiler ships in the repository, but
+> Wokwi is a web page. That is the one part of the AVR edition's "a clone needs
+> nothing" promise this tree cannot repeat — and students still pay nothing.
+
+### The `.cfg` trap, recorded so it is not repeated
+
+`_targets/c031c6.bat` was first written as `c031c6.cfg`. **CMD's `call`
+silently does nothing on an unknown extension** — no error, no exit code. Every
+variable it should have set stayed empty, and an empty `DEVINC` made the
+include flag end `-I"...\cmsis\"`, where the trailing backslash escaped the
+closing quote and swallowed the entire source list. gcc reported *"no input
+files"*, naming nothing that pointed at the real cause.
+
+Target files are therefore `.bat`, and the engine now refuses to build if
+`MCUFLAGS` or `DEVINC` came back empty.
 
 ## Seeing the assembly
 
@@ -178,14 +227,23 @@ describe the feature only under ESP32.
 The maintainer licence buys one thing: the simulator appearing inside VS Code
 instead of a browser tab. **Students pay nothing and need no account.**
 
-## Open decisions
+## Decisions
 
-- **Target A is not chosen.** C031C6 (more pins, more RAM, modern `MODER`
-  GPIO, Wokwi-only) versus F103C8 (native Renode support and therefore a free
-  offline loop, but STM32F1's `CRL`/`CRH` GPIO is unlike every later family).
-  Part 0 is deliberately target-neutral, so the choice only bites at the first
-  GPIO lesson.
-- **Target B** for the application track is the F446RE under Renode.
+- **Target A is the STM32C031C6** (decided 2026-09-19, at lesson 04 — the
+  first lesson with code, which is where the choice finally bites). Three
+  things settled it: Wokwi hosts it and the browser-upload route is proven
+  free (`_spike/FINDINGS.md`, A1b); its `MODER` GPIO and one-write 48 MHz clock
+  match every modern STM32 family, where the F103C8's `CRL`/`CRH` matches none;
+  and all four Part 0 decks already quote RM0490, the STM32C0x1 reference
+  manual, so a different part would contradict four weeks of taught slides.
+
+  What was given up: the F103C8 would have run offline in Renode with no
+  dependence on a hosted service staying free. That risk is accepted, and
+  `_startup/` is structured per-target so a port is a new `_targets/*.bat`
+  plus a startup file, not a rewrite.
+- **Target B** for the application track is the F446RE under Renode. Its
+  multilib (`thumb/v7e-m+fp/hard`) is kept in the vendored prune, so nothing
+  blocks it.
 
 ## Conventions
 

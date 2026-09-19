@@ -18,9 +18,11 @@ Self-contained: the AVR toolchain and the SimulIDE simulator are vendored under
 ```
 projects/             53 legacy lesson folders (previous edition, SimulIDE 1.1.0-SR1)
 projects2026_avr/     intro + 24 curated lessons, SimulIDE 1.1.0-SR2  <-- frozen, complete
-projects2026_arm/     STM32 edition, Part 0 so far  <-- live; owns the website
+projects2026_arm/     STM32 edition, Part 0 + lesson 04  <-- live; owns the website
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _game, _eeprom, _pwm ...
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
+tools/arm-toolchain/  arm-none-eabi-gcc 15.2.1 + gdb  <-- ARM edition, see below
+tools/cmsis/          CMSIS 6 core + ST STM32C0xx headers  <-- ARM edition
 tools/simulide/       SimulIDE 0.4.15-SR10 and 1.1.0-SR1 + the original master board
 tools/simulide110sr2/ SimulIDE 1.1.0-SR2  <-- the simulator the 2026 edition targets
 tools/simulide200/    SimulIDE 2.x (R260501) — not targeted this cycle
@@ -30,8 +32,9 @@ docs/                 framework + SimulIDE documentation
 
 **This tracker documents the AVR edition.** `projects2026_arm/` arrived on
 2026-09-13, is independent of everything below, and carries its own
-`README.md`; only its effect on the published site is recorded here, in
-section 9g.
+`README.md`. Only the two things that reach outside it are recorded here: its
+effect on the published site (section 9g) and its toolchain under the shared
+`tools/` directory (section 9h).
 
 `tools/simulide110sr2/SimulIDE_1.1.0-SR2_Win64/` is committed, so a fresh clone
 can simulate. The `.zip` files beside it are ignored - one duplicates the
@@ -222,6 +225,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-08 | Application track started: `_game` engine plus lessons 23 and 24. All 25 build clean. See section 9e. |
 | 2026-09-09 | GLCD debugging: R/W (PG1) was floating, `_glcd.c`'s `set_pixel` was destructive, `putchar` corrupted glyphs at column 64, and `_game.c` had dropped a settling delay the board needs. All fixed; warnings 5/45 → 0/9. SITL C-to-Python link proven. See sections 6 and 9e. |
 | 2026-09-14 | GitHub Pages switched to the ARM edition; the AVR decks are no longer published. Colab link added to the ARM decks. See section 9g. |
+| 2026-09-19 | ARM toolchain vendored under `tools/`; ARM Part 1 began with lesson 04. Nothing in the AVR tree touched. See section 9h. |
 
 ## 9. The system pass (2026-09-05)
 
@@ -682,6 +686,48 @@ and does nothing there.
 
 Note that this tracker still documents the AVR edition only. `projects2026_arm/`
 has its own `README.md` and is not described here.
+
+## 9h. The ARM toolchain is vendored (2026-09-19)
+
+Recorded here rather than in section 9g because it changes `tools/`, which both
+editions share. **Everything else about the ARM edition stays in
+`projects2026_arm/README.md`**, per the boundary section 2 sets.
+
+`tools/arm-toolchain/` — xPack `arm-none-eabi-gcc` 15.2.1-1.1, and
+`tools/cmsis/` — CMSIS 6 core headers plus ST's STM32C0xx device headers. A
+clone now compiles ARM with no installs, the same promise the AVR side has
+always made.
+
+No download was needed: the archive from the Phase 0 spike was still in a
+previous session's scratchpad, and its sha256 matched xPack's published `.sha`
+before unpacking. **The vendored compiler rebuilds `_spike/c031c6/` to
+byte-identical figures** — FLASH 5260 B, RAM 2000 B, exactly what
+`_spike/FINDINGS.md` recorded under A2. That is the check that mattered; a
+toolchain that builds *something* proves nothing.
+
+Pruned 1.4 GB → 227 MB, keeping three multilibs (`thumb/v6-m/nofp` for the
+M0+ parts, `thumb/v7-m/nofp` for the F103C8, `thumb/v7e-m+fp/hard` for the
+F446RE) so every candidate target still links. `arm-none-eabi-gdb.exe` kept
+deliberately — the AVR tree never had a source-level debugger at all.
+
+**Target A is decided: the STM32C031C6.** Open since Phase 0, and lesson 04
+forced it because `startup.c` and `link.ld` are per-chip. Wokwi hosts it, the
+browser-upload route is proven free, and all four Part 0 decks already quote
+RM0490. Full reasoning in the ARM README.
+
+### A new member for section 11's list
+
+`_targets/c031c6.cfg` was written with a `.cfg` extension. **CMD's `call`
+silently does nothing on an unknown extension** — no error, no exit code, no
+output. Every variable it should have set stayed empty, and an empty `DEVINC`
+made the include flag end `-I"...\cmsis\"`, where the trailing backslash
+escaped the closing quote and swallowed the entire source list. gcc reported
+*"no input files"*, naming nothing that pointed at the cause.
+
+Target files are `.bat` now, and the engine refuses to build if `MCUFLAGS` or
+`DEVINC` come back empty. This is the same family as the batch-redirect bug in
+section 5 and belongs beside it: **a silent no-op that produces a plausible
+error somewhere else.**
 
 ## 10. Next steps
 

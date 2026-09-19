@@ -34,6 +34,12 @@ DATASHEET = "https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-ad
 # colab.research.google.com/github/ in front - change the constant, re-render.
 COLAB = ("https://colab.research.google.com/github/gnoejh/soc3050code/blob/"
          "main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb")
+
+# The simulated board, pinned beside the other two. Students run every lesson
+# from Part 1 onward on this part in the browser, so the pinout and - more
+# importantly - Wokwi's list of what it does NOT model need to be one click
+# away during a lecture, not hunted for. Same reasoning as DATASHEET above.
+BOARD = "https://docs.wokwi.com/parts/board-st-nucleo-c031c6"
 OUT = os.path.join(BASE, "_slides")
 
 
@@ -333,6 +339,7 @@ PAGE = """<title>{title}</title>
 
 <div class="topbar">
   <span><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="{board}" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
   <span><a href="{colab}" target="_blank" rel="noopener">Open in Colab</a></span>
   <span class="spacer"></span>
   <span class="deck-name">{title}</span>
@@ -417,6 +424,7 @@ INDEX = """<title>SOC3050 Lecture Decks - ARM</title>
   <h1>SOC3050 &mdash; STM32 Lecture Decks</h1>
   <p class="sub">{count} decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
   <p class="sub"><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
+  <p class="sub"><a href="{board}" target="_blank" rel="noopener">ST Nucleo-C031C6 on Wokwi</a> &mdash; the board every lesson from Part 1 runs on, free in the browser. Its page also lists the peripherals Wokwi does <em>not</em> model, which is worth reading before planning any lab.</p>
   <p class="sub"><a href="{colab}" target="_blank" rel="noopener">Open the course notebook in Colab</a> &mdash; a real <code>arm-none-eabi-gcc</code> in the browser, with no toolchain to install. Builds, sections and disassembly; it cannot flash or run a board.</p>
   <ol>
 {cards}
@@ -464,7 +472,7 @@ def main(argv):
                 for c in chunks)
             page = PAGE.format(title=html.escape(title), slides=body,
                                key=name, datasheet=DATASHEET,
-                               colab=COLAB)
+                               board=BOARD, colab=COLAB)
 
             dest = os.path.join(OUT, name + ".html")
             with open(dest, "w", encoding="utf-8", newline="\n") as fh:
@@ -491,7 +499,7 @@ def main(argv):
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8",
               newline="\n") as fh:
         fh.write(INDEX.format(count=len(lessons), cards="\n".join(cards),
-                              datasheet=DATASHEET, colab=COLAB))
+                              datasheet=DATASHEET, board=BOARD, colab=COLAB))
 
     print("\n%d deck(s) rendered, %d listed in the index -> %s"
           % (len(rendering), len(lessons), os.path.relpath(OUT, BASE)))
