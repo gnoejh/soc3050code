@@ -12,14 +12,15 @@ initialisation and the clock setup — and then takes them apart.
 | | |
 |---|---|
 | `Slide.md` | the lecture, 20 slides — rendered to `_slides/04_Startup_And_LinkerScript.html` |
-| `Lab.md` | the lab: six parts, ~2 hours, **hands-on with the explanation inline** — not assessed, nothing handed in |
-| `Main.c` | the lab program — prints a memory report measured from linker symbols, blinks PA5 |
+| `Lab.md` | the lab: seven parts, ~2 hours, **hands-on with the explanation inline** — not assessed, nothing handed in |
+| `Main.c` | the lab program — prints a memory report measured from linker symbols, then drives an eight-LED bar on PB0–PB7 from pattern tables **students edit** |
 | `startup.c` | **the subject of the lesson.** Vector table, `Reset_Handler`, `SystemInit()` |
 | `link.ld` | **the subject of the lesson.** Memory map and section placement |
 | `retarget.c` | infrastructure: `_write()` and friends, so `printf` reaches USART2 |
 | `build.bat` | one command, no arguments |
 | `simulate.bat` | always rebuilds, then opens the Wokwi board |
-| `wokwi.toml`, `diagram.json` | for the Wokwi VS Code extension; the browser route needs neither |
+| `diagram.json` | the board plus the eight LEDs on PB0–PB7. The browser route needs it pasted into the Wokwi tab's `diagram.json`; the VS Code extension reads it directly. Pin names are Wokwi's, not the datasheet's — `led0` sits on `nucleo:PB0.1` because no plain `PB0` exists; see `_slides/board-pins.html`, linked from every slide's top bar |
+| `wokwi.toml` | for the Wokwi VS Code extension only |
 
 **This lesson is self-sufficient.** It links nothing from `_lib/`, and it
 carries its own `startup.c` and `link.ld` rather than sharing the target's
@@ -32,18 +33,19 @@ build.bat        # compiles every .c in this folder, links with link.ld
 simulate.bat     # rebuilds, then opens wokwi.com on the Nucleo-C031C6
 ```
 
-In the Wokwi tab: `F1` → **Upload Firmware and Start Simulation…** → pick
-`Main.elf`. Free, no account, no licence.
+In the Wokwi tab: paste this folder's `diagram.json` into the `diagram.json`
+tab (that adds the eight LEDs), then `F1` → **Upload Firmware and Start
+Simulation…** → pick `Main.elf`. Free, no account, no licence.
 
 Expected build output:
 
 ```
-FLASH:  6736 B  /  32 KB   20.56%
+FLASH:  7624 B  /  32 KB   23.27%
 RAM:    2008 B  /  12 KB   16.34%
 ```
 
 Zero warnings. The slides quote those figures and the hex's first data record
-(`:10000000003000200D050008C1040008C1040008EC`) literally, so **if `Main.c`,
+(`:1000000000300020C50600087906000879060008BF`) literally, so **if `Main.c`,
 `startup.c` or `link.ld` changes, re-derive slides 7, 15 and 19** rather than
 letting them drift.
 
@@ -79,13 +81,15 @@ silently.
 |---|---|
 | `RCC->CR` | `HSIDIV` cleared — 12 MHz → 48 MHz, in `SystemInit()` |
 | `FLASH->ACR` | one wait state, set *before* the clock speeds up |
-| `RCC->IOPENR` | GPIOA clock gate — without it the port reads back zero |
+| `RCC->IOPENR` | GPIOA and GPIOB clock gates — without one the port reads back zero |
 | `RCC->APBENR1` | USART2 clock gate |
-| `GPIOA->MODER`, `ODR`, `AFR[0]` | PA5 output (LED), PA2/PA3 alternate function 1 (USART2) |
+| `GPIOA->MODER`, `ODR`, `AFR[0]` | PA5 output (LD4 heartbeat), PA2/PA3 alternate function 1 (USART2) |
+| `GPIOB->MODER`, `ODR` | PB0–PB7 outputs — the LED bar; one byte written per frame |
+| `SysTick->LOAD`, `VAL`, `CTRL` | polled 1 ms tick for `delay_ms()`; no interrupt |
 | `USART2->BRR`, `CR1`, `ISR`, `TDR` | 115200 baud, polled transmit |
 
-`EXTI`, `NVIC` and `SysTick` are **not** used here — lesson 04 has no
-interrupts at all. The vector table is full of handlers that never fire, which
+`EXTI` and `NVIC` are **not** used here, and `SysTick` is only polled —
+lesson 04 has no interrupts at all. The vector table is full of handlers that never fire, which
 is the point: it exists for the hardware to read on reset, not for this program
 to use.
 
@@ -104,13 +108,14 @@ guess exists only because a surprise sticks better than a paragraph.
 | 3 | **move `.isr_vector` after `.text`** | firmware that passes every check and cannot start |
 | 4 | shrink RAM: 12K → 8K → 2K → 1K | what a linker can and cannot check for you |
 | 5 | add an array, `const` or not | `.rodata` vs `.data` vs `.bss`, measured |
+| 6 | **edit the LED patterns** — tables, timings, playlist, or a computed pattern | the half of `Main.c` that is theirs; open-ended, brought to the next class |
 
 **Every figure quoted in the answers was measured, not reasoned about:**
 
 - Part 0 step 5 works because `led_init()` runs *before* `uart2_init()`, which
   re-enables the same gate — verified by reading the call order.
 - Part 3: moving the section builds clean with **zero warnings**; `.text` lands
-  at `0x08000000` and `.isr_vector` at `0x0800147C`, so the reset words become
+  at `0x08000000` and `.isr_vector` at `0x08001634`, so the reset words become
   `SP = 0x08432200`, `PC = 0xD374428B` — instruction bytes. Removing `KEEP()`,
   the *obvious* exercise, **does not** delete the table on this toolchain, so
   it demonstrates nothing and is demoted to an optional aside.
@@ -118,8 +123,9 @@ guess exists only because a surprise sticks better than a paragraph.
   else, because everything but the stack is placed bottom-up. 2 KB **builds**
   at 98.05%. 1 KB fails: `._user_heap_stack will not fit`, `overflowed by 984
   bytes`, 196.09%.
-- Part 5: `const` +280 FLASH / **+0 RAM**; initialised +280 FLASH / +256 RAM
-  (the double cost); uninitialised +24 FLASH / +256 RAM. The declarations carry
+- Part 5: `const` +288 FLASH / **+0 RAM**; initialised +288 FLASH / +256 RAM
+  (the double cost); uninitialised +32 FLASH / +256 RAM. (32 of each figure
+  is the `printf` that keeps the array alive.) The declarations carry
   `volatile` because without it `-Os` deletes the array outright — itself worth
   showing, and the lab does.
 
@@ -133,11 +139,17 @@ with clean RAM hides the bug completely.
 ## Status
 
 - Builds clean, zero warnings, with the vendored `tools/arm-toolchain/`.
-- `Main.hex` validated: 428 records, all checksums correct, extended
-  linear address record `:020000040800F2` present, entry point `0x0800050d`
+- `Main.hex` validated: 484 records, all checksums correct, extended
+  linear address record `:020000040800F2` present, entry point `0x080006c5`
   (odd — the Thumb bit).
-- Every exercise in `Lab.md` has been built and its stated outcome checked.
+- Every exercise in `Lab.md` has been built and its stated outcome checked —
+  re-done on 2026-09-22 after the LED bar was added, since `Main.c` growing
+  moved every FLASH figure. RAM figures did not move: the pattern tables are
+  `const`, and `frame_count` replaced `blink_count` byte for byte.
 - **Not yet watched running in Wokwi.** Per `CLAUDE.md` §9e that means the
-  lesson is not finished. The build is byte-comparable to the Phase 0 spike
-  that *was* seen running (`_spike/FINDINGS.md`, A1b), which is evidence and
-  not proof.
+  lesson is not finished. The startup, UART and PA5 half is byte-comparable
+  to the Phase 0 spike that *was* seen running (`_spike/FINDINGS.md`, A1b),
+  which is evidence and not proof. The LED bar half — GPIOB, the polled
+  SysTick delay, and the eight `wokwi-led` parts in `diagram.json` — has no
+  such precedent and has been checked only by building. First thing to do
+  when a browser is at hand: paste the diagram, upload, and watch.

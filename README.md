@@ -6,9 +6,10 @@ repository and it works, with nothing to install.
 
 Two editions live here. **`projects2026_avr/` (ATmega128) is finished and
 frozen; `projects2026_arm/` (STM32) is the live one**, and it is what
-<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition is early —
-four theory lessons, no build system of its own yet — so the AVR tree is still
-where you go for something that compiles and simulates today.
+<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition is early:
+four theory lessons plus lesson 04, the first that builds (with the vendored
+`tools/arm-toolchain/`) and runs in the browser on Wokwi's Nucleo-C031C6. The
+AVR tree is still the larger body of working lessons.
 
 ---
 

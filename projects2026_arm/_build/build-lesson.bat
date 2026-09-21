@@ -76,9 +76,11 @@ echo Building %LESSON%  [target %TARGET%] ...
 REM ---- assemble the source list -------------------------------------------
 REM  Every .c in the lesson folder is compiled.  That is what makes a lesson
 REM  folder self-sufficient: drop retarget.c or a driver in beside Main.c and
-REM  it builds, with no list to maintain anywhere.
+REM  it builds, with no list to maintain anywhere.  Each name is quoted: a
+REM  stray "Main copy.c" otherwise becomes two files that do not exist, and
+REM  gcc reports a missing copy.c that nothing in the folder is called.
 set "SOURCES="
-for %%F in (*.c) do set "SOURCES=!SOURCES! %%F"
+for %%F in (*.c) do set "SOURCES=!SOURCES! "%%F""
 if not exist "startup.c" set "SOURCES=!SOURCES! "!STARTUP!""
 for %%L in (%LIBS%) do (
     if not exist "%~dp0..\_lib\%%L.c" (

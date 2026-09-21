@@ -249,7 +249,7 @@ words of memory *itself*, before fetching a single instruction.
   <rect class="hifill" x="200" y="26" width="200" height="34" rx="4"/>
   <text x="300" y="48" text-anchor="middle" class="mono">word 0 = 0x20003000</text>
   <rect class="hifill" x="200" y="66" width="200" height="34" rx="4"/>
-  <text x="300" y="88" text-anchor="middle" class="mono">word 1 = 0x0800050D</text>
+  <text x="300" y="88" text-anchor="middle" class="mono">word 1 = 0x080006C5</text>
 
   <path class="wire" d="M138 46 H196" marker-end="url(#a4)"/>
 
@@ -312,7 +312,7 @@ a cast so the whole table can be one array.
 This is record 2 of the `Main.hex` this lesson builds, byte for byte:
 
 ```
-:10000000 003000200D050008C1040008C1040008 EC
+:10000000 00300020C50600087906000879060008 BF
            ^^^^^^^^ ^^^^^^^^ ^^^^^^^^ ^^^^^^^^
            word 0   word 1   word 2   word 3
 ```
@@ -322,17 +322,17 @@ ARM is **little-endian**, so each group of four bytes reads right to left:
 | Bytes | Value | Meaning |
 |---|---|---|
 | `00 30 00 20` | `0x20003000` | initial SP — top of RAM |
-| `0D 05 00 08` | `0x0800050D` | `Reset_Handler` |
-| `C1 04 00 08` | `0x080004C1` | `NMI_Handler` |
-| `C1 04 00 08` | `0x080004C1` | `HardFault_Handler` |
+| `C5 06 00 08` | `0x080006C5` | `Reset_Handler` |
+| `79 06 00 08` | `0x08000679` | `NMI_Handler` |
+| `79 06 00 08` | `0x08000679` | `HardFault_Handler` |
 
 Three observations, each worth more than a paragraph of theory:
 
 1. **`0x20003000` is not a number someone typed.** RAM starts at `0x20000000`
    and this part has 12 KB. `0x20000000 + 0x3000` is exactly the top. The
    linker computed it from `link.ld`, and the stack grows *downward* from it.
-2. **`0x0800050D` is odd, and every handler address here is.** `nm` reports
-   `Reset_Handler` at `0800050c`. The low bit is the **Thumb bit** from
+2. **`0x080006C5` is odd, and every handler address here is.** `nm` reports
+   `Reset_Handler` at `080006c4`. The low bit is the **Thumb bit** from
    lesson 01 — the core reads it as "this target is Thumb code", not as part of
    the address. An even entry here faults on the first instruction.
 3. **Words 2 and 3 are identical.** `NMI_Handler` and `HardFault_Handler` are
@@ -454,7 +454,7 @@ live in RAM. It therefore needs **two addresses**, and the linker gives it two.
   <text x="120" y="106" text-anchor="middle" class="mono">.data master copy</text>
   <text x="120" y="122" text-anchor="middle" class="lbl">100 bytes</text>
   <text x="120" y="152" text-anchor="middle" class="mono">_sidata</text>
-  <text x="120" y="168" text-anchor="middle" class="lbl">= 0x080019EC</text>
+  <text x="120" y="168" text-anchor="middle" class="lbl">= 0x08001D64</text>
 
   <text x="460" y="20" text-anchor="middle" class="lbl">RAM — writable, empty at reset</text>
   <rect class="box" x="370" y="30" width="180" height="150" rx="6"/>
@@ -609,8 +609,8 @@ This is `arm-none-eabi-size -A` on this lesson's own build:
 ```
 section               size          addr
 .isr_vector            180    0x08000000
-.text                 5244    0x080000b4
-.rodata               1204    0x08001530
+.text                 5684    0x080000b4
+.rodata               1652    0x080016e8
 .data                  100    0x20000000
 .bss                   372    0x20000064
 ._user_heap_stack     1536    0x20000218
@@ -620,7 +620,7 @@ and the linker's own summary, printed at every build:
 
 ```
 Memory region     Used Size   Region Size   %age Used
-       FLASH:        6736 B        32 KB       20.56%
+       FLASH:        7624 B        32 KB       23.27%
          RAM:        2008 B        12 KB       16.34%
 ```
 
@@ -628,7 +628,7 @@ Check the arithmetic yourself — both sums teach something:
 
 - **RAM** = 100 + 372 + 1536 = **2008**. The heap and stack reservation is
   three quarters of your RAM use, and you have not written a real program yet.
-- **FLASH** = 180 + 5244 + 1204 + 4 + 4 + **100** = **6736**. That 100 is
+- **FLASH** = 180 + 5684 + 1652 + 4 + 4 + **100** = **7624**. That 100 is
   `.data`, counted a second time — once at its RAM address, once at its FLASH
   load address. **`.data` costs you both.** A large initialised array is the
   most expensive thing you can declare on a part this size.
@@ -712,41 +712,52 @@ That link is in the bar at the top of every slide.
 
 ```svg
 <svg viewBox="0 0 580 224" role="img" aria-label="What this lesson uses on the Nucleo-C031C6 board">
-  <rect class="box" x="150" y="24" width="280" height="150" rx="8"/>
+  <rect class="box" x="100" y="24" width="380" height="150" rx="8"/>
   <text x="290" y="46" text-anchor="middle" class="mono">STM32C031C6</text>
   <text x="290" y="64" text-anchor="middle" class="lbl">Cortex-M0+ · 48 MHz · 32 KB flash · 12 KB RAM</text>
 
-  <rect class="hifill" x="172" y="82" width="110" height="34" rx="4"/>
-  <text x="227" y="103" text-anchor="middle" class="mono">PA5</text>
-  <rect class="hifill" x="298" y="82" width="110" height="34" rx="4"/>
-  <text x="353" y="103" text-anchor="middle" class="mono">PA2 / PA3</text>
+  <rect class="hifill" x="116" y="82" width="110" height="34" rx="4"/>
+  <text x="171" y="103" text-anchor="middle" class="mono">PB0 .. PB7</text>
+  <rect class="hifill" x="235" y="82" width="110" height="34" rx="4"/>
+  <text x="290" y="103" text-anchor="middle" class="mono">PA5</text>
+  <rect class="hifill" x="354" y="82" width="110" height="34" rx="4"/>
+  <text x="409" y="103" text-anchor="middle" class="mono">PA2 / PA3</text>
 
-  <text x="227" y="132" text-anchor="middle" class="lbl">user LED</text>
-  <text x="227" y="148" text-anchor="middle" class="lbl">on the board</text>
-  <text x="353" y="132" text-anchor="middle" class="lbl">USART2, AF1</text>
-  <text x="353" y="148" text-anchor="middle" class="lbl">to the serial monitor</text>
+  <text x="171" y="132" text-anchor="middle" class="lbl">eight LEDs</text>
+  <text x="171" y="148" text-anchor="middle" class="lbl">from diagram.json</text>
+  <text x="290" y="132" text-anchor="middle" class="lbl">user LED LD4</text>
+  <text x="290" y="148" text-anchor="middle" class="lbl">the heartbeat</text>
+  <text x="409" y="132" text-anchor="middle" class="lbl">USART2, AF1</text>
+  <text x="409" y="148" text-anchor="middle" class="lbl">to the serial monitor</text>
 
-  <rect class="reg" x="20" y="88" width="110" height="34" rx="4"/>
-  <text x="75" y="109" text-anchor="middle" class="lbl">you see it blink</text>
-  <path class="wire" d="M130 105 H168"/>
+  <rect class="reg" x="4" y="88" width="88" height="34" rx="4"/>
+  <text x="48" y="109" text-anchor="middle" class="lbl">your patterns</text>
+  <path class="wire" d="M92 105 H112"/>
 
-  <rect class="reg" x="450" y="88" width="110" height="34" rx="4"/>
-  <text x="505" y="109" text-anchor="middle" class="lbl">you read printf</text>
-  <path class="wire" d="M412 105 H448"/>
+  <rect class="reg" x="488" y="88" width="88" height="34" rx="4"/>
+  <text x="532" y="109" text-anchor="middle" class="lbl">you read printf</text>
+  <path class="wire" d="M468 105 H484"/>
 
-  <text x="290" y="200" text-anchor="middle" class="lbl">Two pins. That is the whole of this lesson's hardware.</text>
+  <text x="290" y="200" text-anchor="middle" class="lbl">Eleven pins. The eight on the left are the only ones you chose; the board fixed the rest.</text>
   <text x="290" y="218" text-anchor="middle" class="lbl">Wokwi part type: board-st-nucleo-c031c6</text>
 </svg>
 ```
 
-Only two pins matter this week, and both are fixed by the board rather than
-chosen by us:
+Eleven pins matter this week. Eight of them are the only hardware choice this
+lesson makes; the other three are fixed by the board:
 
 | Pin | Wired to | Used by |
 |---|---|---|
-| **PA5** | the on-board user LED (Wokwi labels it **LD4**) | `led_init()`, the blink loop |
+| **PB0–PB7** | eight LEDs added by `diagram.json`, anode to pin, cathode to GND | `ledbar_init()`, your patterns |
+| **PA5** | the on-board user LED (Wokwi labels it **LD4**) | `led_init()`, the per-frame heartbeat |
 | **PA2** | USART2 TX, alternate function 1 | `printf` → the serial monitor |
 | **PA3** | USART2 RX, alternate function 1 | (not used this week) |
+
+The eight LEDs are wires in `diagram.json`, and a wire names its board pin by
+**the string in Wokwi's board file, not the datasheet name**: `led0` is on
+`nucleo:PB0.1`, because PB0 reaches two header positions and plain `PB0` does
+not exist. Every name Wokwi accepts is on the **Board pins** page in the top
+bar of this slide. Check it before you add a wire.
 
 **Read the "not implemented" list on that page before you plan anything.**
 Wokwi simulates the CPU and most peripherals, but not all of them. As of now
@@ -782,7 +793,7 @@ monitor shows this — with **your** numbers, from **your** build:
 
 -- where link.ld put things --
   vector table    : 0x08000000  (must be the base of FLASH)
-  .data in FLASH  : 0x080019EC  _sidata, the copy source
+  .data in FLASH  : 0x08001D64  _sidata, the copy source
   .data in RAM    : 0x20000000 .. 0x20000064  (100 bytes)
   .bss  in RAM    : 0x20000064 .. 0x200001D8  (372 bytes)
   heap starts at  : 0x200001D8  (first byte after .bss)
@@ -798,7 +809,11 @@ monitor shows this — with **your** numbers, from **your** build:
 `&` from a linker symbol at run time. Edit `link.ld` and they move — which is
 exactly what the lab asks you to do.
 
-And the green LED on PA5 blinks.
+Then the LED bar starts: eight LEDs on PB0–PB7 stepping through the pattern
+tables at the bottom of `Main.c`, with LD4 on PA5 toggling once per frame as a
+heartbeat. The serial monitor names each pattern as it starts. **That half of
+`Main.c` is yours to change** — the tables, the timings, and the playlist in
+`main()`. Lab Part 6 says how.
 
 ---
 
@@ -810,7 +825,7 @@ controlled ways. Full instructions are in **`Lab.md`**.
 | | You change | Predict, then observe |
 |---|---|---|
 | **1** | delete the `.data` copy loop | What does `data_witness` read instead of `0x00C0FFEE`? |
-| **2** | delete the `.bss` zero loop | Where does the blink counter start? Is it the same on every run? |
+| **2** | delete the `.bss` zero loop | Where does the frame counter start? Is it the same on every run? |
 | **3** | **move `.isr_vector` after `.text`** | Does it still build? Does anything warn you? |
 | **4** | 12K → 8K → 2K → 1K of RAM | Which printed numbers move? Where does the linker stop you? |
 

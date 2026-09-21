@@ -9,8 +9,10 @@ The live edition. `projects2026_avr/` is the finished 2026 AVR edition and is
 _build/build-lesson.bat   the build engine - lessons call it, nobody runs it
 _build/build-slides.py    the renderer (this tree's own copy)
 _build/disasm.py          disassemble an ELF without the toolchain
+_build/wokwi-pins.py      renders the board pin map (below) from the facts file
 _targets/c031c6.bat       per-chip flags, include paths and memory sizes
-_slides/                  generated decks - do not edit, re-render instead
+_targets/c031c6-pins.json every pin name Wokwi accepts for the board -> MCU pin
+_slides/                  generated decks + board-pins.html - do not edit, re-render instead
 _notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
 01_Instruction_Set/       Part 0 - Thumb vs ARM, what the CPU does
@@ -42,6 +44,34 @@ python projects2026_arm/_build/build-slides.py
 ```
 
 `_slides/` is generated. Edit the `Slide.md`, never the HTML.
+
+## The board pin map
+
+Every deck's top bar carries a **Board pins** link to `_slides/board-pins.html`:
+one table of every string Wokwi accepts on the board end of a `diagram.json`
+wire, and the MCU pin or rail each one reaches.
+
+It exists because those strings are visible nowhere a student would look. The
+board image does not print them, the editor does not list them, and they are
+not the datasheet names: plain `PB0` is rejected, `PB0.1`, `PB0.2` and `D10`
+all work and all reach PB0, and `GND` is really `GND.1` to `GND.9`. Lesson 04's
+`diagram.json` hit exactly this, and a student adding one LED would have had
+no way to find out why.
+
+Two files, one derived from the other:
+
+- `_targets/c031c6-pins.json` — the facts, committed. Derived from Wokwi's
+  board definition (`wokwi/wokwi-boards`, `boards/st-nucleo-c031c6/board.json`)
+  by `python _build/wokwi-pins.py --refresh`. That repository declares no
+  licence, so the board file itself is **not** vendored; only the name-to-pin
+  facts are, in our own format.
+- `_slides/board-pins.html` — the page. `build-slides.py` renders it on every
+  run, so it cannot be stale relative to the facts, and the Pages workflow
+  verifies it is present. The notes column (pins the course reserves, board-file
+  quirks such as `PD3` mapping to the 3.3 V rail) is the `NOTES` table in the
+  script, maintained by hand.
+
+If Wokwi renames a pin, run `--refresh` and re-render; do not edit the page.
 
 ## The Colab notebook
 
