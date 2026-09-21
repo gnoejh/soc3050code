@@ -75,6 +75,8 @@ jobs:
           # + index.html + board-pins.html (the pin map wokwi-pins.py renders)
           test "$decks" -eq "$((lessons + 2))" || { echo "expected $((lessons + 2)) files, got $decks"; exit 1; }
           test -s "$out/board-pins.html" || { echo "no board-pins.html"; exit 1; }
+          # the board manual the top bar links to, copied from _docs/ by the renderer
+          test -s "$out/UM2953_Nucleo64_MB1717.pdf" || { echo "no board manual PDF"; exit 1; }
           grep -q '<title>' "$out/index.html" || { echo "index has no title"; exit 1; }
           # the root must be the ARM index, not a leftover AVR one
           grep -q 'STM32 Lecture Decks' "$out/index.html" \

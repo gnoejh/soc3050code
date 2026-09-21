@@ -13,6 +13,7 @@ _build/wokwi-pins.py      renders the board pin map (below) from the facts file
 _targets/c031c6.bat       per-chip flags, include paths and memory sizes
 _targets/c031c6-pins.json every pin name Wokwi accepts for the board -> MCU pin
 _slides/                  generated decks + board-pins.html - do not edit, re-render instead
+_docs/                    the board manual (ST UM2953), copied beside the decks on render
 _notebooks/               the Colab workbench, one notebook for the course
 00_Architecture/          Part 0 - the programmer's model
 01_Instruction_Set/       Part 0 - Thumb vs ARM, what the CPU does
@@ -75,8 +76,15 @@ If Wokwi renames a pin, run `--refresh` and re-render; do not edit the page.
 
 The top bar also carries the real board's manual, **ST UM2953, STM32 Nucleo-64
 boards (MB1717)**: header pinouts, solder bridges, schematics. The pin-name
-page says what Wokwi calls a pin; the manual says what it is. Both constants,
-`BOARD_MANUAL` and `BOARD`, sit at the top of `build-slides.py`.
+page says what Wokwi calls a pin; the manual says what it is.
+
+The PDF lives in the tree, at `_docs/UM2953_Nucleo64_MB1717.pdf`, and
+`build-slides.py` copies it beside the decks on every render, so the link is
+relative and works from a clone and from the site without st.com having to
+answer (it did not, from the machine that set this up). The renderer refuses
+to run if the file is missing. The copy in `_slides/` is git-ignored — one
+committed copy, in `_docs/`, is enough — and ST's own URL is offered on the
+index page as a fallback. The constants are at the top of `build-slides.py`.
 
 ## The Colab notebook
 

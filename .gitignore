@@ -57,6 +57,11 @@ projects2026_arm/**/Main.bin
 projects2026_arm/**/Main.map
 projects2026_arm/**/*.o
 
+# The board manual is committed once, in projects2026_arm/_docs/. The renderer
+# copies it into _slides/ so the decks' relative link works; that copy is
+# derived, like the HTML around it, and is not committed a second time.
+projects2026_arm/_slides/*.pdf
+
 # ...except the Phase 0 spike's own artefacts.  They are evidence, not build
 # output: the Part 0 decks quote encodings and section sizes decoded straight
 # out of them, projects2026_arm/README.md makes reproducing those a rule, and

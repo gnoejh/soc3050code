@@ -43,8 +43,8 @@ SOURCE = ("https://raw.githubusercontent.com/wokwi/wokwi-boards/main/"
           "boards/st-nucleo-c031c6/board.json")
 WOKWI_PART = "board-st-nucleo-c031c6"
 BOARD_DOC = "https://docs.wokwi.com/parts/board-st-nucleo-c031c6"
-BOARD_MANUAL = ("https://www.st.com/resource/en/user_manual/"
-                "um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf")
+# Relative: build-slides.py copies the PDF from _docs/ to sit beside this page.
+BOARD_MANUAL = "UM2953_Nucleo64_MB1717.pdf"
 
 # Course knowledge about MCU pins.  Keyed by the MCU pin (the board file's
 # "target"), not by a Wokwi name, so an alias inherits its pin's note.
