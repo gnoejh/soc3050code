@@ -41,6 +41,14 @@ COLAB = ("https://colab.research.google.com/github/gnoejh/soc3050code/blob/"
 # away during a lecture, not hunted for. Same reasoning as DATASHEET above.
 BOARD = "https://docs.wokwi.com/parts/board-st-nucleo-c031c6"
 
+# The board's own manual: ST UM2953, "STM32 Nucleo-64 boards (MB1717)". It is
+# the document with the header pinouts, the solder-bridge tables and the
+# schematics - the place to check what a header pin is physically before
+# asking Wokwi what it is called. The Wokwi page above is the simulated
+# board; this is the real one.
+BOARD_MANUAL = ("https://www.st.com/resource/en/user_manual/"
+                "um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf")
+
 # The board's pin names as diagram.json wants them, rendered beside the decks
 # by _build/wokwi-pins.py from the committed _targets/c031c6-pins.json.  It
 # sits in the top bar because a lab that adds one wire needs the exact string
@@ -346,6 +354,7 @@ PAGE = """<title>{title}</title>
 
 <div class="topbar">
   <span><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="{manual}" target="_blank" rel="noopener">Board manual (PDF)</a></span>
   <span><a href="{board}" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
   <span><a href="{pins}" target="_blank" rel="noopener">Board pins</a></span>
   <span><a href="{colab}" target="_blank" rel="noopener">Open in Colab</a></span>
@@ -432,6 +441,7 @@ INDEX = """<title>SOC3050 Lecture Decks - ARM</title>
   <h1>SOC3050 &mdash; STM32 Lecture Decks</h1>
   <p class="sub">{count} decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
   <p class="sub"><a href="{datasheet}" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
+  <p class="sub"><a href="{manual}" target="_blank" rel="noopener">Nucleo-64 board manual, UM2953 (PDF)</a> &mdash; the real board: header pinouts, solder bridges, schematics. Read this for what a pin <em>is</em>; read the pin-name page below for what Wokwi <em>calls</em> it.</p>
   <p class="sub"><a href="{board}" target="_blank" rel="noopener">ST Nucleo-C031C6 on Wokwi</a> &mdash; the board every lesson from Part 1 runs on, free in the browser. Its page also lists the peripherals Wokwi does <em>not</em> model, which is worth reading before planning any lab.</p>
   <p class="sub"><a href="{pins}">Board pin names for diagram.json</a> &mdash; every string Wokwi accepts on the board end of a wire, and which MCU pin it reaches. <code>PB0</code> is not one of them; <code>PB0.1</code> is. Generated from Wokwi's board file.</p>
   <p class="sub"><a href="{colab}" target="_blank" rel="noopener">Open the course notebook in Colab</a> &mdash; a real <code>arm-none-eabi-gcc</code> in the browser, with no toolchain to install. Builds, sections and disassembly; it cannot flash or run a board.</p>
@@ -481,7 +491,8 @@ def main(argv):
                 for c in chunks)
             page = PAGE.format(title=html.escape(title), slides=body,
                                key=name, datasheet=DATASHEET,
-                               board=BOARD, colab=COLAB, pins=PINS)
+                               board=BOARD, colab=COLAB, pins=PINS,
+                               manual=BOARD_MANUAL)
 
             dest = os.path.join(OUT, name + ".html")
             with open(dest, "w", encoding="utf-8", newline="\n") as fh:
@@ -509,7 +520,7 @@ def main(argv):
               newline="\n") as fh:
         fh.write(INDEX.format(count=len(lessons), cards="\n".join(cards),
                               datasheet=DATASHEET, board=BOARD, colab=COLAB,
-                              pins=PINS))
+                              pins=PINS, manual=BOARD_MANUAL))
 
     # The pin map the top bar links to.  Rendered here so a normal deck render
     # can never leave it missing or stale; the script has a hyphen in its name,

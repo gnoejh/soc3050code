@@ -115,6 +115,7 @@
 
 <div class="topbar">
   <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
   <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
   <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
   <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
@@ -126,7 +127,7 @@
 <section class="slide">
 <h1>Startup and the Linker Script: Building the Ground You Stand On</h1>
 <h2>SOC3050 ARM Edition — Part 1, Instances</h2>
-<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a></p>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
 <p><strong>The first lesson with code you build and run.</strong></p>
 <p>Part 0 gave you four models: the machine, its instructions, its toolchain, and<br>concurrency. Lesson 02 told you that something has to build the C environment<br>before <code>main()</code> runs, and that on a bare-metal part there is no operating<br>system to do it.</p>
 <p>This week you write that something, and then you watch it work.</p>
@@ -541,7 +542,7 @@ _sidata = LOADADDR(.data); /*  &lt;-- where it was stored            */
 </section>
 <section class="slide">
 <h2>Slide 18: The Board You Are Simulating</h2>
-<p>Everything from here to the end of the course runs on one part: the<br><strong>ST Nucleo-C031C6</strong>, in the browser at<br><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">docs.wokwi.com/parts/board-st-nucleo-c031c6</a>.<br>That link is in the bar at the top of every slide.</p>
+<p>Everything from here to the end of the course runs on one part: the<br><strong>ST Nucleo-C031C6</strong>, in the browser at<br><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">docs.wokwi.com/parts/board-st-nucleo-c031c6</a>.<br>That link is in the bar at the top of every slide, next to the manual for the<br>real board, <strong>UM2953</strong> — the header pinouts, solder bridges and schematics that<br>the simulated one is a model of.</p>
 <figure class="diagram"><svg viewBox="0 0 580 224" role="img" aria-label="What this lesson uses on the Nucleo-C031C6 board">
   <rect class="box" x="100" y="24" width="380" height="150" rx="8"/>
   <text x="290" y="46" text-anchor="middle" class="mono">STM32C031C6</text>

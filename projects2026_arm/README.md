@@ -73,6 +73,11 @@ Two files, one derived from the other:
 
 If Wokwi renames a pin, run `--refresh` and re-render; do not edit the page.
 
+The top bar also carries the real board's manual, **ST UM2953, STM32 Nucleo-64
+boards (MB1717)**: header pinouts, solder bridges, schematics. The pin-name
+page says what Wokwi calls a pin; the manual says what it is. Both constants,
+`BOARD_MANUAL` and `BOARD`, sit at the top of `build-slides.py`.
+
 ## The Colab notebook
 
 Every deck's top bar carries an **Open in Colab** link, next to the reference

@@ -1,7 +1,8 @@
 # Startup and the Linker Script: Building the Ground You Stand On
 ## SOC3050 ARM Edition — Part 1, Instances
 
-**Reference**: [STM32 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
+**Reference**: [STM32 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf) ·
+**Board manual**: [UM2953, STM32 Nucleo-64 boards (MB1717)](https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf)
 
 **The first lesson with code you build and run.**
 
@@ -708,7 +709,9 @@ Two notes worth keeping:
 Everything from here to the end of the course runs on one part: the
 **ST Nucleo-C031C6**, in the browser at
 [docs.wokwi.com/parts/board-st-nucleo-c031c6](https://docs.wokwi.com/parts/board-st-nucleo-c031c6).
-That link is in the bar at the top of every slide.
+That link is in the bar at the top of every slide, next to the manual for the
+real board, **UM2953** — the header pinouts, solder bridges and schematics that
+the simulated one is a model of.
 
 ```svg
 <svg viewBox="0 0 580 224" role="img" aria-label="What this lesson uses on the Nucleo-C031C6 board">
