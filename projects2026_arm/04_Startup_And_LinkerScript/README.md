@@ -146,10 +146,11 @@ with clean RAM hides the bug completely.
   re-done on 2026-09-22 after the LED bar was added, since `Main.c` growing
   moved every FLASH figure. RAM figures did not move: the pattern tables are
   `const`, and `frame_count` replaced `blink_count` byte for byte.
-- **Not yet watched running in Wokwi.** Per `CLAUDE.md` §9e that means the
-  lesson is not finished. The startup, UART and PA5 half is byte-comparable
-  to the Phase 0 spike that *was* seen running (`_spike/FINDINGS.md`, A1b),
-  which is evidence and not proof. The LED bar half — GPIOB, the polled
-  SysTick delay, and the eight `wokwi-led` parts in `diagram.json` — has no
-  such precedent and has been checked only by building. First thing to do
-  when a browser is at hand: paste the diagram, upload, and watch.
+- **Watched running in Wokwi on 2026-09-22** by the maintainer: memory
+  report on the serial monitor, the eight-LED bar stepping through its
+  patterns, LD4 heartbeat. That is the check `CLAUDE.md` §9e says a lesson
+  is not finished without, and it covers the parts that had no precedent —
+  GPIOB, the polled SysTick delay, and the `wokwi-led` parts in
+  `diagram.json`. The lab's per-exercise *outcomes* (Parts 1–5) remain
+  build-verified rather than watched, as the "What the lab does" section
+  says.
