@@ -695,6 +695,15 @@ from the committed `_targets/c031c6-pins.json` and linked from every slide's
 top bar. It exists because those names are not the datasheet's (`PB0` is
 rejected; `PB0.1` works) and are visible nowhere else. The workflow's verify
 step now expects `lessons + 2` HTML files and asserts that page is present.
+
+The root also serves one PDF, `UM2953_Nucleo64_MB1717.pdf` — ST's manual for
+the real board — committed once at `projects2026_arm/_docs/` and copied
+beside the decks by the renderer, which refuses to run without it. The top
+bar links it relatively, so it opens from a clone too, and the verify step
+asserts it is in the site. It is shipped rather than linked because st.com
+did not answer from the machine that set it up. Both the page and the PDF
+were confirmed serving on 2026-09-22.
+
 Why and how are in the ARM README; the lesson change itself (the LED bar in
 lesson 04) is documented in that lesson's README.
 
