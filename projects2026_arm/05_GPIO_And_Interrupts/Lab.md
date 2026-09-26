@@ -69,12 +69,12 @@ Every value in it was **read back from a register**, not printed from the code:
   vector 21             : 0x0800023D  EXTI0_1_IRQHandler - yours
 ```
 
-**Check the first line against slide 4.** If it prints `0xEBFFFFFF`, the
+**Check the first line against slide 6.** If it prints `0xEBFFFFFF`, the
 simulator models the reset state faithfully. If it prints something else, write
 it down — that is a difference between Wokwi and silicon, and knowing where
 your simulator is lenient is part of using one.
 
-**Check the last line against slide 12.** `0x0800023D` is odd — the Thumb bit —
+**Check the last line against slide 27.** `0x0800023D` is odd — the Thumb bit —
 and `0x0800023C` is where `nm` says your handler starts.
 
 ### Step 3. Press the buttons
@@ -102,7 +102,7 @@ number?
 > the 1 kHz poll samples once a millisecond, so almost every bounce falls
 > between two samples and is never seen. Polling is a low-pass filter you get
 > for free. The interrupt shows you the truth, and then `main()` has to filter
-> it itself — the quiet-time rule on slide 16.
+> it itself — the quiet-time rule on slide 31.
 
 ---
 
@@ -116,7 +116,7 @@ In `gpio_init()`, delete:
 
 Rebuild (it builds clean) and re-upload. **Don't press anything yet.**
 
-**Guess first:** slide 4 says what PA0 is now. What does the program think
+**Guess first:** slide 6 says what PA0 is now. What does the program think
 button A is doing?
 
 > The banner says `PA0 button A : ANALOG`, and on silicon the idle level reads
@@ -182,7 +182,7 @@ Rebuild — clean — and re-upload. Watch LD4, then press **B** once.
 >
 > The first edge sets `FPR1` bit 1. The handler runs, counts, and returns —
 > but the bit is still set, so the NVIC sees line 1 still pending and
-> **tail-chains straight back into the handler** (slide 14). It never lets
+> **tail-chains straight back into the handler** (slide 29). It never lets
 > `main()` run again. The chip is not crashed; it is busier than it has ever
 > been, doing nothing useful, forever.
 >
@@ -277,7 +277,7 @@ Rebuild, re-upload, watch a few lines, then press B.
 > FPR1 bit 1 = 1
 > ```
 >
-> **EXTI saw the edge and latched it.** Hops one and two of slide 10 worked.
+> **EXTI saw the edge and latched it.** Hops one and two of slide 23 worked.
 > The pending bit is sitting there, set, and the NVIC is not letting it in,
 > because nobody enabled IRQ 5. It stays 1 forever, because the only code that
 > clears it is the handler that never runs.
@@ -339,7 +339,7 @@ Put `bar_write()` back.
 Add button **C** on **PC13**, as an interrupt. When it is pressed, send the lit
 LED home to PB0.
 
-This touches every hop of slide 10, and two of them differently from button B.
+This touches every hop of slide 23, and two of them differently from button B.
 Work through them in order:
 
 1. **Wire it.** In `diagram.json`, copy `btnB`'s part and its two connections;
@@ -349,12 +349,13 @@ Work through them in order:
    yet. Which bit of `RCC->IOPENR`?
 3. **Configure the pin.** Input, pull-up — the helpers take any port.
 4. **Select the port in EXTI.** Line 13. Which of the four `EXTICR` registers,
-   which byte in it, and which code for port C? (Slide 11.)
+   which byte in it, and which code for port C? (Slide 24 works line 13 as its
+   example — try it before you look.)
    *Try it once without this step first.* Button B worked without thinking
    about `EXTICR`; this one will not. Why?
 5. **Pick edges, clear stale pending, unmask** — the same three lines as B,
    for line 13.
-6. **Enable the right NVIC line.** Not IRQ 5. Slide 12 says which IRQ serves
+6. **Enable the right NVIC line.** Not IRQ 5. Slide 26 says which IRQ serves
    line 13, and ST's header gives it a name ending `_IRQn`.
 7. **Write the handler.** Its name comes from the same place. It serves lines
    4 **to 15**, so check `FPR1` for bit 13 — never assume which line fired.

@@ -83,6 +83,30 @@ Two files, one derived from the other:
 
 If Wokwi renames a pin, run `--refresh` and re-render; do not edit the page.
 
+### Each lesson's pins, drawn
+
+From lesson 04 on, every deck opens with two generated slides, so students see
+*where* a pin is before they meet its registers:
+
+- **The Board** — the Nucleo's headers to scale, as Wokwi lays them out, with
+  the exact header pins the lesson's `diagram.json` wires to highlighted and
+  labelled. Positions come from `_targets/c031c6-layout.json` (derived from
+  Wokwi's board file, like the pin names); *which* pins come from the lesson's
+  own `diagram.json`, so the drawing cannot disagree with the circuit.
+- **The Chip** — ports A and B as sixteen bit-cells each, in register order,
+  marked `in` / `out` / `afN` / `an` as the lesson configures them. That part
+  is course knowledge, in the `LESSONS` table of `_build/pinmap.py`.
+
+```
+python _build/pinmap.py              # after changing any diagram.json or LESSONS
+python _build/pinmap.py --refresh    # re-derive the layout facts from Wokwi
+python _build/build-slides.py        # then re-render
+```
+
+A slide opts in with a ```` ```svg ```` block whose first line is the
+generator's marker comment; only those blocks are rewritten. A new lesson needs
+an entry in `LESSONS` and the two marked blocks — copy them from lesson 09.
+
 The top bar also carries the real board's manual, **ST UM2953, STM32 Nucleo-64
 boards (MB1717)**: header pinouts, solder bridges, schematics. The pin-name
 page says what Wokwi calls a pin; the manual says what it is.

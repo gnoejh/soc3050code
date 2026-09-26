@@ -6,7 +6,7 @@
  *
  * Each pin owns a 2-bit field in MODER and PUPDR at bit (pin * 2), a 4-bit
  * field in AFR[pin / 8] at bit ((pin % 8) * 4), and one bit in IDR, ODR and
- * BSRR.  Lesson 05, slide 3 has the table.  The port's clock gate in
+ * BSRR.  Lesson 05, slide 4 has the table.  The port's clock gate in
  * RCC->IOPENR is NOT opened here - that is the caller's job, done once, first.
  */
 #ifndef GPIO_H
@@ -40,7 +40,7 @@ static inline void pin_af(GPIO_TypeDef *port, uint32_t pin, uint32_t af)
     pin_mode(port, pin, MODE_AF);
 }
 
-/* BSRR: one store, no read - lesson 05, slide 5. */
+/* BSRR: one store, no read - lesson 05, slides 12-13. */
 static inline void pin_high(GPIO_TypeDef *port, uint32_t pin) { port->BSRR = 1u << pin; }
 static inline void pin_low (GPIO_TypeDef *port, uint32_t pin) { port->BSRR = 1u << (pin + 16u); }
 
@@ -51,7 +51,7 @@ static inline uint32_t pin_read(GPIO_TypeDef *port, uint32_t pin)
 
 /* Is this exception's vector still the weak default?  A strong handler with
  * the exact CMSIS name replaces it at link time; a misspelt one does not, and
- * nothing else will tell you (lesson 05, slide 15).  exc = 16 + IRQn. */
+ * nothing else will tell you (lesson 05, slide 30).  exc = 16 + IRQn. */
 extern void (* const vectors[])(void);   /* startup.c */
 void Default_Handler(void);              /* startup.c */
 

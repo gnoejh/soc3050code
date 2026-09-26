@@ -13,7 +13,7 @@ and that difference is the lesson's measurement.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 19 slides (the renderer counts 20) — rendered to `_slides/05_GPIO_And_Interrupts.html` |
+| `Slide.md` | the lecture, a title and 34 slides in five parts (the renderer counts 35), every register explained with worked values — rendered to `_slides/05_GPIO_And_Interrupts.html` |
 | `Lab.md` | the lab: eight parts, ~2 hours, guided, **nothing handed in** |
 | `Main.c` | the lab program — GPIO helpers, the debouncer, the EXTI setup, the handler, and a banner that reads the whole configuration back from the registers |
 | `build.bat` | one command; `LIBS=retarget` |
@@ -33,7 +33,7 @@ build.bat        # FLASH 7156 B / 32 KB, RAM 2008 B / 12 KB, zero warnings
 simulate.bat     # rebuilds, then opens wokwi.com on the Nucleo-C031C6
 ```
 
-Slides 12, 13 and 15 quote this build's addresses and sizes literally — vector
+Slides 27, 28 and 30 quote this build's addresses and sizes literally — vector
 21 = `0x0800023D`, the handler at `0x0800023c`, FLASH 7156 B against 7120 B
 misspelt — so **if `Main.c` changes, re-derive them** (`objdump -s -j
 .isr_vector`, `nm`, `objdump --disassemble=EXTI0_1_IRQHandler`).
@@ -84,7 +84,7 @@ parts.
 
 - Builds clean, zero warnings, with the vendored toolchain.
 - **Not yet watched running in Wokwi.** Every runtime outcome in `Slide.md`
-  slide 17 and `Lab.md` — the edge counts, the Part 1 analog read, the Part 3
+  slide 32 and `Lab.md` — the edge counts, the Part 1 analog read, the Part 3
   freeze, the Part 5 `FPR1` readout, whether Wokwi reports `MODER` at reset as
   `0xEBFFFFFF` — is predicted from the silicon's documented behaviour and
   Wokwi's documentation, and the text says so where it matters. Per `CLAUDE.md`
