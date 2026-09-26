@@ -1,0 +1,381 @@
+<title>UART and a Python Host: Talking to the Board, Properly</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">UART and a Python Host: Talking to the Board, Properly</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>UART and a Python Host: Talking to the Board, Properly</h1>
+<h2>SOC3050 ARM Edition — Part 1, Instances</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>The serial port you have printed to since lesson 04 — now in both<br>directions, driven by interrupts, and spoken to by a program.</strong></p>
+<p>Until now <code>printf</code> stopped the CPU for every character, and nothing ever went<br><em>into</em> the board. This week the UART gets an interrupt each way, a protocol a<br>program can trust, and a partner on the PC: <code>host.py</code>, the first Python in the<br>course. From here on, the board is half of a system.</p>
+<p>Figures marked <strong>measured</strong> come from running this lesson&#x27;s firmware in<br>Renode (the harness of lesson 07, slide 20) and feeding its output to<br><code>host.py</code>. Not yet watched in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: The Model, Fourth Instance</h2>
+<table><thead><tr><th>Model slot</th><th>USART2</th></tr></thead><tbody><tr><td><strong>clock gate</strong></td><td><code>RCC-&gt;APBENR1</code> <code>USART2EN</code></td></tr><tr><td><strong>pins</strong></td><td>PA2 (TX), PA3 (RX), alternate function 1</td></tr><tr><td><strong>control</strong></td><td><code>CR1</code>: <code>UE</code>, <code>TE</code>, <code>RE</code>, and the two interrupt enables <code>RXNEIE</code>, <code>TXEIE</code></td></tr><tr><td><strong>status</strong></td><td><code>ISR</code>: <code>RXNE</code> (a byte arrived), <code>TXE</code> (room to send), <code>ORE</code> (overrun)</td></tr><tr><td><strong>data</strong></td><td><code>RDR</code> in, <code>TDR</code> out</td></tr><tr><td><strong>event</strong></td><td><code>USART2_IRQn</code> = 28, one vector for everything</td></tr><tr><td><strong>rate</strong></td><td><code>BRR</code> = 48 000 000 / 115 200 = 416.67 → <strong>417</strong></td></tr></tbody></table>
+<p><code>BRR = 417</code> gives 115 108 baud, 0.08% slow — far inside the few percent a<br>UART tolerates, because the receiver resynchronises on every start bit. The<br>banner prints <code>BRR = 417</code> read back from the register (<strong>measured</strong>).</p>
+<p>Every row is a slot you already know. That is the whole point of Part 0&#x27;s<br>model: the fourth peripheral is not a fourth new thing.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: One Byte on the Wire</h2>
+<figure class="diagram"><svg viewBox="0 0 580 150" role="img" aria-label="UART frame: idle high, start bit low, eight data bits LSB first, stop bit high">
+  <path class="wire" d="M20 40 H70 V100 H120 V40 H170 V100 H220 V40 H270 V100 H320 V40 H370 V40 H420 V100 H470 V100 H520 V40 H570"/>
+  <text x="45" y="30" text-anchor="middle" class="lbl">idle</text>
+  <text x="95" y="125" text-anchor="middle" class="hi">start</text>
+  <text x="145" y="125" text-anchor="middle" class="mono lbl">b0</text>
+  <text x="195" y="125" text-anchor="middle" class="mono lbl">b1</text>
+  <text x="245" y="125" text-anchor="middle" class="mono lbl">b2</text>
+  <text x="295" y="125" text-anchor="middle" class="mono lbl">b3</text>
+  <text x="345" y="125" text-anchor="middle" class="mono lbl">b4</text>
+  <text x="395" y="125" text-anchor="middle" class="mono lbl">b5</text>
+  <text x="445" y="125" text-anchor="middle" class="mono lbl">b6</text>
+  <text x="495" y="125" text-anchor="middle" class="mono lbl">b7</text>
+  <text x="545" y="125" text-anchor="middle" class="hi">stop</text>
+  <text x="290" y="146" text-anchor="middle" class="lbl">10 bit-times per byte; least significant bit first</text>
+</svg></figure>
+<p>Ten bits per byte at 115 200 bits per second is <strong>11 520 bytes a second —<br>86.8 µs per byte</strong>. That one number drives both halves of this lesson:</p>
+<ul><li><strong>Sending:</strong> a 90-character line takes ~8 ms. A polled <code>printf</code> holds the CPU for all of it.</li><li><strong>Receiving:</strong> the UART holds <strong>one</strong> received byte. The next arrives 86.8 µs later and overwrites it unless software has read it — the <strong>overrun</strong>, <code>ORE</code>.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3: Why Receive Must Be an Interrupt</h2>
+<p>Polling would work only if every path through the program came back to the<br>UART within 86.8 µs. In lesson 07&#x27;s system one <code>printf</code> holds a task for 8 ms,<br>and the hog never comes back at all.</p>
+<p>So receive becomes a producer and a consumer:</p>
+<figure class="diagram"><svg viewBox="0 0 580 150" role="img" aria-label="RX path: UART RXNE interrupt puts each byte in a kernel queue; the protocol task blocks on the queue">
+  <defs><marker id="u3" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="10" y="45" width="90" height="44" rx="5"/>
+  <text x="55" y="65" text-anchor="middle" class="mono">RDR</text>
+  <text x="55" y="81" text-anchor="middle" class="lbl">1 byte</text>
+  <path class="wire" d="M100 67 H130" marker-end="url(#u3)"/>
+  <rect class="hifill" x="134" y="40" width="150" height="54" rx="5"/>
+  <text x="209" y="60" text-anchor="middle" class="mono">USART2_IRQHandler</text>
+  <text x="209" y="78" text-anchor="middle" class="lbl">priority 1, every 86.8 us</text>
+  <path class="wire" d="M284 67 H314" marker-end="url(#u3)"/>
+  <rect class="reg" x="318" y="45" width="110" height="44" rx="5"/>
+  <text x="373" y="65" text-anchor="middle" class="mono">os_queue</text>
+  <text x="373" y="81" text-anchor="middle" class="lbl">64 bytes</text>
+  <path class="wire" d="M428 67 H458" marker-end="url(#u3)"/>
+  <rect class="box" x="462" y="45" width="110" height="44" rx="5"/>
+  <text x="517" y="65" text-anchor="middle" class="mono">task_proto</text>
+  <text x="517" y="81" text-anchor="middle" class="lbl">blocked: 0% CPU</text>
+  <text x="290" y="130" text-anchor="middle" class="lbl">The deadline moves from 87 us to "before 64 bytes pile up" — 5.5 ms.</text>
+</svg></figure>
+<p>The ISR meets the hard 86.8 µs deadline with a few dozen instructions. The<br>queue turns it into a soft one: the task only has to catch up before 64 bytes<br>accumulate. And while nothing arrives, the protocol task costs <strong>nothing</strong> —<br>it is blocked in <code>os_queue_get()</code> (lesson 07, slide 15).</p>
+<p><strong>Measured:</strong> 77 bytes typed back to back — <code>rx overruns 0, rx dropped 0</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: One Interrupt, Three Jobs</h2>
+<pre class="lang-c"><code>void USART2_IRQHandler(void)
+{
+    uint32_t isr = USART2-&gt;ISR;
+    if (isr &amp; USART_ISR_ORE) {                /* overrun             */
+        USART2-&gt;ICR = USART_ICR_ORECF;        /* clear: write 1, ICR */
+        stats.rx_overruns++;
+    }
+    if (isr &amp; USART_ISR_RXNE_RXFNE) {         /* a byte arrived      */
+        uint8_t c = (uint8_t)USART2-&gt;RDR;     /* reading clears RXNE */
+        if (!os_queue_put_from_isr(&amp;rx_queue, &amp;c)) stats.rx_dropped++;
+    }
+    if ((USART2-&gt;CR1 &amp; TXEIE) &amp;&amp; (isr &amp; USART_ISR_TXE_TXFNF)) { ... }
+}</code></pre>
+<p>Count the ways a flag is cleared in this course so far:</p>
+<table><thead><tr><th>Flag</th><th>How</th><th>Lesson</th></tr></thead><tbody><tr><td>EXTI <code>FPR1</code></td><td>write 1 to it</td><td>05</td></tr><tr><td>TIM <code>UIF</code></td><td>write <strong>0</strong> to it</td><td>06</td></tr><tr><td>TIM <code>CC1IF</code></td><td>read <code>CCR1</code></td><td>06</td></tr><tr><td>USART <code>RXNE</code> / <code>TXE</code></td><td>read <code>RDR</code> / write <code>TDR</code></td><td>08</td></tr><tr><td>USART <code>ORE</code></td><td>write 1 to a <strong>different</strong> register, <code>ICR</code></td><td>08</td></tr></tbody></table>
+<p>Five conventions on one chip. There is no rule to memorise — only the habit:<br><strong>for every flag, look up how it clears.</strong> The penalty for guessing is an<br>interrupt that never stops.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Transmit — a Lock-Free Ring</h2>
+<p>Sending goes the other way: tasks produce, the interrupt consumes.</p>
+<pre class="lang-c"><code>static uint8_t           tx_ring[256];
+static volatile uint16_t tx_head;   /* written ONLY by tasks (producer) */
+static volatile uint16_t tx_tail;   /* written ONLY by the ISR (consumer) */
+
+static void tx_put(uint8_t c)
+{
+    uint16_t next = (tx_head + 1) % 256;
+    while (next == tx_tail) { os_delay(1); }    /* full: let the ISR drain */
+    tx_ring[tx_head] = c;                        /* 1. the data            */
+    tx_head = next;                              /* 2. THEN publish it     */
+}</code></pre>
+<p>No mutex, no masked interrupts — because <strong>each index has exactly one<br>writer</strong>. That is lesson 03 slide 7&#x27;s safe case, applied twice: tasks read<br><code>tail</code> and write <code>head</code>; the ISR reads <code>head</code> and writes <code>tail</code>. Neither can<br>catch the other half-way.</p>
+<p>Two details carry the correctness:</p>
+<ul><li><strong>Data before index.</strong> If <code>head</code> moved first, the ISR could send a slot that has not been filled yet.</li><li><strong>One slot always empty.</strong> <code>head == tail</code> means <em>empty</em>; if the ring could fill completely, <em>full</em> would look identical.</li></ul>
+<p>The RX side uses a kernel queue <em>with</em> locking, and the TX side a ring<br><em>without</em> — on purpose, so you have seen both.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: <code>TXEIE</code> — On Only While There Is Work</h2>
+<p><code>TXE</code> means &quot;the transmit register is empty&quot;. When the UART is idle it is<br>empty <strong>all the time</strong>. So a permanently enabled <code>TXEIE</code> would interrupt<br>continuously:</p>
+<pre class="lang-c"><code>if (tx_tail != tx_head) {
+    USART2-&gt;TDR = tx_ring[tx_tail];           /* send one, clears TXE   */
+    tx_tail = (tx_tail + 1) % 256;
+} else {
+    USART2-&gt;CR1 &amp;= ~USART_CR1_TXEIE_TXFNFIE;  /* nothing left: stop     */
+}</code></pre>
+<p>and <code>_write()</code> switches it back on after filling the ring.</p>
+<p><strong>Measured</strong>, with the <code>else</code> line removed: <strong>nothing is printed at all — not<br>even the banner.</strong> The first <code>_write()</code> enabled <code>TXEIE</code>; the ISR sent the<br>first character, found the ring empty, and was called again, and again, at<br>priority 1, above everything that could ever put more data in. Lesson 05&#x27;s<br>endless interrupt, in a new costume.</p>
+<p><code>_write()</code> enables <code>TXEIE</code> with a read-modify-write of <code>CR1</code> — which the ISR<br>also writes. So that one line is a <strong>critical section</strong>, two instructions long.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Replacing <code>printf</code>&#x27;s Back End — Weak Again</h2>
+<p><code>printf</code> has called <code>_write()</code> since lesson 04, and <code>_lib/retarget.c</code>&#x27;s<br>version polls. This lesson&#x27;s <code>uart.c</code> defines its own. How do both link?</p>
+<pre class="lang-c"><code>/* _lib/retarget.c */
+__attribute__((weak)) int _write(int fd, const char *buf, int len) { ...polled... }
+
+/* 08_UART_And_Python_Host/uart.c */
+int _write(int fd, const char *buf, int len) { ...ring buffer... }</code></pre>
+<p><strong>The same mechanism as the vector table</strong> (lesson 05, slide 15): a strong<br>definition beats a weak one at link time. The lesson keeps <code>retarget.c</code>&#x27;s<br>syscall stubs and replaces exactly one function. <code>printf</code> does not know<br>anything changed — it now returns as soon as the text is in the ring, not<br>when the last bit has left the pin.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Two Tasks, One Serial Port</h2>
+<p>The telemetry task and the protocol task both print. Without coordination,<br>two lines can interleave character by character — and a line that is half<br>one frame and half another fails its checksum on the PC.</p>
+<p>Lesson 07&#x27;s mutex makes each line atomic:</p>
+<pre class="lang-c"><code>static void say(const char *fmt, ...)
+{
+    va_list ap;  va_start(ap, fmt);
+    os_mutex_lock(&amp;print_lock);
+    vprintf(fmt, ap);
+    os_mutex_unlock(&amp;print_lock);
+    va_end(ap);
+}</code></pre>
+<p>There is a second reason: newlib-nano&#x27;s <code>printf</code> keeps state in one shared<br>structure and is <strong>not re-entrant</strong>. Two tasks inside it at once can corrupt<br>each other&#x27;s output even when the timing looks harmless.</p>
+<p>The lesson makes no measured claim here: in Renode the UART sends<br>instantly, so the window never opened. Lab Part 5 asks you to reason out when<br>it would.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Lines — for People and for Programs</h2>
+<p>The protocol task collects bytes until <code>\r</code> or <code>\n</code>, then looks at the first<br>character:</p>
+<table><thead><tr><th>Line starts with</th><th>It is</th><th>Example</th><th>Reply</th></tr></thead><tbody><tr><td>anything else</td><td>a <strong>shell command</strong> from a person</td><td><code>led 170</code></td><td><code>bar = 0xAA</code></td></tr><tr><td><code>$</code></td><td>a <strong>frame</strong> from a program</td><td><code>$LED,85*6C</code></td><td><code>$ACK,LED,85*09</code></td></tr></tbody></table>
+<p>One UART, two audiences, and the difference is deliberate. A person wants<br>words and forgiveness. A program wants a format it can parse and <strong>proof the<br>line arrived intact</strong> — because a serial line picks up noise, drops bytes when<br>a buffer overflows, and gets cut in half when a cable is pulled.</p>
+<p>A line longer than 63 characters is thrown away whole, rather than acted on in<br>part.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: The Frame — Borrowed From GPS</h2>
+<pre><code>$LED,170*57
+ \_____/ \/
+  body   checksum: XOR of every byte of the body, two hex digits</code></pre>
+<p>This is <strong>NMEA 0183</strong>, the sentence format GPS receivers have printed since<br>the 1980s. Worked by hand:</p>
+<pre><code>L  E  D  ,  1  7  0
+4C 45 44 2C 31 37 30    XOR all seven  -&gt;  0x57</code></pre>
+<p><code>host.py --selftest</code> checks its own arithmetic against a real GPS sentence<br>(<code>$GPGGA,...*47</code>) — so the checksum is <em>the</em> NMEA checksum, not merely one<br>that agrees with itself.</p>
+<p>What XOR catches, and what it does not:</p>
+<ul><li><strong>Any single flipped bit</strong> — <code>$LED,171*57</code> (<code>0</code> → <code>1</code>, one bit) is rejected: the checksum comes out <code>56</code>.</li><li><strong>Not</strong> two errors in the same bit position of different bytes — they cancel. A CRC catches those; MAVLink, the drone protocol of lessons 13–14, uses one.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 11: Measured — a Session</h2>
+<p>Typed into the running firmware (Renode), one line at a time, and what came<br>back:</p>
+<pre><code>help            -&gt; commands: led &lt;0-255&gt;   rate &lt;20-5000 ms&gt;   quiet   stats   help
+led 170         -&gt; bar = 0xAA
+$LED,85*6C      -&gt; $ACK,LED,85*09
+$LED,85*00      -&gt; $NAK,CHECKSUM*65          (damaged on purpose)
+$LED,85         -&gt; $NAK,NOSTAR*7D            (no checksum at all)
+bogus           -&gt; unknown command &#x27;bogus&#x27; - try help
+$RATE,250*19    -&gt; $ACK,RATE,250*7C
+$STAT*12        -&gt; $STAT,71,3,2,0,0,0*25     (71 bytes in, 3 frames ok, 2 bad)</code></pre>
+<p>and, interleaved with all of it, telemetry — first once a second, then every<br>250 ms after the <code>RATE</code> frame:</p>
+<pre><code>$TEL,1000,0,500,0,0*75
+$TEL,2000,1,1000,0,0*43
+$TEL,2250,2,875,0,0*7C</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 12: <code>host.py</code> — the Other End</h2>
+<p>A 230-line Python program with no dependencies beyond pyserial:</p>
+<table><thead><tr><th>Command</th><th>Does</th></tr></thead><tbody><tr><td><code>host.py --selftest</code></td><td>checks the checksum against the GPS sentence</td></tr><tr><td><code>host.py --frame &quot;LED,170&quot;</code></td><td>prints <code>$LED,170*57</code> — to paste into Wokwi</td></tr><tr><td><code>host.py --file capture.txt</code></td><td>checks and charts a saved log</td></tr><tr><td><code>host.py --port rfc2217://localhost:4000</code></td><td>live, through the Wokwi VS Code extension</td></tr><tr><td><code>host.py --port COM5 --send &quot;RATE,100&quot;</code></td><td>live, on a real Nucleo</td></tr><tr><td><code>host.py --demo</code></td><td>no board at all: fake telemetry, with a damaged and a lost line</td></tr></tbody></table>
+<p><strong>Why three routes?</strong> Wokwi in a browser keeps its serial port inside the<br>browser; nothing on your PC can open it. So the browser route is <strong>copy the<br>serial monitor&#x27;s text into a file</strong>. The VS Code extension can forward the port<br>as a TCP server (<code>rfc2217ServerPort = 4000</code> in this lesson&#x27;s <code>wokwi.toml</code>), and<br>pyserial speaks that protocol natively — the live route. A real board is just<br><code>COM5</code>.</p>
+<p>The protocol being printable is what makes the copy-and-paste route possible<br>at all. A binary protocol could not survive a text box.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Measured — <code>host.py</code> Reads the Board</h2>
+<p>The session on slide 11, saved to a file and given to <code>host.py --file</code>:</p>
+<pre><code>t=   1.00s seq=0     tri= 500  A=0 B=0  |####################
+FRAME ACK,LED,85
+FRAME NAK,CHECKSUM
+FRAME NAK,NOSTAR
+FRAME ACK,RATE,250
+t=   2.00s seq=1     tri=1000  A=0 B=0  |########################################
+t=   2.25s seq=2     tri= 875  A=0 B=0  |###################################
+FRAME STAT,71,3,2,0,0,0
+t=   2.50s seq=3     tri= 750  A=0 B=0  |##############################
+
+frames good 9, bad 0, lost (sequence gaps) 0, other lines 11</code></pre>
+<p><strong>Every frame the C code built passed the Python check</strong>, and every frame the<br>Python code built (<code>LED</code>, <code>RATE</code>, <code>STAT</code>) was accepted by the C check. Two<br>implementations, two languages, one arithmetic — each testing the other.</p>
+<p><code>--demo</code> shows the failures: a line altered in transit is counted <strong>bad</strong>, and<br>the sequence number it carried never arrives intact, so it is <strong>also</strong> a gap.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: The Silent-Failure Checklist, UART Edition</h2>
+<table><thead><tr><th>Forgot</th><th>Symptom</th></tr></thead><tbody><tr><td><code>USART2EN</code> in <code>APBENR1</code></td><td>nothing sent, nothing received</td></tr><tr><td>AF1 on PA2/PA3</td><td>UART works internally; the pins carry nothing</td></tr><tr><td><code>BRR</code> for the wrong clock</td><td>garbage characters — the most recognisable UART fault</td></tr><tr><td>clearing <code>ORE</code></td><td>reception stops after the first overrun</td></tr><tr><td>turning <code>TXEIE</code> off when empty</td><td>interrupt storm; <strong>measured: not even the banner</strong></td></tr><tr><td>blocking in the ISR</td><td>impossible to do right: the ISR version of <code>put</code> never blocks</td></tr><tr><td>a lock around printing</td><td>lines interleave; checksums fail on the PC</td></tr></tbody></table>
+<p>The last two are design, not configuration: which context may wait, and which<br>data is shared. Lessons 03 and 07 are why you can reason about them.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: What Carries Forward</h2>
+<ul><li><strong>Every later peripheral that moves a stream of data looks like this:</strong> an interrupt that feeds or drains a buffer, and a task that blocks. Lesson 10 replaces the per-byte interrupt with <strong>DMA</strong> — one interrupt per block.</li><li><strong>The board now has a partner.</strong> Lesson 09 sends real sensor readings in <code>$TEL</code> frames and <code>host.py</code> plots them. Part 3 swaps this protocol for <strong>MAVLink</strong>, and <code>host.py</code> for mission software that flies a drone.</li><li><strong>Checked data, not trusted data.</strong> A frame that fails its checksum is thrown away and counted — never half-used. That rule scales from a text line to a flight controller.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:08_UART_And_Python_Host', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:08_UART_And_Python_Host') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

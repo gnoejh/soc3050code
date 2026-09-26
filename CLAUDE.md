@@ -18,7 +18,7 @@ Self-contained: the AVR toolchain and the SimulIDE simulator are vendored under
 ```
 projects/             53 legacy lesson folders (previous edition, SimulIDE 1.1.0-SR1)
 projects2026_avr/     intro + 24 curated lessons, SimulIDE 1.1.0-SR2  <-- frozen, complete
-projects2026_arm/     STM32 edition, Part 0 + lesson 04  <-- live; owns the website
+projects2026_arm/     STM32 edition, Part 0 + Part 1 (04-09)  <-- live; owns the website
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _game, _eeprom, _pwm ...
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
 tools/arm-toolchain/  arm-none-eabi-gcc 15.2.1 + gdb  <-- ARM edition, see below
@@ -227,6 +227,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-14 | GitHub Pages switched to the ARM edition; the AVR decks are no longer published. Colab link added to the ARM decks. See section 9g. |
 | 2026-09-19 | ARM toolchain vendored under `tools/`; ARM Part 1 began with lesson 04. Nothing in the AVR tree touched. See section 9h. |
 | 2026-09-22 | ARM lesson 04 grew an eight-LED bar students program; the site gained a generated board pin map. Nothing in the AVR tree touched. See the end of section 9g. |
+| 2026-09-26 | ARM syllabus agreed (20 lessons, Game → Drone → Robot) and ARM Part 1 written: lessons 05–09, all zero warnings; 06–09 partly run in Renode, none yet watched in Wokwi. Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "The syllabus". |
 
 ## 9. The system pass (2026-09-05)
 

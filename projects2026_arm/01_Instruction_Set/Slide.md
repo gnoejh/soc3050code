@@ -224,7 +224,7 @@ around it — which is why `PORTB |= (1 << 0)` was something you never had to
 think about. **Cortex-M0+ has no `sbi`.** Every peripheral register here is
 ordinary memory at an ordinary address, reached the ordinary way. The
 convenience comes back as *hardware* instead: STM32's GPIO has a set/reset
-register, `BSRR`, that turns a bit-set back into one `str` — lesson 02.
+register, `BSRR`, that turns a bit-set back into one `str` — lesson 05.
 
 ### Crossing the boundary, on this chip
 

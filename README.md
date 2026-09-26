@@ -6,10 +6,13 @@ repository and it works, with nothing to install.
 
 Two editions live here. **`projects2026_avr/` (ATmega128) is finished and
 frozen; `projects2026_arm/` (STM32) is the live one**, and it is what
-<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition is early:
-four theory lessons plus lesson 04, the first that builds (with the vendored
-`tools/arm-toolchain/`) and runs in the browser on Wokwi's Nucleo-C031C6. The
-AVR tree is still the larger body of working lessons.
+<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition has its
+syllabus (20 lessons, ending in games, drones and robots) and Part 1 written:
+four theory lessons, then lessons 04–09 — startup code, GPIO and interrupts,
+timers, a from-scratch RTOS, an interrupt UART with a Python host, and the
+ADC, I²C and SPI buses. They build with the vendored `tools/arm-toolchain/`
+and run in the browser on Wokwi's Nucleo-C031C6; 05–09 are not yet watched
+there. The AVR tree is still the larger body of verified lessons.
 
 ---
 
@@ -52,18 +55,20 @@ There are three. They are independent; none imports from another.
 |---|---|---|---|
 | Chip | STM32C031 (Cortex-M0+) | ATmega128 | ATmega128 |
 | Status | **live, being written** | finished, frozen | archived |
-| Lessons | 4 (Part 0, theory only) | an introduction plus 24 | 53, with overlaps |
-| Build | none yet — `arm-none-eabi-gcc` by hand | one shared engine | per-project scripts |
-| Run it | Renode / Wokwi, local | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
-| Slides | all 4, **published online** | all 25, offline only | 34 of 53 |
+| Lessons | 10 of 20 (Part 0 theory + Part 1, 04–09) | an introduction plus 24 | 53, with overlaps |
+| Build | one shared engine, vendored gcc | one shared engine | per-project scripts |
+| Run it | Wokwi in the browser | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
+| Slides | all 10, **published online** | all 25, offline only | 34 of 53 |
 
 **To teach or study a topic today, start in `projects2026_avr/`** — see
 [its README](projects2026_avr/README.md) for the lesson list and the board map.
 It is frozen, not abandoned: everything in it builds, simulates and is verified.
 
-**`projects2026_arm/`** is where new work goes. Its Part 0 is four decks on the
-programmer's model, the instruction set, the toolchain and concurrency, with no
-`Main.c` yet on purpose — see [its README](projects2026_arm/README.md).
+**`projects2026_arm/`** is where new work goes. Part 0 is four theory decks on
+the programmer's model, the instruction set, the toolchain and concurrency;
+Part 1 (04–09) builds and runs, each lesson with a `Slide.md` and a `Lab.md`.
+The syllabus and each lesson's verification status are in
+[its README](projects2026_arm/README.md).
 
 `projects/` is left in place because a lot of supporting material still points
 at it, but it is not being maintained — see
@@ -129,7 +134,7 @@ a clone, because the compiler and SimulIDE are vendored under `tools/`.
 ## What is included
 
 ```
-projects2026_arm/     the live STM32 edition - Part 0 + lesson 04, owns the website
+projects2026_arm/     the live STM32 edition - Part 0 + Part 1 (04-09), owns the website
 projects2026_avr/     the finished AVR edition: 25 lessons + the shared board
 projects/             the archived 53-project edition
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _eeprom, _pwm, _interrupt

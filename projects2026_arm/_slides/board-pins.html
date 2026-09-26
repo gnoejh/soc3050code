@@ -73,15 +73,15 @@
   <h2>MCU pins</h2>
   <table>
     <tr><th>MCU pin</th><th>Names Wokwi accepts</th><th>Arduino header</th><th>Notes for this course</th></tr>
-<tr><td><b>PA0</b></td><td><code>PA0</code> <code>A0</code></td><td>A0</td><td></td></tr>
-<tr><td><b>PA1</b></td><td><code>PA1</code> <code>A1</code></td><td>A1</td><td></td></tr>
+<tr><td><b>PA0</b></td><td><code>PA0</code> <code>A0</code></td><td>A0</td><td>Button A in lessons 05, 07, 08. Also ADC channel 0 - analog pin A0 on the header.</td></tr>
+<tr><td><b>PA1</b></td><td><code>PA1</code> <code>A1</code></td><td>A1</td><td>Button B in lessons 05, 07, 08 (EXTI line 1 in 05). Line 1 is shared by PA1, PB1, PC1... - only one can interrupt.</td></tr>
 <tr><td><b>PA2</b></td><td><code>PA2</code></td><td></td><td>USART2 TX, alternate function 1 - the serial monitor that printf writes to. Taken.</td></tr>
-<tr><td><b>PA3</b></td><td><code>PA3</code></td><td></td><td>USART2 RX - the serial monitor. Taken.</td></tr>
-<tr><td><b>PA4</b></td><td><code>PA4</code> <code>A2</code></td><td>A2</td><td></td></tr>
-<tr><td><b>PA5</b></td><td><code>PA5</code> <code>D13</code></td><td>D13</td><td>LD4, the on-board green LED. Lesson 04 uses it as the heartbeat.</td></tr>
-<tr><td><b>PA6</b></td><td><code>PA6</code> <code>D12</code></td><td>D12</td><td></td></tr>
-<tr><td><b>PA7</b></td><td><code>PA7</code> <code>D11</code></td><td>D11</td><td></td></tr>
-<tr><td><b>PA8</b></td><td><code>PA8</code></td><td></td><td></td></tr>
+<tr><td><b>PA3</b></td><td><code>PA3</code></td><td></td><td>USART2 RX - the serial monitor, and lesson 08&#x27;s input. Taken.</td></tr>
+<tr><td><b>PA4</b></td><td><code>PA4</code> <code>A2</code></td><td>A2</td><td>Potentiometer in lesson 09: ADC channel 4 (analog pin A2).</td></tr>
+<tr><td><b>PA5</b></td><td><code>PA5</code> <code>D13</code></td><td>D13</td><td>LD4, the on-board green LED, and also SPI1 SCK (AF0, Arduino D13) - in lesson 09 LD4 flickers with the SPI clock.</td></tr>
+<tr><td><b>PA6</b></td><td><code>PA6</code> <code>D12</code></td><td>D12</td><td>Servo PWM in lesson 06: TIM3_CH1, alternate function 1.</td></tr>
+<tr><td><b>PA7</b></td><td><code>PA7</code> <code>D11</code></td><td>D11</td><td>HC-SR04 echo in lesson 06 (TIM14_CH1, AF4); SPI1 MOSI to the MAX7219 in lesson 09 (AF0). Same pin, different AF per lesson.</td></tr>
+<tr><td><b>PA8</b></td><td><code>PA8</code></td><td></td><td>HC-SR04 trigger in lesson 06: a plain GPIO output, 10 us pulse.</td></tr>
 <tr><td><b>PA9</b></td><td><code>PA9</code> <code>D8</code></td><td>D8</td><td></td></tr>
 <tr><td><b>PA10</b></td><td><code>PA10</code> <code>D2</code></td><td>D2</td><td></td></tr>
 <tr><td><b>PA11</b></td><td><code>PA11</code> <code>A4</code></td><td>A4</td><td></td></tr>
@@ -89,16 +89,16 @@
 <tr><td><b>PA13</b></td><td><code>PA13</code></td><td></td><td>SWDIO - the ST-LINK debug line on real hardware. Leave it alone.</td></tr>
 <tr><td><b>PA14</b></td><td><code>PA14</code></td><td></td><td>SWCLK - the ST-LINK debug line on real hardware. Leave it alone.</td></tr>
 <tr><td><b>PA15</b></td><td><code>PA15</code> <code>D7</code></td><td>D7</td><td></td></tr>
-<tr><td><b>PB0</b></td><td><code>PB0.1</code> <code>PB0.2</code> <code>D10</code></td><td>D10</td><td>LED bar, bit 0, in lesson 04. Note there is no plain PB0 - see the trap list.</td></tr>
-<tr><td><b>PB1</b></td><td><code>PB1</code> <code>A3</code></td><td>A3</td><td>LED bar, bit 1, in lesson 04.</td></tr>
-<tr><td><b>PB2</b></td><td><code>PB2</code></td><td></td><td>LED bar, bit 2, in lesson 04.</td></tr>
-<tr><td><b>PB3</b></td><td><code>PB3</code> <code>D3</code></td><td>D3</td><td>LED bar, bit 3, in lesson 04.</td></tr>
-<tr><td><b>PB4</b></td><td><code>PB4</code> <code>D5</code></td><td>D5</td><td>LED bar, bit 4, in lesson 04.</td></tr>
-<tr><td><b>PB5</b></td><td><code>PB5</code> <code>D6</code></td><td>D6</td><td>LED bar, bit 5, in lesson 04.</td></tr>
-<tr><td><b>PB6</b></td><td><code>PB6</code> <code>D1</code></td><td>D1</td><td>LED bar, bit 6, in lesson 04.</td></tr>
-<tr><td><b>PB7</b></td><td><code>PB7</code> <code>D0</code></td><td>D0</td><td>LED bar, bit 7, in lesson 04.</td></tr>
-<tr><td><b>PB8</b></td><td><code>PB8</code> <code>D15</code></td><td>D15</td><td></td></tr>
-<tr><td><b>PB9</b></td><td><code>PB9</code> <code>D14</code></td><td>D14</td><td></td></tr>
+<tr><td><b>PB0</b></td><td><code>PB0.1</code> <code>PB0.2</code> <code>D10</code></td><td>D10</td><td>LED bar, bit 0, in lessons 04-08; MAX7219 chip select in lesson 09. Note there is no plain PB0 - see the trap list.</td></tr>
+<tr><td><b>PB1</b></td><td><code>PB1</code> <code>A3</code></td><td>A3</td><td>LED bar, bit 1, in lessons 04-08.</td></tr>
+<tr><td><b>PB2</b></td><td><code>PB2</code></td><td></td><td>LED bar, bit 2, in lessons 04-08.</td></tr>
+<tr><td><b>PB3</b></td><td><code>PB3</code> <code>D3</code></td><td>D3</td><td>LED bar, bit 3, in lessons 04-08.</td></tr>
+<tr><td><b>PB4</b></td><td><code>PB4</code> <code>D5</code></td><td>D5</td><td>LED bar, bit 4, in lessons 04-08.</td></tr>
+<tr><td><b>PB5</b></td><td><code>PB5</code> <code>D6</code></td><td>D6</td><td>LED bar, bit 5, in lessons 04-08.</td></tr>
+<tr><td><b>PB6</b></td><td><code>PB6</code> <code>D1</code></td><td>D1</td><td>LED bar, bit 6, in lessons 04-08.</td></tr>
+<tr><td><b>PB7</b></td><td><code>PB7</code> <code>D0</code></td><td>D0</td><td>LED bar, bit 7, in lessons 04-08.</td></tr>
+<tr><td><b>PB8</b></td><td><code>PB8</code> <code>D15</code></td><td>D15</td><td>I2C1 SCL in lesson 09 (AF6, open drain) - the MPU6050.</td></tr>
+<tr><td><b>PB9</b></td><td><code>PB9</code> <code>D14</code></td><td>D14</td><td>I2C1 SDA in lesson 09 (AF6, open drain) - the MPU6050.</td></tr>
 <tr><td><b>PB10</b></td><td><code>PB10</code> <code>D4</code></td><td>D4</td><td></td></tr>
 <tr><td><b>PB11</b></td><td><code>PB11</code></td><td></td><td></td></tr>
 <tr><td><b>PB12</b></td><td><code>PB12.1</code> <code>PB12.2</code></td><td></td><td></td></tr>
@@ -107,7 +107,7 @@
 <tr><td><b>PB15</b></td><td><code>PB15</code></td><td></td><td></td></tr>
 <tr><td><b>PC6</b></td><td><code>PC6</code></td><td></td><td></td></tr>
 <tr><td><b>PC7</b></td><td><code>PC7</code> <code>D9</code></td><td>D9</td><td></td></tr>
-<tr><td><b>PC13</b></td><td><code>PC13</code></td><td></td><td></td></tr>
+<tr><td><b>PC13</b></td><td><code>PC13</code></td><td></td><td>User button B1 on the real board - NOT modelled by Wokwi. Lesson 05 Lab Part 7 wires an external button here (EXTI line 13, EXTICR code 2).</td></tr>
 <tr><td><b>PC14</b></td><td><code>PC14</code></td><td></td><td>LSE crystal pad (32 kHz) on the real board.</td></tr>
 <tr><td><b>PC15</b></td><td><code>PC15</code></td><td></td><td>LSE crystal pad (32 kHz) on the real board.</td></tr>
 <tr><td><b>PD0</b></td><td><code>PD0</code></td><td></td><td></td></tr>

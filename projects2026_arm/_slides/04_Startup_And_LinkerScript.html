@@ -211,7 +211,7 @@
 <h2>Slide 4: The I/O Map — <code>GPIOA-&gt;MODER</code> Is an Address</h2>
 <p>Lesson 00 said <em>a register is an address with a side effect</em>. This is where you<br>see the address. There is no I/O instruction on this machine and no I/O address<br>space: <strong>peripherals are reached by ordinary loads and stores</strong>.</p>
 <p>The names come from <strong>CMSIS</strong>:<br><strong>the Common Microcontroller Software Interface Standard</strong>,<br>ARM&#x27;s vendor-neutral header set for Cortex-M. This course uses two pieces of<br>it — the <em>core</em> headers from ARM (<code>core_cm0plus.h</code>: the NVIC and SysTick) and<br>the <em>device</em> header from ST (<code>stm32c031xx.h</code>: every peripheral on this part).<br>Both are vendored in <code>tools/cmsis/</code>.</p>
-<p><strong>CMSIS is headers, not a library.</strong> Nothing is linked and no function is<br>called. It is <code>#define</code>s and struct declarations that put names on addresses ST<br>published in the reference manual. It is <em>not</em> ST&#x27;s HAL — that is a real<br>library, and lesson 34 compares the two.</p>
+<p><strong>CMSIS is headers, not a library.</strong> Nothing is linked and no function is<br>called. It is <code>#define</code>s and struct declarations that put names on addresses ST<br>published in the reference manual. It is <em>not</em> ST&#x27;s HAL — that is a real<br>library, and lesson 11 compares the two.</p>
 <p>Naming the address costs you nothing. Compile both spellings of the same<br>toggle at <code>-Os</code> and compare:</p>
 <pre><code>GPIOA-&gt;ODR ^= (1u&lt;&lt;5);          *(volatile uint32_t *)0x50000014UL ^= (1u&lt;&lt;5);
 
@@ -616,7 +616,7 @@ _sidata = LOADADDR(.data); /*  &lt;-- where it was stored            */
 <section class="slide">
 <h2>Slide 21: What Carries Forward</h2>
 <p>You now own every line of code that runs on this chip. Nothing below <code>main()</code><br>is a black box any more, and for the rest of the course that pays:</p>
-<ul><li><strong>Every later lesson links this same <code>startup.c</code> shape.</strong> When you add a timer interrupt in lesson 08, you will define <code>TIM3_IRQHandler</code> and know precisely why that name and no other name works.</li><li><strong>When a board is silent, you now have a checklist.</strong> Did <code>.data</code> get copied? Is <code>SystemCoreClock</code> 48 MHz or still 12? Is the handler name spelled exactly right? Is the peripheral clock even enabled?</li><li><strong><code>size -A</code> is now readable</strong>, and on a 32 KB part you will read it often.</li></ul>
+<ul><li><strong>Every later lesson links this same <code>startup.c</code> shape.</strong> When you add a timer interrupt in lesson 06, you will define <code>TIM3_IRQHandler</code> and know precisely why that name and no other name works.</li><li><strong>When a board is silent, you now have a checklist.</strong> Did <code>.data</code> get copied? Is <code>SystemCoreClock</code> 48 MHz or still 12? Is the handler name spelled exactly right? Is the peripheral clock even enabled?</li><li><strong><code>size -A</code> is now readable</strong>, and on a 32 KB part you will read it often.</li></ul>
 <p>Next week: <strong>GPIO</strong> — the first peripheral, and the first instance of the<br>Part 0 peripheral model. Control, status, data, behind a clock gate and a pin<br>mux. You have already met its clock gate: <code>RCC-&gt;IOPENR</code>, the line in<br><code>led_init()</code> that must come first or the entire port reads back zero.</p>
 </section>
 </div>

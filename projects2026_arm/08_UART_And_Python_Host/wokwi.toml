@@ -1,0 +1,8 @@
+# Wokwi VS Code extension reads this. The browser route does not need it.
+[wokwi]
+version = 1
+firmware = 'Main.hex'
+elf = 'Main.elf'
+# Serial port forwarding: the simulated USART2 becomes a TCP server that
+# pyserial reaches as rfc2217://localhost:4000 - the live route for host.py.
+rfc2217ServerPort = 4000

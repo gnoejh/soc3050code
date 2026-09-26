@@ -617,7 +617,7 @@ that runs the tables and the computed patterns in order, forever.
 >   counter and the delay live there once instead of in every pattern.
 > - `delay_ms()` is a real millisecond: SysTick, the core's own down-counter,
 >   wraps once per millisecond at 48 MHz and the loop polls its flag. There is
->   no interrupt yet. Lesson 07 turns this same counter into one, and then the
+>   no interrupt yet. Lesson 06 turns this same counter into one, and then the
 >   CPU no longer has to stand still while an LED is on.
 > - Time spent inside `delay_ms()` is time the CPU does nothing else. A 500 ms
 >   frame is 24 million wasted cycles. That is the problem the timer lessons

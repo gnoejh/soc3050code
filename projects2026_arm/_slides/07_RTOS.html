@@ -1,0 +1,461 @@
+<title>RTOS: Writing the Thing That Runs Your Tasks</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">RTOS: Writing the Thing That Runs Your Tasks</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>RTOS: Writing the Thing That Runs Your Tasks</h1>
+<h2>SOC3050 ARM Edition — Part 1, Instances</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>A preemptive kernel in about 300 lines, and every one of them is yours.</strong></p>
+<p>Lesson 06 ended at the superloop&#x27;s ceiling: every job must be short, or it<br>delays all the others. This week you lift the ceiling by building what<br>FreeRTOS, Zephyr and every other embedded kernel are built on — a context<br>switch — and then use it to meet the most famous scheduling bug in the history<br>of embedded systems.</p>
+<p>Figures marked <strong>measured</strong> come from running this lesson&#x27;s kernel, unchanged,<br>on Renode&#x27;s Cortex-M0 model (slide 20 says exactly how). None has been watched<br>in Wokwi yet.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: The Job That Never Yields</h2>
+<p>Put this in lesson 06&#x27;s superloop:</p>
+<pre class="lang-c"><code>for (;;) {                               /* find primes, forever */
+    uint32_t d = 3;
+    while (d * d &lt;= n &amp;&amp; n % d != 0u) { d += 2u; }
+    if (d * d &gt; n) { primes++; }
+    n += 2u;
+}</code></pre>
+<p>It never returns to the loop, so nothing else ever runs again: the LED bar<br>freezes, the buttons die, the report stops. The superloop only works while<br>every job <strong>agrees</strong> to be short. That is cooperation, and one uncooperative<br>job ends it.</p>
+<p>What we want instead: the hog runs whenever nothing more urgent needs the CPU,<br>and <strong>is stopped</strong> — mid-calculation, without its consent — the instant<br>something more urgent does. Then carried on later from exactly where it was.</p>
+<p>That is <strong>preemptive multitasking</strong>, and on a Cortex-M it takes one interrupt,<br>one exception, and a second stack pointer.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: A Task Is a Stack and Nine Numbers</h2>
+<p>A C function that is running <em>is</em>, at any instant:</p>
+<ul><li>its <strong>stack</strong> — local variables, return addresses, saved registers;</li><li>its <strong>registers</strong> — <code>r0</code>–<code>r12</code>, <code>lr</code>, <code>pc</code> and <code>xPSR</code>;</li><li>its <strong>stack pointer</strong> — where on that stack it currently is.</li></ul>
+<p>Save all of that, and you can put the function away. Restore it, and it<br>continues as if nothing happened — because, from its point of view, nothing<br>did. That saved state is the task&#x27;s <strong>context</strong>; swapping one for another is a<br><strong>context switch</strong>.</p>
+<pre class="lang-c"><code>typedef struct os_task {
+    uint32_t   *sp;          /* MUST be first - the assembly reads [tcb + 0] */
+    const char *name;
+    uint8_t     prio, base_prio, state;
+    uint32_t    wake;
+    ...
+} os_task_t;</code></pre>
+<p>That struct is the <strong>task control block</strong>. Each task also gets its own<br>stack — a plain array. The registers live <em>on</em> that stack while the task is<br>switched out, so the TCB only needs to remember one number: where the stack<br>pointer was.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Two Stack Pointers</h2>
+<p>The Cortex-M has <strong>two</strong> stack pointers, and you have been using one of them<br>without noticing:</p>
+<table><thead><tr><th></th><th>Used by</th><th>In this kernel</th></tr></thead><tbody><tr><td><strong>MSP</strong> — main stack pointer</td><td>every exception handler; <code>main()</code> after reset</td><td>handlers only</td></tr><tr><td><strong>PSP</strong> — process stack pointer</td><td>Thread mode, if <code>CONTROL.SPSEL = 1</code></td><td>every task, each on its own stack</td></tr></tbody></table>
+<p>The split is what makes the design clean. Interrupt handlers always run on<br>MSP, a stack no task owns, so a handler never needs space on a task&#x27;s stack<br>beyond the eight words the hardware pushes on entry. Each task&#x27;s stack only has<br>to hold <em>that task</em>.</p>
+<p>The switch between them is automatic. On exception return, <code>lr</code> holds an<br><strong>EXC_RETURN</strong> value, and one of its values means <em>go back to Thread mode and<br>use PSP</em>:</p>
+<pre><code>0xFFFFFFFD    return to Thread mode, restore from PSP, keep using PSP</code></pre>
+<p>Every switch in this kernel returns with exactly that value.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: PendSV — an Exception You Pend Yourself</h2>
+<p>A switch must never happen <em>inside</em> another interrupt handler: that handler&#x27;s<br>frame is on MSP, half-finished, and swapping the task beneath it would return<br>it into the wrong world. So switches happen in one place only — <strong>PendSV</strong>, a<br>system exception with two properties:</p>
+<ul><li><strong>It is triggered by software.</strong> <code>SCB-&gt;ICSR = SCB_ICSR_PENDSVSET_Msk</code> sets its pending bit. Nothing else ever raises it.</li><li><strong>This kernel gives it the lowest priority</strong>, 3. So it runs only when <em>no other handler is active</em> — after every other interrupt has finished, on the way back to a task.</li></ul>
+<figure class="diagram"><svg viewBox="0 0 580 170" role="img" aria-label="SysTick decides a switch is needed and pends PendSV; PendSV runs after SysTick returns">
+  <defs><marker id="r4" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="10" y="60" width="110" height="40" rx="5"/>
+  <text x="65" y="85" text-anchor="middle" class="mono">task A</text>
+  <path class="wire" d="M120 80 H150" marker-end="url(#r4)"/>
+  <rect class="reg" x="154" y="60" width="130" height="40" rx="5"/>
+  <text x="219" y="78" text-anchor="middle" class="mono">SysTick_Handler</text>
+  <text x="219" y="93" text-anchor="middle" class="lbl">decides; pends PendSV</text>
+  <path class="wire" d="M284 80 H314" marker-end="url(#r4)"/>
+  <rect class="hifill" x="318" y="60" width="130" height="40" rx="5"/>
+  <text x="383" y="78" text-anchor="middle" class="mono">PendSV_Handler</text>
+  <text x="383" y="93" text-anchor="middle" class="lbl">tail-chained: switches</text>
+  <path class="wire" d="M448 80 H478" marker-end="url(#r4)"/>
+  <rect class="box" x="482" y="60" width="90" height="40" rx="5"/>
+  <text x="527" y="85" text-anchor="middle" class="mono">task B</text>
+  <text x="290" y="140" text-anchor="middle" class="lbl">Deciding and switching are separate, and switching always waits for the calm.</text>
+</svg></figure>
+<p>Deciding <em>who</em> runs next happens anywhere — the tick, a mutex unlock, a queue<br>put from a UART interrupt. <strong>Doing</strong> the switch happens only in PendSV.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: The Switch, Drawn</h2>
+<p>When PendSV starts, the hardware has already pushed half of task A&#x27;s context<br>onto A&#x27;s stack (lesson 03, slide 2). PendSV pushes the other half beside it:</p>
+<figure class="diagram"><svg viewBox="0 0 580 250" role="img" aria-label="Saved context layout on a task stack: r4-r7, r8-r11 saved by PendSV, then the hardware frame">
+  <text x="100" y="20" text-anchor="middle" class="lbl">task A's stack, after the save</text>
+  <rect class="hifill" x="30" y="30" width="140" height="30"/>
+  <text x="100" y="50" text-anchor="middle" class="mono">r4 r5 r6 r7</text>
+  <rect class="hifill" x="30" y="60" width="140" height="30"/>
+  <text x="100" y="80" text-anchor="middle" class="mono">r8 r9 r10 r11</text>
+  <rect class="box" x="30" y="90" width="140" height="30"/>
+  <text x="100" y="110" text-anchor="middle" class="mono">r0 r1 r2 r3</text>
+  <rect class="box" x="30" y="120" width="140" height="30"/>
+  <text x="100" y="140" text-anchor="middle" class="mono">r12 lr pc xPSR</text>
+  <rect class="dash" x="30" y="150" width="140" height="40"/>
+  <text x="100" y="175" text-anchor="middle" class="lbl">A's own locals</text>
+  <text x="180" y="50" class="mono">&lt;- tcb->sp</text>
+  <text x="200" y="80" class="lbl">PendSV saves these (8 words)</text>
+  <text x="200" y="125" class="lbl">the hardware saved these (8 words)</text>
+  <text x="300" y="175" class="lbl">low addresses at the top; stacks grow up the page</text>
+  <text x="290" y="228" text-anchor="middle" class="hi">Sixteen words and one pointer: that is a whole paused program.</text>
+</svg></figure>
+<p>Then the reverse for task B: load B&#x27;s saved <code>sp</code>, pop <em>its</em> <code>r4</code>–<code>r11</code>, set<br>PSP to B&#x27;s hardware frame, return with <code>0xFFFFFFFD</code>. The hardware pops the<br>rest — including B&#x27;s <code>pc</code> — and B resumes.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: The Switch, as Compiled</h2>
+<p><code>PendSV_Handler</code> in <code>os.c</code> is a <code>naked</code> function: no compiler prologue, every<br>instruction written out. From this lesson&#x27;s <code>Main.elf</code>:</p>
+<pre><code>08000700 &lt;PendSV_Handler&gt;:
+ cpsid  i
+ ldr    r3, =os_current      ; r1 = the task being left
+ ldr    r1, [r3, #0]
+ cmp    r1, #0               ; the very first switch has nothing to save
+ beq    1f
+ mrs    r0, PSP
+ subs   r0, #32
+ str    r0, [r1, #0]         ; tcb-&gt;sp = psp - 32
+ stmia  r0!, {r4, r5, r6, r7}
+ mov    r4, r8  ...  mov r7, fp
+ stmia  r0!, {r4, r5, r6, r7}
+1: ...                       ; os_current = os_next; switch count++
+ ldr    r0, [r1, #0]         ; r0 = the new task&#x27;s saved sp
+ adds   r0, #16
+ ldmia  r0!, {r4, r5, r6, r7}
+ mov    r8, r4  ...  mov fp, r7
+ msr    PSP, r0
+ subs   r0, #32
+ ldmia  r0!, {r4, r5, r6, r7}
+ cpsie  i
+ ldr    r0, =0xFFFFFFFD
+ bx     r0</code></pre>
+<p><strong>34 instructions, 88 bytes</strong> with its literal pool. That is the whole of<br>multitasking.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Why <code>r8</code>–<code>r11</code> Go the Long Way Round</h2>
+<p><code>stmia r0!, {r4-r11}</code> would do it in one instruction — on a Cortex-M3. On<br>this core it does not exist.</p>
+<p>The M0+ runs <strong>Thumb-1 plus six</strong> (lesson 01, slide 17). Its <code>stm</code> and <code>ldm</code><br>reach only the <strong>low registers</strong>, <code>r0</code>–<code>r7</code>. So <code>r8</code>–<code>r11</code> are saved by<br>copying them into <code>r4</code>–<code>r7</code> — which have <em>already</em> been saved and are free —<br>and storing those. Restoring runs the same trick backwards, which is why the<br>code restores <code>r8</code>–<code>r11</code> <strong>first</strong> and <code>r4</code>–<code>r7</code> last.</p>
+<p>Two more details the listing shows:</p>
+<ul><li><code>mov r4, r8</code> is legal: <code>mov</code> between low and high registers is one of the few instructions Thumb-1 allows on <code>r8</code>–<code>r12</code>.</li><li><code>sl</code> and <code>fp</code> in the disassembly are <code>r10</code> and <code>r11</code> — their old APCS names. Same registers.</li></ul>
+<p>The assembler rejected the first draft outright: <code>subs r0, #32</code> is not<br>accepted in GCC&#x27;s default inline-assembly syntax for this core. One line,<br><code>.syntax unified</code>, at the top of the block fixed it. Silent failures get<br>slides in this course; loud ones deserve a sentence.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: The First Switch — Forging a Frame</h2>
+<p>A new task has never run, so it has never been preempted, so there is no<br>saved context to restore. <code>os_task_create()</code> <strong>builds one</strong>: the stack a task<br>would have if it had just been interrupted at its first instruction.</p>
+<pre class="lang-c"><code>*--sp = 0x01000000u;                   /* xPSR: only the Thumb bit     */
+*--sp = (uint32_t)fn &amp; ~1u;            /* pc:   the function&#x27;s start   */
+*--sp = (uint32_t)task_exit;           /* lr:   where it goes if it returns */
+*--sp = 0u; *--sp = 0u; *--sp = 0u; *--sp = 0u;   /* r12, r3, r2, r1  */
+*--sp = (uint32_t)arg;                 /* r0:   its argument (AAPCS)   */
+for (int i = 0; i &lt; 8; i++) *--sp = 0u;           /* r11..r4           */</code></pre>
+<ul><li><strong>xPSR&#x27;s T bit must be 1.</strong> Returning with it clear means switching to ARM state, which the M0+ does not have: a HardFault on the first switch.</li><li><strong><code>arg</code> goes in the <code>r0</code> slot</strong>, because that is where AAPCS puts a function&#x27;s first argument (lesson 01, slide 18). The task receives it as a normal parameter.</li><li><strong><code>lr</code> is <code>task_exit</code></strong>, so a task function that returns does not wander off into memory — it is parked for good.</li></ul>
+<p>To the switch, a brand-new task and a task preempted a second ago look<br>identical. That is the trick.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Who Runs Next</h2>
+<pre class="lang-c"><code>static os_task_t *pick(void)
+{
+    uint32_t cur = os_current ? (uint32_t)(os_current - tasks) : 0u;
+    os_task_t *best = 0;
+    for (uint32_t i = 1; i &lt;= n_tasks; i++) {
+        os_task_t *t = &amp;tasks[(cur + i) % n_tasks];
+        if (t-&gt;state == OS_READY &amp;&amp; (best == 0 || t-&gt;prio &gt; best-&gt;prio)) best = t;
+    }
+    return best;
+}</code></pre>
+<ul><li><strong>Fixed-priority preemptive</strong>: the highest-priority <code>READY</code> task runs, always.</li><li><strong>Round-robin among equals</strong>: the search starts <em>after</em> the current task, and only a strictly higher priority replaces a find, so tasks of equal priority take turns — one tick each.</li><li><strong>Idle</strong>, priority 0, is always ready, so there is always an answer.</li></ul>
+<p><strong>Priority numbers here run the other way from the NVIC.</strong> In this kernel —<br>as in FreeRTOS — a <em>higher</em> number is <em>more</em> urgent. In the NVIC, 0 is most<br>urgent. Two numbering schemes on one chip: always say which one you mean.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: The Tick, and Sleeping</h2>
+<p><code>SysTick_Handler</code> is now the kernel&#x27;s heartbeat:</p>
+<pre class="lang-c"><code>ticks++;
+if (os_current) os_current-&gt;ticks++;           /* who was running: CPU use */
+for each task: if SLEEPING and (int32_t)(ticks - wake) &gt;= 0 -&gt; READY;
+schedule();                                     /* pend PendSV if needed    */</code></pre>
+<p>A task that wants to wait calls <code>os_delay(ms)</code>: it marks itself <code>SLEEPING</code>,<br>asks for a switch, and is gone until the tick wakes it. <strong>The CPU is not<br>waiting for it</strong> — someone else runs.</p>
+<p><code>os_delay_until(&amp;last, period)</code> is lesson 06&#x27;s <code>at += period</code> turned into a<br>call: the task wakes on a fixed grid however long its own work took. The LED<br>bar uses it, so its frames stay exactly 60 ms apart while the hog runs flat<br>out underneath.</p>
+<p>The per-task <code>ticks</code> counter is <strong>statistical profiling</strong>: at each tick, charge<br>one millisecond to whoever was running. Over a second, it is each task&#x27;s CPU<br>share — the table the report prints.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Measured — a Hog That Does Not Hurt</h2>
+<p>Scenario 1, one second&#x27;s report, <strong>measured</strong> (hog on, then after button B):</p>
+<pre><code>t=  3001 ms   switches/s 419                t=  5001 ms   switches/s 429
+  task      prio  st  cpu%   stack            task      prio  st  cpu%
+  bar       2/2   S     0     24 / 128          bar       2/2   S     0
+  button    3/3   S     0     30 / 128          button    3/3   S     0
+  hog       1/1   R   100     20 / 128          hog       1/1   S     0
+  report    1/1   R     0    115 / 512          report    1/1   R     0
+  idle      0/0   R     0     16 / 64           idle      0/0   R   100</code></pre>
+<p>The hog takes <strong>every spare cycle</strong> — 100% — and yet the bar and the buttons,<br>at higher priority, are serviced on time: each wakes, preempts the hog within a<br>tick, does a few microseconds of work, and sleeps again. That is why they show<br>0% and still work.</p>
+<p>Press B and the hog&#x27;s share passes, whole, to <strong>idle</strong>. Nothing else changed.<br>In lesson 06&#x27;s superloop, the left-hand column is impossible.</p>
+<p>~420 switches a second: the button task wakes 200 times a second and the bar<br>about 17, and each visit is two switches — in and out.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Sharing — the Mutex</h2>
+<p>Two tasks that touch the same thing — a buffer, a peripheral, the UART — need<br><strong>mutual exclusion</strong>, as in lesson 03. Masking interrupts works, but for a long<br>critical section it freezes the whole system. A <strong>mutex</strong> blocks only the tasks<br>that want <em>this</em> resource:</p>
+<pre class="lang-c"><code>void os_mutex_lock(os_mutex_t *m)
+{
+    uint32_t pm = enter();                       /* PRIMASK, as always   */
+    while (m-&gt;owner != 0) {
+        os_current-&gt;state      = OS_BLOCKED;     /* wait - off the CPU   */
+        os_current-&gt;waiting_on = m;
+        schedule(); leave(pm);  pm = enter();    /* switched out here    */
+    }
+    m-&gt;owner = os_current;
+    leave(pm);
+}</code></pre>
+<p>Look at what it is made of: the kernel&#x27;s own bookkeeping is protected by<br><strong>masking interrupts for a few instructions</strong> — lesson 03&#x27;s tool, unchanged.<br>The mutex is a way to make a <em>long</em> critical section cheap for everyone who<br>does not need it.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Priority Inversion</h2>
+<p>Three tasks. <strong>High</strong> needs the mutex briefly every 100 ms. <strong>Low</strong> holds it for<br>30 ms at a time. <strong>Mid</strong> never touches it, but computes for 120 ms every<br>250 ms.</p>
+<figure class="diagram"><svg viewBox="0 0 580 200" role="img" aria-label="Priority inversion timeline: high blocks on low's mutex, mid preempts low, high waits for mid">
+  <text x="10" y="40" class="mono">high</text>
+  <text x="10" y="90" class="mono">mid</text>
+  <text x="10" y="140" class="mono">low</text>
+  <rect class="box" x="60" y="125" width="60" height="22"/>
+  <text x="90" y="140" text-anchor="middle" class="lbl">lock</text>
+  <rect class="hifill" x="120" y="25" width="16" height="22"/>
+  <text x="128" y="20" text-anchor="middle" class="lbl">wants it</text>
+  <path class="dash" d="M136 36 H470"/>
+  <text x="300" y="30" text-anchor="middle" class="hi">BLOCKED — waiting for low</text>
+  <rect class="box" x="136" y="125" width="20" height="22"/>
+  <rect class="hifill" x="156" y="75" width="280" height="22"/>
+  <text x="296" y="90" text-anchor="middle" class="mono">mid runs 120 ms</text>
+  <rect class="box" x="436" y="125" width="34" height="22"/>
+  <text x="453" y="162" text-anchor="middle" class="lbl">unlock</text>
+  <rect class="box" x="470" y="25" width="40" height="22"/>
+  <text x="290" y="190" text-anchor="middle" class="lbl">high waits for mid — a task it outranks, that shares nothing with it.</text>
+</svg></figure>
+<p>High is blocked by low, which is legitimate — low holds what high needs. But<br>then mid preempts <strong>low</strong>, and while mid runs, low cannot finish and release<br>the mutex. <strong>High is now waiting for mid</strong>, a lower-priority task it has<br>nothing to do with. The priorities have been turned upside down.</p>
+<p>This happened on Mars. In 1997 the Pathfinder lander&#x27;s computer kept<br>resetting, because a high-priority bus task was starved through exactly this<br>pattern. Engineers found it by reproducing it on the ground, and fixed it by<br>turning on one flag, remotely — the one on the next slide.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Priority Inheritance — Measured</h2>
+<p>The fix: while low holds a mutex that high is waiting for, <strong>low borrows<br>high&#x27;s priority</strong>. Mid can no longer preempt it; low finishes its 30 ms,<br>unlocks, drops back to priority 1, and high goes.</p>
+<pre class="lang-c"><code>#if OS_PRIORITY_INHERIT
+    if (m-&gt;owner-&gt;prio &lt; os_current-&gt;prio) m-&gt;owner-&gt;prio = os_current-&gt;prio;
+#endif</code></pre>
+<p>and <code>os_mutex_unlock()</code> restores <code>base_prio</code>. Scenario 2, <strong>measured</strong>, five<br>seconds each:</p>
+<table><thead><tr><th><code>OS_PRIORITY_INHERIT</code></th><th>High&#x27;s worst wait</th><th>Waits over 40 ms</th></tr></thead><tbody><tr><td><strong>1</strong></td><td><strong>10 ms</strong></td><td><strong>0</strong></td></tr><tr><td>0</td><td><strong>110 ms</strong></td><td>6 in 49 locks</td></tr></tbody></table>
+<p>Same tasks, same code, one <code>#define</code>. Low&#x27;s critical section is 30 ms, so any<br>wait over 40 ms is time high spent waiting for <em>mid</em>. With inheritance there<br>are none.</p>
+<p>Limitation, stated plainly: this kernel&#x27;s inheritance is right for one mutex<br>at a time. A task holding two, with different waiters, needs a real<br>implementation — FreeRTOS&#x27;s is several hundred lines.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Queues — Data Between Tasks, and From Interrupts</h2>
+<p>A mutex protects shared data. Often the better design is <strong>not to share it</strong>:<br>give it to someone. A queue copies items in and out, and blocks a reader while<br>it is empty and a writer while it is full:</p>
+<pre class="lang-c"><code>os_queue_put(&amp;q, &amp;item);            /* task: blocks if full   */
+os_queue_get(&amp;q, &amp;item);            /* task: blocks if empty  */
+os_queue_put_from_isr(&amp;q, &amp;item);   /* ISR: never blocks - returns 0 if full */</code></pre>
+<p>The ISR version is the important one. An interrupt handler <strong>must never<br>block</strong> — there is no task to put to sleep, only a handler on MSP. So it<br>reports &quot;full&quot; and lets the handler decide. And because it calls <code>schedule()</code>,<br>a task waiting on the queue can be made ready <em>from inside the interrupt</em>; the<br>switch to it happens the moment the last handler returns.</p>
+<p>That is exactly lesson 08&#x27;s design: the UART receive interrupt puts bytes in a<br>queue, and a protocol task blocks on it — using no CPU at all until a byte<br>arrives.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Sizing a Stack — the High-Water Mark</h2>
+<p>Every task needs its own stack, and RAM is 12 KB. How big?</p>
+<p><code>os_task_create()</code> fills each stack with <code>0xDEADBEEF</code>. The stack grows down, so<br>the words that still say <code>0xDEADBEEF</code> at the bottom were never reached. Count<br>them:</p>
+<pre><code>  task      stack used/size       (measured)
+  bar          24 / 128
+  button       30 / 128
+  hog          20 / 128
+  report      115 / 512      &lt;- printf
+  idle         16 / 64</code></pre>
+<p><code>printf</code> is the expensive one: 115 words — 460 bytes — for newlib-nano&#x27;s<br>formatter and our <code>_write</code>. Every task that prints needs room for that.</p>
+<p>The method matters more than the numbers: <strong>run the program, exercise every<br>path, read the high-water mark, add a margin.</strong> A stack sized by guessing is<br>wrong in one of two directions, and only one of them is visible.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: When It Is Too Small — Measured</h2>
+<p>Give the report task 96 words instead of 512. It needs 115. <strong>Measured</strong>:</p>
+<pre><code>  report    1/1   R     0      96 / 96    OVERFLOW
+  bar 60 ms/frame   hog ON , 5539 primes/s
+  ...
+  bar 60 ms/frame   hog ON , 536871010 primes/s</code></pre>
+<p><strong>Nothing crashed.</strong> The report task wrote 19 words below its stack, and the<br>linker had put <code>primes</code> — another task&#x27;s variable — right there, at<br><code>0x20000084</code>, the word under <code>stk_report</code> at <code>0x20000088</code>. 536 871 010 is<br><code>0x20000062</code>: a stack address, now sitting in a prime counter.</p>
+<p>That is what a stack overflow usually looks like on a microcontroller: not a<br>crash, but <em>somebody else&#x27;s data quietly wrong</em>, far from the cause. The<br>high-water mark caught it; without one you would be debugging the hog.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: A HardFault That Says Where</h2>
+<p>When something does fault, the hardware stacks the usual eight words and<br>enters <code>HardFault_Handler</code> — on PSP&#x27;s stack if a task was running. Bit 2 of<br><code>lr</code> says which stack; word 6 of the frame is the <code>pc</code> that faulted. This<br>lesson&#x27;s handler prints them. <strong>Measured</strong>, with <code>__builtin_trap()</code> placed in<br>the hog:</p>
+<pre><code>*** HardFault in task &#x27;hog&#x27;
+    pc   = 0x08000422   &lt;- the instruction that faulted
+    lr   = 0x08000415   &lt;- where it would have returned to
+    xPSR = 0x61000000
+    Find the line:  arm-none-eabi-addr2line -e Main.elf 0x08000422</code></pre>
+<p>and <code>addr2line</code> answers with the exact line of <code>Main.c</code>. The instruction at<br>that address is <code>udf #255</code> — <em>undefined</em>, deliberately.</p>
+<p>The M0+ has one fault handler and no fault-status registers; the reason is<br>lost. On the Cortex-M4 in lesson 11, <code>CFSR</code> says <em>why</em> as well as <em>where</em>.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: What You Built, and What a Real RTOS Adds</h2>
+<table><thead><tr><th>This kernel</th><th>FreeRTOS / Zephyr add</th></tr></thead><tbody><tr><td>fixed-priority preemptive, round-robin</td><td>tickless idle, deadline scheduling (Zephyr)</td></tr><tr><td>sleep, mutex with inheritance, queue</td><td>semaphores, event groups, timers, message buffers</td></tr><tr><td>one mutex&#x27;s inheritance</td><td>nested inheritance, recursive mutexes</td></tr><tr><td>high-water marks by pattern</td><td>overflow checks on every switch, MPU guard regions</td></tr><tr><td>34-instruction PendSV</td><td>the same switch — with FPU state on an M4F</td></tr></tbody></table>
+<p>The core is the same, instruction for instruction. That is the point of<br>writing it: <code>xTaskCreate</code>, <code>vTaskDelayUntil</code> and <code>xQueueSendFromISR</code> are no<br>longer names — they are <code>os_task_create</code>, <code>os_delay_until</code> and<br><code>os_queue_put_from_isr</code>, and you know what is under each.</p>
+<p><strong>From here on, lessons are written as tasks.</strong> Lesson 08&#x27;s UART is an<br>interrupt feeding a queue feeding a task.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: How the Measurements Were Made</h2>
+<p>Wokwi could not be driven from the command line, so the kernel was run in<br><strong>Renode 1.17.0</strong> on its STM32F072 platform — a Cortex-M0, the same ARMv6-M<br>architecture as this chip, with SysTick, PendSV and the NVIC modelled.</p>
+<ul><li><code>os.c</code> and <code>Main.c</code> were compiled <strong>unchanged</strong>.</li><li>A <strong>test-only</strong> <code>startup.c</code> skipped the C0&#x27;s clock and flash-latency waits, which the F0 model does not answer the same way.</li><li>The C0&#x27;s GPIO block was mapped as plain memory so button presses could be written in.</li><li>The F0&#x27;s USART2 sits at the C0&#x27;s USART2 address with the same registers, so <code>printf</code> needed nothing.</li></ul>
+<p>One difference was found and matters: <strong>Renode does not fault on an unaligned<br>word access</strong>; ARMv6-M silicon does. So the lab faults with<br><code>__builtin_trap()</code>, which faults everywhere. Whether Wokwi faults on the<br>unaligned access is Lab Part 6&#x27;s open question.</p>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:07_RTOS', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:07_RTOS') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

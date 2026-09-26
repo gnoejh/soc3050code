@@ -1,0 +1,5 @@
+# Wokwi VS Code extension reads this. The browser route does not need it.
+[wokwi]
+version = 1
+firmware = 'Main.hex'
+elf = 'Main.elf'

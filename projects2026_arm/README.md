@@ -12,6 +12,10 @@ _build/disasm.py          disassemble an ELF without the toolchain
 _build/wokwi-pins.py      renders the board pin map (below) from the facts file
 _targets/c031c6.bat       per-chip flags, include paths and memory sizes
 _targets/c031c6-pins.json every pin name Wokwi accepts for the board -> MCU pin
+_startup/c031c6/          shared startup.c + link.ld - linked by any lesson without its own
+_lib/                     shared modules a lesson names in LIBS: retarget (printf -> USART2,
+                          weak _write), os (lesson 07's kernel), uart + proto (lesson 08's
+                          interrupt UART and frame format); gpio.h is header-only
 _slides/                  generated decks + board-pins.html - do not edit, re-render instead
 _docs/                    the board manual (ST UM2953), copied beside the decks on render
 _notebooks/               the Colab workbench, one notebook for the course
@@ -20,6 +24,11 @@ _notebooks/               the Colab workbench, one notebook for the course
 02_Development/           Part 0 - toolchain, sections, linking, boot
 03_Execution_Concurrency/ Part 0 - interrupts, volatile, atomicity
 04_Startup_And_LinkerScript/  Part 1 - the first lesson with code
+05_GPIO_And_Interrupts/   Part 1 - GPIO, EXTI, NVIC; polled vs interrupt buttons
+06_Time_And_Timers/       Part 1 - SysTick IRQ, TIM3 PWM servo, TIM14 input capture
+07_RTOS/                  Part 1 - a preemptive kernel from scratch; priority inversion
+08_UART_And_Python_Host/  Part 1 - interrupt UART, checksummed frames, host.py
+09_Sensors_And_Buses/     Part 1 - ADC, I2C (MPU6050), SPI (MAX7219)
 _spike/                   Phase 0 proof of concept - throwaway, see below
 ```
 
@@ -165,6 +174,76 @@ From Part 1 onward every lesson has code and follows three beats:
 > **Model → Map → Measure**
 > — the abstract idea, drawn; mapped onto this chip's registers by reading the
 > reference manual; then written, run and *observed*.
+
+## The syllabus (agreed 2026-09-26)
+
+**One course, 20 lessons (00–19), no semester split.** One lesson per *model*,
+not per peripheral: topics that are instances of the same model share a lesson,
+and the smaller ones become Lab parts. Dense lessons may take two weeks.
+Applications run **Game → Drone → Robot**, and drones and robots are
+**simulation only**. RTOS and Python arrive early so the applications can lean
+on both. The course stands alone; it does not depend on SOC4180GH.
+
+| Part | # | Lesson | Target / simulator |
+|---|---|---|---|
+| 0 Models | 00–03 | Architecture, Instruction Set, Development, Execution & Concurrency ✅ | none |
+| 1 Instances | 04 | Startup_And_LinkerScript ✅ | C031C6 / Wokwi |
+| | 05 | GPIO_And_Interrupts — GPIO, EXTI, NVIC, handler names ◐ | |
+| | 06 | Time_And_Timers — SysTick IRQ, TIM3, PWM (servo), input capture ◐ | |
+| | 07 | RTOS — PendSV switch, MSP/PSP, mutex, queue, HardFault ◐ | |
+| | 08 | UART_And_Python_Host — ring buffer, framed protocol, `host.py` ◐ | |
+| | 09 | Sensors_And_Buses — ADC, I²C (MPU6050), SPI (MAX7219) ◐ | |
+| 2 Systems | 10 | F446RE_FPU_DMA — port, FPU vs fixed point, DMA | F446RE / Renode |
+| | 11 | Faults_Watchdog_Power — CFSR, watchdog, WFI; HAL vs CMSIS | |
+| 3 Applications | 12 | Game — SSD1306 engine + arcade | Wokwi |
+| | 13 | Drone_Attitude — IMU fusion, attitude loops, motor mixing | Webots (proposed) |
+| | 14 | Drone_Missions — position hold, MAVLink missions from Python | |
+| | 15 | Robot_Line_Follower | |
+| | 16 | Robot_Navigation — obstacles, Python path planner | |
+| | 17 | Robot_Balancing — PID vs LQR | |
+| | 18 | Robot_Competition — sumo tournament | |
+| | 19 | Final_Project | |
+
+**Two tiers in Part 3, as in real systems:** C on the MCU (RTOS tasks) owns
+sensors, filters, control loops and failsafes; Python on the host owns
+missions, planning, telemetry and scoring. The low-level contract is
+`_hal/control.h`'s `control_step(sensors_t*, actuators_t*)`.
+
+✅ taught and watched running · ◐ written, zero warnings, **not yet watched in
+Wokwi** — 06–09 were partly *run* in Renode instead (below).
+
+**Spikes, and what became of them:**
+
+- *Before 07, RTOS in Wokwi* — **half done.** The kernel was run, unchanged,
+  on Renode's STM32F072 (a Cortex-M0, the same ARMv6-M): context switching,
+  priority inversion with and without inheritance, stack overflow and the
+  HardFault reporter all behaved as the slides say. Wokwi itself not yet.
+- *Before 08, Python to a simulated UART* — **resolved by design.** The frame
+  format is printable ASCII with an NMEA checksum, so the browser route is
+  copy-and-paste into `host.py --file`; the VS Code extension's documented
+  `rfc2217ServerPort` is the live route; a real board is a COM port. No
+  lesson had to move.
+- *Before 10* — Renode vendored, and a `nucleo_f446re.repl` written.
+- *Before 13* — Webots installs on student Windows machines and flies a
+  Crazyflie under an external C controller, with a MAVLink route for 14.
+  Fallbacks: ArduPilot/PX4 SITL or gym-pybullet-drones; MuJoCo for robots.
+
+### How lessons 06–09 were run without Wokwi
+
+Renode 1.17.0 (portable, not vendored — downloaded to a scratch directory) on
+its STM32F072 platform. The F0 shares the C0's USART2, TIM3, TIM14, I²C1, SPI1
+and ADC addresses and IRQ numbers, so lesson code ran unchanged, with three
+harness-only adjustments: a test `SystemInit()` that skips the C0's clock and
+flash-latency polls; the C0's GPIO block mapped as plain RAM, with `IDR`
+written to press buttons; and the F0's timers clocked at 48 MHz instead of
+Renode's default 10 MHz. Each lesson README says exactly what was run, what
+it showed, and what Renode could not model. Where Renode and silicon
+disagree — it does not fault on unaligned access, does not NACK an absent I²C
+device, and its F0 ADC has no `CCRDY` — the lessons say so rather than
+papering over it.
+
+The numbering in `_spike/FINDINGS.md` (EXTI as "lesson 06") predates this
+syllabus; EXTI is lesson 05.
 
 ## The `_spike/` directory
 

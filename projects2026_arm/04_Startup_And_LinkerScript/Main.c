@@ -73,7 +73,7 @@ static void led_init(void)
  * SysTick is a 24-bit down-counter built into every Cortex-M core.  Loaded
  * with (clock / 1000) - 1 it wraps once per millisecond and raises COUNTFLAG
  * each time; reading CTRL clears the flag again.  No interrupt is involved -
- * lesson 07 turns this same counter into one.  Until then, polling it is
+ * lesson 06 turns this same counter into one.  Until then, polling it is
  * honest, exact, and four lines long.
  */
 static void systick_init(void)

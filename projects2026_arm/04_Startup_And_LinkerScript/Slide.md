@@ -148,7 +148,7 @@ Both are vendored in `tools/cmsis/`.
 **CMSIS is headers, not a library.** Nothing is linked and no function is
 called. It is `#define`s and struct declarations that put names on addresses ST
 published in the reference manual. It is *not* ST's HAL — that is a real
-library, and lesson 34 compares the two.
+library, and lesson 11 compares the two.
 
 Naming the address costs you nothing. Compile both spellings of the same
 toggle at `-Os` and compare:
@@ -855,7 +855,7 @@ You now own every line of code that runs on this chip. Nothing below `main()`
 is a black box any more, and for the rest of the course that pays:
 
 - **Every later lesson links this same `startup.c` shape.** When you add a
-  timer interrupt in lesson 08, you will define `TIM3_IRQHandler` and know
+  timer interrupt in lesson 06, you will define `TIM3_IRQHandler` and know
   precisely why that name and no other name works.
 - **When a board is silent, you now have a checklist.** Did `.data` get copied?
   Is `SystemCoreClock` 48 MHz or still 12? Is the handler name spelled exactly

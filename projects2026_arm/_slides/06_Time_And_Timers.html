@@ -1,0 +1,395 @@
+<title>Time and Timers: Letting the Hardware Keep Time</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Time and Timers: Letting the Hardware Keep Time</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Time and Timers: Letting the Hardware Keep Time</h1>
+<h2>SOC3050 ARM Edition — Part 1, Instances</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>Three clocks, one crystal, and a parking sensor.</strong></p>
+<p>Lesson 05 ended on a confession: its millisecond was polled, and every<br><code>printf</code> quietly stole a few of them. This week time becomes something the<br>hardware keeps <em>for</em> you — SysTick as an interrupt, a timer that generates a<br>waveform with no CPU at all, and a timer that writes down <em>when</em> an edge<br>happened, to the microsecond, however busy the CPU is.</p>
+<p>Every figure on these slides is real output from<br><code>06_Time_And_Timers/Main.elf</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 1: The Millisecond That Lied</h2>
+<p>Lesson 05&#x27;s clock was a loop asking SysTick &quot;have you wrapped yet?&quot;:</p>
+<pre class="lang-c"><code>while (!(SysTick-&gt;CTRL &amp; SysTick_CTRL_COUNTFLAG_Msk)) { }
+ms_now++;</code></pre>
+<p><code>COUNTFLAG</code> remembers <strong>one</strong> wrap. A <code>printf</code> of 90 characters at 115200 baud<br>holds the loop for about 8 ms; seven wraps happen while nobody is asking, and<br>seven milliseconds vanish. Time that depends on the loop coming back is only as<br>good as the loop.</p>
+<p>The fix is lesson 03&#x27;s second rendezvous — <strong>interrupt</strong> instead of poll:</p>
+<pre class="lang-c"><code>static volatile uint32_t ms_ticks;
+
+void SysTick_Handler(void) { ms_ticks++; }
+
+SysTick_Config(SystemCoreClock / 1000u);      /* in main(), once */</code></pre>
+<p>Now each wrap <em>forces</em> a one-line function to run, whatever <code>main()</code> is doing.<br>This lesson&#x27;s report line prints how long its own previous <code>printf</code> took — and<br>the clock keeps counting straight through it.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: <code>SysTick_Config()</code> Is Five Lines You Can Read</h2>
+<p>It is CMSIS, from <code>core_cm0plus.h</code>, and it hides nothing:</p>
+<pre class="lang-c"><code>if ((ticks - 1UL) &gt; SysTick_LOAD_RELOAD_Msk) return 1;   /* 24 bits only */
+SysTick-&gt;LOAD  = ticks - 1UL;                             /* 47999        */
+NVIC_SetPriority(SysTick_IRQn, (1UL &lt;&lt; __NVIC_PRIO_BITS) - 1UL);  /* 3   */
+SysTick-&gt;VAL   = 0UL;
+SysTick-&gt;CTRL  = CLKSOURCE | TICKINT | ENABLE;</code></pre>
+<p>Two details matter later:</p>
+<ul><li><strong>Priority 3 — the lowest.</strong> Time-keeping is almost never the most urgent thing; a late tick is caught up, a missed capture is gone. Slide 15.</li><li><strong>SysTick is part of the core, not ST&#x27;s silicon.</strong> Every Cortex-M has it at the same address with the same registers, which is exactly why every RTOS uses it as its heartbeat. Lesson 07 does.</li></ul>
+<p><code>SysTick_Handler</code> has <strong>no flag to clear</strong> — unlike every other handler in<br>this course. Its request is the wrap itself, and taking the exception<br>acknowledges it.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: <code>millis()</code> and the Wrap That Does Not Matter</h2>
+<p><code>ms_ticks</code> is a <code>uint32_t</code>. It wraps after 2³² ms — <strong>49.7 days</strong>. Code that<br>compares absolute times breaks on day 50:</p>
+<pre class="lang-c"><code>if (millis() &gt;= deadline) ...          /* WRONG at the wrap */
+if (millis() - start &gt;= period) ...    /* right, always     */</code></pre>
+<p>Unsigned subtraction is modulo 2³², so <code>now - start</code> is the true elapsed time<br>even when <code>now</code> has wrapped past zero and <code>start</code> has not. Every timeout in<br>this lesson is written that way.</p>
+<p>Reading <code>ms_ticks</code> needs no lock: one aligned word, one writer (lesson 03,<br>slide 7). <code>volatile</code> is what forces each <code>millis()</code> to actually load it.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Doing Several Things &quot;At Once&quot; Without Waiting</h2>
+<p>With a real clock, the loop never blocks. Each job checks whether its time has<br>come, and if not, gets out of the way:</p>
+<pre class="lang-c"><code>for (;;) {
+    uint32_t now = millis();
+    if (now - ping_at   &gt;= 100)  { ping_at   += 100;  ranger_ping(); }
+    if (now - report_at &gt;= 1000) { report_at += 1000; printf(...);   }
+    if (now - beat_at   &gt;= 500)  { beat_at   += 500;  toggle LD4;    }
+}</code></pre>
+<p>Three jobs at three rates, none aware of the others. This is <strong>cooperative<br>scheduling</strong> in its smallest form, and most small products ship exactly this.</p>
+<p><code>ping_at += 100</code>, not <code>ping_at = now</code>. If one pass runs 3 ms late, <code>= now</code><br>shifts every later ping by 3 ms and the error accumulates; <code>+=</code> keeps the<br>schedule on a 100 ms grid and absorbs the lateness.</p>
+<p>&gt; The weakness: every job must be quick. One job that takes 50 ms delays all<br>&gt; the others by 50 ms. Lesson 07 removes that limit.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: A Timer Is a Counter With Three Registers</h2>
+<p>Every STM32 timer, from the 16-bit TIM14 to the advanced TIM1, is built on the<br>same core:</p>
+<figure class="diagram"><svg viewBox="0 0 580 230" role="img" aria-label="Timer time base: clock through prescaler into counter, compared with auto-reload, producing update events">
+  <defs><marker id="t5" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="10" y="40" width="90" height="44" rx="5"/>
+  <text x="55" y="60" text-anchor="middle" class="mono">48 MHz</text>
+  <text x="55" y="76" text-anchor="middle" class="lbl">timer clock</text>
+  <path class="wire" d="M100 62 H130" marker-end="url(#t5)"/>
+  <rect class="reg" x="134" y="40" width="110" height="44" rx="5"/>
+  <text x="189" y="60" text-anchor="middle" class="mono">PSC = 47</text>
+  <text x="189" y="76" text-anchor="middle" class="lbl">divide by PSC+1</text>
+  <path class="wire" d="M244 62 H274" marker-end="url(#t5)"/>
+  <rect class="hifill" x="278" y="34" width="120" height="56" rx="5"/>
+  <text x="338" y="56" text-anchor="middle" class="mono">CNT</text>
+  <text x="338" y="74" text-anchor="middle" class="lbl">+1 every 1 us</text>
+  <path class="wire" d="M398 62 H428" marker-end="url(#t5)"/>
+  <rect class="reg" x="432" y="40" width="130" height="44" rx="5"/>
+  <text x="497" y="60" text-anchor="middle" class="mono">ARR = 19999</text>
+  <text x="497" y="76" text-anchor="middle" class="lbl">CNT == ARR ?</text>
+  <path class="hi" d="M497 84 V130 H338 V94" marker-end="url(#t5)"/>
+  <text x="418" y="148" text-anchor="middle" class="hi">update event: CNT → 0, UIF = 1</text>
+  <text x="290" y="190" text-anchor="middle" class="mono">f_update = f_clk / ((PSC+1) × (ARR+1)) = 48 000 000 / (48 × 20000) = 50 Hz</text>
+  <text x="290" y="214" text-anchor="middle" class="lbl">Both registers hold N−1: a count of N steps runs from 0 to N−1.</text>
+</svg></figure>
+<p>The <code>−1</code> in both registers is the classic off-by-one. <code>PSC = 48</code> gives<br>48.98 Hz, and nothing complains — except this lesson&#x27;s report line, which<br>counts TIM3&#x27;s updates against SysTick every second. Lab Part 2.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Shadow Registers, and Why <code>UG</code> Comes First</h2>
+<p><code>PSC</code>, <code>ARR</code> and <code>CCR1</code> are <strong>double-buffered</strong>. What you write lands in a<br><em>preload</em> register; the counter keeps using the <em>shadow</em> copy until the next<br>update event, when the preload is copied across.</p>
+<p>That is what lets you change a PWM duty cycle mid-flight without ever<br>producing a malformed pulse. It is also why a freshly configured timer can<br>ignore you:</p>
+<pre class="lang-c"><code>TIM3-&gt;PSC  = 47;          /* sits in preload...                         */
+TIM3-&gt;ARR  = 19999;
+TIM3-&gt;EGR  = TIM_EGR_UG;  /* ...until this forces an update right now   */
+TIM3-&gt;SR   = ~TIM_SR_UIF; /* UG also raised UIF - clear it, or the first */
+TIM3-&gt;DIER |= TIM_DIER_UIE;  /* interrupt is a phantom                  */</code></pre>
+<p>Skip <code>UG</code> and the prescaler is still 0 for the first period: 20000 counts at<br>48 MHz — 0.4 ms instead of 20 ms. (<code>ARR</code> took effect at once only because it<br>was written before <code>ARPE</code> switched its preload on.) On a timer that runs once, that is a bug you<br>will see; on one that runs forever, it is a glitch you probably will not.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: <code>TIM3_IRQHandler</code> — and the Opposite Convention</h2>
+<p>Lesson 04 promised you would define <code>TIM3_IRQHandler</code> and know why that name<br>works. Here it is, doing one thing per 20 ms frame:</p>
+<pre class="lang-c"><code>void TIM3_IRQHandler(void)
+{
+    if (TIM3-&gt;SR &amp; TIM_SR_UIF) {
+        TIM3-&gt;SR = ~TIM_SR_UIF;       /* write 0 to clear */
+        ...</code></pre>
+<p><strong>Timer flags clear by writing 0. EXTI flags clear by writing 1.</strong> Same chip,<br>same vendor, opposite conventions — and ST&#x27;s own low-level driver shows both:</p>
+<pre class="lang-c"><code>LL_TIM_ClearFlag_UPDATE:        WRITE_REG(TIMx-&gt;SR,   ~(TIM_SR_UIF));
+LL_EXTI_ClearFallingFlag_0_31:  WRITE_REG(EXTI-&gt;FPR1, ExtiLine);</code></pre>
+<p>The compiler builds <code>~TIM_SR_UIF</code> as <code>movs r2, #2 ; negs r2, r2</code> —<br><code>0xFFFFFFFE</code> — and one <code>str</code>. Writing 1s to every other flag leaves them<br>alone, so the clear touches only UIF and needs no read. Write it the EXTI way,<br><code>TIM3-&gt;SR = TIM_SR_UIF</code>, and you clear <strong>every other</strong> flag and leave UIF set:<br>the handler re-enters forever. It builds with zero warnings. Lab Part 1.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Output Compare — the Timer Draws a Waveform</h2>
+<p>Add a fourth register and the counter drives a pin by itself:</p>
+<figure class="diagram"><svg viewBox="0 0 580 210" role="img" aria-label="PWM mode 1: output high while CNT is below CCR1, low until ARR">
+  <text x="20" y="22" class="lbl">CNT</text>
+  <path class="wire" d="M40 110 L200 30 V110 L360 30 V110 L520 30 V110"/>
+  <path class="dash" d="M40 70 H540"/>
+  <text x="545" y="74" class="mono lbl">CCR1</text>
+  <path class="dash" d="M40 30 H540"/>
+  <text x="545" y="34" class="mono lbl">ARR</text>
+  <text x="20" y="150" class="lbl">PA6</text>
+  <path class="hi" d="M40 170 V140 H120 V170 H200 V140 H280 V170 H360 V140 H440 V170 H520"/>
+  <text x="80" y="198" text-anchor="middle" class="lbl">CNT &lt; CCR1</text>
+  <text x="160" y="198" text-anchor="middle" class="lbl">CNT ≥ CCR1</text>
+  <text x="440" y="198" text-anchor="middle" class="lbl">one 20 ms frame per ramp</text>
+</svg></figure>
+<p>PWM mode 1 (<code>OC1M = 110</code>): the pin is high while <code>CNT &lt; CCR1</code>, low after. With<br>the counter ticking once per microsecond, <strong><code>CCR1</code> is the pulse width in<br>microseconds</strong>. No CPU is involved in a single edge — the ISR is only there<br>to <em>change</em> <code>CCR1</code>, and <code>OC1PE</code> (preload) makes every change wait for the next<br>frame boundary, so a pulse is never cut in half.</p>
+<p>Four writes turn the channel on: <code>CCMR1</code> (mode and preload), <code>CCER.CC1E</code><br>(connect to the pin), <code>CR1.ARPE</code>, and the pin&#x27;s alternate function.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: The Signal a Servo Reads</h2>
+<p>A hobby servo reads <strong>the width of a pulse, repeated every 20 ms</strong>:</p>
+<table><thead><tr><th>Pulse</th><th>Angle (nominal)</th></tr></thead><tbody><tr><td>1.0 ms</td><td>one end</td></tr><tr><td>1.5 ms</td><td>centre</td></tr><tr><td>2.0 ms</td><td>other end</td></tr></tbody></table>
+<p>&quot;Nominal&quot; is doing real work there. Real servos differ, and Arduino&#x27;s <code>Servo</code><br>library uses 544–2400 µs for its 0–180°. Wokwi&#x27;s servo documentation gives no<br>pulse range at all — so <strong>Lab Part 4 measures it</strong>: sweep <code>CCR1</code> and note where<br>the horn stops moving.</p>
+<p>The frame rate is not critical — typical servos accept a wide range around<br>50 Hz — but the <em>pulse width</em> is the whole message. That is why this<br>lesson counts in microseconds: one count, one microsecond, and <code>CCR1 = 1500</code><br>means exactly 1.5 ms.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Getting the Signal Out — the AF Table</h2>
+<p>The timer channel is inside the chip. <code>pin_af()</code> connects it to a pin, and the<br>number it needs comes from a table in the <strong>datasheet</strong>, not the reference<br>manual:</p>
+<table><thead><tr><th>Signal</th><th>PA6</th><th>PB4</th><th>PB6</th><th>PB7</th><th>PC6</th></tr></thead><tbody><tr><td><code>TIM3_CH1</code></td><td><strong>AF1</strong></td><td>AF1</td><td>AF12</td><td>AF11</td><td>AF1</td></tr></tbody></table>
+<p>(From the STM32C031 pin data, as published in Zephyr&#x27;s <code>hal_stm32</code><br><code>stm32c031c(4-6)tx-pinctrl.dtsi</code> — generated from ST&#x27;s own database.)</p>
+<p>The same signal has <strong>different AF numbers on different pins</strong>. And this<br>lesson&#x27;s second timer: <code>TIM14_CH1</code> is <strong>AF4</strong> on PA7 but AF0 on PB1.</p>
+<p>A wrong AF number gives a pin that is electrically fine, driven by some other<br>peripheral or by nothing. The timer still counts, the interrupt still fires,<br>the report still says 50 updates a second — and the servo does not move. Lab<br>Part 5: <strong>the timer works, the pin doesn&#x27;t.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 11: The Smallest Control Loop</h2>
+<p>The update interrupt runs once per frame and moves the pulse <em>towards</em> the<br>target, never more than 20 µs a frame:</p>
+<pre class="lang-c"><code>uint32_t now  = TIM3-&gt;CCR1;
+uint32_t want = servo_target_us;
+if      (want &gt; now + SLEW) now += SLEW;
+else if (want + SLEW &lt; now) now -= SLEW;
+else                        now  = want;
+TIM3-&gt;CCR1 = now;</code></pre>
+<p>That is a <strong>rate limiter</strong>: the servo glides at 1000 µs per second of travel<br>instead of snapping. It is the smallest possible piece of control code —<br>measure, compare, correct, once per period — and it is running in the right<br>place: an interrupt tied to the exact rate at which the output is consumed.</p>
+<p>Every controller in Part 3, from the line follower to the drone&#x27;s attitude<br>loop, has this shape with better arithmetic inside.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Input Capture — the Hardware Takes the Timestamp</h2>
+<p>Now the reverse: not &quot;make an edge at this time&quot; but &quot;<strong>what time was this<br>edge?</strong>&quot;</p>
+<figure class="diagram"><svg viewBox="0 0 580 190" role="img" aria-label="Input capture: an edge on PA7 copies CNT into CCR1 in hardware, then raises CC1IF">
+  <defs><marker id="t12" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="20" y="40" width="90" height="44" rx="5"/>
+  <text x="65" y="60" text-anchor="middle" class="mono">PA7</text>
+  <text x="65" y="76" text-anchor="middle" class="lbl">echo edge</text>
+  <path class="wire" d="M110 62 H150" marker-end="url(#t12)"/>
+  <rect class="hifill" x="154" y="30" width="170" height="64" rx="5"/>
+  <text x="239" y="54" text-anchor="middle">CCR1 ← CNT</text>
+  <text x="239" y="74" text-anchor="middle" class="lbl">in hardware, at the edge</text>
+  <path class="wire" d="M324 62 H364" marker-end="url(#t12)"/>
+  <rect class="reg" x="368" y="40" width="90" height="44" rx="5"/>
+  <text x="413" y="67" text-anchor="middle" class="mono">CC1IF</text>
+  <path class="wire" d="M458 62 H490" marker-end="url(#t12)"/>
+  <rect class="box" x="494" y="40" width="70" height="44" rx="5"/>
+  <text x="529" y="67" text-anchor="middle" class="lbl">ISR reads</text>
+  <text x="290" y="140" text-anchor="middle" class="hi">The timestamp is taken before the interrupt is even requested.</text>
+  <text x="290" y="164" text-anchor="middle" class="lbl">ISR latency — 1 us or 100 us — changes when you READ it, not what it SAYS.</text>
+</svg></figure>
+<p>That is the whole point. Measuring a pulse with an EXTI interrupt and<br><code>millis()</code> would include the interrupt&#x27;s latency, and the latency varies with<br>whatever else is running. Input capture removes the CPU from the measurement<br>entirely; the ISR is a courier, not a stopwatch.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Measuring the Echo</h2>
+<p>The HC-SR04 answers a 10 µs trigger with a high pulse whose width is the<br>round-trip time of the sound — <strong>58 µs per centimetre</strong>, per Wokwi&#x27;s part<br>documentation. TIM14 free-runs at 1 MHz and captures <strong>both</strong> edges<br>(<code>CC1P = CC1NP = 1</code>):</p>
+<pre class="lang-c"><code>uint16_t t = (uint16_t)TIM14-&gt;CCR1;          /* reading CCR1 clears CC1IF */
+if (pin_read(GPIOA, ECHO_PIN)) echo_rise = t;           /* rising  */
+else { echo_us = (uint16_t)(t - echo_rise); ... }       /* falling */</code></pre>
+<p>Two details:</p>
+<ul><li><strong>The 16-bit subtraction is correct across a wrap.</strong> TIM14 wraps every 65.5 ms; the longest echo, 400 cm, is 23.2 ms. If the counter wraps between the edges, <code>(uint16_t)(t - rise)</code> is still the true width — the same modular trick as <code>millis()</code>, in 16 bits.</li><li><strong>Reading <code>CCR1</code> clears <code>CC1IF</code></strong> — a third clearing convention, and the only one that needs no write at all. The SVD says so in as many words.</li></ul>
+<p>The trigger pulse uses TIM14 too: <code>CNT</code> is already counting microseconds, so<br>it is the stopwatch for the 10 µs.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Two Variables From One Interrupt — Tearing</h2>
+<p>The capture ISR writes two things together: the width and a count. <code>main()</code><br>wants a consistent pair:</p>
+<pre class="lang-c"><code>__disable_irq();
+uint32_t n  = echo_count;
+uint32_t us = echo_us;
+__enable_irq();</code></pre>
+<p>Without the critical section, a capture landing between the two loads pairs a<br><strong>new</strong> count with an <strong>old</strong> width — lesson 03, slide 7&#x27;s <em>tearing</em>, now in<br>real code. With it, the window is two load instructions long: a fraction of a<br>microsecond with interrupts off, and the capture itself is not delayed at all,<br>because the hardware already took the timestamp (slide 12). The interrupt is<br>merely held pending until <code>__enable_irq()</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Three Interrupts, Three Priorities</h2>
+<table><thead><tr><th>Source</th><th>Priority</th><th>Why</th></tr></thead><tbody><tr><td>TIM14 capture</td><td><strong>1</strong></td><td>its <em>read</em> must happen before the next edge overwrites <code>CCR1</code></td></tr><tr><td>TIM3 update</td><td><strong>2</strong></td><td>must set <code>CCR1</code> within the 20 ms frame — generous</td></tr><tr><td>SysTick</td><td><strong>3</strong> (lowest)</td><td>a late tick is still counted; nothing is lost</td></tr></tbody></table>
+<p>On a Cortex-M0+ a higher-priority interrupt <strong>preempts</strong> a running<br>lower-priority handler. Equal priorities never preempt each other; they queue,<br>and the NVIC takes the higher priority — then the lower IRQ number — first.</p>
+<p>Notice what the table is <em>not</em> based on: importance to the user. The servo<br>matters more than the clock to someone watching, but it has 20 ms of slack.<br><strong>Priority follows deadline</strong>, not significance. That rule has a name —<br><em>deadline-monotonic</em>, or <em>rate-monotonic</em> when each deadline is the job&#x27;s own<br>period — and lesson 07 builds a scheduler on it.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Two Clocks Checking Each Other</h2>
+<p>The report line counts TIM3&#x27;s update interrupts per second of SysTick time:</p>
+<pre><code>t=  5000 ms  TIM3 50/s  echo  5800 us = 100 cm  servo 1500 us  (last line took 8 ms)</code></pre>
+<p>Both come from the same 48 MHz, through completely different dividers — so if<br><code>PSC</code> and <code>ARR</code> are right, the answer is exactly 50 every second. It is a<br><strong>self-test</strong>: arithmetic in two independent places that must agree.</p>
+<p>The <code>took</code> figure is the other half of the story: about 88 characters at<br>86.8 µs each is 7 or 8 ms, and the clock kept counting through all of it. Lesson 05<br>would have lost seven of those milliseconds.</p>
+<p>&gt; <code>TIM3 50/s</code> was <strong>measured</strong> by running this program in Renode — whose own<br>&gt; platform file, it turned out, clocks its timers at 10 MHz: the first run<br>&gt; read <code>TIM3 10/s</code>. The self-test caught the simulator. Not yet watched in<br>&gt; Wokwi; if <code>took</code> reads 0 there, its UART is faster than silicon&#x27;s.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: The Silent-Failure Checklist, Timer Edition</h2>
+<table><thead><tr><th>Forgot</th><th>Symptom</th></tr></thead><tbody><tr><td><code>RCC-&gt;APBENR1/2</code> clock gate</td><td>registers read 0, nothing counts</td></tr><tr><td><code>EGR = UG</code> after setting PSC/ARR</td><td>first period at the wrong rate</td></tr><tr><td><code>−1</code> in <code>PSC</code> or <code>ARR</code></td><td>2% off — only a cross-check notices</td></tr><tr><td>clearing <code>UIF</code> by writing <strong>1</strong></td><td>handler re-enters forever</td></tr><tr><td>the pin&#x27;s AF number</td><td>timer runs, pin is dead</td></tr><tr><td><code>CCER.CC1E</code></td><td>same — the channel never reaches the pin</td></tr><tr><td>both capture edges</td><td>rising edges only: no widths, ever</td></tr><tr><td>handler name, exactly</td><td>vector stays <code>Default_Handler</code> (lesson 05)</td></tr></tbody></table>
+<p>The banner prints <code>PSC</code>, <code>ARR</code>, the computed rate, both AF fields, the capture<br>polarity bits and whether each of the three handlers is installed — read back<br>from the hardware, as in lesson 05.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: What Carries Forward</h2>
+<ul><li><strong>Time is now an interrupt</strong>, and <code>now - then</code> is the only comparison you write.</li><li><strong>Timers are one model, many instances.</strong> TIM3 made a waveform, TIM14 measured one; TIM1, TIM16 and TIM17 are the same registers with more features. You will not need a new lesson to use them.</li><li><strong>The superloop has a ceiling.</strong> Every job in slide 4&#x27;s loop must finish quickly, or it delays all the others. The ranger, the report and the heartbeat coexist only because each is short. <strong>Lesson 07 lifts the ceiling</strong>: SysTick becomes the heartbeat of a scheduler that can <em>interrupt a job</em> and run another, and <code>delay_ms()</code> comes back — without stopping anything else.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:06_Time_And_Timers', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:06_Time_And_Timers') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>
