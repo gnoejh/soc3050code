@@ -465,18 +465,82 @@ a button that reads 0 when pressed (slide 19), that means *pressed, forever*.
 | `0` | **Push-pull** (reset) | drive **high** *and* **low** — the normal choice |
 | `1` | **Open-drain** | drive **low** only; for high it lets go, and a resistor pulls it up |
 
-```
-push-pull:   3.3V -[on]-  pin  -[off]- GND     -> pin = 1
-             3.3V -[off]- pin  -[on]-  GND     -> pin = 0
-open-drain:          (nothing) pin -[on]-  GND  -> pin = 0
-                     (nothing) pin -[off]- GND  -> pin = whatever pulls it
+```svg
+<svg viewBox="0 0 620 360" role="img" aria-label="Push-pull output: a P-MOS to 3.3 V and an N-MOS to ground with drains joined at the pin. Open-drain: two chips' N-MOS drains joined on one wire with a pull-up resistor.">
+  <text x="150" y="18" text-anchor="middle" class="hi">PUSH-PULL  (OTYPER = 0)</text>
+  <path class="wire" d="M90 44 H210"/>
+  <text x="150" y="38" text-anchor="middle" class="mono lbl">3.3 V</text>
+  <path class="wire" d="M150 44 V62 H140 M140 132 H150 V150"/>
+  <path class="wire" d="M140 58 V136" stroke-width="2.5"/>
+  <path class="wire" d="M133 62 V132" stroke-width="2"/>
+  <circle cx="129" cy="97.0" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <path class="wire" d="M70 97.0 H125"/>
+  <text x="158" y="102.0" class="mono">P-MOS</text>
+  <circle cx="150" cy="150" r="3.5" fill="currentColor"/>
+  <path class="wire" d="M150 150 H250"/>
+  <circle class="hi" cx="256" cy="150" r="6" fill="none"/>
+  <text x="256" y="176" text-anchor="middle" class="mono">pin</text>
+  <text x="200" y="143" text-anchor="middle" class="lbl">drains joined</text>
+  <path class="wire" d="M150 150 V168 H140 M140 238 H150 V256"/>
+  <path class="wire" d="M140 164 V242" stroke-width="2.5"/>
+  <path class="wire" d="M133 168 V238" stroke-width="2"/>
+  <path class="wire" d="M70 203.0 H133"/>
+  <text x="158" y="208.0" class="mono">N-MOS</text>
+  <path class="wire" d="M90 256 H210"/>
+  <text x="150" y="274" text-anchor="middle" class="mono lbl">GND</text>
+  <path class="wire" d="M70 97 V203"/>
+  <circle cx="70" cy="150" r="3" fill="currentColor"/>
+  <path class="wire" d="M30 150 H70"/>
+  <text x="12" y="128" class="mono lbl">NOT ODR</text>
+  <text x="12" y="176" class="lbl">gates tied</text>
+  <text x="20" y="300" class="mono">ODR = 1: P on,  N off  -> pin = 1</text>
+  <text x="20" y="320" class="mono">ODR = 0: P off, N on   -> pin = 0</text>
+  <text x="20" y="344" class="lbl">drives both ways, fast and strong</text>
+  <path class="dash" d="M300 10 V350"/>
+  <text x="460" y="18" text-anchor="middle" class="hi">OPEN-DRAIN  (OTYPER = 1)</text>
+  <path class="wire" d="M340 44 H400"/>
+  <text x="370" y="38" text-anchor="middle" class="mono lbl">3.3 V</text>
+  <path class="wire" d="M370 44 V64"/>
+  <rect class="reg" x="362" y="64" width="16" height="48" rx="2"/>
+  <text x="386" y="93" class="mono lbl">pull-up</text>
+  <path class="wire" d="M370 112 V150"/>
+  <path class="wire" d="M330 150 H600"/>
+  <circle cx="370" cy="150" r="3.5" fill="currentColor"/>
+  <text x="600" y="138" text-anchor="end" class="mono">shared wire (e.g. I2C SDA)</text>
+  <circle cx="440" cy="150" r="3.5" fill="currentColor"/>
+  <circle cx="545" cy="150" r="3.5" fill="currentColor"/>
+  <path class="wire" d="M440 150 V168 H430 M430 238 H440 V256"/>
+  <path class="wire" d="M430 164 V242" stroke-width="2.5"/>
+  <path class="wire" d="M423 168 V238" stroke-width="2"/>
+  <path class="wire" d="M395 203.0 H423"/>
+  <text x="448" y="208.0" class="mono">chip 1</text>
+  <path class="wire" d="M545 150 V168 H535 M535 238 H545 V256"/>
+  <path class="wire" d="M535 164 V242" stroke-width="2.5"/>
+  <path class="wire" d="M528 168 V238" stroke-width="2"/>
+  <path class="wire" d="M500 203.0 H528"/>
+  <text x="553" y="208.0" class="mono">chip 2</text>
+  <path class="wire" d="M410 256 H575"/>
+  <text x="492" y="274" text-anchor="middle" class="mono lbl">GND</text>
+  <text x="320" y="300" class="mono">anyone on   -> wire = 0</text>
+  <text x="320" y="320" class="mono">everyone off -> resistor: wire = 1</text>
+  <text x="320" y="344" class="lbl">no P-MOS: nobody ever drives high, so nobody can clash</text>
+</svg>
 ```
 
-Why would you ever want a pin that cannot drive high? Because **two
-open-drain outputs can share one wire safely**: the worst they can do is both
-pull low. Two push-pull outputs driving opposite levels short the supply.
-That is how I²C puts many chips on two wires — lesson 09 sets `OTYPER` for
-exactly that reason.
+Every output pin has both transistors. **Push-pull** uses both: the P-MOS
+connects the pin to 3.3 V, the N-MOS connects it to ground, and their gates are
+driven together, by the *inverse* of the `ODR` bit, so exactly one is on: a
+P-MOS conducts when its gate is **low**, an N-MOS when its gate is **high**. **Open-drain** switches the P-MOS off for
+good — only the N-MOS is left, with its drain on the pin (hence the name). It
+can pull the pin low, or let go; *high* has to come from a resistor.
+
+Why would you ever want a pin that cannot drive high? Look at the right-hand
+circuit: **two open-drain outputs can share one wire safely.** The worst they
+can do is both pull low. Two *push-pull* outputs on one wire, one driving high
+and the other low, connect 3.3 V to ground through two transistors — a short.
+Open-drain is how I²C puts many chips on two wires, and it is a *wired-AND*:
+the wire is 1 only if every chip lets go. Lesson 09 sets `OTYPER` for exactly
+that reason.
 
 This lesson leaves `OTYPER` at its reset value, `0x00000000`: every output is
 push-pull.
@@ -875,7 +939,31 @@ one**. Debouncing is not optional; it is part of reading a button.
 
 The main loop samples button A **once per millisecond** and passes the reading
 to a debouncer. A new level is believed only after it has **held unchanged for
-`DEBOUNCE_MS` samples in a row**:
+`DEBOUNCE_MS` samples in a row** (`DEBOUNCE_MS` is 20).
+
+The debouncer's memory is one small struct — everything it needs to remember
+between one millisecond and the next:
+
+```c
+typedef struct {
+    uint8_t  stable;     /* the level we have ACCEPTED: 1 = pressed, 0 = released */
+    uint8_t  raw;        /* the most recent sample, believed or not                */
+    uint16_t held_ms;    /* how many samples in a row `raw` has stayed the same     */
+    uint32_t changes;    /* how many times `raw` has moved - bounce included;       */
+} debounce_t;            /*   this is the "level changes seen" the program prints   */
+```
+
+`main()` keeps one of these for button A, starts it at all zeros (released,
+nothing seen), and feeds it one sample per millisecond:
+
+```c
+debounce_t a = { 0 };
+...
+int ev = debounce_step(&a, (uint8_t)button_down(BTN_A_PIN));   /* every 1 ms */
+```
+
+and the function itself — it returns **+1** on a press, **−1** on a release,
+and **0** the rest of the time:
 
 ```c
 static int debounce_step(debounce_t *d, uint8_t raw)
@@ -895,8 +983,20 @@ static int debounce_step(debounce_t *d, uint8_t raw)
 }
 ```
 
-**Traced**, with `DEBOUNCE_MS` shrunk to 3 so it fits (the program uses 20),
-for a press that bounces twice (`raw` 1 = pressed):
+In words: *if the sample differs from the last one, remember it and start
+counting again; if it is the same, count; when the count reaches
+`DEBOUNCE_MS` and the level differs from what was accepted, accept it and
+report the change.* `d->` is how a function reaches the fields of a struct it
+was given a pointer to.
+
+---
+
+## Slide 21, continued: The Debouncer, Traced
+
+The same function, run by hand on a press that bounces twice. `DEBOUNCE_MS`
+is shrunk to **3** so the table fits (the program uses 20); `raw` 1 means
+pressed. Each row is one call, one millisecond apart, and shows the struct's
+fields **after** the call:
 
 | ms | raw | held | stable | event |
 |---|---|---|---|---|
@@ -912,6 +1012,15 @@ for a press that bounces twice (`raw` 1 = pressed):
 
 Every bounce restarts the count; only three quiet samples in a row finish it.
 One press, one event.
+
+Two things to notice in the table:
+
+- **The press is reported at ms 8, not ms 3**, when the contact first touched.
+  That delay — `DEBOUNCE_MS` after the last bounce — is the price of
+  certainty. At 20 ms it is far below what a person notices.
+- **`changes`** (not shown) went up at ms 3, 4 and 5 — three level changes for
+  one press. That is the number the program prints as *level changes seen at
+  1 kHz*, and why it is sometimes more than 1.
 
 ---
 
@@ -995,6 +1104,64 @@ but of which port? `EXTICR` chooses, with a **port code**:
 |---|---|---|---|---|---|
 | Port | A | B | C | D | F |
 
+Picture each line as a **multiplexer**: several inputs, one output, and a
+*select* number that says which input goes through. For line 1, the inputs are
+pin 1 of every port, and the select is line 1's field of `EXTICR`:
+
+```svg
+<svg viewBox="0 0 640 330" role="img" aria-label="EXTI line 1 as a multiplexer: PA1, PB1, PD1 and PF1 in, EXTICR field selects one, output to edge detection">
+  <defs><marker id="mx" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <text x="320" y="18" text-anchor="middle" class="lbl">one multiplexer per EXTI line - sixteen of them, lines 0 to 15; this is line 1</text>
+
+  <path class="dash" d="M222 44 L312 79 L312 219 L222 254 Z"/>
+  <path class="dash" d="M214 40 L304 75 L304 215 L214 250 Z"/>
+  <text x="318" y="250" class="lbl">x16</text>
+
+  <path class="hi" d="M40 70 H206" marker-end="url(#mx)"/>
+  <text x="36" y="74" text-anchor="end" class="mono">PA1</text>
+  <text x="120" y="64" text-anchor="middle" class="mono lbl">code 0</text>
+  <path class="wire" d="M40 105 H206"/>
+  <text x="36" y="109" text-anchor="end" class="mono">PB1</text>
+  <text x="120" y="99" text-anchor="middle" class="mono lbl">code 1</text>
+  <path class="dash" d="M40 140 H206"/>
+  <text x="36" y="144" text-anchor="end" class="mono lbl">PC1</text>
+  <text x="120" y="134" text-anchor="middle" class="mono lbl">code 2</text>
+  <text x="120" y="156" text-anchor="middle" class="lbl">no PC1 pin on this chip</text>
+  <path class="wire" d="M40 175 H206"/>
+  <text x="36" y="179" text-anchor="end" class="mono">PD1</text>
+  <text x="120" y="169" text-anchor="middle" class="mono lbl">code 3</text>
+  <path class="wire" d="M40 210 H206"/>
+  <text x="36" y="214" text-anchor="end" class="mono">PF1</text>
+  <text x="120" y="204" text-anchor="middle" class="mono lbl">code 5</text>
+
+  <path class="box" d="M206 36 L296 71 L296 211 L206 246 Z"/>
+  <text x="248" y="186" text-anchor="middle" class="mono">MUX</text>
+  <text x="248" y="204" text-anchor="middle" class="lbl">line 1</text>
+  <path class="hi" d="M210 70 L262 140 H296" stroke-dasharray="3 3"/>
+
+  <path class="hi" d="M251 318 V232" marker-end="url(#mx)"/>
+  <text x="262" y="292" class="mono">select = EXTICR[0] bits 15:8</text>
+  <text x="262" y="310" class="mono">= 0  ->  port A  ->  PA1 goes through</text>
+
+  <path class="hi" d="M296 140 H366" marker-end="url(#mx)"/>
+  <text x="331" y="132" text-anchor="middle" class="lbl">line 1</text>
+  <rect class="hifill" x="370" y="110" width="130" height="60" rx="5"/>
+  <text x="435" y="134" text-anchor="middle">edge detect</text>
+  <text x="435" y="154" text-anchor="middle" class="mono lbl">RTSR1 / FTSR1</text>
+  <path class="wire" d="M500 140 H530" marker-end="url(#mx)"/>
+  <text x="536" y="126" class="lbl">pending</text>
+  <text x="536" y="144" class="lbl">-> mask</text>
+  <text x="536" y="162" class="lbl">-> NVIC</text>
+  <text x="435" y="200" text-anchor="middle" class="lbl">slide 25</text>
+</svg>
+```
+
+Only **one** input reaches the output at a time — that is what a multiplexer
+is. So line 1 can watch PA1 *or* PB1, never both, and a button on PB1 needs
+the select changed to 1. PC1's input exists in the design (code 2), but this
+48-pin package has no PC1 pin to connect.
+
 Each line gets **8 bits**, four lines per register, four registers:
 
 ```
@@ -1005,6 +1172,129 @@ line n  ->  EXTICR[n / 4],  bits 8(n mod 4)+7 : 8(n mod 4)
 |---|---|---|---|---|---|
 | 1 | `EXTICR[0]` | 15:8 | PA1 (button B) | 0 | `0x00000000` |
 | 13 | `EXTICR[3]` | 15:8 | PC13 (Lab Part 7) | 2 | `0x00000200` |
+
+The same thing drawn as registers — where `EXTICR` sits inside the EXTI block, and
+which byte of it belongs to which line:
+
+```svg
+<svg viewBox="0 0 700 470" role="img" aria-label="EXTI register map at 0x40021800 with the four EXTICR registers at offsets 0x60 to 0x6C, and the byte-per-line layout of EXTICR[0] and EXTICR[3]">
+  <text x="120" y="18" text-anchor="middle" class="lbl">the EXTI block</text>
+  <text x="120" y="34" text-anchor="middle" class="mono">EXTI = 0x40021800</text>
+  <rect class="reg" x="50" y="50" width="150" height="24" rx="3"/>
+  <text x="44" y="67" text-anchor="end" class="mono lbl">0x00</text>
+  <text x="58" y="67" class="mono">RTSR1</text>
+  <text x="206" y="67" class="lbl">rising edge enable</text>
+  <rect class="reg" x="50" y="76" width="150" height="24" rx="3"/>
+  <text x="44" y="93" text-anchor="end" class="mono lbl">0x04</text>
+  <text x="58" y="93" class="mono">FTSR1</text>
+  <text x="206" y="93" class="lbl">falling edge enable</text>
+  <rect class="reg" x="50" y="102" width="150" height="24" rx="3"/>
+  <text x="44" y="119" text-anchor="end" class="mono lbl">0x08</text>
+  <text x="58" y="119" class="mono">SWIER1</text>
+  <text x="206" y="119" class="lbl">software trigger</text>
+  <rect class="reg" x="50" y="128" width="150" height="24" rx="3"/>
+  <text x="44" y="145" text-anchor="end" class="mono lbl">0x0C</text>
+  <text x="58" y="145" class="mono">RPR1</text>
+  <text x="206" y="145" class="lbl">rising pending</text>
+  <rect class="reg" x="50" y="154" width="150" height="24" rx="3"/>
+  <text x="44" y="171" text-anchor="end" class="mono lbl">0x10</text>
+  <text x="58" y="171" class="mono">FPR1</text>
+  <text x="206" y="171" class="lbl">falling pending</text>
+  <rect class="dash" x="50" y="180" width="150" height="18" rx="3"/>
+  <text x="125.0" y="193" text-anchor="middle" class="lbl">reserved 0x14 - 0x5C</text>
+  <rect class="hifill" x="50" y="202" width="150" height="24" rx="3"/>
+  <text x="44" y="219" text-anchor="end" class="mono lbl">0x60</text>
+  <text x="58" y="219" class="mono">EXTICR[0]</text>
+  <text x="206" y="219" class="lbl">lines 0 - 3</text>
+  <rect class="hifill" x="50" y="228" width="150" height="24" rx="3"/>
+  <text x="44" y="245" text-anchor="end" class="mono lbl">0x64</text>
+  <text x="58" y="245" class="mono">EXTICR[1]</text>
+  <text x="206" y="245" class="lbl">lines 4 - 7</text>
+  <rect class="hifill" x="50" y="254" width="150" height="24" rx="3"/>
+  <text x="44" y="271" text-anchor="end" class="mono lbl">0x68</text>
+  <text x="58" y="271" class="mono">EXTICR[2]</text>
+  <text x="206" y="271" class="lbl">lines 8 - 11</text>
+  <rect class="hifill" x="50" y="280" width="150" height="24" rx="3"/>
+  <text x="44" y="297" text-anchor="end" class="mono lbl">0x6C</text>
+  <text x="58" y="297" class="mono">EXTICR[3]</text>
+  <text x="206" y="297" class="lbl">lines 12 - 15</text>
+  <rect class="dash" x="50" y="306" width="150" height="18" rx="3"/>
+  <text x="125.0" y="319" text-anchor="middle" class="lbl">reserved 0x70 - 0x7C</text>
+  <rect class="reg" x="50" y="328" width="150" height="24" rx="3"/>
+  <text x="44" y="345" text-anchor="end" class="mono lbl">0x80</text>
+  <text x="58" y="345" class="mono">IMR1</text>
+  <text x="206" y="345" class="lbl">interrupt mask</text>
+  <rect class="reg" x="50" y="354" width="150" height="24" rx="3"/>
+  <text x="44" y="371" text-anchor="end" class="mono lbl">0x84</text>
+  <text x="58" y="371" class="mono">EMR1</text>
+  <text x="206" y="371" class="lbl">event mask</text>
+  <text x="330" y="62" class="mono">EXTICR[0]   offset 0x60</text>
+  <rect class="reg" x="330" y="84" width="85" height="34" rx="3"/>
+  <text x="372.5" y="99" text-anchor="middle" class="mono">line 3</text>
+  <text x="372.5" y="113" text-anchor="middle" class="mono lbl">code</text>
+  <text x="332" y="79" class="mono lbl">31</text>
+  <text x="413" y="79" text-anchor="end" class="mono lbl">24</text>
+  <rect class="reg" x="418" y="84" width="85" height="34" rx="3"/>
+  <text x="460.5" y="99" text-anchor="middle" class="mono">line 2</text>
+  <text x="460.5" y="113" text-anchor="middle" class="mono lbl">code</text>
+  <text x="420" y="79" class="mono lbl">23</text>
+  <text x="501" y="79" text-anchor="end" class="mono lbl">16</text>
+  <rect class="hifill" x="506" y="84" width="85" height="34" rx="3"/>
+  <text x="548.5" y="99" text-anchor="middle" class="mono">line 1</text>
+  <text x="548.5" y="113" text-anchor="middle" class="mono lbl">= 0x00</text>
+  <text x="508" y="79" class="mono lbl">15</text>
+  <text x="589" y="79" text-anchor="end" class="mono lbl">8</text>
+  <rect class="reg" x="594" y="84" width="85" height="34" rx="3"/>
+  <text x="636.5" y="99" text-anchor="middle" class="mono">line 0</text>
+  <text x="636.5" y="113" text-anchor="middle" class="mono lbl">code</text>
+  <text x="596" y="79" class="mono lbl">7</text>
+  <text x="677" y="79" text-anchor="end" class="mono lbl">0</text>
+  <text x="330" y="136" class="lbl">line 1 = bits 15:8 = 0x00 -> port A -> PA1 (button B)</text>
+  <text x="330" y="164" class="mono">EXTICR[3]   offset 0x6C</text>
+  <rect class="reg" x="330" y="186" width="85" height="34" rx="3"/>
+  <text x="372.5" y="201" text-anchor="middle" class="mono">line 15</text>
+  <text x="372.5" y="215" text-anchor="middle" class="mono lbl">code</text>
+  <text x="332" y="181" class="mono lbl">31</text>
+  <text x="413" y="181" text-anchor="end" class="mono lbl">24</text>
+  <rect class="reg" x="418" y="186" width="85" height="34" rx="3"/>
+  <text x="460.5" y="201" text-anchor="middle" class="mono">line 14</text>
+  <text x="460.5" y="215" text-anchor="middle" class="mono lbl">code</text>
+  <text x="420" y="181" class="mono lbl">23</text>
+  <text x="501" y="181" text-anchor="end" class="mono lbl">16</text>
+  <rect class="hifill" x="506" y="186" width="85" height="34" rx="3"/>
+  <text x="548.5" y="201" text-anchor="middle" class="mono">line 13</text>
+  <text x="548.5" y="215" text-anchor="middle" class="mono lbl">= 0x02</text>
+  <text x="508" y="181" class="mono lbl">15</text>
+  <text x="589" y="181" text-anchor="end" class="mono lbl">8</text>
+  <rect class="reg" x="594" y="186" width="85" height="34" rx="3"/>
+  <text x="636.5" y="201" text-anchor="middle" class="mono">line 12</text>
+  <text x="636.5" y="215" text-anchor="middle" class="mono lbl">code</text>
+  <text x="596" y="181" class="mono lbl">7</text>
+  <text x="677" y="181" text-anchor="end" class="mono lbl">0</text>
+  <text x="330" y="238" class="lbl">line 13 = bits 15:8 = 0x02 -> port C -> PC13 (Lab Part 7)</text>
+  <text x="330" y="278" class="mono">one line's byte, e.g. EXTICR[0] bits 15:8</text>
+  <rect class="reg" x="330" y="290" width="41" height="30" rx="3"/>
+  <text x="350.5" y="309" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="374" y="290" width="41" height="30" rx="3"/>
+  <text x="394.5" y="309" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="418" y="290" width="41" height="30" rx="3"/>
+  <text x="438.5" y="309" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="462" y="290" width="41" height="30" rx="3"/>
+  <text x="482.5" y="309" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="506" y="290" width="41" height="30" rx="3"/>
+  <text x="526.5" y="309" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="hifill" x="550" y="290" width="41" height="30" rx="3"/>
+  <text x="570.5" y="309" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="594" y="290" width="41" height="30" rx="3"/>
+  <text x="614.5" y="309" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="hifill" x="638" y="290" width="41" height="30" rx="3"/>
+  <text x="658.5" y="309" text-anchor="middle" class="mono lbl">8</text>
+  <text x="440" y="338" text-anchor="middle" class="lbl">reserved - leave 0</text>
+  <text x="616" y="338" text-anchor="middle" class="lbl">port code, 3 bits</text>
+  <text x="330" y="366" class="mono lbl" xml:space="preserve">000 = A   001 = B   010 = C   011 = D   101 = F</text>
+  <text x="350" y="414" text-anchor="middle" class="lbl">EXTICR[0]..[3] are four consecutive words; the C code calls them EXTI-&gt;EXTICR[0..3], the reference manual EXTI_EXTICR1..4</text>
+</svg>
+```
 
 The code does the same arithmetic:
 

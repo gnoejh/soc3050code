@@ -13,7 +13,7 @@ and that difference is the lesson's measurement.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 34 slides in five parts (the renderer counts 35), every register explained with worked values — rendered to `_slides/05_GPIO_And_Interrupts.html` |
+| `Slide.md` | the lecture, a title and 34 slides in five parts, slide 21 split in two (the renderer counts 36), every register explained with worked values and the output stage, EXTI multiplexer and EXTICR layout drawn — rendered to `_slides/05_GPIO_And_Interrupts.html` |
 | `Lab.md` | the lab: eight parts, ~2 hours, guided, **nothing handed in** |
 | `Main.c` | the lab program — GPIO helpers, the debouncer, the EXTI setup, the handler, and a banner that reads the whole configuration back from the registers |
 | `build.bat` | one command; `LIBS=retarget` |
