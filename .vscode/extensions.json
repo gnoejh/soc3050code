@@ -1,0 +1,12 @@
+{
+    // Offered to anyone who opens this folder.
+    //   wokwi-vscode  simulates the ARM lessons locally, and is the GDB server F5 uses
+    //   cpptools      IntelliSense, and the "cppdbg" debugger launch.json relies on
+    "recommendations": [
+        "wokwi.wokwi-vscode",
+        "ms-vscode.cpptools",
+        "ms-vscode.vscode-serial-monitor",
+        "ms-vscode.powershell",
+        "ms-python.python"
+    ]
+}

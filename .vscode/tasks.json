@@ -1,20 +1,25 @@
 {
     // SOC3050 build and simulation tasks.
     //
-    // The default tasks work in BOTH lesson trees. tools/cli/build-current.ps1
+    // The default tasks work in EVERY lesson tree. tools/cli/build-current.ps1
     // and simulate-current.ps1 look at the folder the open file is in and pick
     // the right build system:
     //
-    //   projects2026_avr/<lesson>/  -> the lesson's own build.bat, which calls
+    //   projects2026_arm/<lesson>/  -> the lesson's build.bat, which calls
+    //                                  _build/build-lesson.bat (arm-none-eabi-gcc);
+    //                                  simulated in Wokwi, debugged with F5
+    //                                  (see launch.json)
+    //   projects2026_avr/<lesson>/  -> the lesson's build.bat, which calls
     //                                  _build/build-lesson.bat (SimulIDE 1.1.0-SR2)
     //   projects/<project>/         -> the legacy cli-build-project.ps1 (SR1)
     //
-    // Open any file inside a lesson folder, then run the task.
+    // Open any file inside a lesson folder, then run the task. Tasks that only
+    // make sense for one tree say so in their label: "ARM:", "AVR:", "Legacy:".
     "version": "2.0.0",
     "tasks": [
         {
             "label": "Build Current Project",
-            "detail": "Build the lesson containing the open file (2026 or legacy tree)",
+            "detail": "Build the lesson containing the open file (ARM, AVR or legacy tree)",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
@@ -46,7 +51,7 @@
         },
         {
             "label": "Simulate Current Project",
-            "detail": "Build if needed, then open the lesson in SimulIDE",
+            "detail": "Rebuild, then open the lesson in its simulator (ARM: Wokwi, AVR: SimulIDE)",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
@@ -67,8 +72,8 @@
             "problemMatcher": []
         },
         {
-            "label": "Verify All Lessons (2026)",
-            "detail": "Build all 22 lessons and validate each Main.hex is real firmware",
+            "label": "AVR: Verify All Lessons",
+            "detail": "Build all 25 AVR lessons and validate each Main.hex is real firmware",
             "type": "shell",
             "command": "pwsh.exe",
             "args": [
@@ -89,8 +94,22 @@
             }
         },
         {
-            "label": "Build Slides (2026)",
-            "detail": "Render every Slide.md into a presentable HTML deck",
+            "label": "ARM: Build Slides",
+            "detail": "Render every ARM Slide.md into projects2026_arm/_slides (the published site)",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}\\projects2026_arm\\_build\\build-slides.py"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "AVR: Build Slides",
+            "detail": "Render every AVR Slide.md into projects2026_avr/_slides",
             "type": "shell",
             "command": "python",
             "args": [
@@ -103,7 +122,23 @@
             "problemMatcher": []
         },
         {
-            "label": "Show Memory Usage",
+            "label": "ARM: Show Memory Usage",
+            "detail": "Per-section sizes (arm-none-eabi-size -A) for the lesson's Main.elf",
+            "type": "shell",
+            "command": "${workspaceFolder}\\tools\\arm-toolchain\\bin\\arm-none-eabi-size.exe",
+            "args": [
+                "-A",
+                "Main.elf"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [],
+            "dependsOn": "Build Current Project"
+        },
+        {
+            "label": "AVR: Show Memory Usage",
             "detail": "avr-size for the lesson's Main.elf",
             "type": "shell",
             "command": "${workspaceFolder}\\tools\\avr-toolchain\\bin\\avr-size.exe",
@@ -125,7 +160,7 @@
             "command": "Remove-Item",
             "args": [
                 "-Path",
-                "*.o,*.elf,*.hex,*.map,Board.simu",
+                "*.o,*.elf,*.hex,*.bin,*.map,Board.simu",
                 "-Force",
                 "-ErrorAction",
                 "SilentlyContinue"
@@ -140,8 +175,8 @@
             }
         },
         {
-            "label": "Program Hardware",
-            "detail": "Flash the built hex to a board on COM3 via avrdude",
+            "label": "AVR: Program Hardware",
+            "detail": "Flash the built hex to an ATmega128 board on COM3 via avrdude",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
@@ -163,11 +198,11 @@
             }
         },
         {
-            "label": "Build and Program Current Project",
+            "label": "AVR: Build and Program Current Project",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "Build Current Project",
-                "Program Hardware"
+                "AVR: Program Hardware"
             ],
             "problemMatcher": [],
             "group": "build"

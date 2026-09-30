@@ -1,14 +1,53 @@
 {
+    // F5 debugging for the ARM edition (projects2026_arm/, STM32C031C6).
+    //
+    // Source-level debugging runs against the Wokwi simulator: the Wokwi VS Code
+    // extension exposes the simulated chip as a GDB server on port 3333
+    // (gdbServerPort in each lesson's wokwi.toml), and the vendored
+    // arm-none-eabi-gdb connects to it.
+    //
+    // To debug a lesson (04 onward):
+    //   1. Ctrl+Shift+B with the lesson's Main.c open    build it once
+    //   2. Open the lesson's diagram.json and press the green Play button in
+    //      the Wokwi diagram editor. The board starts, and Wokwi opens its GDB
+    //      server. This route always runs the lesson whose diagram you opened.
+    //   3. Back in Main.c, set breakpoints (F9) and press F5.
+    //      F5 rebuilds (Wokwi reloads changed firmware by itself) and attaches.
+    //      Every item in the Run menu then works: Step Over F10, Step Into
+    //      F11, Step Out, Continue, Stop.
+    //
+    // To stop at the very first instruction, e.g. to step through startup
+    // code in lesson 04: instead of step 2, run F1 -> "Wokwi: Start Simulator
+    // and Wait for Debugger". The chip then holds at reset until F5 attaches.
+    // That command uses the config chosen with "Wokwi: Select Config File",
+    // so pick this lesson's wokwi.toml there first.
+    //
+    // Step 2 cannot be folded into F5: starting the simulator is an editor
+    // command, and a preLaunchTask can only run programs. If F5 reports
+    // "connection refused" on localhost:3333, the simulator is not running.
+    //
+    // The lessons build with -Os, so stepping can jump between lines and some
+    // variables show "optimized out". That is the real code the chip runs.
+    //
+    // Needs the Microsoft C/C++ extension (ms-vscode.cpptools) for the
+    // "cppdbg" debugger type; .vscode/extensions.json recommends it.
+    //
+    // The AVR edition (projects2026_avr/) has no debugger: SimulIDE offers no
+    // GDB server. Use its "Simulate Current Project" task instead.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Build ATmega128",
-            "type": "node",
+            "name": "ARM: Debug lesson in Wokwi (GDB)",
+            "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Main/build.ps1",
-            "preLaunchTask": "Build ATmega128 Project",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/Main"
+            "program": "${fileDirname}/Main.elf",
+            "cwd": "${fileDirname}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${workspaceFolder}/tools/arm-toolchain/bin/arm-none-eabi-gdb.exe",
+            "miDebuggerServerAddress": "localhost:3333",
+            "preLaunchTask": "Build Current Project",
+            "stopAtConnect": false,
+            "externalConsole": false
         }
     ]
 }

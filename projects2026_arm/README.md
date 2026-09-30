@@ -413,8 +413,51 @@ browser via `F1 → Upload Firmware and Start Simulation…`. That works for STM
 and is documented nowhere except `_spike/FINDINGS.md`; Wokwi's own docs
 describe the feature only under ESP32.
 
-The maintainer licence buys one thing: the simulator appearing inside VS Code
-instead of a browser tab. **Students pay nothing and need no account.**
+The extension buys two things: the simulator inside VS Code instead of a
+browser tab, and **source-level debugging**. Running a lesson still needs
+nothing; debugging one needs the extension and its free key.
+
+### Debugging a lesson in VS Code (F5)
+
+Set up (2026-09-30) so the Run menu works on every lesson from 04 on:
+breakpoints, Step Over / Into / Out, Continue, variables, the call stack.
+
+**One-time setup:**
+- Install the extensions VS Code offers from `.vscode/extensions.json`. The two
+  that matter are **Wokwi Simulator** and **C/C++** (`ms-vscode.cpptools`),
+  which provides the `cppdbg` debugger.
+- `F1 → Wokwi: Request a New License`. The key is free; it expires after
+  30 days and is renewed the same way.
+
+**Each session:**
+1. Open the lesson's `Main.c` and build it: `Ctrl+Shift+B`.
+2. Open the lesson's `diagram.json`. It opens in Wokwi's diagram editor; press
+   its green **Play** button. The board starts running.
+3. Back in `Main.c`, set breakpoints with `F9` and press **`F5`**.
+
+**How it works.** Each lesson's `wokwi.toml` sets `gdbServerPort = 3333`, so
+the simulated chip is also a GDB server. `.vscode/launch.json` rebuilds the
+lesson through the "Build Current Project" task; Wokwi notices the changed
+firmware and reloads it by itself. The vendored
+`tools/arm-toolchain/bin/arm-none-eabi-gdb.exe` then attaches to
+`localhost:3333` with the lesson's `Main.elf`. Step 2 goes through the diagram
+on purpose: Wokwi then reads the `wokwi.toml` beside that diagram, so it always
+simulates the lesson being debugged. Starting from the command palette uses
+whichever config was selected last, and that may be a different lesson.
+
+**To stop at the first instruction**, for example to step through
+`Reset_Handler` in lesson 04: replace step 2 with `F1 → Wokwi: Select Config
+File` (this lesson's `wokwi.toml`), then `F1 → Wokwi: Start Simulator and Wait
+for Debugger`. The chip then holds at reset until `F5` attaches.
+
+**The one limit:** `F5` cannot start the simulator itself. That is an editor
+command, and a `preLaunchTask` can only run programs. If `F5` reports
+*connection refused* on `localhost:3333`, the simulator is not running: do
+step 2.
+
+Lessons build with `-Os`, so stepping can jump between lines and some locals
+read *optimized out*. That is the code the chip really runs, and the slides
+quote its addresses, so the build is not switched to `-Og` for debugging.
 
 ## Decisions
 

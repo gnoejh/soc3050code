@@ -1,6 +1,8 @@
 {
-    // Student-friendly ATmega128 development environment
-    // Simple configuration without complex MPLAB dependencies
+    // Student environment for SOC3050: the ARM edition (projects2026_arm/,
+    // STM32C031C6 in Wokwi) and the frozen AVR edition (projects2026_avr/).
+    // Build: Ctrl+Shift+B. Debug an ARM lesson: F5 - see launch.json.
+    // Recommended extensions are listed in extensions.json.
     "terminal.integrated.defaultProfile.windows": "PowerShell",
     // File associations for embedded development
     "files.associations": {
@@ -15,13 +17,6 @@
     // Python environment configuration
     "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
     "python.terminal.activateEnvironment": true,
-    // Extensions for student workflow
-    "extensions.recommendations": [
-        "ms-vscode.vscode-serial-monitor",
-        "ms-vscode.cpptools",
-        "ms-vscode.powershell",
-        "ms-python.python"
-    ],
     // Clean editor settings
     "editor.formatOnSave": true,
     "editor.tabSize": 4,

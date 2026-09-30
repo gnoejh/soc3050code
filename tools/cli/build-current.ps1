@@ -5,7 +5,11 @@
 .DESCRIPTION
     The repository holds two lesson trees with different build systems:
 
-      projects2026_avr/   current edition. Each lesson has a build.bat that
+      projects2026_arm/   live ARM edition (STM32C031C6). Each lesson has a
+                          build.bat that names its target and _lib modules
+                          and calls the shared _build/build-lesson.bat.
+
+      projects2026_avr/   frozen AVR edition. Each lesson has a build.bat that
                           names its shared_libs set and calls the shared
                           engine in _build/build-lesson.bat.
 
@@ -37,14 +41,17 @@ if (-not (Test-Path -LiteralPath $ProjectDir -PathType Container)) {
 $ProjectDir = (Resolve-Path -LiteralPath $ProjectDir).Path
 $name = Split-Path $ProjectDir -Leaf
 
-# --- 2026 edition -----------------------------------------------------------
+# --- 2026 editions, ARM and AVR ---------------------------------------------
+# Both trees have the same shape, so one branch serves them; only the label
+# differs. The ARM tree is the one with a _targets directory.
 # Legacy projects also contain a build.bat, so the presence of one proves
 # nothing. What identifies the 2026 tree is the shared engine sitting in a
 # _build directory beside the lesson.
 $lessonBuild = Join-Path $ProjectDir "build.bat"
 $engine = Join-Path (Split-Path $ProjectDir -Parent) "_build\build-lesson.bat"
 if ((Test-Path -LiteralPath $lessonBuild) -and (Test-Path -LiteralPath $engine)) {
-    Write-Host "[2026] Building $name" -ForegroundColor Cyan
+    $tag = if (Test-Path -LiteralPath (Join-Path (Split-Path $ProjectDir -Parent) "_targets")) { "ARM" } else { "AVR" }
+    Write-Host "[$tag] Building $name" -ForegroundColor Cyan
     & cmd.exe /c "cd /d `"$ProjectDir`" && call .\build.bat"
     $code = $LASTEXITCODE
 
@@ -74,6 +81,7 @@ if ($ProjectDir -like "*\projects\*" -or $ProjectDir -like "*/projects/*") {
 }
 
 Write-Host "[ERROR] $name is not a lesson folder." -ForegroundColor Red
-Write-Host "        Open a file inside projects2026_avr\<lesson>\ (current edition)" -ForegroundColor Yellow
+Write-Host "        Open a file inside projects2026_arm\<lesson>\ (04 onward; 00-03 have no code)," -ForegroundColor Yellow
+Write-Host "        projects2026_avr\<lesson>\ (frozen AVR edition)" -ForegroundColor Yellow
 Write-Host "        or projects\<project>\ (legacy), then run the task again." -ForegroundColor Yellow
 exit 1

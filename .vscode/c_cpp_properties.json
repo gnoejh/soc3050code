@@ -1,7 +1,28 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "ARM (STM32C031C6)",
+            "includePath": [
+                "${fileDirname}",
+                "${workspaceFolder}/projects2026_arm/_lib",
+                "${workspaceFolder}/tools/cmsis/Core/Include",
+                "${workspaceFolder}/tools/cmsis/Device/ST/STM32C0xx/Include"
+            ],
+            "defines": [
+                "STM32C031xx"
+            ],
+            "compilerPath": "${workspaceFolder}/tools/arm-toolchain/bin/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mcpu=cortex-m0plus",
+                "-mthumb",
+                "-mfloat-abi=soft"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm"
+        },
+        {
+            "name": "AVR (ATmega128)",
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/shared_libs",
