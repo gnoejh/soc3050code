@@ -75,6 +75,8 @@
   .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
   .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
   .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
   .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
   .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
 
@@ -274,6 +276,25 @@ str   r0, [r1]</code></pre>
   <text x="280" y="150" text-anchor="middle" class="lbl">cmp is a subtraction that throws the answer away and keeps the flags.</text>
   <text x="280" y="170" text-anchor="middle" class="lbl">tst is an AND that does the same.</text>
 </svg></figure>
+<p>The four bits are the top of <code>APSR</code>, the flags view of <code>xPSR</code> from lesson 00:</p>
+<figure class="diagram"><svg width="786" viewBox="0 0 786 76" role="img" aria-label="APSR, 32 bits">
+<text x="16" y="41" class="mono">APSR</text>
+<text x="131.0" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="769.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="210.0" y="28" width="560.0" height="26"/>
+<text x="490.0" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="130.0" y="28" width="20.0" height="26"/>
+<text x="140.0" y="41" text-anchor="middle" class="mono">N</text>
+<rect class="hifill" x="150.0" y="28" width="20.0" height="26"/>
+<text x="160.0" y="20" text-anchor="middle" class="mono lbl">30</text>
+<text x="160.0" y="41" text-anchor="middle" class="mono">Z</text>
+<rect class="hifill" x="170.0" y="28" width="20.0" height="26"/>
+<text x="180.0" y="20" text-anchor="middle" class="mono lbl">29</text>
+<text x="180.0" y="41" text-anchor="middle" class="mono">C</text>
+<rect class="hifill" x="190.0" y="28" width="20.0" height="26"/>
+<text x="200.0" y="20" text-anchor="middle" class="mono lbl">28</text>
+<text x="200.0" y="41" text-anchor="middle" class="mono">V</text>
+</svg></figure>
 <table><thead><tr><th>Branch</th><th>Taken when</th><th>From C</th></tr></thead><tbody><tr><td><code>beq</code></td><td>equal (<code>Z</code>)</td><td><code>if (a == b)</code></td></tr><tr><td><code>bne</code></td><td>not equal</td><td><code>if (a != b)</code></td></tr><tr><td><code>blt</code> / <code>bge</code></td><td>signed less / greater-or-equal</td><td><code>int</code> comparison</td></tr><tr><td><code>bcc</code> / <code>bcs</code></td><td>unsigned lower / higher-or-same</td><td><code>unsigned</code> comparison</td></tr><tr><td><code>bmi</code> / <code>bpl</code></td><td>negative / positive</td><td>sign test</td></tr></tbody></table>
 <p>&gt; <strong><code>blt</code> and <code>bcc</code> are not interchangeable.</strong> The compiler picks based on<br>&gt; whether your variable is signed. A comparison that behaves oddly at the<br>&gt; extremes of a range is very often a signedness bug, and the disassembly shows<br>&gt; it immediately.</p>
 </section>
@@ -323,6 +344,95 @@ str   r0, [r1]</code></pre>
 <p><strong>Offsets are always positive.</strong> There is no <code>[r1, #-4]</code> in 16-bit Thumb. To<br>step backwards the compiler must adjust the base register first.</p>
 <p><strong>A far field costs an extra instruction.</strong> Reaching offset 28 is free:</p>
 <pre><code> 80002d0:  ldr   r6, [r4, #28]        ; USART2-&gt;ISR, one instruction</code></pre>
+<p>Here is where the limit comes from. Five bits for the opcode, three for each<br>register, and five left for the offset, stored divided by 4 — <code>7</code> means 28,<br><code>10</code> means 40:</p>
+<figure class="diagram"><svg width="510" viewBox="0 0 510 182" role="img" aria-label="ldr r6, [r4, #28], 16 bits; str r5, [r4, #40], 16 bits">
+<text x="16" y="35" class="mono">ldr r6, [r4, #28]</text>
+<text x="16" y="50" class="mono lbl">= 0x69E6</text>
+<text x="175.3" y="20" text-anchor="start" class="mono lbl">15</text>
+<text x="493.3" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="174.3" y="28" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M254.3 28 V32 M254.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M234.3 28 V32 M234.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M214.3 28 V32 M214.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M194.3 28 V32 M194.3 50 V54"/>
+<text x="273.3" y="20" text-anchor="end" class="mono lbl">11</text>
+<rect class="hifill" x="274.3" y="28" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M354.3 28 V32 M354.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M334.3 28 V32 M334.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M314.3 28 V32 M314.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M294.3 28 V32 M294.3 50 V54"/>
+<text x="373.3" y="20" text-anchor="end" class="mono lbl">6</text>
+<rect class="reg" x="374.3" y="28" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M414.3 28 V32 M414.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M394.3 28 V32 M394.3 50 V54"/>
+<text x="433.3" y="20" text-anchor="end" class="mono lbl">3</text>
+<rect class="reg" x="434.3" y="28" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M474.3 28 V32 M474.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M454.3 28 V32 M454.3 50 V54"/>
+<text x="484.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="464.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="444.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="424.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="364.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="344.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="324.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="304.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="284.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="244.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="204.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="184.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="67" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="324.3" y="67" text-anchor="middle" class="mono halo">imm5</text>
+<text x="404.3" y="67" text-anchor="middle" class="mono halo lbl">Rn</text>
+<text x="464.3" y="67" text-anchor="middle" class="mono halo lbl">Rt</text>
+<text x="16" y="121" class="mono">str r5, [r4, #40]</text>
+<text x="16" y="136" class="mono lbl">= 0x62A5</text>
+<text x="175.3" y="106" text-anchor="start" class="mono lbl">15</text>
+<text x="493.3" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="174.3" y="114" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M254.3 114 V118 M254.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M234.3 114 V118 M234.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M214.3 114 V118 M214.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M194.3 114 V118 M194.3 136 V140"/>
+<text x="273.3" y="106" text-anchor="end" class="mono lbl">11</text>
+<rect class="hifill" x="274.3" y="114" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M354.3 114 V118 M354.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M334.3 114 V118 M334.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M314.3 114 V118 M314.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M294.3 114 V118 M294.3 136 V140"/>
+<text x="373.3" y="106" text-anchor="end" class="mono lbl">6</text>
+<rect class="reg" x="374.3" y="114" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M414.3 114 V118 M414.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M394.3 114 V118 M394.3 136 V140"/>
+<text x="433.3" y="106" text-anchor="end" class="mono lbl">3</text>
+<rect class="reg" x="434.3" y="114" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M474.3 114 V118 M474.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M454.3 114 V118 M454.3 136 V140"/>
+<text x="484.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="464.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="444.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="424.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="364.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="324.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="284.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="244.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="204.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="184.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="153" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="324.3" y="153" text-anchor="middle" class="mono halo">imm5</text>
+<text x="404.3" y="153" text-anchor="middle" class="mono halo lbl">Rn</text>
+<text x="464.3" y="153" text-anchor="middle" class="mono halo lbl">Rt</text>
+</svg></figure>
 <p>but a field beyond 124 bytes cannot be encoded, so the compiler emits an <code>add</code><br>to move the base, then loads from the new base. <strong>This is why a large<br>peripheral struct can generate visibly worse code at the far end of it</strong>, and<br>why drivers that keep a pointer to the specific register they hammer in a loop<br>are sometimes measurably faster than ones that index from the block base.</p>
 <p>&gt; On Cortex-M3 and above the 32-bit encodings lift most of this: offsets up to<br>&gt; 4095 bytes, negative offsets, scaled register offsets and auto-increment.<br>&gt; Same source code, denser output — another instance of the &quot;one model, many<br>&gt; instances&quot; idea from lesson 00.</p>
 </section>
@@ -330,7 +440,7 @@ str   r0, [r1]</code></pre>
 <h2>Slide 11: A Real Function, Disassembled</h2>
 <p>This is <code>SystemInit()</code> from the spike — the code that takes the chip from its<br>12 MHz reset state to 48 MHz. Here is what the processor got:</p>
 <pre><code>0800022c &lt;SystemInit&gt;:
- 800022c:  2007        movs  r0, #7            ; r0 = the HSIDIV bit mask
+ 800022c:  2007        movs  r0, #7            ; r0 = the LATENCY mask
  800022e:  2301        movs  r3, #1
  8000230:  4a0b        ldr   r2, [pc, #44]     ; r2 = 0x40022000  (FLASH base)
  8000232:  6811        ldr   r1, [r2, #0]      ; LOAD    FLASH-&gt;ACR
@@ -339,6 +449,126 @@ str   r0, [r1]</code></pre>
  8000238:  6013        str   r3, [r2, #0]      ; STORE   back to FLASH-&gt;ACR</code></pre>
 <p>Four instructions — <code>ldr</code>, <code>bics</code>, <code>orrs</code>, <code>str</code> — are the load/modify/store of<br>slide 4, and they came from a single line of C:</p>
 <pre class="lang-c"><code>FLASH-&gt;ACR = (FLASH-&gt;ACR &amp; ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;</code></pre>
+<p>The field being changed is <code>LATENCY</code>, bits 2:0. <code>r0</code> is its mask, <code>r3</code> the new<br>value:</p>
+<figure class="diagram"><svg width="792" viewBox="0 0 792 280" role="img" aria-label="FLASH_ACR, 32 bits; r0, 32 bits; r3, 32 bits">
+<text x="16" y="41" class="mono">FLASH_ACR</text>
+<text x="137.0" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="775.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="616.0" y="28" width="100.0" height="26"/>
+<text x="666.0" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="556.0" y="28" width="20.0" height="26"/>
+<rect class="dash" x="456.0" y="28" width="80.0" height="26"/>
+<text x="496.0" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="416.0" y="28" width="20.0" height="26"/>
+<rect class="dash" x="136.0" y="28" width="260.0" height="26"/>
+<text x="266.0" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="396.0" y="28" width="20.0" height="26"/>
+<text x="406.0" y="20" text-anchor="middle" class="mono lbl">18</text>
+<rect class="reg" x="436.0" y="28" width="20.0" height="26"/>
+<text x="446.0" y="20" text-anchor="middle" class="mono lbl">16</text>
+<rect class="reg" x="536.0" y="28" width="20.0" height="26"/>
+<text x="546.0" y="20" text-anchor="middle" class="mono lbl">11</text>
+<rect class="reg" x="576.0" y="28" width="20.0" height="26"/>
+<text x="586.0" y="20" text-anchor="middle" class="mono lbl">9</text>
+<rect class="reg" x="596.0" y="28" width="20.0" height="26"/>
+<text x="606.0" y="20" text-anchor="middle" class="mono lbl">8</text>
+<rect class="hifill" x="716.0" y="28" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M756.0 28 V32 M756.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M736.0 28 V32 M736.0 50 V54"/>
+<text x="717.0" y="20" text-anchor="start" class="mono lbl">2</text>
+<path class="dash" d="M446.0 54 L446.0 76"/>
+<path class="dash" d="M606.0 54 L606.0 76"/>
+<text x="406.0" y="67" text-anchor="middle" class="mono halo lbl">DBG_SWEN</text>
+<text x="446.0" y="83" text-anchor="middle" class="mono halo lbl">PROGEMPTY</text>
+<text x="546.0" y="67" text-anchor="middle" class="mono halo lbl">ICRST</text>
+<text x="586.0" y="67" text-anchor="middle" class="mono halo lbl">ICEN</text>
+<text x="606.0" y="83" text-anchor="middle" class="mono halo lbl">PRFTEN</text>
+<text x="746.0" y="67" text-anchor="middle" class="mono halo">LATENCY</text>
+<text x="16" y="137" class="mono">r0</text>
+<text x="16" y="152" class="lbl">mask, for bics</text>
+<text x="16" y="167" class="mono lbl">= 0x00000007</text>
+<text x="137.0" y="122" text-anchor="start" class="mono lbl">31</text>
+<text x="775.0" y="122" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="136.0" y="130" width="580.0" height="26"/>
+<rect class="hifill" x="716.0" y="130" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M756.0 130 V134 M756.0 152 V156"/>
+<path class="reg" stroke-width="0.6" d="M736.0 130 V134 M736.0 152 V156"/>
+<text x="717.0" y="122" text-anchor="start" class="mono lbl">2</text>
+<text x="766.0" y="143" text-anchor="middle" class="mono">1</text>
+<text x="746.0" y="143" text-anchor="middle" class="mono">1</text>
+<text x="726.0" y="143" text-anchor="middle" class="mono">1</text>
+<text x="706.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="686.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="666.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="646.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="626.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="606.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="586.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="286.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="266.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="246.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="226.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="206.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="186.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="166.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="146.0" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="16" y="221" class="mono">r3</text>
+<text x="16" y="236" class="lbl">value, for orrs</text>
+<text x="16" y="251" class="mono lbl">= 0x00000001</text>
+<text x="137.0" y="206" text-anchor="start" class="mono lbl">31</text>
+<text x="775.0" y="206" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="136.0" y="214" width="580.0" height="26"/>
+<rect class="hifill" x="716.0" y="214" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M756.0 214 V218 M756.0 236 V240"/>
+<path class="reg" stroke-width="0.6" d="M736.0 214 V218 M736.0 236 V240"/>
+<text x="717.0" y="206" text-anchor="start" class="mono lbl">2</text>
+<text x="766.0" y="227" text-anchor="middle" class="mono">1</text>
+<text x="746.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="726.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="706.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="686.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="666.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="646.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="626.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="606.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="586.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="286.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="266.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="246.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="226.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="206.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="186.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="166.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+<text x="146.0" y="227" text-anchor="middle" class="mono lbl">0</text>
+</svg></figure>
 <p>One statement, four bus operations. <code>bics</code> is the <code>&amp; ~</code>, <code>orrs</code> is the <code>|</code>.<br>That correspondence is the whole reason to read disassembly.</p>
 </section>
 <section class="slide">
@@ -350,7 +580,7 @@ str   r0, [r1]</code></pre>
   <text x="120" y="86" text-anchor="middle" class="lbl">small number: fits inside</text>
   <text x="120" y="104" text-anchor="middle" class="lbl">the instruction itself</text>
   <rect class="hifill" x="300" y="30" width="240" height="38" rx="5"/>
-  <text x="420" y="49" text-anchor="middle" class="mono">0x40021000</text>
+  <text x="420" y="49" text-anchor="middle" class="mono">0x40022000</text>
   <text x="420" y="86" text-anchor="middle" class="lbl">32 bits — cannot possibly fit in a</text>
   <text x="420" y="104" text-anchor="middle" class="lbl">16-bit instruction</text>
   <rect class="box" x="140" y="132" width="280" height="36" rx="5"/>
@@ -366,6 +596,81 @@ str   r0, [r1]</code></pre>
  8000268:  ffffc7ff   .word  0xffffc7ff    ; ~(7 &lt;&lt; 11)  — the HSIDIV mask
  800026c:  20000000   .word  0x20000000    ; &amp;SystemCoreClock, in SRAM
  8000270:  02dc6c00   .word  0x02dc6c00    ; 48000000</code></pre>
+<p>The third word is a mask, and drawn out it is easy to read: all ones except the<br>three <code>HSIDIV</code> bits of <code>RCC-&gt;CR</code>, which an <code>ands</code> with it clears:</p>
+<figure class="diagram"><svg width="786" viewBox="0 0 786 96" role="img" aria-label=".word, 32 bits">
+<text x="16" y="35" class="mono">.word</text>
+<text x="16" y="50" class="lbl">~(7 &lt;&lt; 11)</text>
+<text x="16" y="65" class="mono lbl">= 0xFFFFC7FF</text>
+<text x="131.0" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="769.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="130.0" y="28" width="360.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M470.0 28 V32 M470.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M450.0 28 V32 M450.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M430.0 28 V32 M430.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M410.0 28 V32 M410.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M390.0 28 V32 M390.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M370.0 28 V32 M370.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M350.0 28 V32 M350.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M330.0 28 V32 M330.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M310.0 28 V32 M310.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M290.0 28 V32 M290.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M270.0 28 V32 M270.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M250.0 28 V32 M250.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M230.0 28 V32 M230.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M210.0 28 V32 M210.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M190.0 28 V32 M190.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M170.0 28 V32 M170.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M150.0 28 V32 M150.0 50 V54"/>
+<text x="489.0" y="20" text-anchor="end" class="mono lbl">14</text>
+<rect class="hifill" x="490.0" y="28" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M530.0 28 V32 M530.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M510.0 28 V32 M510.0 50 V54"/>
+<text x="549.0" y="20" text-anchor="end" class="mono lbl">11</text>
+<rect class="reg" x="550.0" y="28" width="220.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M750.0 28 V32 M750.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M730.0 28 V32 M730.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M710.0 28 V32 M710.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M690.0 28 V32 M690.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M670.0 28 V32 M670.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M650.0 28 V32 M650.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M630.0 28 V32 M630.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M610.0 28 V32 M610.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M590.0 28 V32 M590.0 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M570.0 28 V32 M570.0 50 V54"/>
+<text x="760.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="740.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="720.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="700.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="680.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="660.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="640.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="620.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="600.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="580.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="560.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="540.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="520.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="500.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="480.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="460.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="440.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="420.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="400.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="380.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="360.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="340.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="320.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="300.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="280.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="260.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="240.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="220.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="200.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="180.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="160.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="140.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="520.0" y="67" text-anchor="middle" class="mono halo">HSIDIV</text>
+</svg></figure>
 <p><code>0x02dc6c00</code> is 48,000,000. The clock speed you assigned in C is sitting in<br>flash as a number, and the address it gets written to is <code>0x20000000</code> — the<br>very bottom of SRAM, exactly where lesson 02 will show the linker putting it.</p>
 </section>
 <section class="slide">
@@ -376,6 +681,50 @@ str   r0, [r1]</code></pre>
  800023e:  2b01        cmp   r3, #1           ; is it what we asked for?
  8000240:  d1fb        bne.n 800023a          ; no -&gt; go back and read again</code></pre>
 <p>The branch target <code>800023a</code> is the load. That is the loop: <strong>read, test,<br>branch back</strong>. It costs the CPU every cycle until the hardware agrees.</p>
+<p>The branch itself is two bytes. <code>d1fb</code> holds the condition (<code>0001</code>, NE) and a<br>signed offset in halfwords, <code>0xFB</code> = −5, counted from PC + 4:<br><code>0x8000244 − 10 = 0x800023a</code>.</p>
+<figure class="diagram"><svg width="479" viewBox="0 0 479 96" role="img" aria-label="bne.n 800023a, 16 bits">
+<text x="16" y="35" class="mono">bne.n 800023a</text>
+<text x="16" y="50" class="mono lbl">= 0xD1FB</text>
+<text x="143.7" y="20" text-anchor="start" class="mono lbl">15</text>
+<text x="461.7" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="142.7" y="28" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M202.7 28 V32 M202.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M182.7 28 V32 M182.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M162.7 28 V32 M162.7 50 V54"/>
+<text x="221.7" y="20" text-anchor="end" class="mono lbl">12</text>
+<rect class="reg" x="222.7" y="28" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M282.7 28 V32 M282.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M262.7 28 V32 M262.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M242.7 28 V32 M242.7 50 V54"/>
+<text x="301.7" y="20" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="302.7" y="28" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M442.7 28 V32 M442.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M422.7 28 V32 M422.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M402.7 28 V32 M402.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M382.7 28 V32 M382.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M362.7 28 V32 M362.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M342.7 28 V32 M342.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M322.7 28 V32 M322.7 50 V54"/>
+<text x="452.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="432.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="412.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="372.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="352.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="332.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="312.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="292.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="272.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="252.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="232.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="212.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="192.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="172.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="152.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="182.7" y="67" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="262.7" y="67" text-anchor="middle" class="mono halo lbl">cond</text>
+<text x="382.7" y="67" text-anchor="middle" class="mono halo">imm8</text>
+</svg></figure>
 <p>Note there is no <code>volatile</code> keyword visible in the machine code — but without<br>it in the C source, the compiler would have read <code>FLASH-&gt;ACR</code> <strong>once</strong>, cached<br>it in <code>r3</code>, and looped forever on a value that never changes.</p>
 </section>
 <section class="slide">
@@ -490,6 +839,135 @@ int _write(int fd, const char *buf, int len)
 <section class="slide">
 <h2>Slide 16: Thumb-1 and Thumb-2 — Two Generations</h2>
 <p>Look at the second column of the disassembly: <code>2007</code>, <code>4a0b</code>, <code>6811</code>. Four hex<br>digits. Two bytes. Almost every instruction on this chip is <strong>16 bits wide</strong>,<br>which is why 32 KB of flash holds a useful program at all.</p>
+<p>Those three, taken apart. Every 16-bit format spends its top bits on the<br>opcode, three bits on each register it names, and whatever is left on a<br>constant:</p>
+<figure class="diagram"><svg width="510" viewBox="0 0 510 268" role="img" aria-label="movs r0, #7, 16 bits; ldr r2, [pc, #44], 16 bits; ldr r1, [r2, #0], 16 bits">
+<text x="16" y="35" class="mono">movs r0, #7</text>
+<text x="16" y="50" class="mono lbl">= 0x2007</text>
+<text x="175.3" y="20" text-anchor="start" class="mono lbl">15</text>
+<text x="493.3" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="174.3" y="28" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M254.3 28 V32 M254.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M234.3 28 V32 M234.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M214.3 28 V32 M214.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M194.3 28 V32 M194.3 50 V54"/>
+<text x="273.3" y="20" text-anchor="end" class="mono lbl">11</text>
+<rect class="reg" x="274.3" y="28" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M314.3 28 V32 M314.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M294.3 28 V32 M294.3 50 V54"/>
+<text x="333.3" y="20" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="334.3" y="28" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M474.3 28 V32 M474.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M454.3 28 V32 M454.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M434.3 28 V32 M434.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M414.3 28 V32 M414.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M394.3 28 V32 M394.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M374.3 28 V32 M374.3 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M354.3 28 V32 M354.3 50 V54"/>
+<text x="484.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="464.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="444.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="424.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="364.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="324.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="284.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="244.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="41" text-anchor="middle" class="mono">1</text>
+<text x="204.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="184.3" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="67" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="304.3" y="67" text-anchor="middle" class="mono halo lbl">Rd</text>
+<text x="414.3" y="67" text-anchor="middle" class="mono halo">imm8</text>
+<text x="16" y="121" class="mono">ldr r2, [pc, #44]</text>
+<text x="16" y="136" class="mono lbl">= 0x4A0B</text>
+<text x="175.3" y="106" text-anchor="start" class="mono lbl">15</text>
+<text x="493.3" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="174.3" y="114" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M254.3 114 V118 M254.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M234.3 114 V118 M234.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M214.3 114 V118 M214.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M194.3 114 V118 M194.3 136 V140"/>
+<text x="273.3" y="106" text-anchor="end" class="mono lbl">11</text>
+<rect class="reg" x="274.3" y="114" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M314.3 114 V118 M314.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M294.3 114 V118 M294.3 136 V140"/>
+<text x="333.3" y="106" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="334.3" y="114" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M474.3 114 V118 M474.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M454.3 114 V118 M454.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M434.3 114 V118 M434.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M414.3 114 V118 M414.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M394.3 114 V118 M394.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M374.3 114 V118 M374.3 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M354.3 114 V118 M354.3 136 V140"/>
+<text x="484.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="464.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="444.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="424.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="404.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="364.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="324.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="284.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="244.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="204.3" y="127" text-anchor="middle" class="mono">1</text>
+<text x="184.3" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="153" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="304.3" y="153" text-anchor="middle" class="mono halo lbl">Rt</text>
+<text x="414.3" y="153" text-anchor="middle" class="mono halo">imm8</text>
+<text x="16" y="207" class="mono">ldr r1, [r2, #0]</text>
+<text x="16" y="222" class="mono lbl">= 0x6811</text>
+<text x="175.3" y="192" text-anchor="start" class="mono lbl">15</text>
+<text x="493.3" y="192" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="174.3" y="200" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M254.3 200 V204 M254.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M234.3 200 V204 M234.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M214.3 200 V204 M214.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M194.3 200 V204 M194.3 222 V226"/>
+<text x="273.3" y="192" text-anchor="end" class="mono lbl">11</text>
+<rect class="hifill" x="274.3" y="200" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M354.3 200 V204 M354.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M334.3 200 V204 M334.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M314.3 200 V204 M314.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M294.3 200 V204 M294.3 222 V226"/>
+<text x="373.3" y="192" text-anchor="end" class="mono lbl">6</text>
+<rect class="reg" x="374.3" y="200" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M414.3 200 V204 M414.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M394.3 200 V204 M394.3 222 V226"/>
+<text x="433.3" y="192" text-anchor="end" class="mono lbl">3</text>
+<rect class="reg" x="434.3" y="200" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M474.3 200 V204 M474.3 222 V226"/>
+<path class="reg" stroke-width="0.6" d="M454.3 200 V204 M454.3 222 V226"/>
+<text x="484.3" y="213" text-anchor="middle" class="mono">1</text>
+<text x="464.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="444.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="424.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.3" y="213" text-anchor="middle" class="mono">1</text>
+<text x="384.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="364.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="324.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="284.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.3" y="213" text-anchor="middle" class="mono">1</text>
+<text x="244.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="213" text-anchor="middle" class="mono">1</text>
+<text x="204.3" y="213" text-anchor="middle" class="mono">1</text>
+<text x="184.3" y="213" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.3" y="239" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="324.3" y="239" text-anchor="middle" class="mono halo">imm5</text>
+<text x="404.3" y="239" text-anchor="middle" class="mono halo lbl">Rn</text>
+<text x="464.3" y="239" text-anchor="middle" class="mono halo lbl">Rt</text>
+</svg></figure>
+<p>Three bits per register is why most 16-bit forms reach only R0–R7.</p>
 <p>Thumb was not always able to do anything else:</p>
 <ul><li><strong>Thumb-1</strong> (1994) — 16-bit encodings, and nothing else. Compact, and correspondingly restricted.</li><li><strong>Thumb-2</strong> (2003, ARMv6T2) — keeps every 16-bit encoding and adds 32-bit ones <strong>beside</strong> them, in the same instruction stream. There is no mode switch: the decoder reads a halfword, and if its top five bits are <code>11101</code>, <code>11110</code> or <code>11111</code>, a second halfword belongs to it.</li></ul>
 <p>So &quot;Thumb&quot; on its own does not tell you what a core can do. The generation<br>does:</p>
@@ -502,6 +980,92 @@ int _write(int fd, const char *buf, int len)
 <table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><code>bl</code></td><td>call a function anywhere in the address space</td></tr><tr><td><code>mrs</code> / <code>msr</code></td><td>read and write the special registers (<code>PRIMASK</code>, <code>CONTROL</code>, <code>PSP</code>)</td></tr><tr><td><code>dsb</code> / <code>dmb</code> / <code>isb</code></td><td>memory and instruction barriers</td></tr></tbody></table>
 <p>Everything else an M0+ executes is two bytes. Here is one of the six, decoded<br>out of the real image — the call in <code>Reset_Handler</code> that runs the clock setup<br>from slide 11:</p>
 <pre><code> 800028a:  f7ff ffcf   bl  800022c &lt;SystemInit&gt;</code></pre>
+<figure class="diagram"><svg width="799" viewBox="0 0 799 120" role="img" aria-label="f7ff then ffcf: the offset is S:I1:I2:imm10:imm11:0 = −98, from 800028e back to 800022c; bl SystemInit, 32 bits">
+<text x="399" y="16" text-anchor="middle" class="lbl">f7ff then ffcf: the offset is S:I1:I2:imm10:imm11:0 = −98, from 800028e back to 800022c</text>
+<text x="16" y="59" class="mono">bl SystemInit</text>
+<text x="16" y="74" class="mono lbl">= 0xF7FFFFCF</text>
+<text x="143.7" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="781.7" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="142.7" y="52" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M222.7 52 V56 M222.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M202.7 52 V56 M202.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M182.7 52 V56 M182.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M162.7 52 V56 M162.7 74 V78"/>
+<text x="241.7" y="44" text-anchor="end" class="mono lbl">27</text>
+<rect class="reg" x="242.7" y="52" width="20.0" height="26"/>
+<text x="252.7" y="44" text-anchor="middle" class="mono lbl">26</text>
+<rect class="hifill" x="262.7" y="52" width="200.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M442.7 52 V56 M442.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M422.7 52 V56 M422.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M402.7 52 V56 M402.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M382.7 52 V56 M382.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M362.7 52 V56 M362.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M342.7 52 V56 M342.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M322.7 52 V56 M322.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M302.7 52 V56 M302.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M282.7 52 V56 M282.7 74 V78"/>
+<text x="263.7" y="44" text-anchor="start" class="mono lbl">25</text>
+<text x="461.7" y="44" text-anchor="end" class="mono lbl">16</text>
+<rect class="reg" x="462.7" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M482.7 52 V56 M482.7 74 V78"/>
+<text x="501.7" y="44" text-anchor="end" class="mono lbl">14</text>
+<rect class="reg" x="502.7" y="52" width="20.0" height="26"/>
+<text x="512.7" y="44" text-anchor="middle" class="mono lbl">13</text>
+<rect class="reg" x="522.7" y="52" width="20.0" height="26"/>
+<text x="532.7" y="44" text-anchor="middle" class="mono lbl">12</text>
+<rect class="reg" x="542.7" y="52" width="20.0" height="26"/>
+<text x="552.7" y="44" text-anchor="middle" class="mono lbl">11</text>
+<rect class="hifill" x="562.7" y="52" width="220.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M762.7 52 V56 M762.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M742.7 52 V56 M742.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M722.7 52 V56 M722.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M702.7 52 V56 M702.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M682.7 52 V56 M682.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M662.7 52 V56 M662.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M642.7 52 V56 M642.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M622.7 52 V56 M622.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M602.7 52 V56 M602.7 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M582.7 52 V56 M582.7 74 V78"/>
+<text x="563.7" y="44" text-anchor="start" class="mono lbl">10</text>
+<text x="772.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="752.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="732.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="712.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="692.7" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.7" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="632.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="612.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="592.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="572.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="552.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="532.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="512.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="492.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="472.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="452.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="432.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="412.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="392.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="372.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="352.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="332.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="312.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="292.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="272.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="252.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="232.7" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="212.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="192.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="172.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="152.7" y="65" text-anchor="middle" class="mono">1</text>
+<text x="192.7" y="91" text-anchor="middle" class="mono halo lbl">op</text>
+<text x="252.7" y="91" text-anchor="middle" class="mono halo lbl">S</text>
+<text x="362.7" y="91" text-anchor="middle" class="mono halo">imm10</text>
+<text x="512.7" y="91" text-anchor="middle" class="mono halo lbl">J1</text>
+<text x="552.7" y="91" text-anchor="middle" class="mono halo lbl">J2</text>
+<text x="672.7" y="91" text-anchor="middle" class="mono halo">imm11</text>
+</svg></figure>
 <p>Four bytes, because a 16-bit branch reaches about ±2 KB and a call has to<br>reach anywhere. <strong>That is the whole rule for when Thumb widens</strong>: not when 32<br>bits would be convenient, but when 16 bits cannot do the job at all.</p>
 <p><strong><code>.n</code> and <code>.w</code>.</strong> objdump has been writing <code>bne.n</code>, <code>blt.n</code> and <code>b.n</code><br>throughout this deck. <code>.n</code> is <em>narrow</em>, 16 bits; <code>.w</code> is <em>wide</em>, 32. On this<br>chip there is nothing to choose and the suffix is only objdump being explicit.<br>On M3 and above the assembler picks the smallest encoding that reaches, and<br><code>.w</code> forces the wide one — which is how you write a branch that crosses a<br>large flash.</p>
 <p>&gt; <strong>Now re-read the last dozen slides.</strong> The <code>s</code> on every <code>adds</code>, the missing<br>&gt; divide, the 5-bit positive-only offsets, the eight reachable registers, the<br>&gt; literal pool full of addresses — <strong>none of those are ARM. They are<br>&gt; Thumb-1.</strong> Compile the same C for a Cortex-M4 and you get <code>add</code> that leaves<br>&gt; the flags alone, <code>sdiv</code> instead of a library call, <code>ldr r0, [r1, #2000]</code> in<br>&gt; one instruction, and far fewer literal pools, because <code>movw</code> / <code>movt</code> build a<br>&gt; 32-bit constant inline. Same source, same instruction set family — a<br>&gt; different instance of the model from lesson 00.</p>
@@ -536,6 +1100,149 @@ int _write(int fd, const char *buf, int len)
 <p>Decoded, ignoring the record framing:</p>
 <table><thead><tr><th>Bytes (little-endian)</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><td><code>00300020</code></td><td><code>0x20003000</code></td><td>initial stack pointer — top of 12 KB SRAM</td></tr><tr><td><code>75020008</code></td><td><code>0x08000275</code></td><td>reset vector — <strong>where execution begins</strong></td></tr><tr><td><code>29020008</code></td><td><code>0x08000229</code></td><td>NMI handler</td></tr></tbody></table>
 <p><code>Reset_Handler</code> is at <code>0x08000274</code>, an even address. The vector says<br><code>0x08000275</code>. <strong>The low bit is set on purpose</strong>: on this processor it means<br>&quot;the code at this address is Thumb code&quot;. Every function pointer on the chip<br>is odd.</p>
+<figure class="diagram"><svg width="799" viewBox="0 0 799 182" role="img" aria-label="vector [1], 32 bits; Reset_Handler, 32 bits">
+<text x="16" y="35" class="mono">vector [1]</text>
+<text x="16" y="50" class="mono lbl">= 0x08000275</text>
+<text x="143.7" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="781.7" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="142.7" y="28" width="620.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M742.7 28 V32 M742.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M722.7 28 V32 M722.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M702.7 28 V32 M702.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M682.7 28 V32 M682.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M662.7 28 V32 M662.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M642.7 28 V32 M642.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M622.7 28 V32 M622.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M602.7 28 V32 M602.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M582.7 28 V32 M582.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M562.7 28 V32 M562.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M542.7 28 V32 M542.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M522.7 28 V32 M522.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M502.7 28 V32 M502.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M482.7 28 V32 M482.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M462.7 28 V32 M462.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M442.7 28 V32 M442.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M422.7 28 V32 M422.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M402.7 28 V32 M402.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M382.7 28 V32 M382.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M362.7 28 V32 M362.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M342.7 28 V32 M342.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M322.7 28 V32 M322.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M302.7 28 V32 M302.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M282.7 28 V32 M282.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M262.7 28 V32 M262.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M242.7 28 V32 M242.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M222.7 28 V32 M222.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M202.7 28 V32 M202.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M182.7 28 V32 M182.7 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M162.7 28 V32 M162.7 50 V54"/>
+<text x="761.7" y="20" text-anchor="end" class="mono lbl">1</text>
+<rect class="hifill" x="762.7" y="28" width="20.0" height="26"/>
+<text x="772.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="752.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="712.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="672.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="652.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="632.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="572.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="292.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="272.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="252.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="232.7" y="41" text-anchor="middle" class="mono">1</text>
+<text x="212.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="192.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="172.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="152.7" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.7" y="67" text-anchor="middle" class="mono halo lbl">address</text>
+<text x="772.7" y="67" text-anchor="middle" class="mono halo">T</text>
+<text x="16" y="121" class="mono">Reset_Handler</text>
+<text x="16" y="136" class="mono lbl">= 0x08000274</text>
+<text x="143.7" y="106" text-anchor="start" class="mono lbl">31</text>
+<text x="781.7" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="142.7" y="114" width="620.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M742.7 114 V118 M742.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M722.7 114 V118 M722.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M702.7 114 V118 M702.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M682.7 114 V118 M682.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M662.7 114 V118 M662.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M642.7 114 V118 M642.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M622.7 114 V118 M622.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M602.7 114 V118 M602.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M582.7 114 V118 M582.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M562.7 114 V118 M562.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M542.7 114 V118 M542.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M522.7 114 V118 M522.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M502.7 114 V118 M502.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M482.7 114 V118 M482.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M462.7 114 V118 M462.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M442.7 114 V118 M442.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M422.7 114 V118 M422.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M402.7 114 V118 M402.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M382.7 114 V118 M382.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M362.7 114 V118 M362.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M342.7 114 V118 M342.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M322.7 114 V118 M322.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M302.7 114 V118 M302.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M282.7 114 V118 M282.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M262.7 114 V118 M262.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M242.7 114 V118 M242.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M222.7 114 V118 M222.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M202.7 114 V118 M202.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M182.7 114 V118 M182.7 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M162.7 114 V118 M162.7 136 V140"/>
+<text x="761.7" y="106" text-anchor="end" class="mono lbl">1</text>
+<rect class="reg" x="762.7" y="114" width="20.0" height="26"/>
+<text x="772.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="712.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="672.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="652.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="632.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="572.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="292.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="272.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="252.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="232.7" y="127" text-anchor="middle" class="mono">1</text>
+<text x="212.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="192.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="172.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="152.7" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.7" y="153" text-anchor="middle" class="mono halo lbl">address</text>
+</svg></figure>
 <p>The bit exists because on a Cortex-A it is a genuine question — that core<br>has both instruction sets and this is how a branch says which one it is<br>landing in. On a Cortex-M, per slide 2, the answer is always Thumb, so the<br>bit is always 1 and the hardware still insists on being told.</p>
 <p>&gt; Clear that bit and the CPU faults immediately on reset. A vector table full<br>&gt; of even addresses is a dead chip — and it is a common hand-written-assembly<br>&gt; mistake.</p>
 </section>

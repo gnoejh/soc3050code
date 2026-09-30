@@ -75,6 +75,8 @@
   .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
   .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
   .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
   .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
   .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
 
@@ -503,6 +505,69 @@ bx   lr                         .word 0x50000014    &lt;- 4 bytes of data
 <table><thead><tr><th>In <code>Main.c</code> / <code>retarget.c</code></th><th>Base</th><th>Offset</th><th>Address</th></tr></thead><tbody><tr><td><code>RCC-&gt;CR</code> (clock, <code>HSIDIV</code>)</td><td><code>0x40021000</code></td><td><code>0x00</code></td><td><code>0x40021000</code></td></tr><tr><td><code>RCC-&gt;IOPENR</code> (GPIOA clock gate)</td><td><code>0x40021000</code></td><td><code>0x34</code></td><td><code>0x40021034</code></td></tr><tr><td><code>RCC-&gt;APBENR1</code> (USART2 clock gate)</td><td><code>0x40021000</code></td><td><code>0x3C</code></td><td><code>0x4002103C</code></td></tr><tr><td><code>GPIOA-&gt;MODER</code> (pin direction)</td><td><code>0x50000000</code></td><td><code>0x00</code></td><td><code>0x50000000</code></td></tr><tr><td><code>GPIOA-&gt;ODR</code> (LED on PA5)</td><td><code>0x50000000</code></td><td><code>0x14</code></td><td><code>0x50000014</code></td></tr><tr><td><code>GPIOA-&gt;AFR[0]</code> (PA2/PA3 to USART2)</td><td><code>0x50000000</code></td><td><code>0x20</code></td><td><code>0x50000020</code></td></tr><tr><td><code>USART2-&gt;BRR</code> (baud rate)</td><td><code>0x40004400</code></td><td><code>0x0C</code></td><td><code>0x4000440C</code></td></tr><tr><td><code>USART2-&gt;ISR</code> (transmit ready?)</td><td><code>0x40004400</code></td><td><code>0x1C</code></td><td><code>0x4000441C</code></td></tr><tr><td><code>USART2-&gt;TDR</code> (the byte out)</td><td><code>0x40004400</code></td><td><code>0x28</code></td><td><code>0x40004428</code></td></tr></tbody></table>
 <p>&gt; Every row was verified by compiling <code>_Static_assert((uintptr_t)&amp;GPIOA-&gt;ODR<br>&gt; == 0x50000014UL, ...)</code> and friends against ST&#x27;s header. If a number here were<br>&gt; wrong, this lesson would not compile.</p>
 <p><strong>Two habits this should start.</strong> First, when a peripheral does not respond,<br>ask <em>which address did that actually write to</em> — it is always answerable.<br>Second, notice that <code>RCC-&gt;IOPENR</code> appears in this table at all: a peripheral<br>with no clock reads back zero and ignores writes, silently. <code>led_init()</code> sets<br>that gate first, and every peripheral lesson after this one will too.</p>
+<p>The two clock-gate registers, drawn to scale — one bit per peripheral, and the<br>three this lesson sets shaded:</p>
+<figure class="diagram"><svg width="791" viewBox="0 0 791 205" role="img" aria-label="IOPENR bits are GPIOxEN, one per port: A B C D F; RCC-&gt;IOPENR, 32 bits; RCC-&gt;APBENR1, 32 bits">
+<text x="395" y="16" text-anchor="middle" class="lbl">IOPENR bits are GPIOxEN, one per port: A B C D F</text>
+<text x="16" y="59" class="mono">RCC-&gt;IOPENR</text>
+<text x="16" y="74" class="lbl">0x40021034</text>
+<text x="135.8" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="773.8" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="674.8" y="52" width="20.0" height="26"/>
+<rect class="dash" x="134.8" y="52" width="520.0" height="26"/>
+<text x="394.8" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="654.8" y="52" width="20.0" height="26"/>
+<text x="664.8" y="44" text-anchor="middle" class="mono lbl">5</text>
+<text x="664.8" y="65" text-anchor="middle" class="mono">F</text>
+<rect class="reg" x="694.8" y="52" width="20.0" height="26"/>
+<text x="704.8" y="44" text-anchor="middle" class="mono lbl">3</text>
+<text x="704.8" y="65" text-anchor="middle" class="mono">D</text>
+<rect class="reg" x="714.8" y="52" width="20.0" height="26"/>
+<text x="724.8" y="44" text-anchor="middle" class="mono lbl">2</text>
+<text x="724.8" y="65" text-anchor="middle" class="mono">C</text>
+<rect class="hifill" x="734.8" y="52" width="20.0" height="26"/>
+<text x="744.8" y="44" text-anchor="middle" class="mono lbl">1</text>
+<text x="744.8" y="65" text-anchor="middle" class="mono">B</text>
+<rect class="hifill" x="754.8" y="52" width="20.0" height="26"/>
+<text x="764.8" y="65" text-anchor="middle" class="mono">A</text>
+<text x="16" y="128" class="mono">RCC-&gt;APBENR1</text>
+<text x="16" y="143" class="lbl">0x4002103C</text>
+<text x="135.8" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="773.8" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="754.8" y="121" width="20.0" height="26"/>
+<rect class="dash" x="574.8" y="121" width="160.0" height="26"/>
+<text x="654.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="434.8" y="121" width="100.0" height="26"/>
+<text x="484.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="354.8" y="121" width="60.0" height="26"/>
+<text x="384.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="234.8" y="121" width="100.0" height="26"/>
+<text x="284.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="134.8" y="121" width="60.0" height="26"/>
+<text x="164.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="194.8" y="121" width="20.0" height="26"/>
+<text x="204.8" y="113" text-anchor="middle" class="mono lbl">28</text>
+<rect class="reg" x="214.8" y="121" width="20.0" height="26"/>
+<text x="224.8" y="113" text-anchor="middle" class="mono lbl">27</text>
+<rect class="reg" x="334.8" y="121" width="20.0" height="26"/>
+<text x="344.8" y="113" text-anchor="middle" class="mono lbl">21</text>
+<rect class="hifill" x="414.8" y="121" width="20.0" height="26"/>
+<text x="424.8" y="113" text-anchor="middle" class="mono lbl">17</text>
+<rect class="reg" x="534.8" y="121" width="20.0" height="26"/>
+<text x="544.8" y="113" text-anchor="middle" class="mono lbl">11</text>
+<rect class="reg" x="554.8" y="121" width="20.0" height="26"/>
+<text x="564.8" y="113" text-anchor="middle" class="mono lbl">10</text>
+<rect class="reg" x="734.8" y="121" width="20.0" height="26"/>
+<text x="744.8" y="113" text-anchor="middle" class="mono lbl">1</text>
+<path class="dash" d="M224.8 147 L224.8 169"/>
+<path class="dash" d="M564.8 147 L564.8 169"/>
+<text x="204.8" y="160" text-anchor="middle" class="mono halo lbl">PWREN</text>
+<text x="224.8" y="176" text-anchor="middle" class="mono halo lbl">DBGEN</text>
+<text x="344.8" y="160" text-anchor="middle" class="mono halo lbl">I2C1EN</text>
+<text x="424.8" y="160" text-anchor="middle" class="mono halo">USART2EN</text>
+<text x="544.8" y="160" text-anchor="middle" class="mono halo lbl">WWDGEN</text>
+<text x="564.8" y="176" text-anchor="middle" class="mono halo lbl">RTCAPBEN</text>
+<text x="744.8" y="160" text-anchor="middle" class="mono halo lbl">TIM3EN</text>
+</svg></figure>
 </section>
 <section class="slide">
 <h2>Slide 5: Reset, in Hardware, Before Any Code</h2>
@@ -567,7 +632,154 @@ void (* const vectors[])(void) = {
 <p>ARM is <strong>little-endian</strong>, so each group of four bytes reads right to left:</p>
 <table><thead><tr><th>Bytes</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><td><code>00 30 00 20</code></td><td><code>0x20003000</code></td><td>initial SP — top of RAM</td></tr><tr><td><code>C5 06 00 08</code></td><td><code>0x080006C5</code></td><td><code>Reset_Handler</code></td></tr><tr><td><code>79 06 00 08</code></td><td><code>0x08000679</code></td><td><code>NMI_Handler</code></td></tr><tr><td><code>79 06 00 08</code></td><td><code>0x08000679</code></td><td><code>HardFault_Handler</code></td></tr></tbody></table>
 <p>Three observations, each worth more than a paragraph of theory:</p>
-<ol><li><strong><code>0x20003000</code> is not a number someone typed.</strong> RAM starts at <code>0x20000000</code> and this part has 12 KB. <code>0x20000000 + 0x3000</code> is exactly the top. The linker computed it from <code>link.ld</code>, and the stack grows <em>downward</em> from it.</li><li><strong><code>0x080006C5</code> is odd, and every handler address here is.</strong> <code>nm</code> reports <code>Reset_Handler</code> at <code>080006c4</code>. The low bit is the <strong>Thumb bit</strong> from lesson 01 — the core reads it as &quot;this target is Thumb code&quot;, not as part of the address. An even entry here faults on the first instruction.</li><li><strong>Words 2 and 3 are identical.</strong> <code>NMI_Handler</code> and <code>HardFault_Handler</code> are the same address, because both are weak aliases of one <code>Default_Handler</code>. Slide 6 is about why that matters.</li></ol>
+<ol><li><strong><code>0x20003000</code> is not a number someone typed.</strong> RAM starts at <code>0x20000000</code> and this part has 12 KB. <code>0x20000000 + 0x3000</code> is exactly the top. The linker computed it from <code>link.ld</code>, and the stack grows <em>downward</em> from it.</li><li><strong><code>0x080006C5</code> is odd, and every handler address here is.</strong> <code>nm</code> reports <code>Reset_Handler</code> at <code>080006c4</code>. The low bit is the <strong>Thumb bit</strong> from lesson 01 — the core reads it as &quot;this target is Thumb code&quot;, not as part of the address. An even entry here faults on the first instruction.</li><li><strong>Words 2 and 3 are identical.</strong> <code>NMI_Handler</code> and <code>HardFault_Handler</code> are the same address, because both are weak aliases of one <code>Default_Handler</code>. Slide 8 is about why that matters.</li></ol>
+<p>Observation 2, drawn to scale — the same address, and one extra bit:</p>
+<figure class="diagram"><svg width="837" viewBox="0 0 837 182" role="img" aria-label="nm, 32 bits; word 1, 32 bits">
+<text x="16" y="35" class="mono">nm</text>
+<text x="16" y="50" class="lbl">where Reset_Handler is</text>
+<text x="16" y="65" class="mono lbl">= 0x080006C4</text>
+<text x="181.8" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="819.8" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="180.8" y="28" width="620.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M780.8 28 V32 M780.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M760.8 28 V32 M760.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M740.8 28 V32 M740.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M720.8 28 V32 M720.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M700.8 28 V32 M700.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M680.8 28 V32 M680.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M660.8 28 V32 M660.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M640.8 28 V32 M640.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M620.8 28 V32 M620.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M600.8 28 V32 M600.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M580.8 28 V32 M580.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M560.8 28 V32 M560.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M540.8 28 V32 M540.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M520.8 28 V32 M520.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M500.8 28 V32 M500.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M480.8 28 V32 M480.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M460.8 28 V32 M460.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M440.8 28 V32 M440.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M420.8 28 V32 M420.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M400.8 28 V32 M400.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M380.8 28 V32 M380.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M360.8 28 V32 M360.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M340.8 28 V32 M340.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M320.8 28 V32 M320.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M300.8 28 V32 M300.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M280.8 28 V32 M280.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M260.8 28 V32 M260.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M240.8 28 V32 M240.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M220.8 28 V32 M220.8 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M200.8 28 V32 M200.8 50 V54"/>
+<text x="799.8" y="20" text-anchor="end" class="mono lbl">1</text>
+<rect class="reg" x="800.8" y="28" width="20.0" height="26"/>
+<text x="810.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="790.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="770.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="750.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="730.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="710.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="690.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="670.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="650.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="630.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="610.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="590.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="570.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="550.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="530.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="510.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="490.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="470.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="450.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="430.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="410.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="390.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="370.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="350.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="330.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="310.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="290.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="270.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="250.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="230.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="210.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="190.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="490.8" y="67" text-anchor="middle" class="mono halo lbl">address</text>
+<text x="810.8" y="67" text-anchor="middle" class="mono halo lbl">T</text>
+<text x="16" y="121" class="mono">word 1</text>
+<text x="16" y="136" class="lbl">what the table holds</text>
+<text x="16" y="151" class="mono lbl">= 0x080006C5</text>
+<text x="181.8" y="106" text-anchor="start" class="mono lbl">31</text>
+<text x="819.8" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="180.8" y="114" width="620.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M780.8 114 V118 M780.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M760.8 114 V118 M760.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M740.8 114 V118 M740.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M720.8 114 V118 M720.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M700.8 114 V118 M700.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M680.8 114 V118 M680.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M660.8 114 V118 M660.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M640.8 114 V118 M640.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M620.8 114 V118 M620.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M600.8 114 V118 M600.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M580.8 114 V118 M580.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M560.8 114 V118 M560.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M540.8 114 V118 M540.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M520.8 114 V118 M520.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M500.8 114 V118 M500.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M480.8 114 V118 M480.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M460.8 114 V118 M460.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M440.8 114 V118 M440.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M420.8 114 V118 M420.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M400.8 114 V118 M400.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M380.8 114 V118 M380.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M360.8 114 V118 M360.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M340.8 114 V118 M340.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M320.8 114 V118 M320.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M300.8 114 V118 M300.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M280.8 114 V118 M280.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M260.8 114 V118 M260.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M240.8 114 V118 M240.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M220.8 114 V118 M220.8 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M200.8 114 V118 M200.8 136 V140"/>
+<text x="799.8" y="106" text-anchor="end" class="mono lbl">1</text>
+<rect class="hifill" x="800.8" y="114" width="20.0" height="26"/>
+<text x="810.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="790.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="770.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="750.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="730.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="710.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="690.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="670.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="650.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="630.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="610.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="590.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="570.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="550.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="530.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="510.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="490.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="470.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="450.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="430.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="410.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="390.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="370.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="350.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="330.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="310.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="290.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="270.8" y="127" text-anchor="middle" class="mono">1</text>
+<text x="250.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="230.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="210.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="190.8" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="490.8" y="153" text-anchor="middle" class="mono halo lbl">address</text>
+<text x="810.8" y="153" text-anchor="middle" class="mono halo">T</text>
+</svg></figure>
 </section>
 <section class="slide">
 <h2>Slide 8: Weak Aliases — and the Trap That Costs an Afternoon</h2>
@@ -768,6 +980,73 @@ _sidata = LOADADDR(.data); /*  &lt;-- where it was stored            */
 
     SystemCoreClock = 48000000UL;
 }</code></pre>
+<p>The two registers it touches, with the fields it writes or polls shaded:</p>
+<figure class="diagram"><svg width="786" viewBox="0 0 786 238" role="img" aria-label="RCC-&gt;CR bits left unnamed: 19:16 external-oscillator (HSE) and CSS, 9 and 7:5 the kernel clock; FLASH-&gt;ACR, 32 bits; RCC-&gt;CR, 32 bits">
+<text x="393" y="16" text-anchor="middle" class="lbl">RCC-&gt;CR bits left unnamed: 19:16 external-oscillator (HSE) and CSS, 9 and 7:5 the kernel clock</text>
+<text x="16" y="59" class="mono">FLASH-&gt;ACR</text>
+<text x="16" y="74" class="lbl">0x40022000</text>
+<text x="131.0" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="769.0" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="610.0" y="52" width="100.0" height="26"/>
+<text x="660.0" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="550.0" y="52" width="20.0" height="26"/>
+<rect class="dash" x="450.0" y="52" width="80.0" height="26"/>
+<text x="490.0" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="410.0" y="52" width="20.0" height="26"/>
+<rect class="dash" x="130.0" y="52" width="260.0" height="26"/>
+<text x="260.0" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="390.0" y="52" width="20.0" height="26"/>
+<text x="400.0" y="44" text-anchor="middle" class="mono lbl">18</text>
+<rect class="reg" x="430.0" y="52" width="20.0" height="26"/>
+<text x="440.0" y="44" text-anchor="middle" class="mono lbl">16</text>
+<rect class="reg" x="530.0" y="52" width="20.0" height="26"/>
+<text x="540.0" y="44" text-anchor="middle" class="mono lbl">11</text>
+<rect class="reg" x="570.0" y="52" width="20.0" height="26"/>
+<text x="580.0" y="44" text-anchor="middle" class="mono lbl">9</text>
+<rect class="reg" x="590.0" y="52" width="20.0" height="26"/>
+<text x="600.0" y="44" text-anchor="middle" class="mono lbl">8</text>
+<rect class="hifill" x="710.0" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M750.0 52 V56 M750.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M730.0 52 V56 M730.0 74 V78"/>
+<text x="711.0" y="44" text-anchor="start" class="mono lbl">2</text>
+<path class="dash" d="M440.0 78 L440.0 100"/>
+<path class="dash" d="M600.0 78 L600.0 100"/>
+<text x="400.0" y="91" text-anchor="middle" class="mono halo lbl">DBG_SWEN</text>
+<text x="440.0" y="107" text-anchor="middle" class="mono halo lbl">PROGEMPTY</text>
+<text x="540.0" y="91" text-anchor="middle" class="mono halo lbl">ICRST</text>
+<text x="580.0" y="91" text-anchor="middle" class="mono halo lbl">ICEN</text>
+<text x="600.0" y="107" text-anchor="middle" class="mono halo lbl">PRFTEN</text>
+<text x="740.0" y="91" text-anchor="middle" class="mono halo">LATENCY</text>
+<text x="16" y="161" class="mono">RCC-&gt;CR</text>
+<text x="16" y="176" class="lbl">0x40021000</text>
+<text x="131.0" y="146" text-anchor="start" class="mono lbl">31</text>
+<text x="769.0" y="146" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="670.0" y="154" width="100.0" height="26"/>
+<text x="720.0" y="167" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="450.0" y="154" width="40.0" height="26"/>
+<rect class="dash" x="130.0" y="154" width="240.0" height="26"/>
+<text x="250.0" y="167" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="370.0" y="154" width="20.0" height="26"/>
+<rect class="reg" x="390.0" y="154" width="20.0" height="26"/>
+<rect class="reg" x="410.0" y="154" width="20.0" height="26"/>
+<rect class="reg" x="430.0" y="154" width="20.0" height="26"/>
+<rect class="hifill" x="490.0" y="154" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M530.0 154 V158 M530.0 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M510.0 154 V158 M510.0 176 V180"/>
+<text x="491.0" y="146" text-anchor="start" class="mono lbl">13</text>
+<text x="549.0" y="146" text-anchor="end" class="mono lbl">11</text>
+<text x="520.0" y="167" text-anchor="middle" class="mono">HSIDIV</text>
+<rect class="hifill" x="550.0" y="154" width="20.0" height="26"/>
+<text x="560.0" y="146" text-anchor="middle" class="mono lbl">10</text>
+<rect class="reg" x="570.0" y="154" width="20.0" height="26"/>
+<rect class="reg" x="590.0" y="154" width="20.0" height="26"/>
+<rect class="reg" x="610.0" y="154" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M650.0 154 V158 M650.0 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M630.0 154 V158 M630.0 176 V180"/>
+<path class="dash" d="M600.0 180 L600.0 202"/>
+<text x="560.0" y="193" text-anchor="middle" class="mono halo">HSIRDY</text>
+<text x="600.0" y="209" text-anchor="middle" class="mono halo lbl">HSION</text>
+</svg></figure>
 <p><strong>The order is not negotiable.</strong> Flash memory cannot be read as fast as the CPU<br>runs at 48 MHz, so it needs one wait state. Raise the wait state <em>first</em>, then<br>the clock. Do it the other way round and the CPU fetches an instruction that is<br>not ready yet — and the part hangs with no error, somewhere that has nothing to<br>do with your bug.</p>
 <p>&gt; <strong>The rule for every clock change you will ever make:</strong> wait states go up<br>&gt; <em>before</em> the frequency, and come down <em>after</em> it.</p>
 <p>This is also the gentlest clock setup in the STM32 family: no PLL, no lock bit<br>to poll, no source switch. The F446RE target later in the course needs all<br>three, and you will appreciate this one by comparison.</p>
@@ -823,6 +1102,107 @@ _sidata = LOADADDR(.data); /*  &lt;-- where it was stored            */
 </svg></figure>
 <p>Eleven pins matter this week. Eight of them are the only hardware choice this<br>lesson makes; the other three are fixed by the board:</p>
 <table><thead><tr><th>Pin</th><th>Wired to</th><th>Used by</th></tr></thead><tbody><tr><td><strong>PB0–PB7</strong></td><td>eight LEDs added by <code>diagram.json</code>, anode to pin, cathode to GND</td><td><code>ledbar_init()</code>, your patterns</td></tr><tr><td><strong>PA5</strong></td><td>the on-board user LED (Wokwi labels it <strong>LD4</strong>)</td><td><code>led_init()</code>, the per-frame heartbeat</td></tr><tr><td><strong>PA2</strong></td><td>USART2 TX, alternate function 1</td><td><code>printf</code> → the serial monitor</td></tr><tr><td><strong>PA3</strong></td><td>USART2 RX, alternate function 1</td><td>(not used this week)</td></tr></tbody></table>
+<p><code>ledbar_init()</code> writes <code>01</code> (output) into the eight <code>MODER</code> fields for PB0–PB7,<br>and after that each frame of a pattern is one byte written to <code>GPIOB-&gt;ODR</code>:</p>
+<figure class="diagram"><svg width="869" viewBox="0 0 869 172" role="img" aria-label="Numbered by pin; PB0-PB7, the LED bar, shaded; GPIOB-&gt;MODER, 32 bits; GPIOB-&gt;ODR, 32 bits">
+<text x="434" y="16" text-anchor="middle" class="lbl">Numbered by pin; PB0-PB7, the LED bar, shaded</text>
+<text x="16" y="59" class="mono">GPIOB-&gt;MODER</text>
+<text x="16" y="74" class="lbl">2 bits per pin, 01 = output</text>
+<text x="213.8" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="851.8" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="212.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M232.8 52 V56 M232.8 74 V78"/>
+<text x="232.8" y="65" text-anchor="middle" class="mono">15</text>
+<rect class="reg" x="252.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M272.8 52 V56 M272.8 74 V78"/>
+<text x="272.8" y="65" text-anchor="middle" class="mono">14</text>
+<rect class="reg" x="292.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M312.8 52 V56 M312.8 74 V78"/>
+<text x="312.8" y="65" text-anchor="middle" class="mono">13</text>
+<rect class="reg" x="332.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M352.8 52 V56 M352.8 74 V78"/>
+<text x="352.8" y="65" text-anchor="middle" class="mono">12</text>
+<rect class="reg" x="372.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M392.8 52 V56 M392.8 74 V78"/>
+<text x="392.8" y="65" text-anchor="middle" class="mono">11</text>
+<rect class="reg" x="412.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M432.8 52 V56 M432.8 74 V78"/>
+<text x="432.8" y="65" text-anchor="middle" class="mono">10</text>
+<rect class="reg" x="452.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M472.8 52 V56 M472.8 74 V78"/>
+<text x="472.8" y="65" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="492.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M512.8 52 V56 M512.8 74 V78"/>
+<text x="512.8" y="65" text-anchor="middle" class="mono">8</text>
+<rect class="hifill" x="532.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M552.8 52 V56 M552.8 74 V78"/>
+<text x="533.8" y="44" text-anchor="start" class="mono lbl">15</text>
+<text x="571.8" y="44" text-anchor="end" class="mono lbl">14</text>
+<text x="552.8" y="65" text-anchor="middle" class="mono">7</text>
+<rect class="hifill" x="572.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M592.8 52 V56 M592.8 74 V78"/>
+<text x="611.8" y="44" text-anchor="end" class="mono lbl">12</text>
+<text x="592.8" y="65" text-anchor="middle" class="mono">6</text>
+<rect class="hifill" x="612.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M632.8 52 V56 M632.8 74 V78"/>
+<text x="651.8" y="44" text-anchor="end" class="mono lbl">10</text>
+<text x="632.8" y="65" text-anchor="middle" class="mono">5</text>
+<rect class="hifill" x="652.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M672.8 52 V56 M672.8 74 V78"/>
+<text x="691.8" y="44" text-anchor="end" class="mono lbl">8</text>
+<text x="672.8" y="65" text-anchor="middle" class="mono">4</text>
+<rect class="hifill" x="692.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M712.8 52 V56 M712.8 74 V78"/>
+<text x="731.8" y="44" text-anchor="end" class="mono lbl">6</text>
+<text x="712.8" y="65" text-anchor="middle" class="mono">3</text>
+<rect class="hifill" x="732.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M752.8 52 V56 M752.8 74 V78"/>
+<text x="771.8" y="44" text-anchor="end" class="mono lbl">4</text>
+<text x="752.8" y="65" text-anchor="middle" class="mono">2</text>
+<rect class="hifill" x="772.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M792.8 52 V56 M792.8 74 V78"/>
+<text x="811.8" y="44" text-anchor="end" class="mono lbl">2</text>
+<text x="792.8" y="65" text-anchor="middle" class="mono">1</text>
+<rect class="hifill" x="812.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M832.8 52 V56 M832.8 74 V78"/>
+<text x="832.8" y="65" text-anchor="middle" class="mono">0</text>
+<text x="16" y="128" class="mono">GPIOB-&gt;ODR</text>
+<text x="16" y="143" class="lbl">1 bit per pin</text>
+<text x="213.8" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="851.8" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="212.8" y="121" width="320.0" height="26"/>
+<text x="372.8" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="532.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="552.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="572.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="592.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="612.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="632.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="652.8" y="121" width="20.0" height="26"/>
+<rect class="reg" x="672.8" y="121" width="20.0" height="26"/>
+<rect class="hifill" x="692.8" y="121" width="20.0" height="26"/>
+<text x="702.8" y="113" text-anchor="middle" class="mono lbl">7</text>
+<text x="702.8" y="134" text-anchor="middle" class="mono">7</text>
+<rect class="hifill" x="712.8" y="121" width="20.0" height="26"/>
+<text x="722.8" y="113" text-anchor="middle" class="mono lbl">6</text>
+<text x="722.8" y="134" text-anchor="middle" class="mono">6</text>
+<rect class="hifill" x="732.8" y="121" width="20.0" height="26"/>
+<text x="742.8" y="113" text-anchor="middle" class="mono lbl">5</text>
+<text x="742.8" y="134" text-anchor="middle" class="mono">5</text>
+<rect class="hifill" x="752.8" y="121" width="20.0" height="26"/>
+<text x="762.8" y="113" text-anchor="middle" class="mono lbl">4</text>
+<text x="762.8" y="134" text-anchor="middle" class="mono">4</text>
+<rect class="hifill" x="772.8" y="121" width="20.0" height="26"/>
+<text x="782.8" y="113" text-anchor="middle" class="mono lbl">3</text>
+<text x="782.8" y="134" text-anchor="middle" class="mono">3</text>
+<rect class="hifill" x="792.8" y="121" width="20.0" height="26"/>
+<text x="802.8" y="113" text-anchor="middle" class="mono lbl">2</text>
+<text x="802.8" y="134" text-anchor="middle" class="mono">2</text>
+<rect class="hifill" x="812.8" y="121" width="20.0" height="26"/>
+<text x="822.8" y="113" text-anchor="middle" class="mono lbl">1</text>
+<text x="822.8" y="134" text-anchor="middle" class="mono">1</text>
+<rect class="hifill" x="832.8" y="121" width="20.0" height="26"/>
+<text x="842.8" y="134" text-anchor="middle" class="mono">0</text>
+</svg></figure>
 <p>The eight LEDs are wires in <code>diagram.json</code>, and a wire names its board pin by<br><strong>the string in Wokwi&#x27;s board file, not the datasheet name</strong>: <code>led0</code> is on<br><code>nucleo:PB0.1</code>, because PB0 reaches two header positions and plain <code>PB0</code> does<br>not exist. Every name Wokwi accepts is on the <strong>Board pins</strong> page in the top<br>bar of this slide. Check it before you add a wire.</p>
 <p><strong>Read the &quot;not implemented&quot; list on that page before you plan anything.</strong><br>Wokwi simulates the CPU and most peripherals, but not all of them. As of now<br>it lists <strong>DMA, RTC, IWDG, PWR, SYSCFG and DBG as unavailable</strong>, and I²C and<br>SPI as master-only.</p>
 <p>That list is not a footnote — it decides what this course can demonstrate:</p>

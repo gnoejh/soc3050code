@@ -307,6 +307,14 @@ this lesson configures it.
 | **event** | `USART2_IRQn` = 28, one vector for everything |
 | **rate** | `BRR` = 48 000 000 / 115 200 = 416.67 → **417** |
 
+Three of those slots, drawn to scale (this lesson's bits shaded):
+
+```regs
+RCC->APBENR1 ; clock gate | 32 | 1, 10, 11, !17 USART2EN, 21, 27, 28
+GPIOA->AFR[0] ; AFRL: PA2, PA3 = AF1 | 32 = 0x00001100 | 31:28 7, 27:24 6, 23:20 5, 19:16 4, !15:12 3, !11:8 2, 7:4 1, 3:0 0
+USART2->BRR ; 417 | 32 = 0x000001A1 | !15:0 BRR
+```
+
 `BRR = 417` gives 115 108 baud, 0.08% slow — far inside the few percent a
 UART tolerates, because the receiver resynchronises on every start bit. The
 banner prints `BRR = 417` read back from the register (**measured**).
@@ -405,6 +413,13 @@ void USART2_IRQHandler(void)
 }
 ```
 
+The flags it tests, and the separate register that clears `ORE` — same bit, 3:
+
+```regs
+USART2->ISR ; status, read | 32 | 0, 1, 2, !3 ORE, 4, !5 RXNE, 6, !7 TXE, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+USART2->ICR ; write 1 to clear | 32 | 0, 1, 2, !3 ORECF, 4, 5, 6, 7, 8, 9, 11, 12, 13, 17, 20
+```
+
 Count the ways a flag is cleared in this course so far:
 
 | Flag | How | Lesson |
@@ -471,7 +486,13 @@ if (tx_tail != tx_head) {
 }
 ```
 
-and `_write()` switches it back on after filling the ring.
+and `_write()` switches it back on after filling the ring. `CR1` in its two
+states, as `uart_init()` and `_write()` leave it:
+
+```regs
+USART2->CR1 ; idle | 32 = 0x0000002D | 31, 30, 29, 28, 27, 26, 25:21, 20:16, 15, 14, 13, 12, 11, 10, 9, 8, 7 TXEIE, 6, 5 RXNEIE, 4, 3 TE, 2 RE, 1, 0 UE
+USART2->CR1 ; sending | 32 = 0x000000AD | 31, 30, 29, 28, 27, 26, 25:21, 20:16, 15, 14, 13, 12, 11, 10, 9, 8, !7 TXEIE, 6, 5 RXNEIE, 4, 3 TE, 2 RE, 1, 0 UE
+```
 
 **Measured**, with the `else` line removed: **nothing is printed at all — not
 even the banner.** The first `_write()` enabled `TXEIE`; the ISR sent the

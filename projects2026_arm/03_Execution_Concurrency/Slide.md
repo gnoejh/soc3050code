@@ -83,6 +83,14 @@ lets a function clobber, so **an ISR can be an ordinary C function**. No special
 keyword, no `ISR()` macro. You simply define a function with the right name and
 the linker puts it in the vector table.
 
+One of the eight, `xPSR`, is how the hardware knows what is running: entry
+writes the exception number into its low bits, and the flags of the interrupted
+code are saved with it.
+
+```regs
+xPSR ; stacked on entry | 32 | 31 N, 30 Z, 29 C, 28 V, 24 T, !5:0 exception no.
+```
+
 > Spell the name wrong and you have written an unused function. It compiles, it
 > links, it runs, and the interrupt does nothing. No warning, anywhere.
 
@@ -216,6 +224,13 @@ counter++;
 __enable_irq();
 ```
 
+Each call is one instruction, `cpsid i` / `cpsie i`, and all either one
+changes is a single bit — bit 0 of the core register `PRIMASK`:
+
+```regs
+PRIMASK ; 1 = interrupts masked | 32 | !0 PM
+```
+
 Keep it short. Every cycle spent with interrupts off is a cycle in which the
 chip cannot respond to anything.
 
@@ -296,6 +311,14 @@ and it can also let a more urgent interrupt preempt a handler already running.
   <path class="hi" d="M360 140 V100" marker-end="url(#c4)"/>
   <text x="280" y="200" text-anchor="middle" class="lbl">The timer handler was itself interrupted. Everything it shares is now at risk too.</text>
 </svg>
+```
+
+Each interrupt's priority is one byte in the NVIC's `IPR` registers, four to a
+word — but this chip implements only the **top two bits** of each byte, so there
+are just four levels (0 is the most urgent):
+
+```regs
+NVIC->IPR[0] ; IRQ 0-3 | 32 | !31:30 IRQ3, !23:22 IRQ2, !15:14 IRQ1, !7:6 IRQ0
 ```
 
 Two consequences worth carrying forward:

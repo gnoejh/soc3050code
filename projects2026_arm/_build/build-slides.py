@@ -21,6 +21,11 @@ import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# The ```regs block renderer, beside this script.
+sys.dont_write_bytecode = True          # no __pycache__ litter in _build/
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import regdiag  # noqa: E402
+
 # The one reference every lesson leans on. It is pinned into the deck
 # chrome rather than left on the title slide alone, so it is reachable
 # from any slide without going back to the start.
@@ -132,6 +137,12 @@ def render_blocks(lines):
             if lang == "svg":
                 out.append('<figure class="diagram">%s</figure>'
                            % chr(10).join(body))
+                continue
+            # ```regs draws register bit maps to scale from a few lines of
+            # text - see _build/regdiag.py for the format.
+            if lang == "regs":
+                out.append('<figure class="diagram">%s</figure>'
+                           % regdiag.render(body))
                 continue
             cls = ' class="lang-%s"' % html.escape(lang) if lang else ""
             out.append("<pre%s><code>%s</code></pre>"
@@ -321,6 +332,8 @@ PAGE = """<title>{title}</title>
   .diagram .hifill {{ fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }}
   .diagram .ok     {{ fill: none; stroke: var(--mark); stroke-width: 2; }}
   .diagram .wire   {{ fill: none; stroke: currentColor; stroke-width: 1.5; }}
+  .diagram text.hi {{ fill: var(--accent); stroke: none; font-weight: 600; }}
+  .diagram .halo   {{ paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }}
   .diagram .dash   {{ fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }}
   .diagram figcaption {{ color: var(--muted); font-size: .8rem; margin-top: .4rem; }}
 

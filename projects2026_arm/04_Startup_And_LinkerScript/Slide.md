@@ -497,6 +497,15 @@ Second, notice that `RCC->IOPENR` appears in this table at all: a peripheral
 with no clock reads back zero and ignores writes, silently. `led_init()` sets
 that gate first, and every peripheral lesson after this one will too.
 
+The two clock-gate registers, drawn to scale — one bit per peripheral, and the
+three this lesson sets shaded:
+
+```regs
+# IOPENR bits are GPIOxEN, one per port: A B C D F
+RCC->IOPENR ; 0x40021034 | 32 | 5 F, 3 D, 2 C, !1 B, !0 A
+RCC->APBENR1 ; 0x4002103C | 32 | 28 PWREN, 27 DBGEN, 21 I2C1EN, !17 USART2EN, 11 WWDGEN, 10 RTCAPBEN, 1 TIM3EN
+```
+
 ---
 
 ## Slide 5: Reset, in Hardware, Before Any Code
@@ -608,7 +617,14 @@ Three observations, each worth more than a paragraph of theory:
    the address. An even entry here faults on the first instruction.
 3. **Words 2 and 3 are identical.** `NMI_Handler` and `HardFault_Handler` are
    the same address, because both are weak aliases of one `Default_Handler`.
-   Slide 6 is about why that matters.
+   Slide 8 is about why that matters.
+
+Observation 2, drawn to scale — the same address, and one extra bit:
+
+```regs
+nm ; where Reset_Handler is | 32 = 0x080006C4 | 31:1 address, 0 T
+word 1 ; what the table holds | 32 = 0x080006C5 | 31:1 address, !0 T
+```
 
 ---
 
@@ -927,6 +943,14 @@ void SystemInit(void)
 }
 ```
 
+The two registers it touches, with the fields it writes or polls shaded:
+
+```regs
+FLASH->ACR ; 0x40022000 | 32 | 18 DBG_SWEN, 16 PROGEMPTY, 11 ICRST, 9 ICEN, 8 PRFTEN, !2:0 LATENCY
+# RCC->CR bits left unnamed: 19:16 external-oscillator (HSE) and CSS, 9 and 7:5 the kernel clock
+RCC->CR ; 0x40021000 | 32 | 19, 18, 17, 16, !13:11 HSIDIV, !10 HSIRDY, 9, 8 HSION, 7:5
+```
+
 **The order is not negotiable.** Flash memory cannot be read as fast as the CPU
 runs at 48 MHz, so it needs one wait state. Raise the wait state *first*, then
 the clock. Do it the other way round and the CPU fetches an instruction that is
@@ -1025,6 +1049,15 @@ lesson makes; the other three are fixed by the board:
 | **PA5** | the on-board user LED (Wokwi labels it **LD4**) | `led_init()`, the per-frame heartbeat |
 | **PA2** | USART2 TX, alternate function 1 | `printf` → the serial monitor |
 | **PA3** | USART2 RX, alternate function 1 | (not used this week) |
+
+`ledbar_init()` writes `01` (output) into the eight `MODER` fields for PB0–PB7,
+and after that each frame of a pattern is one byte written to `GPIOB->ODR`:
+
+```regs
+# Numbered by pin; PB0-PB7, the LED bar, shaded
+GPIOB->MODER ; 2 bits per pin, 01 = output | 32 | 31:30 15, 29:28 14, 27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, !15:14 7, !13:12 6, !11:10 5, !9:8 4, !7:6 3, !5:4 2, !3:2 1, !1:0 0
+GPIOB->ODR ; 1 bit per pin | 32 | 15, 14, 13, 12, 11, 10, 9, 8, !7 7, !6 6, !5 5, !4 4, !3 3, !2 2, !1 1, !0 0
+```
 
 The eight LEDs are wires in `diagram.json`, and a wire names its board pin by
 **the string in Wokwi's board file, not the datasheet name**: `led0` is on

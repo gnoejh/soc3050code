@@ -263,6 +263,14 @@ The first two records of the real `Main.hex`:
 | `750200 08` | `0x08000275` — the reset vector |
 | `BB` | checksum |
 
+The two words, drawn to scale. The reset vector is odd: bit 0 is the **Thumb
+bit**, and the handler itself starts at `0x08000274`.
+
+```regs
+SP ; word 0, initial stack pointer | 32 = 0x20003000 | 31:0
+PC ; word 1, reset vector | 32 = 0x08000275 | 31:1 address, !0 T
+```
+
 The first record, `:02000004 0800`, is an **extended linear address** record —
 it sets the upper half of the address to `0x0800`. An 8-bit AVR never needed
 one, because its whole flash fits in 16 bits of address. Yours does not.

@@ -229,6 +229,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-22 | ARM lesson 04 grew an eight-LED bar students program; the site gained a generated board pin map. Nothing in the AVR tree touched. See the end of section 9g. |
 | 2026-09-26 | ARM syllabus agreed (20 lessons, Game → Drone → Robot) and ARM Part 1 written: lessons 05–09, all zero warnings; 06–09 partly run in Renode, none yet watched in Wokwi. Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "The syllabus". |
 | 2026-09-27 | ARM lesson 05's deck rewritten step by step (every GPIO register its own slide), each of lessons 04-09 opened with generated pin-map slides, then push-pull/open-drain, the EXTI multiplexer and the EXTICR layout drawn as SVG and the debouncer split over two slides. Nothing in the AVR tree touched. |
+| 2026-09-30 | ARM decks gained 62 to-scale register diagrams, written as ```` ```regs ```` blocks and drawn by the new `projects2026_arm/_build/regdiag.py`; every bit position checked against the CMSIS headers. Three factual slips in ARM slide text fixed on the way. Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "Register diagrams". |
 
 ## 9. The system pass (2026-09-05)
 

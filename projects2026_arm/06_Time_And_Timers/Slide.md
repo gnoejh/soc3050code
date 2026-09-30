@@ -323,6 +323,11 @@ holds the loop for about 8 ms; seven wraps happen while nobody is asking, and
 seven milliseconds vanish. Time that depends on the loop coming back is only as
 good as the loop.
 
+```regs
+# SysTick->CTRL (SYST_CSR, 0xE000E010): COUNTFLAG is one bit - one wrap
+CTRL ; SYST_CSR | 32 | !16 COUNTFLAG, 2 CLKSOURCE, 1 TICKINT, 0 ENABLE
+```
+
 The fix is lesson 03's second rendezvous — **interrupt** instead of poll:
 
 ```c
@@ -349,6 +354,13 @@ SysTick->LOAD  = ticks - 1UL;                             /* 47999        */
 NVIC_SetPriority(SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);  /* 3   */
 SysTick->VAL   = 0UL;
 SysTick->CTRL  = CLKSOURCE | TICKINT | ENABLE;
+```
+
+What it leaves in the registers, drawn to scale:
+
+```regs
+CTRL ; core clock, interrupt, on | 32 = 0x00000007 | 16 COUNTFLAG, !2 CLKSOURCE, !1 TICKINT, !0 ENABLE
+LOAD ; 47999, 24 bits only | 32 = 0x0000BB7F | !23:0 RELOAD
 ```
 
 Two details matter later:
@@ -441,6 +453,12 @@ same core:
 </svg>
 ```
 
+```regs
+# TIM3's two dividers: 16 bits each, each holding N-1
+PSC ; divide by 48 | 16 = 0x002F | !15:0 PSC
+ARR ; 20000 counts | 16 = 0x4E1F | !15:0 ARR
+```
+
 The `−1` in both registers is the classic off-by-one. `PSC = 48` gives
 48.98 Hz, and nothing complains — except this lesson's report line, which
 counts TIM3's updates against SysTick every second. Lab Part 2.
@@ -463,6 +481,12 @@ TIM3->ARR  = 19999;
 TIM3->EGR  = TIM_EGR_UG;  /* ...until this forces an update right now   */
 TIM3->SR   = ~TIM_SR_UIF; /* UG also raised UIF - clear it, or the first */
 TIM3->DIER |= TIM_DIER_UIE;  /* interrupt is a phantom                  */
+```
+
+```regs
+# UG and UIE; the empty boxes are TIM3's channel, trigger and DMA bits
+EGR ; event generation | 16 | 6, 4, 3, 2, 1, !0 UG
+DIER ; interrupt enable | 16 | 14, 12, 11, 10, 9, 8, 6, 4, 3, 2, 1, !0 UIE
 ```
 
 Skip `UG` and the prescaler is still 0 for the first period: 20000 counts at
@@ -499,6 +523,12 @@ alone, so the clear touches only UIF and needs no read. Write it the EXTI way,
 `TIM3->SR = TIM_SR_UIF`, and you clear **every other** flag and leave UIF set:
 the handler re-enters forever. It builds with zero warnings. Lab Part 1.
 
+```regs
+# TIM3->SR, the two writes: a 0 clears a flag, a 1 leaves it alone
+SR ; = ~TIM_SR_UIF   right | 32 = 0xFFFFFFFE | 12, 11, 10, 9, 6, 4, 3, 2, 1, !0 UIF
+SR ; = TIM_SR_UIF   wrong | 32 = 0x00000001 | 12, 11, 10, 9, 6, 4, 3, 2, 1, !0 UIF
+```
+
 ---
 
 ## Slide 8: Output Compare — the Timer Draws a Waveform
@@ -529,6 +559,13 @@ frame boundary, so a pulse is never cut in half.
 
 Four writes turn the channel on: `CCMR1` (mode and preload), `CCER.CC1E`
 (connect to the pin), `CR1.ARPE`, and the pin's alternate function.
+
+```regs
+# TIM3 once configured. OC1M is 4 bits: its top bit sits at 16, far from the rest
+CCMR1 ; OC1M 0110, OC1PE | 32 = 0x00000068 | 24, 16 OC1M_3, 15, 14:12, 11, 10, 9:8, 7, !6:4 OC1M, !3 OC1PE, 2, 1:0 CC1S
+CR1 ; ARPE, then CEN | 16 = 0x0081 | 11, 9:8, !7 ARPE, 6:5, 4, 3, 2, 1, !0 CEN
+CCER ; channel 1 to pin | 16 = 0x0001 | 15, 13, 12, 11, 9, 8, 7, 5, 4, 3, 1, !0 CC1E
+```
 
 ---
 
@@ -642,6 +679,12 @@ round-trip time of the sound — **58 µs per centimetre**, per Wokwi's part
 documentation. TIM14 free-runs at 1 MHz and captures **both** edges
 (`CC1P = CC1NP = 1`):
 
+```regs
+# TIM14, channel 1 as a capture input on both edges
+CCMR1 ; CC1S = 01: input, TI1 | 16 = 0x0001 | 7:4 IC1F, 3:2 IC1PSC, !1:0 CC1S
+CCER ; both edges, enabled | 16 = 0x000B | !3 CC1NP, !1 CC1P, !0 CC1E
+```
+
 ```c
 uint16_t t = (uint16_t)TIM14->CCR1;          /* reading CCR1 clears CC1IF */
 if (pin_read(GPIOA, ECHO_PIN)) echo_rise = t;           /* rising  */
@@ -690,6 +733,12 @@ merely held pending until `__enable_irq()`.
 | TIM14 capture | **1** | its *read* must happen before the next edge overwrites `CCR1` |
 | TIM3 update | **2** | must set `CCR1` within the 20 ms frame — generous |
 | SysTick | **3** (lowest) | a late tick is still counted; nothing is lost |
+
+```regs
+# Where those numbers live: 2 bits each, at the top of a byte
+IPR4 ; NVIC, IRQs 16-19 | 32 = 0x40000080 | !31:30 TIM14, 23:22, 15:14, !7:6 TIM3
+SHPR3 ; SCB, system handlers | 32 = 0xC0000000 | !31:30 SysTick, 23:22 PendSV
+```
 
 On a Cortex-M0+ a higher-priority interrupt **preempts** a running
 lower-priority handler. Equal priorities never preempt each other; they queue,

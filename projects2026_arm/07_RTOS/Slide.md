@@ -375,6 +375,12 @@ use PSP*:
 0xFFFFFFFD    return to Thread mode, restore from PSP, keep using PSP
 ```
 
+```regs
+# The lr value, bit by bit, and the CONTROL bit it leaves set in a task
+EXC_RETURN ; in lr | 32 = 0xFFFFFFFD | 31:4 all ones, 3 Thread, !2 PSP, 1:0
+CONTROL ; while a task runs | 32 = 0x00000002 | !1 SPSEL, 0 nPRIV
+```
+
 Every switch in this kernel returns with exactly that value.
 
 ---
@@ -391,6 +397,12 @@ system exception with two properties:
 - **This kernel gives it the lowest priority**, 3. So it runs only when *no
   other handler is active* — after every other interrupt has finished, on the
   way back to a task.
+
+```regs
+# The write that pends it, and both system handlers at priority 3
+ICSR ; SCB, the write | 32 = 0x10000000 | 31 NMIPENDSET, !28 PENDSVSET, 27, 26, 25, 23, 22, 17:12 VECTPENDING, 5:0 VECTACTIVE
+SHPR3 ; SCB, after os_start | 32 = 0xC0C00000 | !31:30 SysTick, !23:22 PendSV
+```
 
 ```svg
 <svg viewBox="0 0 580 170" role="img" aria-label="SysTick decides a switch is needed and pends PendSV; PendSV runs after SysTick returns">
@@ -497,6 +509,15 @@ copying them into `r4`–`r7` — which have *already* been saved and are free �
 and storing those. Restoring runs the same trick backwards, which is why the
 code restores `r8`–`r11` **first** and `r4`–`r7` last.
 
+The encodings show why. `stmia` has an 8-bit register list — one bit per
+register, `r0` to `r7`, no room for more; `mov` has a 4-bit `Rm`:
+
+```regs
+# Two halfwords from this lesson's PendSV_Handler
+stmia r0!, {r4-r7} | 16 = 0xC0F0 | 15:11 STMIA, 10:8 Rn, !7:0 register list
+mov r4, r8 | 16 = 0x4644 | 15:8 MOV hi, 7 D, !6:3 Rm, 2:0 Rd
+```
+
 Two more details the listing shows:
 
 - `mov r4, r8` is legal: `mov` between low and high registers is one of the
@@ -524,6 +545,10 @@ would have if it had just been interrupted at its first instruction.
 *--sp = 0u; *--sp = 0u; *--sp = 0u; *--sp = 0u;   /* r12, r3, r2, r1  */
 *--sp = (uint32_t)arg;                 /* r0:   its argument (AAPCS)   */
 for (int i = 0; i < 8; i++) *--sp = 0u;           /* r11..r4           */
+```
+
+```regs
+xPSR ; forged: T only | 32 = 0x01000000 | 31 N, 30 Z, 29 C, 28 V, !24 T, 5:0 ISR
 ```
 
 - **xPSR's T bit must be 1.** Returning with it clear means switching to ARM
@@ -806,6 +831,13 @@ the hog:
 
 and `addr2line` answers with the exact line of `Main.c`. The instruction at
 that address is `udf #255` — *undefined*, deliberately.
+
+```regs
+# The printed xPSR decoded, and the lr bit that picks the stack
+xPSR ; stacked at the fault | 32 = 0x61000000 | 31 N, !30 Z, !29 C, 28 V, !24 T, 5:0 ISR
+EXC_RETURN ; a task faulted | 32 = 0xFFFFFFFD | 31:4 all ones, 3 Thread, !2 PSP, 1:0
+EXC_RETURN ; a handler faulted | 32 = 0xFFFFFFF1 | 31:4 all ones, 3 Thread, !2 PSP, 1:0
+```
 
 The M0+ has one fault handler and no fault-status registers; the reason is
 lost. On the Cortex-M4 in lesson 11, `CFSR` says *why* as well as *where*.

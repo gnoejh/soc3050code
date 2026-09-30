@@ -293,6 +293,13 @@ this lesson configures it.
 | **speed here** | ~7 µs per conversion | 400 kHz | 6 MHz |
 | **clock gate** | `APBENR2.ADCEN` | `APBENR1.I2C1EN` | `APBENR2.SPI1EN` |
 
+The three gates, drawn to scale in their registers:
+
+```regs
+RCC->APBENR1 | 32 | 1, 10, 11, 17, !21 I2C1EN, 27, 28
+RCC->APBENR2 | 32 | 0, 11, !12 SPI1EN, 14, 15, 17, 18, !20 ADCEN
+```
+
 Each is the Part 0 peripheral model once more — gate, control, status, data —
 and each adds exactly one new idea: the ADC a **start-up sequence**, I²C
 **addresses and acknowledgement**, SPI **selection by wire**.
@@ -343,6 +350,14 @@ with no error anywhere.
 
 `CKMODE` can only be changed while the ADC is off, which is why it is step 1.
 
+The bits those four steps touch (shaded), to scale:
+
+```regs
+ADC1->CR | 32 | !31 ADCAL, !28 ADVREGEN, 4 ADSTP, 2 ADSTART, 1 ADDIS, !0 ADEN
+ADC1->CFGR2 ; CKMODE = 01: PCLK/2 | 32 = 0x40000000 | !31:30 CKMODE, 29 LFTRIG, 9 TOVS, 8:5 OVSS, 4:2 OVSR, 0 OVSE
+ADC1->ISR | 32 | 13, 11, 9, 8, 7, 4, 3, 2, 1, !0 ADRDY
+```
+
 ---
 
 ## Slide 4: Choosing a Channel — and Waiting for It
@@ -356,6 +371,13 @@ while (!(ADC1->ISR & ADC_ISR_CCRDY)) ; /* WAIT: the new selection settles    */
 ADC1->CR    |= ADC_CR_ADSTART;         /* now convert                        */
 while (!(ADC1->ISR & ADC_ISR_EOC)) ;
 code = ADC1->DR;                       /* reading DR clears EOC              */
+```
+
+For the pot, `channel` is 4 (PA4) — one bit of 23 — and the two flags waited on:
+
+```regs
+ADC1->CHSELR ; 1u << 4 | 32 = 0x00000010 | each 1 used 23 mark 4
+ADC1->ISR | 32 | !13 CCRDY, 11, 9, 8, 7, 4, 3, !2 EOC, 1, 0
 ```
 
 On this ADC family a new `CHSELR` is not instant. Start before `CCRDY` and the
@@ -423,6 +445,13 @@ dividing by it. What Wokwi returns there is Lab Part 2's question.
 - **ACK**: after every byte the receiver pulls SDA low for one clock. **No
   ACK means nobody is there** — or nobody willing.
 
+What `i2c_init()` leaves in GPIOB for PB8 (SCL) and PB9 (SDA):
+
+```regs
+GPIOB->OTYPER ; 1 = open drain | 32 = 0x00000300 | each 1 used 16 mark 8 9
+GPIOB->AFR[1] ; AFRH: PB9, PB8 = AF6 | 32 = 0x00000066 | 31:28 15, 27:24 14, 23:20 13, 19:16 12, 15:12 11, 11:8 10, !7:4 9, !3:0 8
+```
+
 ---
 
 ## Slide 7: Reading a Register — One Transaction, Two Directions
@@ -454,6 +483,13 @@ drains one byte at a time as `ISR` asks:
 I2C1->CR2 = (addr << 1) | (n << I2C_CR2_NBYTES_Pos) | I2C_CR2_START [| AUTOEND] [| RD_WRN];
 ```
 
+The two `CR2` values of slide 7's `i2c_write_read(0x68, &reg, 1, buf, 8)`:
+
+```regs
+I2C1->CR2 ; write 1, no STOP | 32 = 0x000120D0 | 26, 25 AUTOEND, 24, !23:16 NBYTES, 15, 14, !13 START, 12, 11, 10 RD_WRN, 9:8, !7:1 SADD, 0
+I2C1->CR2 ; read 8, AUTOEND | 32 = 0x020824D0 | 26, !25 AUTOEND, 24, !23:16 NBYTES, 15, 14, !13 START, 12, 11, !10 RD_WRN, 9:8, !7:1 SADD, 0
+```
+
 | `ISR` flag | Means | Software |
 |---|---|---|
 | `TXIS` | ready for the next byte | write `TXDR` |
@@ -462,11 +498,19 @@ I2C1->CR2 = (addr << 1) | (n << I2C_CR2_NBYTES_Pos) | I2C_CR2_START [| AUTOEND] 
 | `STOPF` | STOP sent — the transfer is over | clear with `ICR` |
 | `NACKF` | not acknowledged | clear, and end with STOP |
 
+```regs
+I2C1->ISR | 32 | 23:17, 16, 15, 13, 12, 11, 10, 9, 8, 7, !6 TC, !5 STOPF, !4 NACKF, 3, !2 RXNE, !1 TXIS, 0
+```
+
 The bus timing lives in one register, `TIMINGR`. This lesson uses
 **`0x0090273D`** — not derived here, but **ST's own value** from its
 NUCLEO-C031C6 examples, computed by CubeMX for Fast mode, 400 kHz, with a
 48 MHz I²C clock. Deriving it is a page of arithmetic with rise and fall times;
 using the manufacturer's is the professional choice, provided you say so.
+
+```regs
+I2C1->TIMINGR ; ST's 400 kHz value | 32 = 0x0090273D | 31:28 PRESC, 23:20 SCLDEL, 19:16 SDADEL, 15:8 SCLH, 7:0 SCLL
+```
 
 ---
 
@@ -487,7 +531,11 @@ Every wait in `i2c.c` has a limit. And after a NACK the transfer must still be
 **A bus scan** is the most useful I²C tool there is: probe every address with
 an address byte and nothing else (`NBYTES = 0`, START, AUTOEND) and list who
 acknowledges. That is precisely what ST's own `HAL_I2C_IsDeviceReady()` does.
-The shell's `scan` command is it.
+The shell's `scan` command is it. The probe for `0x68`:
+
+```regs
+I2C1->CR2 ; i2c_probe(0x68) | 32 = 0x020020D0 | 26, !25 AUTOEND, 24, !23:16 NBYTES, 15, 14, !13 START, 12, 11, 10 RD_WRN, 9:8, !7:1 SADD, 0
+```
 
 ---
 
@@ -555,6 +603,13 @@ SPI1->CR1 = SPI_CR1_MSTR | (2 << SPI_CR1_BR_Pos)  /* master, 48/8 = 6 MHz  */
 SPI1->CR1 |= SPI_CR1_SPE;
 ```
 
+Both registers after init, the bits this code sets shaded (bits 31:16 are unused on this SPI):
+
+```regs
+SPI1->CR1 ; 0x0314, then SPE | 32 = 0x00000354 | 15, 14, 13, 12, 11, 10, !9 SSM, !8 SSI, 7, !6 SPE, !5:3 BR, !2 MSTR, 1, 0
+SPI1->CR2 ; DS = 1111: 16 bits | 32 = 0x00000F00 | 14, 13, 12, !11:8 DS, 7, 6, 5, 4, 3, 2, 1, 0
+```
+
 Sending one 16-bit command, and the three things that go wrong silently:
 
 ```c
@@ -564,6 +619,10 @@ while (!(SPI1->SR & SPI_SR_RXNE)) ;
 (void)*(volatile uint16_t *)&SPI1->DR;     /* 2. read what came back        */
 while (SPI1->SR & SPI_SR_BSY) ;            /* 3. wait for the LAST bit      */
 pin_high(GPIOB, CS_PIN);                   /*    the rising edge latches it */
+```
+
+```regs
+SPI1->SR | 32 | 12:11 FTLVL, 10:9 FRLVL, 8, !7 BSY, 6, 5, 4, 3, 2, 1 TXE, !0 RXNE
 ```
 
 1. This SPI packs data by the **width of the access**, so the pointer type

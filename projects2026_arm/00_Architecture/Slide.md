@@ -128,6 +128,13 @@ and stores back.
 program owns is in memory. That is a remarkably small amount of state, and it
 is why an interrupt can save and restore it in a handful of cycles.
 
+`xPSR` drawn to scale — flags at the top, the running exception's number at the
+bottom, and almost nothing in between:
+
+```regs
+xPSR ; APSR · EPSR · IPSR | 32 | !31 N, !30 Z, !29 C, !28 V, 24 T, 5:0 ISR
+```
+
 You will rarely name these in C — the compiler does — but the debugger shows
 them, a crash report is mostly their contents, and lesson 01 lives here.
 
@@ -361,6 +368,13 @@ asked.
 </svg>
 ```
 
+Which stack Thread mode uses, and whether it is privileged, is two bits in the
+special register `CONTROL`; the other thirty are reserved:
+
+```regs
+CONTROL ; both 0 at reset | 32 | !1 SPSEL, !0 nPRIV
+```
+
 Until the RTOS lesson, one stack (`MSP`) serves everything and you can ignore
 the distinction. It matters later for two reasons: an RTOS gives each task its
 own stack on `PSP`, and a fault handler runs in Handler mode, which is how it
@@ -415,6 +429,13 @@ the start of flash.
 **The table is built by your own code** — you will write one in the first
 coding lesson. There is no registration call; a handler is connected because
 its address sits in the right slot.
+
+The CPU also records which slot it took. While `USART2_IRQHandler` runs, the
+bottom of `xPSR` — the IPSR view — holds the exception number, 16 + 28 = 44:
+
+```regs
+IPSR ; inside USART2_IRQHandler | 32 = 0x0000002C | !5:0 ISR
+```
 
 ---
 

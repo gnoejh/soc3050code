@@ -75,6 +75,8 @@
   .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
   .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
   .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
   .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
   .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
 
@@ -186,6 +188,39 @@
   <text x="280" y="176" text-anchor="middle" class="lbl">Write to PC and you have branched. It is an ordinary register.</text>
 </svg></figure>
 <p><strong>This is the entire working state of the processor.</strong> Everything else your<br>program owns is in memory. That is a remarkably small amount of state, and it<br>is why an interrupt can save and restore it in a handful of cycles.</p>
+<p><code>xPSR</code> drawn to scale — flags at the top, the running exception&#x27;s number at the<br>bottom, and almost nothing in between:</p>
+<figure class="diagram"><svg width="811" viewBox="0 0 811 79" role="img" aria-label="xPSR, 32 bits">
+<text x="16" y="35" class="mono">xPSR</text>
+<text x="16" y="50" class="lbl">APSR · EPSR · IPSR</text>
+<text x="156.2" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="794.2" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="28" width="360.0" height="26"/>
+<text x="495.2" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="235.2" y="28" width="60.0" height="26"/>
+<text x="265.2" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="155.2" y="28" width="20.0" height="26"/>
+<text x="165.2" y="41" text-anchor="middle" class="mono">N</text>
+<rect class="hifill" x="175.2" y="28" width="20.0" height="26"/>
+<text x="185.2" y="20" text-anchor="middle" class="mono lbl">30</text>
+<text x="185.2" y="41" text-anchor="middle" class="mono">Z</text>
+<rect class="hifill" x="195.2" y="28" width="20.0" height="26"/>
+<text x="205.2" y="20" text-anchor="middle" class="mono lbl">29</text>
+<text x="205.2" y="41" text-anchor="middle" class="mono">C</text>
+<rect class="hifill" x="215.2" y="28" width="20.0" height="26"/>
+<text x="225.2" y="20" text-anchor="middle" class="mono lbl">28</text>
+<text x="225.2" y="41" text-anchor="middle" class="mono">V</text>
+<rect class="reg" x="295.2" y="28" width="20.0" height="26"/>
+<text x="305.2" y="20" text-anchor="middle" class="mono lbl">24</text>
+<text x="305.2" y="41" text-anchor="middle" class="mono">T</text>
+<rect class="reg" x="675.2" y="28" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M775.2 28 V32 M775.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M755.2 28 V32 M755.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M735.2 28 V32 M735.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M715.2 28 V32 M715.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M695.2 28 V32 M695.2 50 V54"/>
+<text x="676.2" y="20" text-anchor="start" class="mono lbl">5</text>
+<text x="735.2" y="41" text-anchor="middle" class="mono">ISR</text>
+</svg></figure>
 <p>You will rarely name these in C — the compiler does — but the debugger shows<br>them, a crash report is mostly their contents, and lesson 01 lives here.</p>
 </section>
 <section class="slide">
@@ -324,6 +359,21 @@
   <text x="280" y="154" text-anchor="middle" class="lbl">Handler mode is always privileged. Thread mode need not be —</text>
   <text x="280" y="172" text-anchor="middle" class="lbl">which is how an RTOS keeps one task from corrupting another.</text>
 </svg></figure>
+<p>Which stack Thread mode uses, and whether it is privileged, is two bits in the<br>special register <code>CONTROL</code>; the other thirty are reserved:</p>
+<figure class="diagram"><svg width="792" viewBox="0 0 792 112" role="img" aria-label="CONTROL, 32 bits">
+<text x="16" y="35" class="mono">CONTROL</text>
+<text x="16" y="50" class="lbl">both 0 at reset</text>
+<text x="137.0" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="775.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="136.0" y="28" width="600.0" height="26"/>
+<text x="436.0" y="41" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="736.0" y="28" width="20.0" height="26"/>
+<text x="746.0" y="20" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="756.0" y="28" width="20.0" height="26"/>
+<path class="dash" d="M766.0 54 L766.0 76"/>
+<text x="746.0" y="67" text-anchor="middle" class="mono halo">SPSEL</text>
+<text x="766.0" y="83" text-anchor="middle" class="mono halo">nPRIV</text>
+</svg></figure>
 <p>Until the RTOS lesson, one stack (<code>MSP</code>) serves everything and you can ignore<br>the distinction. It matters later for two reasons: an RTOS gives each task its<br>own stack on <code>PSP</code>, and a fault handler runs in Handler mode, which is how it<br>still works when the faulting code has wrecked everything else.</p>
 </section>
 <section class="slide">
@@ -356,6 +406,55 @@
   <text x="280" y="216" text-anchor="middle" class="lbl">Put the wrong address in a slot and the chip jumps there anyway.</text>
 </svg></figure>
 <p><strong>The table is built by your own code</strong> — you will write one in the first<br>coding lesson. There is no registration call; a handler is connected because<br>its address sits in the right slot.</p>
+<p>The CPU also records which slot it took. While <code>USART2_IRQHandler</code> runs, the<br>bottom of <code>xPSR</code> — the IPSR view — holds the exception number, 16 + 28 = 44:</p>
+<figure class="diagram"><svg width="850" viewBox="0 0 850 96" role="img" aria-label="IPSR, 32 bits">
+<text x="16" y="35" class="mono">IPSR</text>
+<text x="16" y="50" class="lbl">inside USART2_IRQHandler</text>
+<text x="16" y="65" class="mono lbl">= 0x0000002C</text>
+<text x="194.6" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="832.6" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="193.6" y="28" width="520.0" height="26"/>
+<rect class="hifill" x="713.6" y="28" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M813.6 28 V32 M813.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M793.6 28 V32 M793.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M773.6 28 V32 M773.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M753.6 28 V32 M753.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M733.6 28 V32 M733.6 50 V54"/>
+<text x="714.6" y="20" text-anchor="start" class="mono lbl">5</text>
+<text x="823.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="803.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="783.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="763.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="743.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="723.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="703.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="683.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="663.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="643.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="623.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="603.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="583.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="563.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="543.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="523.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="503.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="483.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="463.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="443.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="423.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="403.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="383.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="363.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="343.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="323.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="303.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="283.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="263.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="243.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="223.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="203.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="773.6" y="67" text-anchor="middle" class="mono halo">ISR</text>
+</svg></figure>
 </section>
 <section class="slide">
 <h2>Slide 10: The Data Model — Width, Alignment, Byte Order</h2>

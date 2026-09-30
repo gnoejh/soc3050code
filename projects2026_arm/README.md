@@ -8,6 +8,7 @@ The live edition. `projects2026_avr/` is the finished 2026 AVR edition and is
 ```
 _build/build-lesson.bat   the build engine - lessons call it, nobody runs it
 _build/build-slides.py    the renderer (this tree's own copy)
+_build/regdiag.py         draws ```regs register bit maps for it (see "Writing diagrams")
 _build/disasm.py          disassemble an ELF without the toolchain
 _build/wokwi-pins.py      renders the board pin map (below) from the facts file
 _targets/c031c6.bat       per-chip flags, include paths and memory sizes
@@ -160,6 +161,37 @@ and the CSS variables, never hardcoded colours**. Helper classes:
 
 Give every `<svg>` a `viewBox` (it scales; fixed width/height does not) and a
 `role="img"` with an `aria-label`.
+
+### Register diagrams: ` ```regs `
+
+A register's bit layout is not hand-drawn. A ` ```regs ` block describes it in
+one line per register, and `_build/regdiag.py` draws it as an SVG to a fixed
+scale: 20 px per bit in every deck, or 10 for a 64-bit `AFR` pair. All rows
+line up on bit 0, so a 2-bit field is visibly twice as wide as a 1-bit one:
+
+````
+```regs
+# SysTick->CTRL = 7: core clock, interrupt, counter on
+CTRL ; SYST_CSR | 32 = 0x00000007 | 16 COUNTFLAG, !2 CLKSOURCE, !1 TICKINT, !0 ENABLE
+MODER ; 2 bits per pin | 32 | each 2 pins mark 5
+```
+````
+
+`NAME ; note | WIDTH [= value] | fields`. A field is `hi:lo NAME` or
+`bit NAME`, and `!` shades it. Bits that no field covers are drawn dashed as
+reserved. A value writes every bit's digit into its cell. `each N` draws
+uniform per-pin fields. The full format is in the module's docstring.
+
+It started from a hand sketch of GPIOA's registers at one bit scale, which is
+still in lesson 05 as a raw SVG (slide 4). There are now 62 of these diagrams
+across the ten decks.
+
+**Every bit position in them was checked against the CMSIS headers**
+(`tools/cmsis/.../stm32c031xx.h`, `core_cm0plus.h`), with one deliberate
+exception. The header masks IPSR's exception number as 9 bits (`0x1FF`), but
+the Cortex-M0+ implements only bits 5:0 (ARMv6-M), so the diagrams draw 5:0.
+ICSR's `VECTACTIVE` (5:0) and `VECTPENDING` (17:12) follow the same rule. Keep
+new diagrams consistent with that.
 
 ## Curriculum shape: models before code
 

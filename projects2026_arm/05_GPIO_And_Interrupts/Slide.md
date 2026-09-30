@@ -397,6 +397,152 @@ order. So the position of pin *n*'s bits is always a small calculation:
 | `AFR[n / 8]` | 4 | bits 4(*n* mod 8)+3 : 4(*n* mod 8) | `AFR[0]` 3:0 | `AFR[0]` 7:4 | `AFR[0]` 23:20 | `AFR[1]` 23:20 |
 | `BSRR` | 1 + 1 | bit *n* sets, bit *n*+16 resets | 0 / 16 | 1 / 17 | 5 / 21 | 13 / 29 |
 
+The same table, drawn. Each bar is one register at one scale, so pin *n*'s
+field widens from 1 bit to 2 to 4 as you go down, and moves left with it:
+
+```svg
+<svg viewBox="0 0 820 400" role="img" aria-label="GPIOA registers drawn to one bit scale: IDR, ODR and OTYPER give each pin 1 bit, BSRR 1 set bit and 1 reset bit, MODER, OSPEEDR and PUPDR 2 bits, AFR 4 bits; pin 0 and pin 5 marked in each">
+  <text x="410" y="18" text-anchor="middle" class="lbl">GPIOA, drawn to one scale: every small cell is one bit, bit 0 on the right. Shaded: pin 0 and pin 5.</text>
+  <text x="20" y="66" class="mono">PA15 ... PA0</text>
+  <text x="20" y="82" class="lbl">the 16 pins</text>
+  <rect class="hifill" x="790" y="60" width="10" height="24"/>
+  <rect class="reg" x="780" y="60" width="10" height="24"/>
+  <rect class="reg" x="770" y="60" width="10" height="24"/>
+  <rect class="reg" x="760" y="60" width="10" height="24"/>
+  <rect class="reg" x="750" y="60" width="10" height="24"/>
+  <rect class="hifill" x="740" y="60" width="10" height="24"/>
+  <text x="745.0" y="96" text-anchor="middle" class="mono">PA5</text>
+  <rect class="reg" x="730" y="60" width="10" height="24"/>
+  <rect class="reg" x="720" y="60" width="10" height="24"/>
+  <rect class="reg" x="710" y="60" width="10" height="24"/>
+  <rect class="reg" x="700" y="60" width="10" height="24"/>
+  <rect class="reg" x="690" y="60" width="10" height="24"/>
+  <rect class="reg" x="680" y="60" width="10" height="24"/>
+  <rect class="reg" x="670" y="60" width="10" height="24"/>
+  <rect class="reg" x="660" y="60" width="10" height="24"/>
+  <rect class="reg" x="650" y="60" width="10" height="24"/>
+  <rect class="reg" x="640" y="60" width="10" height="24"/>
+  <text x="641" y="51" class="mono lbl">15</text>
+  <text x="799" y="51" text-anchor="end" class="mono lbl">0</text>
+  <text x="799" y="96" text-anchor="end" class="mono lbl">PA0</text>
+  <text x="20" y="136" class="mono">IDR  ODR  OTYPER</text>
+  <text x="20" y="152" class="lbl">1 bit per pin</text>
+  <rect class="dash" x="480" y="130" width="160" height="24"/>
+  <text x="560.0" y="142.0" text-anchor="middle" class="lbl">reserved</text>
+  <rect class="hifill" x="790" y="130" width="10" height="24"/>
+  <rect class="reg" x="780" y="130" width="10" height="24"/>
+  <rect class="reg" x="770" y="130" width="10" height="24"/>
+  <rect class="reg" x="760" y="130" width="10" height="24"/>
+  <rect class="reg" x="750" y="130" width="10" height="24"/>
+  <rect class="hifill" x="740" y="130" width="10" height="24"/>
+  <text x="745.0" y="166" text-anchor="middle" class="mono">5</text>
+  <rect class="reg" x="730" y="130" width="10" height="24"/>
+  <rect class="reg" x="720" y="130" width="10" height="24"/>
+  <rect class="reg" x="710" y="130" width="10" height="24"/>
+  <rect class="reg" x="700" y="130" width="10" height="24"/>
+  <rect class="reg" x="690" y="130" width="10" height="24"/>
+  <rect class="reg" x="680" y="130" width="10" height="24"/>
+  <rect class="reg" x="670" y="130" width="10" height="24"/>
+  <rect class="reg" x="660" y="130" width="10" height="24"/>
+  <rect class="reg" x="650" y="130" width="10" height="24"/>
+  <rect class="reg" x="640" y="130" width="10" height="24"/>
+  <text x="481" y="121" class="mono lbl">31</text>
+  <text x="799" y="121" text-anchor="end" class="mono lbl">0</text>
+  <text x="20" y="206" class="mono">BSRR</text>
+  <text x="20" y="222" class="lbl">1 set + 1 reset</text>
+  <rect class="hifill" x="790" y="200" width="10" height="24"/>
+  <rect class="reg" x="780" y="200" width="10" height="24"/>
+  <rect class="reg" x="770" y="200" width="10" height="24"/>
+  <rect class="reg" x="760" y="200" width="10" height="24"/>
+  <rect class="reg" x="750" y="200" width="10" height="24"/>
+  <rect class="hifill" x="740" y="200" width="10" height="24"/>
+  <text x="745.0" y="236" text-anchor="middle" class="mono">5</text>
+  <rect class="reg" x="730" y="200" width="10" height="24"/>
+  <rect class="reg" x="720" y="200" width="10" height="24"/>
+  <rect class="reg" x="710" y="200" width="10" height="24"/>
+  <rect class="reg" x="700" y="200" width="10" height="24"/>
+  <rect class="reg" x="690" y="200" width="10" height="24"/>
+  <rect class="reg" x="680" y="200" width="10" height="24"/>
+  <rect class="reg" x="670" y="200" width="10" height="24"/>
+  <rect class="reg" x="660" y="200" width="10" height="24"/>
+  <rect class="reg" x="650" y="200" width="10" height="24"/>
+  <rect class="reg" x="640" y="200" width="10" height="24"/>
+  <rect class="hifill" x="630" y="200" width="10" height="24"/>
+  <rect class="reg" x="620" y="200" width="10" height="24"/>
+  <rect class="reg" x="610" y="200" width="10" height="24"/>
+  <rect class="reg" x="600" y="200" width="10" height="24"/>
+  <rect class="reg" x="590" y="200" width="10" height="24"/>
+  <rect class="hifill" x="580" y="200" width="10" height="24"/>
+  <text x="585.0" y="236" text-anchor="middle" class="mono">21</text>
+  <rect class="reg" x="570" y="200" width="10" height="24"/>
+  <rect class="reg" x="560" y="200" width="10" height="24"/>
+  <rect class="reg" x="550" y="200" width="10" height="24"/>
+  <rect class="reg" x="540" y="200" width="10" height="24"/>
+  <rect class="reg" x="530" y="200" width="10" height="24"/>
+  <rect class="reg" x="520" y="200" width="10" height="24"/>
+  <rect class="reg" x="510" y="200" width="10" height="24"/>
+  <rect class="reg" x="500" y="200" width="10" height="24"/>
+  <rect class="reg" x="490" y="200" width="10" height="24"/>
+  <rect class="reg" x="480" y="200" width="10" height="24"/>
+  <text x="481" y="191" class="mono lbl">31</text>
+  <text x="799" y="191" text-anchor="end" class="mono lbl">0</text>
+  <text x="640" y="236" text-anchor="middle" class="mono lbl">16 | 15</text>
+  <text x="530" y="191" text-anchor="middle" class="lbl">BR: reset</text>
+  <text x="700" y="191" text-anchor="middle" class="lbl">BS: set</text>
+  <text x="20" y="276" class="mono">MODER  OSPEEDR  PUPDR</text>
+  <text x="20" y="292" class="lbl">2 bits per pin</text>
+  <rect class="hifill" x="780" y="270" width="20" height="24"/>
+  <rect class="reg" x="760" y="270" width="20" height="24"/>
+  <rect class="reg" x="740" y="270" width="20" height="24"/>
+  <rect class="reg" x="720" y="270" width="20" height="24"/>
+  <rect class="reg" x="700" y="270" width="20" height="24"/>
+  <rect class="hifill" x="680" y="270" width="20" height="24"/>
+  <text x="690.0" y="306" text-anchor="middle" class="mono">11:10</text>
+  <rect class="reg" x="660" y="270" width="20" height="24"/>
+  <rect class="reg" x="640" y="270" width="20" height="24"/>
+  <rect class="reg" x="620" y="270" width="20" height="24"/>
+  <rect class="reg" x="600" y="270" width="20" height="24"/>
+  <rect class="reg" x="580" y="270" width="20" height="24"/>
+  <rect class="reg" x="560" y="270" width="20" height="24"/>
+  <rect class="reg" x="540" y="270" width="20" height="24"/>
+  <rect class="reg" x="520" y="270" width="20" height="24"/>
+  <rect class="reg" x="500" y="270" width="20" height="24"/>
+  <rect class="reg" x="480" y="270" width="20" height="24"/>
+  <text x="481" y="261" class="mono lbl">31</text>
+  <text x="799" y="261" text-anchor="end" class="mono lbl">0</text>
+  <text x="20" y="346" class="mono">AFR[1] : AFR[0]</text>
+  <text x="20" y="362" class="lbl">4 bits per pin</text>
+  <rect class="hifill" x="760" y="340" width="40" height="24"/>
+  <rect class="reg" x="720" y="340" width="40" height="24"/>
+  <rect class="reg" x="680" y="340" width="40" height="24"/>
+  <rect class="reg" x="640" y="340" width="40" height="24"/>
+  <rect class="reg" x="600" y="340" width="40" height="24"/>
+  <rect class="hifill" x="560" y="340" width="40" height="24"/>
+  <text x="580.0" y="376" text-anchor="middle" class="mono">23:20</text>
+  <rect class="reg" x="520" y="340" width="40" height="24"/>
+  <rect class="reg" x="480" y="340" width="40" height="24"/>
+  <rect class="reg" x="440" y="340" width="40" height="24"/>
+  <rect class="reg" x="400" y="340" width="40" height="24"/>
+  <rect class="reg" x="360" y="340" width="40" height="24"/>
+  <rect class="reg" x="320" y="340" width="40" height="24"/>
+  <rect class="reg" x="280" y="340" width="40" height="24"/>
+  <rect class="reg" x="240" y="340" width="40" height="24"/>
+  <rect class="reg" x="200" y="340" width="40" height="24"/>
+  <rect class="reg" x="160" y="340" width="40" height="24"/>
+  <text x="161" y="331" class="mono lbl">63</text>
+  <text x="799" y="331" text-anchor="end" class="mono lbl">0</text>
+  <text x="480" y="331" text-anchor="middle" class="mono lbl">32 | 31</text>
+  <path class="wire" d="M480 336 V368"/>
+  <text x="161" y="376" class="lbl">AFR[1]: pins 15-8</text>
+  <text x="730" y="376" text-anchor="end" class="lbl">AFR[0]: pins 7-0</text>
+  <path class="hi" stroke-dasharray="3 3" d="M745.0 102 L745.0 128"/>
+  <path class="hi" stroke-dasharray="3 3" d="M745.0 172 L745.0 198"/>
+  <path class="hi" stroke-dasharray="3 3" d="M745.0 172 L585.0 198"/>
+  <path class="hi" stroke-dasharray="3 3" d="M745.0 242 L690.0 268"/>
+  <path class="hi" stroke-dasharray="3 3" d="M690.0 312 L580.0 338"/>
+</svg>
+```
+
 **This is the whole map.** Once you can fill in a row of this table for any
 pin, you can configure any pin on any STM32 port without memorising anything.
 Keep it next to you for the rest of the lesson — every slide in Part B uses it.
@@ -406,6 +552,11 @@ Keep it next to you for the rest of the lesson — every slide in Part B uses it
 ## Slide 5: `MODER` — What Is This Pin?
 
 **Offset `0x00`. Two bits per pin**, at bits 2*n*+1 : 2*n*.
+
+```regs
+# GPIOA->MODER, offset 0x00: sixteen 2-bit fields, one per pin (numbered inside). PA5 shaded.
+MODER ; 2 bits per pin | 32 | 31:30 15, 29:28 14, 27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, !11:10 5, 9:8 4, 7:6 3, 5:4 2, 3:2 1, 1:0 0
+```
 
 | Value | Mode | The pin is… |
 |---|---|---|
@@ -441,6 +592,11 @@ What does a pin do before your code touches it? ST's register description says
 pin          15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
 ```
 
+```regs
+# The same value in the register: pins 14 and 13 are 10, every other pin 11
+MODER ; reset value | 32 = 0xEBFFFFFF | 31:30 15, !29:28 14, !27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, 11:10 5, 9:8 4, 7:6 3, 5:4 2, 3:2 1, 1:0 0
+```
+
 **Every pin is `11`, analog — except PA13 and PA14, which are `10`**,
 alternate function: they are the SWD debug lines, and the debugger must reach
 the chip before any of your code has run.
@@ -459,6 +615,11 @@ a button that reads 0 when pressed (slide 19), that means *pressed, forever*.
 ## Slide 7: `OTYPER` — How Does an Output Drive?
 
 **Offset `0x04`. One bit per pin**, at bit *n*. Only matters for outputs.
+
+```regs
+# OTYPER at reset: pin n at bit n, every pin 0 (push-pull); bits 31:16 reserved
+OTYPER ; reset value | 32 = 0x00000000 | 15 15, 14 14, 13 13, 12 12, 11 11, 10 10, 9 9, 8 8, 7 7, 6 6, 5 5, 4 4, 3 3, 2 2, 1 1, 0 0
+```
 
 | Value | Type | The pin can… |
 |---|---|---|
@@ -566,6 +727,11 @@ cost more current.
 Reset value `0x0C000000`: bits 27:26 = `11`, so **PA13 is very high** — again
 the debug line — and every other pin is very low.
 
+```regs
+# OSPEEDR at reset: only PA13's field is 11
+OSPEEDR ; reset value | 32 = 0x0C000000 | 31:30 15, 29:28 14, !27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, 11:10 5, 9:8 4, 7:6 3, 5:4 2, 3:2 1, 1:0 0
+```
+
 An LED and a button change a few times a second, so this lesson leaves every
 pin at "very low". Choose the slowest speed that works: it is the quietest.
 
@@ -592,6 +758,11 @@ Reset value `0x24000000`:
 ```
 0x24000000 = 00 10 01 00 00 00 ... 00
 pin          15 14 13 12 11 10 ...  0
+```
+
+```regs
+# PUPDR at reset: PA14 = 10 (pull-down), PA13 = 01 (pull-up)
+PUPDR ; reset value | 32 = 0x24000000 | 31:30 15, !29:28 14, !27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, 11:10 5, 9:8 4, 7:6 3, 5:4 2, 3:2 1, 1:0 0
 ```
 
 PA14 has a pull-down and PA13 a pull-up — the debug lines again. Everything
@@ -623,6 +794,11 @@ Worked example: if `GPIOA->IDR` reads `0x0000A001`:
                  15   12    8    4  0
 -> PA15 = 1, PA13 = 1, PA0 = 1, every other pin = 0
 -> (0x0000A001 >> 1) & 1 = 0     so PA1 is LOW
+```
+
+```regs
+# The same read in the register; PA1, the bit the code tests, shaded
+IDR ; read only | 32 = 0x0000A001 | 15 15, 14 14, 13 13, 12 12, 11 11, 10 10, 9 9, 8 8, 7 7, 6 6, 5 5, 4 4, 3 3, 2 2, !1 1, 0 0
 ```
 
 Two warnings:
@@ -680,6 +856,13 @@ GPIOA->BSRR = (1u << 5);          /* 0x00000020 : PA5 HIGH        */
 GPIOA->BSRR = (1u << (5 + 16));   /* 0x00200000 : PA5 LOW         */
 ```
 
+```regs
+# The same two writes: PA5 has a set bit at 5 and a reset bit at 21
+BSRR ; write only | 32 | 31:16 BR15 ... BR0, 15:0 BS15 ... BS0
+BSRR ; PA5 high | 32 = 0x00000020 | 31:16, 15:6, !5 BS5, 4:0
+BSRR ; PA5 low | 32 = 0x00200000 | 31:22, !21 BR5, 20:16, 15:0
+```
+
 Because zeros mean "leave alone", **one write can set some pins, clear others
 and ignore the rest.** This lesson's LED bar writes eight pins at once:
 
@@ -695,8 +878,16 @@ leds            = 0000 0101          -> low half:  0x0005  set PB0, PB2
 BSRR            = 0x00FA0005         PB8..PB15: all zero -> untouched
 ```
 
+```regs
+GPIOB->BSRR ; leds = 0b00000101 | 32 = 0x00FA0005 | 31:24, !23:16 BR7..BR0, 15:8, !7:0 BS7..BS0
+```
+
 `BRR` at offset `0x28` is the reset half on its own: `GPIOA->BRR = 1u << 5`
 also sets PA5 low.
+
+```regs
+BRR ; PA5 low | 32 = 0x00000020 | 15:6, !5 BR5, 4:0
+```
 
 ---
 
@@ -746,6 +937,12 @@ AFR[0] after uart2_init() = 0x00001100
                                  AF1  AF1
 ```
 
+```regs
+# Four bits per pin: AFR[0] holds pins 7-0, AFR[1] pins 15-8
+AFR[0] ; after uart2_init() | 32 = 0x00001100 | 31:28 7, 27:24 6, 23:20 5, 19:16 4, !15:12 3, !11:8 2, 7:4 1, 3:0 0
+AFR[1] ; offset 0x24 | 32 | 31:28 15, 27:24 14, 23:20 13, 19:16 12, 15:12 11, 11:8 10, 7:4 9, 3:0 8
+```
+
 A wrong AF number gives a pin that looks configured and carries nothing — no
 error, no fault. Lesson 06 meets that trap with a timer.
 
@@ -778,6 +975,16 @@ with the real numbers:
 | the new mode, in place | `1u << 10` | `0x00000400` |
 | put it in | `0xEBFFF3FF \| 0x400` | **`0xEBFFF7FF`** |
 
+The same steps as bits; pin 5's field shaded:
+
+```regs
+MODER ; read (reset) | 32 = 0xEBFFFFFF | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, !11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+~(3u << 10) ; mask | 32 = 0xFFFFF3FF | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, !11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+MODER & mask ; erased | 32 = 0xEBFFF3FF | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, !11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+1u << 10 ; new mode | 32 = 0x00000400 | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, !11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+MODER ; written back | 32 = 0xEBFFF7FF | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, !11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+```
+
 Only bits 11:10 changed, from `11` to `01`. **The other 15 pins are exactly as
 they were.** That is the reason for the erase-then-insert shape: a plain
 `MODER = 1u << 10` would also set the other 15 pins to input — including the
@@ -809,6 +1016,12 @@ pin             7  6  5  4  3  2  1  0
                 an an out an AF AF in in
 ```
 
+```regs
+# Reset against the end of start-up; the five fields the program wrote, shaded
+MODER ; reset | 32 = 0xEBFFFFFF | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, 11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+MODER ; after uart2_init() | 32 = 0xEBFFF7A0 | 31:30 15, 29:28 14, 27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, !11:10 5, 9:8 4, !7:6 3, !5:4 2, !3:2 1, !1:0 0
+```
+
 That is the whole configuration of the pins this program uses, in one number.
 The banner prints each pin's field of it, read back from the hardware.
 
@@ -833,6 +1046,12 @@ two buttons:
 | `pin_pull(GPIOA, 1, PULL_UP)` | **`0x24000005`** — bits 3:2 = `01` |
 
 `5` is `0101`: pull-up on pin 1, pull-up on pin 0.
+
+```regs
+PUPDR ; reset | 32 = 0x24000000 | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, 11:10, 9:8, 7:6, 5:4, 3:2, 1:0
+PUPDR ; pin 0 pulled up | 32 = 0x24000001 | 31:30, 29:28, 27:26, 25:24, 23:22, 21:20, 19:18, 17:16, 15:14, 13:12, 11:10, 9:8, 7:6, 5:4, 3:2, !1:0
+PUPDR ; pin 1 pulled up | 32 = 0x24000005 | 31:30 15, 29:28 14, 27:26 13, 25:24 12, 23:22 11, 21:20 10, 19:18 9, 17:16 8, 15:14 7, 13:12 6, 11:10 5, 9:8 4, 7:6 3, 5:4 2, !3:2 1, 1:0 0
+```
 
 Once you see that `MODER`, `OSPEEDR` and `PUPDR` all share the two-bits-per-pin
 layout, **one line of code configures any of them for any pin**. That is the
@@ -1090,6 +1309,27 @@ event controller), watches pins and raises interrupts:
 </svg>
 ```
 
+Every one of those switches is a bit in a register. Here they all are, in the
+order an edge from PA1 crosses them, with the value each holds after
+`button_b_irq_init()` — shaded is the bit button B needs:
+
+```regs
+# Button B's whole path, one register per switch, in the order an edge crosses them
+EXTICR[0] ; hop 1: line 1 <- port A | 32 = 0x00000000 | 26:24 EXTI3, 18:16 EXTI2, !10:8 EXTI1, 2:0 EXTI0
+RTSR1 ; hop 2: rising edge (release) | 32 = 0x00000002 | each 1 used 16 mark 1
+FTSR1 ; hop 2: falling edge (press) | 32 = 0x00000002 | each 1 used 16 mark 1
+RPR1 ; hop 2: rising latched, write 1 to clear | 32 | each 1 used 16 mark 1
+FPR1 ; hop 2: falling latched, write 1 to clear | 32 | each 1 used 16 mark 1
+IMR1 ; hop 2: 1 = unmasked, on to the NVIC | 32 | 31, 25, 23, 19, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, !1 IM1, 0
+NVIC ISER ; hop 3: IRQ 5 enabled | 32 = 0x00000020 | each 1 mark 5
+NVIC IPR[1] ; hop 3: IRQ 5 at priority 2 | 32 = 0x00008000 | 31:30 IRQ7, 23:22 IRQ6, !15:14 IRQ5, 7:6 IRQ4
+PRIMASK ; the global switch: 0 = interrupts on | 32 = 0x00000000 | 0 PM
+```
+
+`RPR1` and `FPR1` have no fixed value: hardware sets bit 1 on each edge, and
+the handler clears it by writing a 1 (slide 25). `IMR1`'s bits 19, 23, 25 and
+31 are direct lines from other peripherals, not this lesson's business. `PRIMASK` is the one switch that starts **on**.
+
 The next four slides take the hops one at a time, with the exact value each
 register ends up holding.
 
@@ -1329,6 +1569,12 @@ Inside EXTI, line 1 has one bit in each of five registers — **bit 1**, value
 | `FPR1` | a falling edge **has happened** (pending) | hardware sets it |
 | `IMR1` | pass this line on to the NVIC (**unmask**) | set |
 
+```regs
+# Line n is bit n in every one of them; line 1 is 1u << 1 = 0x00000002
+RTSR1 FTSR1 RPR1 FPR1 ; the bit the code writes | 32 = 0x00000002 | 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, !1 line 1, 0
+IMR1 ; + direct lines 19 23 25 31 | 32 | 31, 25, 23, 19, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, !1 line 1, 0
+```
+
 ```c
 EXTI->RTSR1 |= 1u << 1;    /* rising edge                               */
 EXTI->FTSR1 |= 1u << 1;    /* falling edge                              */
@@ -1359,6 +1605,10 @@ for it:
 NVIC_EnableIRQ(EXTI0_1_IRQn);     /* writes 1 << 5 = 0x00000020 to ISER */
 ```
 
+```regs
+ISER ; bit n = IRQ n | 32 = 0x00000020 | 31:6, !5 IRQ 5, 4:0
+```
+
 Writing 0s to `ISER` does nothing, so no other IRQ is affected — the same
 "zeros mean leave alone" idea as `BSRR`.
 
@@ -1368,6 +1618,11 @@ Writing 0s to `ISER` does nothing, so no other IRQ is affected — the same
 ```c
 NVIC_SetPriority(EXTI0_1_IRQn, 2);
 /* IRQ 5 -> IPR[1], byte 1 (bits 15:8) -> 2 << 6 = 0x80 -> IPR1 = 0x00008000 */
+```
+
+```regs
+# One byte per IRQ, but only its top two bits exist; the rest read as 0
+IPR[1] ; IRQs 7-4 | 32 = 0x00008000 | 31:30 IRQ 7, 23:22 IRQ 6, !15:14 IRQ 5, 7:6 IRQ 4
 ```
 
 | On a Cortex-M0+ | |

@@ -344,6 +344,12 @@ them.
 </svg>
 ```
 
+The four bits are the top of `APSR`, the flags view of `xPSR` from lesson 00:
+
+```regs
+APSR | 32 | !31 N, !30 Z, !29 C, !28 V
+```
+
 | Branch | Taken when | From C |
 |---|---|---|
 | `beq` | equal (`Z`) | `if (a == b)` |
@@ -464,6 +470,15 @@ step backwards the compiler must adjust the base register first.
  80002d0:  ldr   r6, [r4, #28]        ; USART2->ISR, one instruction
 ```
 
+Here is where the limit comes from. Five bits for the opcode, three for each
+register, and five left for the offset, stored divided by 4 — `7` means 28,
+`10` means 40:
+
+```regs
+ldr r6, [r4, #28] | 16 = 0x69E6 | 15:11 op, !10:6 imm5, 5:3 Rn, 2:0 Rt
+str r5, [r4, #40] | 16 = 0x62A5 | 15:11 op, !10:6 imm5, 5:3 Rn, 2:0 Rt
+```
+
 but a field beyond 124 bytes cannot be encoded, so the compiler emits an `add`
 to move the base, then loads from the new base. **This is why a large
 peripheral struct can generate visibly worse code at the far end of it**, and
@@ -484,7 +499,7 @@ This is `SystemInit()` from the spike — the code that takes the chip from its
 
 ```
 0800022c <SystemInit>:
- 800022c:  2007        movs  r0, #7            ; r0 = the HSIDIV bit mask
+ 800022c:  2007        movs  r0, #7            ; r0 = the LATENCY mask
  800022e:  2301        movs  r3, #1
  8000230:  4a0b        ldr   r2, [pc, #44]     ; r2 = 0x40022000  (FLASH base)
  8000232:  6811        ldr   r1, [r2, #0]      ; LOAD    FLASH->ACR
@@ -498,6 +513,15 @@ slide 4, and they came from a single line of C:
 
 ```c
 FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;
+```
+
+The field being changed is `LATENCY`, bits 2:0. `r0` is its mask, `r3` the new
+value:
+
+```regs
+FLASH_ACR | 32 | 18 DBG_SWEN, 16 PROGEMPTY, 11 ICRST, 9 ICEN, 8 PRFTEN, !2:0 LATENCY
+r0 ; mask, for bics | 32 = 0x7 | !2:0
+r3 ; value, for orrs | 32 = 0x1 | !2:0
 ```
 
 One statement, four bus operations. `bics` is the `& ~`, `orrs` is the `|`.
@@ -517,7 +541,7 @@ from **the program counter itself**. Why?
   <text x="120" y="86" text-anchor="middle" class="lbl">small number: fits inside</text>
   <text x="120" y="104" text-anchor="middle" class="lbl">the instruction itself</text>
   <rect class="hifill" x="300" y="30" width="240" height="38" rx="5"/>
-  <text x="420" y="49" text-anchor="middle" class="mono">0x40021000</text>
+  <text x="420" y="49" text-anchor="middle" class="mono">0x40022000</text>
   <text x="420" y="86" text-anchor="middle" class="lbl">32 bits — cannot possibly fit in a</text>
   <text x="420" y="104" text-anchor="middle" class="lbl">16-bit instruction</text>
   <rect class="box" x="140" y="132" width="280" height="36" rx="5"/>
@@ -549,6 +573,13 @@ function touches is listed in plain sight:
  8000270:  02dc6c00   .word  0x02dc6c00    ; 48000000
 ```
 
+The third word is a mask, and drawn out it is easy to read: all ones except the
+three `HSIDIV` bits of `RCC->CR`, which an `ands` with it clears:
+
+```regs
+.word ; ~(7 << 11) | 32 = 0xFFFFC7FF | 31:14, !13:11 HSIDIV, 10:0
+```
+
 `0x02dc6c00` is 48,000,000. The clock speed you assigned in C is sitting in
 flash as a number, and the address it gets written to is `0x20000000` — the
 very bottom of SRAM, exactly where lesson 02 will show the linker putting it.
@@ -569,6 +600,14 @@ the flash controller to acknowledge the new wait state:
 
 The branch target `800023a` is the load. That is the loop: **read, test,
 branch back**. It costs the CPU every cycle until the hardware agrees.
+
+The branch itself is two bytes. `d1fb` holds the condition (`0001`, NE) and a
+signed offset in halfwords, `0xFB` = −5, counted from PC + 4:
+`0x8000244 − 10 = 0x800023a`.
+
+```regs
+bne.n 800023a | 16 = 0xD1FB | 15:12 op, 11:8 cond, !7:0 imm8
+```
 
 Note there is no `volatile` keyword visible in the machine code — but without
 it in the C source, the compiler would have read `FLASH->ACR` **once**, cached
@@ -745,6 +784,18 @@ Look at the second column of the disassembly: `2007`, `4a0b`, `6811`. Four hex
 digits. Two bytes. Almost every instruction on this chip is **16 bits wide**,
 which is why 32 KB of flash holds a useful program at all.
 
+Those three, taken apart. Every 16-bit format spends its top bits on the
+opcode, three bits on each register it names, and whatever is left on a
+constant:
+
+```regs
+movs r0, #7 | 16 = 0x2007 | 15:11 op, 10:8 Rd, !7:0 imm8
+ldr r2, [pc, #44] | 16 = 0x4A0B | 15:11 op, 10:8 Rt, !7:0 imm8
+ldr r1, [r2, #0] | 16 = 0x6811 | 15:11 op, !10:6 imm5, 5:3 Rn, 2:0 Rt
+```
+
+Three bits per register is why most 16-bit forms reach only R0–R7.
+
 Thumb was not always able to do anything else:
 
 - **Thumb-1** (1994) — 16-bit encodings, and nothing else. Compact, and
@@ -791,6 +842,11 @@ from slide 11:
 
 ```
  800028a:  f7ff ffcf   bl  800022c <SystemInit>
+```
+
+```regs
+# f7ff then ffcf: the offset is S:I1:I2:imm10:imm11:0 = −98, from 800028e back to 800022c
+bl SystemInit | 32 = 0xF7FFFFCF | 31:27 op, 26 S, !25:16 imm10, 15:14, 13 J1, 12, 11 J2, !10:0 imm11
 ```
 
 Four bytes, because a 16-bit branch reaches about ±2 KB and a call has to
@@ -882,6 +938,11 @@ Decoded, ignoring the record framing:
 `0x08000275`. **The low bit is set on purpose**: on this processor it means
 "the code at this address is Thumb code". Every function pointer on the chip
 is odd.
+
+```regs
+vector [1] | 32 = 0x08000275 | 31:1 address, !0 T
+Reset_Handler | 32 = 0x08000274 | 31:1 address, 0
+```
 
 The bit exists because on a Cortex-A it is a genuine question — that core
 has both instruction sets and this is how a branch says which one it is
