@@ -459,6 +459,31 @@ Lessons build with `-Os`, so stepping can jump between lines and some locals
 read *optimized out*. That is the code the chip really runs, and the slides
 quote its addresses, so the build is not switched to `-Og` for debugging.
 
+### Reaching code that only an event reaches
+
+Lesson 05's two interesting paths — the debouncer accepting a press, the EXTI
+handler running — are entered by a button, and clicking a Wokwi button under a
+debugger mostly fails: a click is a press *and* a release, and while the chip
+is halted simulated time is frozen, so the press is over before the program
+samples the pin. Three rules, worked step by step in Lab 05 Part 8 and on the
+lesson's slide 33b:
+
+1. **Latch the input.** Ctrl-click a Wokwi pushbutton and it stays pressed
+   until the next click; holding its `key` does the same. Then Continue and let
+   the program reach the breakpoint in its own time.
+2. **Break where the event is decided, not where the signal arrives.** The
+   handler stops on every bounce edge; the debouncer's first line stops a
+   thousand times a second. The accept line and `main()`'s decision run once.
+3. **Inject the event from the register.** The STM32C0's `EXTI->SWIER1`
+   (`0x40021808`) raises a line as a rising edge would, and the NVIC's `ISPR`
+   (`0xE000E200`) pends a vector outright — both from the Debug Console with
+   `-exec set *(unsigned int *)ADDR = VALUE`. No mouse, one clean edge, and
+   the same trick tests any later interrupt before its source exists.
+
+`debounce_step()` is inlined under `-Os`, but line breakpoints inside it still
+work: `-g3` keeps the line table. Whether Wokwi's GDB server accepts writes to
+peripheral registers has not been confirmed; Lab 05 Part 8 says so.
+
 ## Decisions
 
 - **Target A is the STM32C031C6** (decided 2026-09-19, at lesson 04 — the

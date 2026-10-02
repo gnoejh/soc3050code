@@ -379,6 +379,138 @@ third input is exactly what a stopwatch needs.
 
 ---
 
+## Part 8 — Reach both paths from the debugger (optional, 20 min)
+
+Needs the Wokwi VS Code extension and `F5` — see "Debugging a lesson in VS
+Code" in the ARM `README.md`. Everything else in this lab runs in a browser tab;
+this part does not.
+
+**Why clicking the buttons does not work under a debugger.** Three reasons,
+and knowing them is most of the skill:
+
+1. A click is a press *and* a release, over in a fraction of a second. While
+   the chip is halted at a breakpoint or being stepped, **simulated time is
+   frozen**, so a click made then is finished before the program ever samples
+   the pin.
+2. A breakpoint on `b_edges++` stops on **every bounce edge** — ten to a
+   hundred stops per press.
+3. A breakpoint on the first line of `debounce_step()` stops **a thousand
+   times a second**, and the accepted press is never reached. A conditional
+   breakpoint reaches it, but crawls: GDB halts the chip to test the condition
+   each time.
+
+The rule for all three: **never step with the button in your hand.** Latch the
+input, let the chip run, and let the program reach the breakpoint in its own
+simulated time.
+
+### Step 1. Latch button A; break where the press is accepted
+
+Set the breakpoint (`F9`) on this line inside `debounce_step()` — the one that
+runs once per *accepted* press or release, not the function's first line:
+
+```c
+            d->stable = raw;
+```
+
+Build, open `diagram.json`, Play, `F5`, and let it run. Now **Ctrl-click
+button A** (Cmd-click on a Mac). Wokwi documents this as a sticky press: the
+button stays down until the next click. Holding the **A** key does the same for
+as long as you hold it.
+
+**Guess first:** how long after the click does the breakpoint hit, and what are
+`raw` and `held_ms` when it does?
+
+> About 20 ms of simulated time later — `DEBOUNCE_MS` samples in a row at
+> 1 kHz — with `raw = 1`, `held_ms = 20` and `changes` up by one. Step Over
+> past the accept and the function returns `+1`; Continue, and `a_count++` and
+> `bar_write()` run, so the LED moves. Click A again for the release: the same
+> line hits with `raw = 0`.
+>
+> If you click while the chip is halted and nothing happens after Continue,
+> the click was not delivered to the simulation. Continue first, then click.
+
+### Step 2. Break in the handler; see the bounce one edge at a time
+
+Move the breakpoint to `b_edges++`. Continue, then Ctrl-click **B**.
+
+**Guess first:** how many times does it stop for one press?
+
+> As many times as Part 0's "edges caught by EXTI" column said — every stop is
+> one bounce, and `-exec p b_edges` in the Debug Console counts them for you.
+> To stop **once** per press, either switch the bounce off as in Part 2, or put
+> the breakpoint on `b_count++` in `main()`, where the press has been
+> *decided*. That is the general rule: break where the event is decided, not
+> where the signal arrives.
+
+### Step 3. Fire the interrupt with no button at all
+
+Keep the breakpoint on `b_edges++`. In VS Code's Debug Console, commands
+prefixed `-exec` go straight to GDB:
+
+```
+-exec x/3wx 0x40021808
+-exec set *(unsigned int *)0x40021808 = 2
+-exec x/3wx 0x40021808
+```
+
+then Continue.
+
+**Guess first:** what is at `0x40021808`, and does the handler run?
+
+> `EXTI_BASE` is `0x40021800` in `stm32c031xx.h`, and offset `0x08` is
+> **`SWIER1`**, the software interrupt event register. RM0490: writing 1 to
+> `SWIx` sets bit *x* of `RPR1` and raises the line exactly as a rising edge
+> would. The three words printed are `SWIER1`, `RPR1`, `FPR1`; after the write,
+> `RPR1` shows bit 1 set, and the breakpoint hits with `b_edges` up by exactly
+> one — a single clean edge, no bounce, no button, no mouse.
+>
+> The build uses `-g3`, so GDB also knows the header's macros; from a frame in
+> `Main.c`, `-exec set EXTI->SWIER1 = 2` may work as well. Try it.
+>
+> **Then `main()` prints nothing.** The quiet-time rule waits 20 ms, reads the
+> pin, and finds it released — as it was. The *interrupt* fired; the *press*
+> never happened. That is the division of labour on slide 31, seen from the
+> other side: the handler counts edges, `main()` decides what they meant.
+
+### Step 4. Pend the NVIC directly, and skip EXTI
+
+Now move the breakpoint to the handler's `if` line:
+
+```c
+    if ((EXTI->RPR1 | EXTI->FPR1) & mask)
+```
+
+and in the Debug Console:
+
+```
+-exec set *(unsigned int *)0xE000E200 = 32
+```
+
+then Continue.
+
+**Guess first:** the handler is entered — is anything counted?
+
+> `0xE000E200` is the NVIC's `ISPR`, and bit 5 pends IRQ 5. The breakpoint
+> hits: the vector was taken. But `RPR1` and `FPR1` are both 0, the `if` is
+> false, and `b_edges` does not move. The handler was called by the NVIC with
+> no EXTI event behind it — and it was right not to believe the vector. Part 7
+> step 7 said the same thing for a handler that serves lines 4 to 15: **check
+> the pending bit; never assume which line fired, or that one fired at all.**
+>
+> Between them, Steps 3 and 4 let you *poke* every hop of slide 23 as well as
+> read it, which is what Part 5 did. Any interrupt in the rest of the course
+> can be tested this way before its hardware source exists.
+
+**Not yet watched.** Steps 1 and 2 rest on Wokwi's documented pushbutton
+behaviour (Ctrl-click latching, the `key` hold). Steps 3 and 4 write to
+peripheral and core registers through Wokwi's GDB server, and whether its
+STM32C0 model implements `SWIER1`, or its GDB server accepts writes there at
+all, has not been confirmed. If `set` is refused or nothing changes, write down
+exactly what you saw: that is a fact about the simulator, and the chip would
+have obeyed.
+
+---
+
 ## Where to go next
 
 - Change `DEBOUNCE_MS` to 1, then to 200. At 1, does A ever report a double

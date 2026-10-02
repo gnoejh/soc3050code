@@ -13,8 +13,8 @@ and that difference is the lesson's measurement.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title, two generated pin-map slides and 34 slides in five parts, slide 21 split in two (the renderer counts 38), every register explained with worked values and drawn to scale bit by bit — rendered to `_slides/05_GPIO_And_Interrupts.html` |
-| `Lab.md` | the lab: eight parts, ~2 hours, guided, **nothing handed in** |
+| `Slide.md` | the lecture, a title, two generated pin-map slides and 35 slides in five parts, slide 21 split in two (the renderer counts 39), every register explained with worked values and drawn to scale bit by bit — rendered to `_slides/05_GPIO_And_Interrupts.html` |
+| `Lab.md` | the lab: nine parts, ~2 hours, guided, **nothing handed in**; Part 8 is optional and needs the Wokwi VS Code extension |
 | `Main.c` | the lab program — GPIO helpers, the debouncer, the EXTI setup, the handler, and a banner that reads the whole configuration back from the registers |
 | `build.bat` | one command; `LIBS=retarget` |
 | `simulate.bat` | always rebuilds, then opens the Wokwi board |
@@ -62,6 +62,7 @@ misspelt — so **if `Main.c` changes, re-derive them** (`objdump -s -j
 | 5 | delete `NVIC_EnableIRQ` | EXTI latches (`FPR1` = 1 forever), NVIC never delivers |
 | 6 | `bar_write()` via `ODR` instead of `BSRR` | smaller, one store — and clobbers PB8–PB15 |
 | 7 | **a third button on PC13**, open-ended | every hop again, plus GPIOC's clock and `EXTICR` code 2 — which button B never needed because port A is `EXTICR`'s reset value |
+| 8 | reach both paths under `F5`, optional | why clicking fails under a debugger; latch the button (Ctrl-click), break where the event is decided, fire the interrupt from `EXTI->SWIER1` and pend it from NVIC `ISPR` with no button at all |
 
 **Build-verified, 2026-09-26.** Every change in Parts 1 and 3–7 was built from
 a copy of this folder and checked: all build with **zero warnings**; Part 4
@@ -91,3 +92,7 @@ parts.
   §9e the lesson is not finished until someone has watched it: paste
   `diagram.json`, upload `Main.elf`, press both buttons, and confirm the banner
   and the counts.
+- **Part 8 and slide 33b are likewise unwatched.** Ctrl-click latching and the
+  `key` hold are from Wokwi's pushbutton documentation; whether Wokwi's GDB
+  server accepts writes to `EXTI->SWIER1` and NVIC `ISPR` is unknown, and
+  both say so. One session with the extension settles it.

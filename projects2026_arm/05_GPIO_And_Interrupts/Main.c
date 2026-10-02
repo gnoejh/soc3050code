@@ -29,13 +29,13 @@
 #include "stm32c031xx.h"
 #include "retarget.h"
 
-#define BAUD         115200u
+#define BAUD 115200u
 
-#define LD4_PIN      5u        /* PA5 - the on-board green LED: heartbeat     */
-#define BTN_A_PIN    0u        /* PA0 - button A, polled                      */
-#define BTN_B_PIN    1u        /* PA1 - button B, EXTI line 1                 */
+#define LD4_PIN 5u   /* PA5 - the on-board green LED: heartbeat     */
+#define BTN_A_PIN 0u /* PA0 - button A, polled                      */
+#define BTN_B_PIN 1u /* PA1 - button B, EXTI line 1                 */
 
-#define DEBOUNCE_MS  20u       /* a level must hold this long to count        */
+#define DEBOUNCE_MS 20u /* a level must hold this long to count        */
 #define HEARTBEAT_MS 500u
 
 /* ============================================================================
@@ -46,8 +46,19 @@
  * plain functions on purpose - read them, then find the same registers in
  * the GPIO chapter of RM0490 and check the bit positions yourself.
  */
-enum { MODE_INPUT = 0u, MODE_OUTPUT = 1u, MODE_AF = 2u, MODE_ANALOG = 3u };
-enum { PULL_NONE  = 0u, PULL_UP     = 1u, PULL_DOWN = 2u };
+enum
+{
+    MODE_INPUT = 0u,
+    MODE_OUTPUT = 1u,
+    MODE_AF = 2u,
+    MODE_ANALOG = 3u
+};
+enum
+{
+    PULL_NONE = 0u,
+    PULL_UP = 1u,
+    PULL_DOWN = 2u
+};
 
 static void pin_mode(GPIO_TypeDef *port, uint32_t pin, uint32_t mode)
 {
@@ -64,7 +75,7 @@ static void pin_pull(GPIO_TypeDef *port, uint32_t pin, uint32_t pull)
  * a write, and no other pin on the port is touched.  Compare `ODR |= bit`,
  * which is a load, an OR and a store: lesson 03, slide 5's lost update. */
 static inline void pin_high(GPIO_TypeDef *port, uint32_t pin) { port->BSRR = 1u << pin; }
-static inline void pin_low (GPIO_TypeDef *port, uint32_t pin) { port->BSRR = 1u << (pin + 16u); }
+static inline void pin_low(GPIO_TypeDef *port, uint32_t pin) { port->BSRR = 1u << (pin + 16u); }
 
 static inline uint32_t pin_read(GPIO_TypeDef *port, uint32_t pin)
 {
@@ -83,13 +94,12 @@ static inline uint32_t button_down(uint32_t pin) { return pin_read(GPIOA, pin) =
  *
  * noinline keeps it a real function with its own symbol, so Lab Part 6 can
  * disassemble it by name.  Without it -Os folds it into main(). */
-__attribute__((noinline))
-static void bar_write(uint8_t leds)
+__attribute__((noinline)) static void bar_write(uint8_t leds)
 {
     GPIOB->BSRR = ((uint32_t)(uint8_t)~leds << 16) | leds;
 }
 
-static uint32_t moder_at_reset;         /* GPIOA->MODER before we touched it */
+static uint32_t moder_at_reset; /* GPIOA->MODER before we touched it */
 
 static void gpio_init(void)
 {
@@ -97,11 +107,12 @@ static void gpio_init(void)
      * 04, Lab Part 0, step 5. */
     RCC->IOPENR |= RCC_IOPENR_GPIOAEN | RCC_IOPENR_GPIOBEN;
 
-    moder_at_reset = GPIOA->MODER;      /* kept for the banner */
+    moder_at_reset = GPIOA->MODER; /* kept for the banner */
 
     pin_mode(GPIOA, LD4_PIN, MODE_OUTPUT);
 
-    for (uint32_t pin = 0; pin < 8u; pin++) {
+    for (uint32_t pin = 0; pin < 8u; pin++)
+    {
         pin_mode(GPIOB, pin, MODE_OUTPUT);
     }
 
@@ -127,26 +138,25 @@ static void gpio_init(void)
  * On the STM32C0 the port select is EXTI->EXTICR[].  On an F4 the same job is
  * SYSCFG->EXTICR[], and code copied from an F4 tutorial will not compile here.
  */
-#define EXTI_PORT_A  0u        /* EXTICR codes: A=0, B=1, C=2, D=3, F=5       */
+#define EXTI_PORT_A 0u /* EXTICR codes: A=0, B=1, C=2, D=3, F=5       */
 
 static void button_b_irq_init(void)
 {
-    const uint32_t line  = BTN_B_PIN;               /* line number = pin number */
-    const uint32_t shift = (line % 4u) * 8u;        /* one byte per line        */
+    const uint32_t line = BTN_B_PIN;         /* line number = pin number */
+    const uint32_t shift = (line % 4u) * 8u; /* one byte per line        */
 
-    EXTI->EXTICR[line / 4u] = (EXTI->EXTICR[line / 4u] & ~(0xFFu << shift))
-                            | (EXTI_PORT_A << shift);
+    EXTI->EXTICR[line / 4u] = (EXTI->EXTICR[line / 4u] & ~(0xFFu << shift)) | (EXTI_PORT_A << shift);
 
-    EXTI->RTSR1 |= 1u << line;                      /* rising edge  (release)   */
-    EXTI->FTSR1 |= 1u << line;                      /* falling edge (press)     */
+    EXTI->RTSR1 |= 1u << line; /* rising edge  (release)   */
+    EXTI->FTSR1 |= 1u << line; /* falling edge (press)     */
 
-    EXTI->RPR1 = 1u << line;                        /* discard anything stale - */
-    EXTI->FPR1 = 1u << line;                        /* write 1 to clear         */
+    EXTI->RPR1 = 1u << line; /* discard anything stale - */
+    EXTI->FPR1 = 1u << line; /* write 1 to clear         */
 
-    EXTI->IMR1 |= 1u << line;                       /* unmask: let it reach NVIC */
+    EXTI->IMR1 |= 1u << line; /* unmask: let it reach NVIC */
 
-    NVIC_SetPriority(EXTI0_1_IRQn, 2);              /* 0 (highest) .. 3 on M0+  */
-    NVIC_EnableIRQ(EXTI0_1_IRQn);                   /* Lab Part 5 removes this  */
+    NVIC_SetPriority(EXTI0_1_IRQn, 2); /* 0 (highest) .. 3 on M0+  */
+    NVIC_EnableIRQ(EXTI0_1_IRQn);      /* Lab Part 5 removes this  */
 }
 
 /* One writer (this handler), one reader (main).  A 32-bit aligned load or
@@ -154,7 +164,7 @@ static void button_b_irq_init(void)
  * without a lock - it sees the old value or the new one, never half of each.
  * That is lesson 03 slide 7's one safe case: one aligned word, one writer.
  * `volatile` is what stops main caching it in a register (slide 4). */
-static volatile uint32_t b_edges;
+static volatile uint32_t b_edges; // counts the number of button B edges detected
 
 /* The name is the whole connection.  startup.c puts a weak alias called
  * EXTI0_1_IRQHandler in vector 21; defining a function with exactly this name
@@ -164,7 +174,8 @@ void EXTI0_1_IRQHandler(void)
 {
     uint32_t mask = 1u << BTN_B_PIN;
 
-    if ((EXTI->RPR1 | EXTI->FPR1) & mask) {
+    if ((EXTI->RPR1 | EXTI->FPR1) & mask)
+    {
         /* Clear BOTH pending bits, or the NVIC sees the line still pending
          * the moment this function returns, and calls it again, forever.
          * Lab Part 3 removes these two lines. */
@@ -182,7 +193,7 @@ static uint32_t ms_now;
 static void tick_init(void)
 {
     SysTick->LOAD = (SystemCoreClock / 1000u) - 1u;
-    SysTick->VAL  = 0u;
+    SysTick->VAL = 0u;
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
 }
 
@@ -191,7 +202,9 @@ static void tick_init(void)
  * only as good as the loop that polls it.  That is lesson 06's opening. */
 static void tick_wait(void)
 {
-    while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)) { }
+    while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk))
+    {
+    }
     ms_now++;
 }
 
@@ -202,24 +215,28 @@ static void tick_wait(void)
  * after it has held for DEBOUNCE_MS samples in a row; anything shorter is
  * bounce.  Returns +1 on a press, -1 on a release, 0 otherwise.
  */
-typedef struct {
-    uint8_t  stable;           /* the level we have accepted: 1 = down        */
-    uint8_t  raw;              /* the last raw sample                          */
-    uint16_t held_ms;          /* how long raw has stayed the same             */
-    uint32_t changes;          /* raw level changes seen - bounce included     */
+typedef struct
+{
+    uint8_t stable;   /* the level we have accepted: 1 = down        */
+    uint8_t raw;      /* the last raw sample                          */
+    uint16_t held_ms; /* how long raw has stayed the same             */
+    uint32_t changes; /* raw level changes seen - bounce included     */
 } debounce_t;
 
 static int debounce_step(debounce_t *d, uint8_t raw)
 {
-    if (raw != d->raw) {                 /* the level moved: restart the clock */
-        d->raw     = raw;
+    if (raw != d->raw)
+    { /* the level moved: restart the clock */
+        d->raw = raw;
         d->held_ms = 0;
         d->changes++;
         return 0;
     }
-    if (d->held_ms < DEBOUNCE_MS) {
+    if (d->held_ms < DEBOUNCE_MS)
+    {
         d->held_ms++;
-        if (d->held_ms == DEBOUNCE_MS && raw != d->stable) {
+        if (d->held_ms == DEBOUNCE_MS && raw != d->stable)
+        {
             d->stable = raw;
             return raw ? +1 : -1;
         }
@@ -233,16 +250,16 @@ static int debounce_step(debounce_t *d, uint8_t raw)
  * Nothing below prints what the code MEANT to write.  Every field is read
  * back from the hardware, so a write that did not take shows up here.
  */
-extern void (* const vectors[])(void);   /* startup.c */
-void Default_Handler(void);              /* startup.c */
+extern void (*const vectors[])(void); /* startup.c */
+void Default_Handler(void);           /* startup.c */
 
 static uint32_t field2(uint32_t reg, uint32_t pin) { return (reg >> (pin * 2u)) & 3u; }
 
 static void report_config(void)
 {
-    static const char *const mode[] = { "input ", "output", "AF    ", "ANALOG" };
-    static const char *const pull[] = { "none   ", "pull-up", "pull-dn", "?      " };
-    const uint32_t vec = 16u + (uint32_t)EXTI0_1_IRQn;         /* = 21 */
+    static const char *const mode[] = {"input ", "output", "AF    ", "ANALOG"};
+    static const char *const pull[] = {"none   ", "pull-up", "pull-dn", "?      "};
+    const uint32_t vec = 16u + (uint32_t)EXTI0_1_IRQn; /* = 21 */
     const int mine = vectors[vec] != Default_Handler;
 
     printf("\n=== SOC3050 lesson 05 - GPIO and Interrupts ===\n");
@@ -294,28 +311,30 @@ int main(void)
 
     report_config();
 
-    uint32_t cursor = 0;                 /* which LED is lit, 0 = PB0          */
+    uint32_t cursor = 0; /* which LED is lit, 0 = PB0          */
     bar_write((uint8_t)(1u << cursor));
 
-    debounce_t a = { 0 };
+    debounce_t a = {0};
     uint32_t a_count = 0, a_reported = 0;
 
     uint32_t b_seen = 0, b_reported = 0, b_count = 0;
     uint32_t b_quiet_ms = 0;
-    uint8_t  b_armed = 0, b_down = 0;
+    uint8_t b_armed = 0, b_down = 0;
 
     uint32_t beat_at = 0;
-    uint8_t  beat_on = 0;
+    uint8_t beat_on = 0;
 
-    for (;;) {
-        tick_wait();
-
+    for (;;)
+    {
+        tick_wait(); // wait for the next tick (1 ms)
         /* ---- A: sample, debounce, act ------------------------------------ */
         int ev = debounce_step(&a, (uint8_t)button_down(BTN_A_PIN));
-        if (ev != 0) {
-            if (ev > 0) {
+        if (ev != 0)
+        {
+            if (ev > 0)
+            {
                 a_count++;
-                cursor = (cursor + 1u) & 7u;            /* left, towards PB7  */
+                cursor = (cursor + 1u) & 7u; /* left, towards PB7  */
                 bar_write((uint8_t)(1u << cursor));
             }
             printf("A polled     %-7s %3lu   level changes seen at 1 kHz: %lu\n",
@@ -329,18 +348,23 @@ int main(void)
          * quiet for DEBOUNCE_MS, the bouncing is over: read the pin once and
          * see whether it settled pressed or released. */
         uint32_t edges = b_edges;
-        if (edges != b_seen) {
-            b_seen     = edges;
+        if (edges != b_seen)
+        {
+            b_seen = edges;
             b_quiet_ms = 0;
-            b_armed    = 1;
-        } else if (b_armed && ++b_quiet_ms >= DEBOUNCE_MS) {
+            b_armed = 1;
+        }
+        else if (b_armed && ++b_quiet_ms >= DEBOUNCE_MS)
+        {
             b_armed = 0;
             uint8_t down = (uint8_t)button_down(BTN_B_PIN);
-            if (down != b_down) {
+            if (down != b_down)
+            {
                 b_down = down;
-                if (down) {
+                if (down)
+                {
                     b_count++;
-                    cursor = (cursor + 7u) & 7u;        /* right, towards PB0 */
+                    cursor = (cursor + 7u) & 7u; /* right, towards PB0 */
                     bar_write((uint8_t)(1u << cursor));
                 }
                 printf("B interrupt  %-7s %3lu   edges caught by EXTI:        %lu\n",
@@ -351,10 +375,18 @@ int main(void)
         }
 
         /* ---- heartbeat: proof the main loop is still running ------------- */
-        if (ms_now - beat_at >= HEARTBEAT_MS) {
+        if (ms_now - beat_at >= HEARTBEAT_MS)
+        {
             beat_at = ms_now;
             beat_on = (uint8_t)!beat_on;
-            if (beat_on) { pin_high(GPIOA, LD4_PIN); } else { pin_low(GPIOA, LD4_PIN); }
+            if (beat_on)
+            {
+                pin_high(GPIOA, LD4_PIN);
+            }
+            else
+            {
+                pin_low(GPIOA, LD4_PIN);
+            }
         }
     }
 }

@@ -1852,6 +1852,40 @@ banner does exactly that, and that is why it exists.
 
 ---
 
+## Slide 33b: Reaching Both Paths in the Debugger
+
+Under `F5`, clicking a button rarely lands where you wanted. Three reasons:
+
+| Why | What you see |
+|---|---|
+| A click is a press **and** a release; a halted chip means frozen simulated time | the press is over before the program samples the pin |
+| breakpoint on `b_edges++` | one stop per **bounce edge** — tens per press |
+| breakpoint on `debounce_step()`'s first line | 1000 stops a second; the accept is never reached |
+
+Three rules, worked step by step in Lab Part 8:
+
+1. **Latch the input.** Ctrl-click a Wokwi pushbutton and it stays pressed
+   until the next click; holding the **A** or **B** key does the same.
+2. **Break where the event is decided, not where the signal arrives.**
+   `d->stable = raw;` and `b_count++` each run once per press.
+3. **Inject the event from the register** — no button at all, from the
+   Debug Console:
+
+```
+-exec set *(unsigned int *)0x40021808 = 2     EXTI->SWIER1: one rising edge on line 1
+-exec set *(unsigned int *)0xE000E200 = 32    NVIC->ISPR:   pend IRQ 5 with no EXTI event
+```
+
+The first enters the handler with `RPR1` bit 1 set and counts one clean edge.
+The second enters it with nothing pending: the `if` is false, and the handler
+is right to count nothing — never trust the vector, read the pending bit.
+
+> Predicted from RM0490 and Wokwi's documentation, not yet watched. Whether
+> Wokwi's GDB server accepts writes to these registers is the first thing to
+> find out.
+
+---
+
 ## Slide 34: What Carries Forward
 
 - **Slide 4's table works for every pin of every port.** You will not look up

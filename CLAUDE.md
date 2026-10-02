@@ -231,6 +231,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-27 | ARM lesson 05's deck rewritten step by step (every GPIO register its own slide), each of lessons 04-09 opened with generated pin-map slides, then push-pull/open-drain, the EXTI multiplexer and the EXTICR layout drawn as SVG and the debouncer split over two slides. Nothing in the AVR tree touched. |
 | 2026-09-30 | ARM decks gained 62 to-scale register diagrams, written as ```` ```regs ```` blocks and drawn by the new `projects2026_arm/_build/regdiag.py`; every bit position checked against the CMSIS headers. Three factual slips in ARM slide text fixed on the way. Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "Register diagrams". |
 | 2026-09-30 | VS Code moved to the ARM edition: F5 debugs an ARM lesson in Wokwi through its GDB server (`gdbServerPort` in each `wokwi.toml`, vendored `arm-none-eabi-gdb`, `cppdbg`); the old AVR `launch.json` stub is gone. `tools/cli/` dispatchers now recognise `projects2026_arm/`, the ARM IntelliSense config is the default, and AVR-only tasks are labelled `AVR:`. See `projects2026_arm/README.md`, "Debugging a lesson in VS Code". |
+| 2026-10-02 | ARM lesson 05 gained Lab Part 8 and slide 33b: reaching the debounce accept and the EXTI handler under GDB by latching a Wokwi button (Ctrl-click) and by raising the interrupt from the debugger through `EXTI->SWIER1` and NVIC `ISPR`. Unwatched in Wokwi, and says so. Decks re-rendered. Nothing in the AVR tree touched. |
 
 ## 9. The system pass (2026-09-05)
 

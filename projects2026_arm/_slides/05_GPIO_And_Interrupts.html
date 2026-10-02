@@ -3583,6 +3583,17 @@ B interrupt  release   1   edges caught by EXTI:        ...</code></pre>
 <p>This is the debugging checklist for every interrupt in the rest of the course:<br>walk the path of slide 23 <strong>hop by hop</strong>, reading each register back. The<br>banner does exactly that, and that is why it exists.</p>
 </section>
 <section class="slide">
+<h2>Slide 33b: Reaching Both Paths in the Debugger</h2>
+<p>Under <code>F5</code>, clicking a button rarely lands where you wanted. Three reasons:</p>
+<table><thead><tr><th>Why</th><th>What you see</th></tr></thead><tbody><tr><td>A click is a press <strong>and</strong> a release; a halted chip means frozen simulated time</td><td>the press is over before the program samples the pin</td></tr><tr><td>breakpoint on <code>b_edges++</code></td><td>one stop per <strong>bounce edge</strong> — tens per press</td></tr><tr><td>breakpoint on <code>debounce_step()</code>&#x27;s first line</td><td>1000 stops a second; the accept is never reached</td></tr></tbody></table>
+<p>Three rules, worked step by step in Lab Part 8:</p>
+<ol><li><strong>Latch the input.</strong> Ctrl-click a Wokwi pushbutton and it stays pressed until the next click; holding the <strong>A</strong> or <strong>B</strong> key does the same.</li><li><strong>Break where the event is decided, not where the signal arrives.</strong> <code>d-&gt;stable = raw;</code> and <code>b_count++</code> each run once per press.</li><li><strong>Inject the event from the register</strong> — no button at all, from the Debug Console:</li></ol>
+<pre><code>-exec set *(unsigned int *)0x40021808 = 2     EXTI-&gt;SWIER1: one rising edge on line 1
+-exec set *(unsigned int *)0xE000E200 = 32    NVIC-&gt;ISPR:   pend IRQ 5 with no EXTI event</code></pre>
+<p>The first enters the handler with <code>RPR1</code> bit 1 set and counts one clean edge.<br>The second enters it with nothing pending: the <code>if</code> is false, and the handler<br>is right to count nothing — never trust the vector, read the pending bit.</p>
+<p>&gt; Predicted from RM0490 and Wokwi&#x27;s documentation, not yet watched. Whether<br>&gt; Wokwi&#x27;s GDB server accepts writes to these registers is the first thing to<br>&gt; find out.</p>
+</section>
+<section class="slide">
 <h2>Slide 34: What Carries Forward</h2>
 <ul><li><strong>Slide 4&#x27;s table works for every pin of every port.</strong> You will not look up a GPIO bit position again; you will calculate it.</li><li><strong>Read-modify-write versus a single store</strong> (slides 11–13) is the most common concurrency bug in embedded code, and now you can see it in a disassembly.</li><li><strong>Poll or interrupt is a choice you now make on evidence.</strong> You have measured both on the same button.</li><li><strong>The interrupt path is the same shape everywhere.</strong> A timer, a UART, an ADC — each ends in a pending bit, an NVIC line and a vector with an exact name. Lessons 06, 08 and 09 reuse slide 23 with different boxes.</li><li><strong>The polled millisecond is lying a little.</strong> <code>tick_wait()</code> polls SysTick&#x27;s <code>COUNTFLAG</code>, which remembers only <em>one</em> wrap. While a <code>printf</code> blocks for 5 ms, four ticks are lost and <code>ms_now</code> runs slow. <strong>Lesson 06 turns SysTick into an interrupt</strong>, and time stops depending on the loop coming back.</li></ul>
 </section>
