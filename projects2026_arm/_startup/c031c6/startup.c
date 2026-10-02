@@ -20,7 +20,7 @@
 
 extern uint32_t _sidata, _sdata, _edata, _sbss, _ebss, _estack;
 
-int  main(void);
+int main(void);
 void Reset_Handler(void);
 void Default_Handler(void);
 void SystemInit(void);
@@ -43,56 +43,84 @@ uint32_t SystemCoreClock = 12000000UL;
  */
 #define WEAK_ALIAS __attribute__((weak, alias("Default_Handler")))
 
-void NMI_Handler(void)              WEAK_ALIAS;
-void HardFault_Handler(void)        WEAK_ALIAS;
-void SVC_Handler(void)              WEAK_ALIAS;
-void PendSV_Handler(void)           WEAK_ALIAS;
-void SysTick_Handler(void)          WEAK_ALIAS;
+void NMI_Handler(void) WEAK_ALIAS;
+void HardFault_Handler(void) WEAK_ALIAS;
+void SVC_Handler(void) WEAK_ALIAS;
+void PendSV_Handler(void) WEAK_ALIAS;
+void SysTick_Handler(void) WEAK_ALIAS;
 
-void WWDG_IRQHandler(void)          WEAK_ALIAS;
-void RTC_TAMP_IRQHandler(void)      WEAK_ALIAS;
-void FLASH_IRQHandler(void)         WEAK_ALIAS;
-void RCC_IRQHandler(void)           WEAK_ALIAS;
-void EXTI0_1_IRQHandler(void)       WEAK_ALIAS;
-void EXTI2_3_IRQHandler(void)       WEAK_ALIAS;
-void EXTI4_15_IRQHandler(void)      WEAK_ALIAS;
+void WWDG_IRQHandler(void) WEAK_ALIAS;
+void RTC_TAMP_IRQHandler(void) WEAK_ALIAS;
+void FLASH_IRQHandler(void) WEAK_ALIAS;
+void RCC_IRQHandler(void) WEAK_ALIAS;
+void EXTI0_1_IRQHandler(void) WEAK_ALIAS;
+void EXTI2_3_IRQHandler(void) WEAK_ALIAS;
+void EXTI4_15_IRQHandler(void) WEAK_ALIAS;
 void DMA1_Channel1_IRQHandler(void) WEAK_ALIAS;
 void DMA1_Channel2_3_IRQHandler(void) WEAK_ALIAS;
 void DMA1_Ch4_DMAMUX_IRQHandler(void) WEAK_ALIAS;
-void ADC1_IRQHandler(void)          WEAK_ALIAS;
+void ADC1_IRQHandler(void) WEAK_ALIAS;
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void) WEAK_ALIAS;
-void TIM1_CC_IRQHandler(void)       WEAK_ALIAS;
-void TIM3_IRQHandler(void)          WEAK_ALIAS;
-void TIM14_IRQHandler(void)         WEAK_ALIAS;
-void TIM16_IRQHandler(void)         WEAK_ALIAS;
-void TIM17_IRQHandler(void)         WEAK_ALIAS;
-void I2C1_IRQHandler(void)          WEAK_ALIAS;
-void SPI1_IRQHandler(void)          WEAK_ALIAS;
-void USART1_IRQHandler(void)        WEAK_ALIAS;
-void USART2_IRQHandler(void)        WEAK_ALIAS;
+void TIM1_CC_IRQHandler(void) WEAK_ALIAS;
+void TIM3_IRQHandler(void) WEAK_ALIAS;
+void TIM14_IRQHandler(void) WEAK_ALIAS;
+void TIM16_IRQHandler(void) WEAK_ALIAS;
+void TIM17_IRQHandler(void) WEAK_ALIAS;
+void I2C1_IRQHandler(void) WEAK_ALIAS;
+void SPI1_IRQHandler(void) WEAK_ALIAS;
+void USART1_IRQHandler(void) WEAK_ALIAS;
+void USART2_IRQHandler(void) WEAK_ALIAS;
 
 /* vectors[0] is not a function pointer at all - it is the initial stack
  * pointer.  The cast is the price of keeping the whole table in one array. */
-__attribute__((section(".isr_vector"), used))
-void (* const vectors[])(void) = {
-    (void (*)(void))&_estack,       /*  0  initial MSP                      */
-    Reset_Handler,                  /*  1  reset                            */
-    NMI_Handler,                    /*  2                                   */
-    HardFault_Handler,              /*  3                                   */
-    0, 0, 0, 0, 0, 0, 0,            /*  4-10 reserved                       */
-    SVC_Handler,                    /* 11                                   */
-    0, 0,                           /* 12-13 reserved                       */
-    PendSV_Handler,                 /* 14                                   */
-    SysTick_Handler,                /* 15                                   */
+__attribute__((section(".isr_vector"), used)) // place the vector table in the .isr_vector section
+void (*const vectors[])(void) = {
+    (void (*)(void))&_estack, /*  0  initial MSP                      */
+    Reset_Handler,            /*  1  reset                            */
+    NMI_Handler,              /*  2                                   */
+    HardFault_Handler,        /*  3                                   */
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,           /*  4-10 reserved                       */
+    SVC_Handler, /* 11                                   */
+    0,
+    0,               /* 12-13 reserved                       */
+    PendSV_Handler,  /* 14                                   */
+    SysTick_Handler, /* 15                                   */
     /* external interrupts, IRQ0 upward */
-    WWDG_IRQHandler, 0, RTC_TAMP_IRQHandler, FLASH_IRQHandler,
-    RCC_IRQHandler, EXTI0_1_IRQHandler, EXTI2_3_IRQHandler, EXTI4_15_IRQHandler,
-    0, DMA1_Channel1_IRQHandler, DMA1_Channel2_3_IRQHandler,
-    DMA1_Ch4_DMAMUX_IRQHandler, ADC1_IRQHandler,
-    TIM1_BRK_UP_TRG_COM_IRQHandler, TIM1_CC_IRQHandler, 0,
-    TIM3_IRQHandler, 0, 0, TIM14_IRQHandler, 0, TIM16_IRQHandler,
-    TIM17_IRQHandler, I2C1_IRQHandler, 0, SPI1_IRQHandler, 0,
-    USART1_IRQHandler, USART2_IRQHandler,
+    WWDG_IRQHandler,
+    0,
+    RTC_TAMP_IRQHandler,
+    FLASH_IRQHandler,
+    RCC_IRQHandler,
+    EXTI0_1_IRQHandler,
+    EXTI2_3_IRQHandler,
+    EXTI4_15_IRQHandler,
+    0,
+    DMA1_Channel1_IRQHandler,
+    DMA1_Channel2_3_IRQHandler,
+    DMA1_Ch4_DMAMUX_IRQHandler,
+    ADC1_IRQHandler,
+    TIM1_BRK_UP_TRG_COM_IRQHandler,
+    TIM1_CC_IRQHandler,
+    0,
+    TIM3_IRQHandler,
+    0,
+    0,
+    TIM14_IRQHandler,
+    0,
+    TIM16_IRQHandler,
+    TIM17_IRQHandler,
+    I2C1_IRQHandler,
+    0,
+    SPI1_IRQHandler,
+    0,
+    USART1_IRQHandler,
+    USART2_IRQHandler,
 };
 
 void Default_Handler(void)
@@ -100,23 +128,33 @@ void Default_Handler(void)
     /* Park here rather than returning.  An unexpected interrupt that silently
      * returns gives you a program that misbehaves; one that stops gives you a
      * program you can attach a debugger to and read the IPSR of. */
-    for (;;) { }
+    for (;;)
+    {
+    }
 }
 
 void Reset_Handler(void)
 {
     uint32_t *src, *dst;
 
-    src = &_sidata;                                     /* .data: FLASH -> RAM */
-    for (dst = &_sdata; dst < &_edata; ) { *dst++ = *src++; }
+    src = &_sidata; /* .data: FLASH -> RAM */
+    for (dst = &_sdata; dst < &_edata;)
+    {
+        *dst++ = *src++;
+    }
 
-    for (dst = &_sbss; dst < &_ebss; ) { *dst++ = 0; }  /* .bss: zero          */
+    for (dst = &_sbss; dst < &_ebss;)
+    {
+        *dst++ = 0;
+    } /* .bss: zero          */
 
     SystemInit();
-    __libc_init_array();            /* C++ ctors and __attribute__((constructor)) */
+    __libc_init_array(); /* C++ ctors and __attribute__((constructor)) */
     (void)main();
 
-    for (;;) { }                    /* main() must not return, but if it does */
+    for (;;)
+    {
+    } /* main() must not return, but if it does */
 }
 
 /* 48 MHz with no PLL: the C0 wakes on HSI48 / 4, and clearing HSIDIV gives
@@ -124,11 +162,15 @@ void Reset_Handler(void)
  * the clock speeds up, never after. */
 void SystemInit(void)
 {
-    FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0;
-    while ((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_0) { }
+    FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_0; // set flash latency to 1 wait state (LATENCY_0 is bit 0, value 1)
+    while ((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_0)
+    {
+    } // wait until the flash latency is set
 
-    RCC->CR &= ~RCC_CR_HSIDIV;      /* HSIDIV = 000 -> divide by 1 -> 48 MHz */
-    while (!(RCC->CR & RCC_CR_HSIRDY)) { }
+    RCC->CR &= ~RCC_CR_HSIDIV; /* HSIDIV = 000 -> divide by 1 -> 48 MHz */
+    while (!(RCC->CR & RCC_CR_HSIRDY))
+    {
+    } // wait until the HSI48 oscillator is ready
 
     SystemCoreClock = 48000000UL;
 }

@@ -200,7 +200,7 @@ static void tick_init(void)
 /* COUNTFLAG latches ONE wrap.  If the loop is away for 5 ms - printing, say -
  * four milliseconds are simply lost and ms_now runs slow.  Polled time is
  * only as good as the loop that polls it.  That is lesson 06's opening. */
-static void tick_wait(void)
+static void tick_wait(void) // wait for one millisecond to elapse
 {
     while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk))
     {
@@ -235,7 +235,7 @@ static int debounce_step(debounce_t *d, uint8_t raw)
     if (d->held_ms < DEBOUNCE_MS)
     {
         d->held_ms++;
-        if (d->held_ms == DEBOUNCE_MS && raw != d->stable)
+        if (d->held_ms == DEBOUNCE_MS && raw != d->stable) // the raw level has been stable long enough and differs from the accepted level
         {
             d->stable = raw;
             return raw ? +1 : -1;
@@ -319,7 +319,7 @@ int main(void)
 
     uint32_t b_seen = 0, b_reported = 0, b_count = 0;
     uint32_t b_quiet_ms = 0;
-    uint8_t b_armed = 0, b_down = 0;
+    uint8_t b_armed = 0, b_down = 0; // whether button B is armed for quiet-time detection and its current stable state
 
     uint32_t beat_at = 0;
     uint8_t beat_on = 0;
@@ -328,10 +328,10 @@ int main(void)
     {
         tick_wait(); // wait for the next tick (1 ms)
         /* ---- A: sample, debounce, act ------------------------------------ */
-        int ev = debounce_step(&a, (uint8_t)button_down(BTN_A_PIN));
-        if (ev != 0)
+        int ev = debounce_step(&a, (uint8_t)button_down(BTN_A_PIN)); // sample and debounce button A
+        if (ev != 0)                                                 // there was a change in button A's debounced state
         {
-            if (ev > 0)
+            if (ev > 0) // button A was pressed
             {
                 a_count++;
                 cursor = (cursor + 1u) & 7u; /* left, towards PB7  */
@@ -348,17 +348,17 @@ int main(void)
          * quiet for DEBOUNCE_MS, the bouncing is over: read the pin once and
          * see whether it settled pressed or released. */
         uint32_t edges = b_edges;
-        if (edges != b_seen)
+        if (edges != b_seen) // there was a new edge detected on button B
         {
             b_seen = edges;
             b_quiet_ms = 0;
-            b_armed = 1;
+            b_armed = 1; // arm the quiet-time detection for button B
         }
-        else if (b_armed && ++b_quiet_ms >= DEBOUNCE_MS)
+        else if (b_armed && ++b_quiet_ms >= DEBOUNCE_MS) // the quiet-time period has elapsed; check the stable state of button B
         {
             b_armed = 0;
             uint8_t down = (uint8_t)button_down(BTN_B_PIN);
-            if (down != b_down)
+            if (down != b_down) // the stable state of button B has changed
             {
                 b_down = down;
                 if (down)
