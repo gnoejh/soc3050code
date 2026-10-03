@@ -1,0 +1,919 @@
+<title>Robot Competition: A Sumo Tournament Inside the Chip</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Robot Competition: A Sumo Tournament Inside the Chip</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Robot Competition: A Sumo Tournament Inside the Chip</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>Two robots, one ring, and only one of them is written by you.</strong></p>
+<p>A sumo robot has one job: push the other robot out of a 77 cm ring before it<br>pushes you out. It knows nothing but what three distance sensors, four line<br>sensors, two wheel encoders and a bump switch tell it — 50 times a second.<br>This lesson simulates the ring, the motors, the tyres and the sensors <strong>inside<br>the firmware</strong>, hands each robot&#x27;s brain only its own sensors, and then runs a<br>tournament: your <code>student.c</code> against five opponents with personalities. The<br>line it prints at the end is your entry to the class tournament.</p>
+<p>Figures marked <strong>measured on the host</strong> come from <code>host\run.bat</code>, which<br>compiles the same physics, referee and strategies with the PC&#x27;s gcc. Nothing in<br>this deck has been watched running in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob: sim speed - ADC IN4</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - serial monitor</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - shell</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  buzzer - TIM3_CH1</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B: next opponent</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A: start</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL: driver / cones</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 365" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="reg" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  buzzer - TIM3_CH1</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA4   an   knob: sim speed - ADC IN4</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - shell</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - serial monitor</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0</text>
+  <text x="76" y="220" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="198" width="29" height="34" rx="3"/>
+  <text x="102.5" y="212" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="198" width="29" height="34" rx="3"/>
+  <text x="134.5" y="212" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="198" width="29" height="34" rx="3"/>
+  <text x="166.5" y="212" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="198" width="29" height="34" rx="3"/>
+  <text x="198.5" y="212" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="198" width="29" height="34" rx="3"/>
+  <text x="230.5" y="212" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="198" width="29" height="34" rx="3"/>
+  <text x="262.5" y="212" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="198" width="29" height="34" rx="3"/>
+  <text x="294.5" y="212" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="198" width="29" height="34" rx="3"/>
+  <text x="326.5" y="212" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="198" width="29" height="34" rx="3"/>
+  <text x="358.5" y="212" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="198" width="29" height="34" rx="3"/>
+  <text x="390.5" y="212" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="198" width="29" height="34" rx="3"/>
+  <text x="422.5" y="212" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="198" width="29" height="34" rx="3"/>
+  <text x="454.5" y="212" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="198" width="29" height="34" rx="3"/>
+  <text x="486.5" y="212" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="198" width="29" height="34" rx="3"/>
+  <text x="518.5" y="212" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="198" width="29" height="34" rx="3"/>
+  <text x="550.5" y="212" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="198" width="29" height="34" rx="3"/>
+  <text x="582.5" y="212" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="252" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - OLED</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB5   in   button B: next opponent</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB4   in   button A: start</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL: driver / cones</text>
+  <text x="310" y="357" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: What You Are Building</h2>
+<figure class="diagram"><svg viewBox="0 0 820 300" role="img" aria-label="Software in the loop: the world computes each robot's sensor view, each brain sees only its own view and returns wheel commands, the referee applies them to the world">
+  <defs><marker id="s18a1" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="300" y="20" width="220" height="110" rx="8"/>
+  <text x="410" y="48" text-anchor="middle">WORLD  world.c</text>
+  <text x="410" y="70" text-anchor="middle" class="lbl">positions, velocities, contact</text>
+  <text x="410" y="88" text-anchor="middle" class="lbl">motors, tyres, the ring edge</text>
+  <text x="410" y="106" text-anchor="middle" class="lbl">every 5 ms of match time</text>
+  <rect class="box" x="20" y="180" width="200" height="90" rx="8"/>
+  <text x="120" y="210" text-anchor="middle">robot 0 brain</text>
+  <text x="120" y="232" text-anchor="middle" class="mono">student.c</text>
+  <text x="120" y="252" text-anchor="middle" class="lbl">64 bytes of its own memory</text>
+  <rect class="box hifill" x="600" y="180" width="200" height="90" rx="8"/>
+  <text x="700" y="210" text-anchor="middle">robot 1 brain</text>
+  <text x="700" y="232" text-anchor="middle" class="mono">bots.c: Bull ...</text>
+  <text x="700" y="252" text-anchor="middle" class="lbl">64 bytes of its own memory</text>
+  <path class="wire" d="M320 130 L190 180" marker-end="url(#s18a1)"/>
+  <text x="200" y="150" class="mono lbl">view[0]</text>
+  <path class="wire" d="M500 130 L630 180" marker-end="url(#s18a1)"/>
+  <text x="580" y="150" class="mono lbl">view[1]</text>
+  <path class="hi" d="M220 240 H360 V130" marker-end="url(#s18a1)"/>
+  <path class="hi" d="M600 240 H460 V130" marker-end="url(#s18a1)"/>
+  <text x="410" y="200" text-anchor="middle" class="mono">cmd: left, right</text>
+  <text x="410" y="220" text-anchor="middle" class="lbl">REFEREE  referee.c - every 20 ms</text>
+  <text x="410" y="290" text-anchor="middle" class="lbl">the brains never see the world, or each other - only a robot_view_t</text>
+</svg></figure>
+<p>This is <strong>software-in-the-loop</strong> (SITL): the controller is the real C that<br>would fly or drive, and the plant around it is simulated. Here both sides live<br>in one firmware image, on one Cortex-M0+, and the OLED shows the fight.</p>
+<table><thead><tr><th>File</th><th>Role</th><th>Chip-specific?</th></tr></thead><tbody><tr><td><code>world.c</code></td><td>physics + sensor synthesis</td><td>no</td></tr><tr><td><code>referee.c</code></td><td>rules, start positions, the 20 ms call</td><td>no</td></tr><tr><td><code>bots.c</code></td><td>five opponents</td><td>no</td></tr><tr><td><code>student.c</code></td><td><strong>you</strong></td><td>no</td></tr><tr><td><code>scene.c</code></td><td>the picture</td><td>no (draws into <code>oled.c</code>&#x27;s RAM)</td></tr><tr><td><code>Main.c</code></td><td>RTOS tasks, buttons, buzzer, serial</td><td><strong>yes</strong></td></tr></tbody></table>
+<p>Five of six files compile unchanged on a PC. That is the whole trick.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Rules — Real Mini-Sumo, Simplified</h2>
+<table><thead><tr><th></th><th>Real mini-sumo</th><th>This lesson</th></tr></thead><tbody><tr><td>ring</td><td>77 cm diameter, black, 2.5 cm white border</td><td><code>RING_R 0.385f</code>, <code>LINE_W 0.025f</code></td></tr><tr><td>robot</td><td>10 × 10 cm, 500 g</td><td>a 55 mm-radius disc, <code>ROBOT_M 0.50f</code></td></tr><tr><td>start</td><td>wait <strong>5 s</strong> after the start signal</td><td>wait <strong>3 s</strong> (<code>COUNTDOWN_STEPS 600</code>)</td></tr><tr><td>out</td><td>any part touches outside the ring</td><td>the robot&#x27;s <strong>centre</strong> leaves the ring</td></tr><tr><td>round</td><td>3 min, then the judges decide</td><td><strong>20 s</strong>, then a draw</td></tr><tr><td>match</td><td>best of 3 rounds</td><td>best of 3: first to 2; equal = drawn match</td></tr></tbody></table>
+<p>Every robot is the <strong>same machine</strong> — same motors, same tyres, same sensors.<br>The only thing that differs is the brain. That is what makes it a programming<br>competition and not a budget one.</p>
+<p>Start positions come from a <strong>seed</strong>: both robots on a random line through the<br>centre, 10–20 cm out, face-to-face, side-on, back-to-back or random, ±15°.<br>Round 2 swaps round 1&#x27;s places, so neither robot keeps a lucky corner.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Contract — <code>strategy.h</code></h2>
+<pre class="lang-c"><code>void strategy_step(const robot_view_t *in, robot_cmd_t *out,
+                   strategy_mem_t *mem);
+
+typedef struct {
+    int32_t  t_ms;               /* NEGATIVE during the 3 s countdown        */
+    uint16_t dist_mm[N_DIST];    /* to the opponent&#x27;s surface, or DIST_NONE  */
+    uint8_t  edge;               /* EDGE_FL | EDGE_FR | EDGE_BL | EDGE_BR    */
+    uint8_t  bump;               /* BUMP_FRONT | BACK | LEFT | RIGHT         */
+    int32_t  enc_l, enc_r;       /* wheel travel, mm                          */
+    uint8_t  round, my_rounds, their_rounds;
+} robot_view_t;
+
+typedef struct { int8_t left, right; } robot_cmd_t;      /* -100..100 % */
+typedef struct { uint32_t w[16]; } strategy_mem_t;       /* 64 bytes     */</code></pre>
+<p><strong>In:</strong> only this robot&#x27;s sensors. No position, no map, no opponent velocity —<br>a real sumo robot does not know where it is either.<br><strong>Out:</strong> two numbers. <strong>Memory:</strong> 64 bytes, zeroed at the start of every round.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Why the Memory Rule Matters</h2>
+<p>A strategy may keep state <strong>only</strong> in <code>*mem</code>. No globals, no <code>static</code><br>variables. Three reasons, all of them engineering:</p>
+<ol><li><strong>Two copies must be independent.</strong> Student vs student runs the same code twice. A <code>static</code> counter would be <em>shared</em> by both robots.</li><li><strong>A match must repeat from its seed.</strong> A global that survives from match 6 into match 7 makes match 7&#x27;s result depend on history — and the referee can no longer re-run it to check a claim.</li><li><strong>The budget is real.</strong> 64 bytes × 2 robots is what this design can afford; a contract with a hard size is how embedded teams share one RAM.</li></ol>
+<pre class="lang-c"><code>typedef struct { uint8_t mode; int16_t timer; } my_state_t;
+STRATEGY_STATE_FITS(my_state_t);           /* _Static_assert: a COMPILE error if &gt; 64 */
+my_state_t *s = STRATEGY_STATE(my_state_t, mem);</code></pre>
+<p>The host league enforces rule 1–2 mechanically: <code>nm</code> on your object file, and<br>any <code>B b D d C</code> symbol is a rejection (slide 24).</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Model — the Differential-Drive Robot</h2>
+<figure class="diagram"><svg viewBox="0 0 820 280" role="img" aria-label="A differential-drive robot seen from above: two wheels at plus and minus the half-track from the centre, each pushing on the ground with force F_L and F_R; forward force is their sum, turning torque their difference times the half-track">
+  <defs><marker id="s18a2" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <circle class="box" cx="200" cy="140" r="100"/>
+  <rect class="reg" x="120" y="40" width="80" height="22"/>
+  <rect class="reg" x="120" y="218" width="80" height="22"/>
+  <text x="160" y="32" text-anchor="middle" class="mono lbl">left wheel</text>
+  <text x="160" y="258" text-anchor="middle" class="mono lbl">right wheel</text>
+  <path class="hi" d="M200 51 H290" marker-end="url(#s18a2)"/>
+  <text x="296" y="55" class="mono">F_L</text>
+  <path class="hi" d="M200 229 H290" marker-end="url(#s18a2)"/>
+  <text x="296" y="233" class="mono">F_R</text>
+  <path class="wire" d="M200 140 H330" marker-end="url(#s18a2)"/>
+  <text x="335" y="144" class="lbl">heading (the nose)</text>
+  <path class="dash" d="M200 140 V51"/>
+  <text x="206" y="100" class="mono lbl">b = 45 mm</text>
+  <circle cx="200" cy="140" r="3" fill="currentColor"/>
+  <text x="430" y="70" class="mono">m dv/dt   = F_L + F_R</text>
+  <text x="430" y="100" class="mono">I dw/dt   = (F_R - F_L) b</text>
+  <text x="430" y="130" class="mono">v_L = v - w b,  v_R = v + w b</text>
+  <text x="430" y="170" class="lbl">I = m r^2 / 2 (a disc): 0.5 kg, r = 55 mm</text>
+  <text x="430" y="190" class="lbl">equal forces drive straight; opposite forces spin on the spot</text>
+  <text x="430" y="210" class="lbl">sideways (across the wheels) nothing drives - only grip resists</text>
+</svg></figure>
+<p>Two motors, no steering. Everything a sumo robot does — charge, arc, spin,<br>back off — is some pair <code>(left, right)</code>. <code>world.c</code>&#x27;s <code>drive_body()</code> is these<br>three lines plus the tyres.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Model — a Motor Is a Line, a Tyre Is a Ceiling</h2>
+<p>A DC motor&#x27;s force falls linearly with speed: full force at stall, zero at its<br>no-load speed. A tyre can only pass on so much of it — μN — before it slips.</p>
+<pre class="lang-c"><code>float f = F_STALL * (drive - v_ground / V_MAX);     /* the motor&#x27;s line   */
+if (f &gt; grip || f &lt; -grip) {                        /* more than the tyre */
+    f = f &gt; 0.0f ? grip : -grip;                    /* can hold: it slips */
+    v_wheel = V_MAX * (drive - f / F_STALL);        /* and spins          */
+}
+*enc += v_wheel * DT;                               /* the ENCODER sees it */</code></pre>
+<p><code>F_STALL</code> = 3.0 N per wheel; grip = μ · mg/2 = 1.0 × 0.5 × 9.81 / 2 = <strong>2.45 N</strong>.<br>So a standing start is <strong>traction-limited</strong>: the wheels slip until the motor<br>line falls under the ceiling at v₁ = 0.146 m/s, then the robot approaches<br>0.8 m/s with τ = mV/(2F) = 67 ms.</p>
+<table><thead><tr><th>Full throttle from rest</th><th>Model (closed form)</th><th><strong>Measured on the host</strong></th></tr></thead><tbody><tr><td>top speed</td><td>0.800 m/s</td><td><strong>0.800 m/s</strong></td></tr><tr><td>time to half speed</td><td>47.7 ms</td><td><strong>50.0 ms</strong> (one 5 ms step)</td></tr><tr><td>wheels slip at launch</td><td>yes</td><td><strong>yes</strong></td></tr></tbody></table>
+<p>Checking the simulator against its own equation is the cheapest test there is.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Model — Why Angle Matters</h2>
+<p>A robot can push back <strong>only along its wheels</strong>. Sideways, all it has is tyre<br>side-grip — and a rubber tyre lets go sideways first: <code>MU_LAT 0.6f</code> against<br><code>MU_LONG 1.0f</code>.</p>
+<figure class="diagram"><svg viewBox="0 0 820 220" role="img" aria-label="Three push tests: target nose-on braking, target side-on braking, target nose-on pushing back; the pusher pushes from the left in each">
+  <defs><marker id="s18a3" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <circle class="box" cx="60" cy="90" r="28"/><path class="hi" d="M60 90 H100" marker-end="url(#s18a3)"/>
+  <circle class="box hifill" cx="118" cy="90" r="28"/><path class="wire" d="M118 90 H82"/>
+  <text x="90" y="150" text-anchor="middle" class="lbl">nose-on, braking</text>
+  <text x="90" y="172" text-anchor="middle" class="mono">out in 1030 ms</text>
+  <circle class="box" cx="330" cy="90" r="28"/><path class="hi" d="M330 90 H370" marker-end="url(#s18a3)"/>
+  <circle class="box hifill" cx="388" cy="90" r="28"/><path class="wire" d="M388 90 V60"/>
+  <text x="360" y="150" text-anchor="middle" class="lbl">side-on, braking</text>
+  <text x="360" y="172" text-anchor="middle" class="mono">out in 1085 ms</text>
+  <circle class="box" cx="600" cy="90" r="28"/><path class="hi" d="M600 90 H640" marker-end="url(#s18a3)"/>
+  <circle class="box hifill" cx="658" cy="90" r="28"/><path class="hi" d="M658 90 H618" marker-end="url(#s18a3)"/>
+  <text x="630" y="150" text-anchor="middle" class="lbl">nose-on, pushing back at 100 %</text>
+  <text x="630" y="172" text-anchor="middle" class="mono">held: 1 mm in 6 s</text>
+  <text x="410" y="210" text-anchor="middle" class="lbl">measured on the host (league.c, section 1): the pusher at 100 % from the ring centre</text>
+</svg></figure>
+<p>The surprise is the first two: a <strong>braking</strong> robot is about as easy to push<br>nose-on as side-on — its motors&#x27; back-EMF brake and its tyres&#x27; side-grip happen<br>to be similar. The difference is the third: <strong>a robot that faces you can fight<br>back, and two equal robots nose to nose do not move.</strong> A robot hit from the<br>side cannot fight back at all. So: <em>never let them turn you side-on; never<br>attack where they can push back.</em></p>
+</section>
+<section class="slide">
+<h2>Slide 8: Model — Two Discs Collide</h2>
+<pre class="lang-c"><code>float vn = rvx * nx + rvy * ny;               /* closing speed along the normal */
+if (vn &lt; 0.0f) {
+    float jn = -(1.0f + RESTITUTION) * vn / (2.0f / ROBOT_M);   /* stop closing */
+    ...
+    float jt = f_clamp(-vt / k, -MU_BODY * jn, MU_BODY * jn);   /* Coulomb      */
+    a-&gt;w -= ROBOT_R * jt / ROBOT_I;            /* a glancing hit spins them     */
+}
+/* then split any overlap between them */</code></pre>
+<ul><li><strong>Normal impulse</strong>: the bodies stop approaching (<code>RESTITUTION 0.1f</code>: almost dead, like rubber-tyred robots).</li><li><strong>Friction impulse</strong>: along the surface, at most μ·jn — a glancing blow turns the other robot.</li><li><strong>Pushing is emergent.</strong> Nothing says &quot;A pushes B&quot;. A&#x27;s motor accelerates A into B every step, the impulse shares the velocity, and B&#x27;s tyres resist. The force balance on slide 7 falls out of these lines.</li></ul>
+<p>The cost of a disc: no wedge, no scoop, no corners. Real sumo robots win with<br>low wedges that lift the opponent&#x27;s wheels off the ground. A disc keeps the<br>physics on one slide.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Sensors — Distance Cones</h2>
+<figure class="diagram"><svg viewBox="0 0 820 230" role="img" aria-label="Three distance sensors on the robot's nose, aimed 30 degrees left, straight ahead and 30 degrees right, each a cone of plus or minus 7.5 degrees reaching 600 mm; a target counts as seen if any part of it is inside a cone">
+  <circle class="box" cx="90" cy="115" r="40"/>
+  <path class="dash" d="M130 115 L700 115"/>
+  <path class="wire" d="M130 115 L690 41"/><path class="wire" d="M130 115 L690 189"/>
+  <path class="hi" d="M130 115 L555 -11 M130 115 L620 245" stroke-opacity="0.5"/>
+  <text x="560" y="34" class="mono lbl">LEFT  +30 deg</text>
+  <text x="600" y="110" class="mono lbl">CENTRE</text>
+  <text x="560" y="206" class="mono lbl">RIGHT -30 deg</text>
+  <circle class="box hifill" cx="420" cy="78" r="34"/>
+  <text x="420" y="140" text-anchor="middle" class="lbl">seen by LEFT if any of it is inside that cone</text>
+</svg></figure>
+<p>Ray versus circle, done as angles: the opponent&#x27;s centre is <code>off</code> radians from<br>the sensor axis and subtends <code>half = atan2(R, sqrt(d² − R²))</code>; it is seen if<br><code>off ≤ 7.5° + half</code> and its surface is within 600 mm. Then the real-sensor<br>part: ±(8 mm + 3 %) noise and <strong>3 % of reads simply miss</strong> (<code>DIST_NONE</code>).</p>
+<table><thead><tr><th>Target 300 mm dead ahead, 1000 reads</th><th><strong>Measured on the host</strong></th></tr></thead><tbody><tr><td>mean centre reading</td><td><strong>299 mm</strong></td></tr><tr><td>misses</td><td><strong>39 / 1000</strong></td></tr><tr><td>side sensors fired</td><td><strong>0 / 1000</strong></td></tr><tr><td>target 30° left at 250 mm</td><td>L = 155, C = R = none</td></tr></tbody></table>
+<p>A strategy that trusts one reading loses the target 1 time in 25.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Sensors — the Line, and the Speed That Jumps It</h2>
+<p>Four reflectance sensors at the corners, (±40, ±40) mm. They read <strong>white only<br>on the border band</strong>, <code>RING_R − LINE_W ≤ r ≤ RING_R</code>:</p>
+<pre class="lang-c"><code>/* White only ON the border.  Past RING_R there is no dohyo under the
+ * sensor and it reads like black - a robot fast enough to cross the
+ * line between two reads never sees it. */
+if (r2 &gt;= in2 &amp;&amp; r2 &lt;= out2) { bits |= (uint8_t)(1u &lt;&lt; k); }</code></pre>
+<p>The arithmetic every sumo team does:</p>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>border width</td><td>25 mm</td></tr><tr><td>top speed</td><td>0.8 m/s = <strong>16 mm per 20 ms call</strong></td></tr><tr><td>reads that land on the 25 mm band, crossing it at top speed</td><td><strong>1 or 2</strong></td></tr><tr><td>reads that land on it at half speed</td><td>3 or 4</td></tr></tbody></table>
+<p>At 50 Hz the line is wide enough — <strong>if you act on the first read</strong>. A<br>strategy that needs two reads to agree, or waits to finish a manoeuvre, drives<br>straight out. Lab Part 2 counts how often the starter does (<code>s-out</code> in the<br>league table).</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Sensors — Encoders Measure the Wheel</h2>
+<p><code>enc_l</code>, <code>enc_r</code> count wheel travel in mm. When the tyre slips, <strong>the wheel<br>turns and the robot does not</strong> — exactly what a real optical encoder on the<br>motor shaft reports.</p>
+<table><thead><tr><th>Situation</th><th>Encoders say</th><th>The robot</th></tr></thead><tbody><tr><td>cruising</td><td>≈ <code>V_MAX × drive × t</code></td><td>moves that far</td></tr><tr><td>launch at 100 %</td><td>more than it moved</td><td>wheels spin for 15 ms</td></tr><tr><td>nose-to-nose stalemate at 100 %</td><td>~0</td><td>stalled, motors at full force</td></tr><tr><td>being pushed backwards while driving forward</td><td>forwards, fast</td><td>goes backwards</td></tr></tbody></table>
+<p>So encoders cannot give position in a fight. They <em>can</em> tell you &quot;I am<br>commanding forward and my wheels have stopped&quot; — a stall: you are in a pushing<br>match. Combine with <code>BUMP_FRONT</code> and you know who you are pushing.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Sensors — the Bump Switch</h2>
+<pre class="lang-c"><code>static uint8_t bump_side(const body_t *b, float nx, float ny)
+{
+    float lx =  nx * c + ny * s;                        /* in the robot frame */
+    float ly = -nx * s + ny * c;
+    if (lx &gt;  0.7071f) { return BUMP_FRONT; }           /* within 45 deg      */
+    if (lx &lt; -0.7071f) { return BUMP_BACK; }
+    return ly &gt; 0.0f ? BUMP_LEFT : BUMP_RIGHT;
+}</code></pre>
+<p>Set by any contact since the robot&#x27;s last call, cleared when read. It is the<br>one sensor that says <strong>where you are being hit</strong> — and slide 7 says a hit on<br><code>BUMP_LEFT</code> or <code>BUMP_RIGHT</code> is the dangerous one. Turn the nose to it.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The Referee — Everyone Senses the Same Instant</h2>
+<pre class="lang-c"><code>for (int i = 0; i &lt; 2; i++) { world_sense(&amp;m-&gt;w, i, &amp;m-&gt;view[i]); ... }  /* sense both */
+for (int i = 0; i &lt; 2; i++) { m-&gt;e[i]-&gt;fn(&amp;m-&gt;view[i], &amp;m-&gt;cmd[i], &amp;m-&gt;mem[i]); } /* think both */
+for (int i = 0; i &lt; 2; i++) { world_drive(&amp;m-&gt;w, i, ...); }                /* latch both */</code></pre>
+<p>If robot 0 sensed, thought and <em>moved</em>, and only then robot 1 sensed, robot 1<br>would see 20 ms into robot 0&#x27;s future — and whichever brain happened to be<br>&quot;robot 1&quot; would win more. Same-instant sensing is what a real match gives you<br>(both robots run in parallel), and it costs one extra loop.</p>
+<p>The tournament also <strong>alternates sides</strong>: the student is robot 0 in even<br>matches and robot 1 in odd ones (<code>tour_student_side(k)</code>).</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Two Rates</h2>
+<table><thead><tr><th>Loop</th><th>Period</th><th>Who</th><th>Why that rate</th></tr></thead><tbody><tr><td>physics</td><td><strong>5 ms</strong> (<code>DT</code>)</td><td><code>world_step()</code></td><td>contact needs small steps: at 0.8 m/s a robot moves 4 mm</td></tr><tr><td>control</td><td><strong>20 ms</strong> (<code>STEPS_PER_CTRL 4</code>)</td><td><code>strategy_step()</code></td><td>a typical hobby sumo loop; 16 mm per call at top speed</td></tr><tr><td>display</td><td>80 ms</td><td><code>task_oled</code></td><td>an OLED frame is ~1 KB, ~25 ms of I²C</td></tr><tr><td>buttons</td><td>20 ms</td><td><code>pad_read()</code></td><td>lesson 05&#x27;s debouncer, two-sample window</td></tr></tbody></table>
+<p>The physics runs four times per brain call. A controller that sees the world<br>less often than the world changes is <em>normal</em> — it is what &quot;sample rate&quot; means,<br>and slide 10 is what it costs.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Determinism — the Property the Tournament Stands On</h2>
+<p>A match must come out <strong>bit-for-bit identical</strong> from its seed — on the chip,<br>on a PC, today and next week. What that takes:</p>
+<ul><li><strong>one random generator per purpose</strong>, seeded from the match seed: the referee&#x27;s (start positions) and each robot&#x27;s (sensor noise); <code>xorshift32</code>, 3 shifts and 3 XORs, identical everywhere;</li><li><strong>noise drawn on every read</strong>, seen or not — so the <em>sequence</em> never depends on what happened;</li><li><strong>no state outside the match</strong>: strategies&#x27; 64 bytes zeroed each round;</li><li><strong>IEEE single-precision floats, no fused multiply-add</strong>: <code>-ffp-contract=off</code> on the PC; the M0+&#x27;s soft-float has no FMA to fuse into.</li></ul>
+<table><thead><tr><th><strong>Measured on the host</strong></th><th></th></tr></thead><tbody><tr><td>whole league (1500 matches) twice, same seed</td><td><strong>4C26E6F2</strong> both times</td></tr><tr><td>the next seed instead</td><td><code>B9662C8B</code> — different</td></tr><tr><td>built at <code>-O0</code>, <code>-O2</code>, <code>-Os</code></td><td><strong>identical</strong> league and tournament hashes</td></tr></tbody></table>
+<p><strong>Not measured:</strong> that the chip&#x27;s soft-float matches the PC&#x27;s SSE bit for bit.<br>It should — both round every operation to nearest-even — and the <code>$RESULT</code><br>hash is how you find out (Lab Part 1).</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Map — Three Tasks on Lesson 07&#x27;s Kernel</h2>
+<figure class="diagram"><svg viewBox="0 0 820 230" role="img" aria-label="Three RTOS tasks: sim at priority 3 every 20 ms writes a snapshot; oled at priority 1 every 80 ms copies it and draws; shell at priority 2 blocks on the UART and sets request flags">
+  <defs><marker id="s18a4" markerWidth="7" markerHeight="7" refX="6.2" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.4 0.7 L6.2 3 L0.4 5.3 z" fill="currentColor"/></marker></defs>
+  <rect class="box hifill" x="20" y="30" width="230" height="110" rx="8"/>
+  <text x="135" y="56" text-anchor="middle">sim  - prio 3, 20 ms</text>
+  <text x="135" y="78" text-anchor="middle" class="lbl">pad_read, beep_poll, rules</text>
+  <text x="135" y="96" text-anchor="middle" class="lbl">speed x 4 match steps</text>
+  <text x="135" y="114" text-anchor="middle" class="lbl">at most 14 ms of each 20</text>
+  <rect class="reg" x="330" y="60" width="160" height="50"/>
+  <text x="410" y="90" text-anchor="middle" class="mono">snap_t snap</text>
+  <rect class="box" x="570" y="30" width="230" height="110" rx="8"/>
+  <text x="685" y="56" text-anchor="middle">oled - prio 1, 80 ms</text>
+  <text x="685" y="78" text-anchor="middle" class="lbl">copy snap, scene_draw()</text>
+  <text x="685" y="96" text-anchor="middle" class="lbl">oled_flush(): dirty pages</text>
+  <path class="hi" d="M250 85 H330" marker-end="url(#s18a4)"/>
+  <path class="wire" d="M490 85 H570" marker-end="url(#s18a4)"/>
+  <text x="290" y="76" text-anchor="middle" class="lbl">write</text>
+  <text x="530" y="76" text-anchor="middle" class="lbl">copy</text>
+  <rect class="box" x="295" y="160" width="230" height="56" rx="8"/>
+  <text x="410" y="184" text-anchor="middle">shell - prio 2</text>
+  <text x="410" y="204" text-anchor="middle" class="lbl">tour [seed], seed N, stats</text>
+  <path class="dash" d="M295 188 H135 V140" marker-end="url(#s18a4)"/>
+  <text x="200" y="182" class="mono lbl">req_tour</text>
+</svg></figure>
+<p>The snapshot is the only thing the display sees — built whole, then copied in<br>one critical section (<code>__disable_irq(); snap = s; __enable_irq();</code>). So a<br>frame never shows robot 0 from one step and robot 1 from the next, and the<br>display can run slower than the match without slowing it.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Measure — Counting Cycles on a Chip With No Cycle Counter</h2>
+<p>Cortex-M3 and up have <code>DWT-&gt;CYCCNT</code>. The M0+ does not: <code>core_cm0plus.h</code><br>defines no DWT at all. But the kernel&#x27;s SysTick already counts 48 MHz cycles:</p>
+<figure class="diagram"><svg width="830" viewBox="0 0 830 323" role="img" aria-label="The kernel&#x27;s SysTick: RELOAD = 47 999, one interrupt per ms; LOAD, 32 bits; VAL, 32 bits; ICSR, 32 bits">
+<text x="415" y="16" text-anchor="middle" class="lbl">The kernel&#x27;s SysTick: RELOAD = 47 999, one interrupt per ms</text>
+<text x="16" y="59" class="mono">LOAD</text>
+<text x="16" y="74" class="lbl">SYST_RVR</text>
+<text x="16" y="89" class="mono lbl">= 0x0000BB7F</text>
+<text x="175.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="52" width="160.0" height="26"/>
+<rect class="hifill" x="334.4" y="52" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 52 V56 M794.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M774.4 52 V56 M774.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M754.4 52 V56 M754.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M734.4 52 V56 M734.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M714.4 52 V56 M714.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M694.4 52 V56 M694.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M674.4 52 V56 M674.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M654.4 52 V56 M654.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M634.4 52 V56 M634.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M614.4 52 V56 M614.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M594.4 52 V56 M594.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M574.4 52 V56 M574.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M554.4 52 V56 M554.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M534.4 52 V56 M534.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M514.4 52 V56 M514.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M494.4 52 V56 M494.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M474.4 52 V56 M474.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M454.4 52 V56 M454.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M434.4 52 V56 M434.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M414.4 52 V56 M414.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M394.4 52 V56 M394.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M374.4 52 V56 M374.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M354.4 52 V56 M354.4 74 V78"/>
+<text x="335.4" y="44" text-anchor="start" class="mono lbl">23</text>
+<text x="804.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="784.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="764.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="744.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="724.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="704.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="684.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="664.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="644.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="624.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="604.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="584.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="564.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="544.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="524.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="504.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="484.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="464.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="444.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="424.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="364.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="324.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="284.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="244.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="204.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="184.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="574.4" y="91" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="145" class="mono">VAL</text>
+<text x="16" y="160" class="lbl">SYST_CVR, counts DOWN</text>
+<text x="175.4" y="130" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="138" width="160.0" height="26"/>
+<text x="254.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="334.4" y="138" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 138 V142 M794.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M774.4 138 V142 M774.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M754.4 138 V142 M754.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M734.4 138 V142 M734.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M714.4 138 V142 M714.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M694.4 138 V142 M694.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M674.4 138 V142 M674.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M654.4 138 V142 M654.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M634.4 138 V142 M634.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M614.4 138 V142 M614.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M594.4 138 V142 M594.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M574.4 138 V142 M574.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M554.4 138 V142 M554.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M534.4 138 V142 M534.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M514.4 138 V142 M514.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M494.4 138 V142 M494.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M474.4 138 V142 M474.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M454.4 138 V142 M454.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M434.4 138 V142 M434.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M414.4 138 V142 M414.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M394.4 138 V142 M394.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M374.4 138 V142 M374.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M354.4 138 V142 M354.4 160 V164"/>
+<text x="335.4" y="130" text-anchor="start" class="mono lbl">23</text>
+<text x="574.4" y="151" text-anchor="middle" class="mono">CURRENT</text>
+<text x="16" y="214" class="mono">ICSR</text>
+<text x="16" y="229" class="lbl">SCB</text>
+<text x="175.4" y="199" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="199" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="574.4" y="207" width="120.0" height="26"/>
+<text x="634.4" y="220" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="374.4" y="207" width="80.0" height="26"/>
+<text x="414.4" y="220" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="314.4" y="207" width="20.0" height="26"/>
+<rect class="dash" x="194.4" y="207" width="40.0" height="26"/>
+<rect class="reg" x="174.4" y="207" width="20.0" height="26"/>
+<rect class="reg" x="234.4" y="207" width="20.0" height="26"/>
+<rect class="reg" x="254.4" y="207" width="20.0" height="26"/>
+<rect class="hifill" x="274.4" y="207" width="20.0" height="26"/>
+<text x="284.4" y="199" text-anchor="middle" class="mono lbl">26</text>
+<rect class="reg" x="294.4" y="207" width="20.0" height="26"/>
+<rect class="reg" x="334.4" y="207" width="20.0" height="26"/>
+<rect class="reg" x="354.4" y="207" width="20.0" height="26"/>
+<rect class="reg" x="454.4" y="207" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M554.4 207 V211 M554.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M534.4 207 V211 M534.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M514.4 207 V211 M514.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M494.4 207 V211 M494.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M474.4 207 V211 M474.4 229 V233"/>
+<text x="514.4" y="220" text-anchor="middle" class="mono">VECTPENDING</text>
+<rect class="reg" x="694.4" y="207" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 207 V211 M794.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M774.4 207 V211 M774.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M754.4 207 V211 M754.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M734.4 207 V211 M734.4 229 V233"/>
+<path class="reg" stroke-width="0.6" d="M714.4 207 V211 M714.4 229 V233"/>
+<text x="754.4" y="220" text-anchor="middle" class="mono">VECTACTIVE</text>
+<path class="dash" d="M184.4 233 L213.9 239"/>
+<path class="dash" d="M244.4 233 L244.4 255"/>
+<path class="dash" d="M264.4 233 L264.4 271"/>
+<path class="dash" d="M284.4 233 L284.4 287"/>
+<path class="dash" d="M344.4 233 L344.4 255"/>
+<path class="dash" d="M364.4 233 L364.4 271"/>
+<text x="213.9" y="246" text-anchor="middle" class="mono halo lbl">NMIPENDSET</text>
+<text x="244.4" y="262" text-anchor="middle" class="mono halo lbl">PENDSVSET</text>
+<text x="264.4" y="278" text-anchor="middle" class="mono halo lbl">PENDSVCLR</text>
+<text x="284.4" y="294" text-anchor="middle" class="mono halo">PENDSTSET</text>
+<text x="304.4" y="246" text-anchor="middle" class="mono halo lbl">PENDSTCLR</text>
+<text x="344.4" y="262" text-anchor="middle" class="mono halo lbl">ISRPREEMPT</text>
+<text x="364.4" y="278" text-anchor="middle" class="mono halo lbl">ISRPENDING</text>
+</svg></figure>
+<pre class="lang-c"><code>__disable_irq();
+uint32_t t = os_ticks();
+uint32_t v = SysTick-&gt;VAL;
+uint32_t pend = SCB-&gt;ICSR &amp; SCB_ICSR_PENDSTSET_Msk;
+__enable_irq();
+if (pend &amp;&amp; v &gt; load / 2u) { t++; }      /* wrapped, not yet counted */
+return t * (load + 1u) + (load - v);</code></pre>
+<p><code>cycles = ticks × 48 000 + (47 999 − VAL)</code>. The one trap: VAL has wrapped to<br>47 999 but the interrupt has not counted it yet — then a measurement is 48 000<br>cycles too <em>small</em>. With interrupts off, <code>PENDSTSET</code> says exactly that.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: The Time Budget — 20 000 Cycles</h2>
+<p><code>STEP_BUDGET 20000u</code>: <strong>417 µs</strong> per <code>strategy_step()</code> call, measured around<br>every call by the referee (<code>m-&gt;clock</code>):</p>
+<pre class="lang-c"><code>uint32_t t0 = m-&gt;clock();
+m-&gt;e[i]-&gt;fn(&amp;m-&gt;view[i], &amp;m-&gt;cmd[i], &amp;m-&gt;mem[i]);
+uint32_t c = m-&gt;clock() - t0;
+if (c &gt; m-&gt;cyc_max[i]) { m-&gt;cyc_max[i] = c; }</code></pre>
+<p>Why a budget at all? A real sumo robot&#x27;s 50 Hz loop also has to read sensors,<br>run motor PWM, and talk — the strategy gets a slice. Here, every soft-float<br>operation costs ~50–100 cycles (lesson 10), so 20 000 cycles is a few hundred<br>float operations: plenty for a state machine, not enough for a search.</p>
+<p>The worst call goes into <code>$RESULT</code>; <strong>an entry over budget is rejected</strong>. The<br>worst case — not the average — because a robot that misses one deadline in<br>a hundred misses the one that mattered.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: The Knob Is the Clock Rate</h2>
+<table><thead><tr><th>Knob (<code>pad.knob</code>, 0..1000)</th><th>Match steps per 20 ms tick</th><th>Means</th></tr></thead><tbody><tr><td>0–199</td><td>4</td><td>x1: real time</td></tr><tr><td>200–399, 400–599</td><td>8, 16</td><td>x2, x4</td></tr><tr><td>600–799</td><td>32</td><td>x8</td></tr><tr><td>800–1000</td><td>as many as fit in 14 ms</td><td>MAX (silent: no beeps)</td></tr></tbody></table>
+<pre class="lang-c"><code>uint32_t budget = speed ? 4u * speed : 100000u;
+for (uint32_t n = 0; n &lt; budget; n++) {
+    if (os_ticks() - now &gt;= 14u) { break; }
+    ...</code></pre>
+<p>The 14 ms cap is the design decision: <strong>if the CPU cannot keep up with x8, the<br>match slows down — it never skips steps</strong>, because skipped steps would change<br>the result. <code>stats</code> prints the achieved speed. The other 6 ms of each tick are<br>what keeps the shell and the OLED alive.</p>
+<p>How fast <em>is</em> one step on this chip? Not measured yet — <code>stats</code> prints the mean<br>and worst <code>match_step()</code> in cycles. That is Lab Part 1&#x27;s first number.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: Flash Is the Scarce Resource</h2>
+<table><thead><tr><th>Build</th><th>FLASH</th><th>of 32 KB</th></tr></thead><tbody><tr><td>first draft, shell parsed with <code>sscanf()</code></td><td>30 068 B</td><td>92 % — over the 29 KB line</td></tr><tr><td><code>sscanf()</code> replaced by an 11-line <code>number()</code></td><td>27 392 B</td><td></td></tr><tr><td><code>fmath.h</code>&#x27;s <code>f_sin</code>/<code>f_cos</code> called through one out-of-line copy</td><td><strong>27 056 B</strong></td><td>83 %</td></tr></tbody></table>
+<p><code>sscanf</code> dragged in <code>_scanf_i</code>, <code>__ssvfscanf_r</code> and <code>strtol</code>/<code>strtoul</code> —<br><strong>2.7 KB for parsing two numbers</strong>. <code>fmath.h</code>&#x27;s functions are <code>static inline</code>,<br>so each call site got its own polynomial; one out-of-line copy saved 0.5 KB<br>with <strong>bit-identical results</strong> (the host hash did not change).</p>
+<p>RAM: <strong>9 608 B</strong> of 12 KB — three task stacks (512 + 384 + 384 words), the<br>OLED&#x27;s 1 KB framebuffer, the match.</p>
+<p>What is left — about 2 KB under the line — is <strong>your</strong> <code>student.c</code>&#x27;s budget.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: The Opponents</h2>
+<table><thead><tr><th>Bot</th><th>Personality</th><th>Its weakness</th></tr></thead><tbody><tr><td><strong>Bull</strong></td><td>spins until it sees you, then charges flat out</td><td>watches the edge only while blind — lure it to the line</td></tr><tr><td><strong>Matador</strong></td><td>faces you and waits; a fast approach gets a sidestep, then a push from the side; after 2 s walks in</td><td>slow and predictable when nothing happens</td></tr><tr><td><strong>Spinner</strong></td><td>drives in wide arcs, scanning; turns in and pushes</td><td>can be met head-on</td></tr><tr><td><strong>Turtle</strong></td><td>never leaves home; keeps its nose at you; shoves when touched</td><td>it cannot chase — and it cannot be pushed nose-on</td></tr><tr><td><strong>Coward</strong></td><td>turns and runs from anything it sees</td><td>hard to <em>lose</em> to; hard to beat before 20 s</td></tr></tbody></table>
+<p>All five obey the student&#x27;s rules exactly: <code>robot_view_t</code> only, state only in<br><code>strategy_mem_t</code>, no globals. Read <code>bots.c</code> — for technique, and for holes.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: The League — Measured on the Host</h2>
+<p>All six strategies, every pair, 100 matches each, seeds alternating corners:</p>
+<table><thead><tr><th>#</th><th>Strategy</th><th>P</th><th>W</th><th>D</th><th>L</th><th>s-out</th><th>Pts</th></tr></thead><tbody><tr><td>1</td><td>Spinner</td><td>500</td><td>390</td><td>21</td><td>89</td><td>4</td><td>1191</td></tr><tr><td>2</td><td>Bull</td><td>500</td><td>375</td><td>42</td><td>83</td><td>2</td><td>1167</td></tr><tr><td>3</td><td>Turtle</td><td>500</td><td>221</td><td>69</td><td>210</td><td>6</td><td>732</td></tr><tr><td>4</td><td>Matador</td><td>500</td><td>201</td><td>36</td><td>263</td><td>1</td><td>639</td></tr><tr><td>5</td><td><strong>student</strong> (starter)</td><td>500</td><td>152</td><td>105</td><td>243</td><td><strong>27</strong></td><td>561</td></tr><tr><td>6</td><td>Coward</td><td>500</td><td>4</td><td>41</td><td>455</td><td>20</td><td>53</td></tr></tbody></table>
+<p><em>s-out</em>: rounds lost by driving out with nobody touching for 0.5 s. The starter<br>loses 27 rounds <strong>on its own</strong> — the cheapest points in the table to win back.</p>
+<p>19.3 hours of simulated sumo in <strong>1.9 s</strong> on a PC — about <strong>36 000×</strong> real<br>time. That is why the class tournament is run on the host.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: Head to Head — the Order to Beat Them In</h2>
+<p>Row&#x27;s wins–draws–losses against the column, 100 matches (host):</p>
+<table><thead><tr><th></th><th>Spinner</th><th>Bull</th><th>Turtle</th><th>Matador</th><th>Coward</th></tr></thead><tbody><tr><td><strong>student</strong></td><td>13-17-70</td><td>28-37-35</td><td>7-23-70</td><td>15-19-66</td><td><strong>89-9-2</strong></td></tr></tbody></table>
+<p>So the ladder for the starter is <strong>Coward → Bull → Matador → Turtle →<br>Spinner</strong>. Bull is even with it already — it is just <em>reckless</em>. Turtle is hard<br>for a specific reason (slide 7): it always faces you.</p>
+<p>And the firmware&#x27;s own tournament, seed 2026, 4 matches per bot:<br><code>$RESULT,student,5,4,11,3AA81370,...</code> — <strong>5 wins, 4 draws, 11 losses</strong>. The<br>example <code>host/strategies/alice.c</code>, the starter with each Lab part done once<br>plainly, scores <strong>8-5-7</strong> on the same seed and finishes 3rd of 8 in the<br>host league, above Turtle and Matador.</p>
+</section>
+<section class="slide">
+<h2>Slide 24: Submitting — and Why Cheating Does Not Pay</h2>
+<pre><code>$RESULT,&lt;name&gt;,&lt;W&gt;,&lt;D&gt;,&lt;L&gt;,&lt;hash&gt;,&lt;max cycles&gt;,&lt;build&gt;*CS</code></pre>
+<table><thead><tr><th>Field</th><th>Catches</th></tr></thead><tbody><tr><td><code>*CS</code></td><td>a line edited by hand — lesson 08&#x27;s NMEA XOR checksum</td></tr><tr><td><code>&lt;hash&gt;</code></td><td>FNV-1a over every round&#x27;s winner, end step and final positions; the TA re-runs <strong>your</strong> <code>student.c</code> on the host with the same seed and must get the same hash</td></tr><tr><td><code>&lt;max cycles&gt;</code></td><td>a strategy over the 20 000-cycle budget</td></tr><tr><td><code>&lt;build&gt;</code></td><td>FNV-1a of every flash byte: which exact firmware produced the line</td></tr></tbody></table>
+<p>And copy-paste? <strong>Two students with the same strategy get the same hash</strong> —<br>the hash is the behaviour, not the name.</p>
+<p>On the host, <code>run.bat</code> compiles each file with<br><code>-DSTRATEGY_PREFIX=&lt;file name&gt;</code> and checks it with <code>nm</code>:</p>
+<pre><code>0000000000000000 b calls.0
+REJECT host\strategies\cheater.c: the symbols above are variables outside strategy_mem_t</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 25: The Host League — Thirty Files, One Program</h2>
+<p>Everyone writes <code>strategy_step</code>. How do 30 of them link together?</p>
+<pre class="lang-c"><code>/* strategy.h */
+#define strategy_step STRATEGY_CAT(STRATEGY_PREFIX, _step)   /* -&gt; alice_step */
+#define strategy_name STRATEGY_CAT(STRATEGY_PREFIX, _name)
+
+/* host/register.h, force-included with gcc -include */
+__attribute__((constructor))
+static void STRATEGY_CAT(STRATEGY_PREFIX, _register)(void)
+{
+    league_register(REG_STR(STRATEGY_PREFIX), strategy_step);
+}</code></pre>
+<p>The <strong>macro</strong> renames each file&#x27;s function after its file name; the<br><strong>constructor</strong> — a function the C runtime calls before <code>main()</code> — hands it to<br>the league. Nobody edits a list, and the league sorts entries by name so link<br>order cannot change a result.</p>
+<pre><code>host\run.bat strategies\alice.c strategies\bob.c</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 26: What Was Measured — and What Could Not Be</h2>
+<p><strong>Measured on the host</strong> (<code>host\run.bat</code>, all checks pass, exit 0):</p>
+<table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>top speed / half-speed time vs the motor model</td><td>0.800 m/s; 50.0 ms vs 47.7 ms</td></tr><tr><td>side-on pushed out; nose-on pushing back holds</td><td>1085 ms; 1 mm in 6 s</td></tr><tr><td>distance sensor at 300 mm</td><td>299 mm mean, 3.9 % misses</td></tr><tr><td>edge sensors</td><td><code>0x3</code> with the nose on the line, <code>0x0</code> at the centre</td></tr><tr><td>league twice, same seed; <code>-O0</code>/<code>-O2</code>/<code>-Os</code></td><td>identical hashes</td></tr><tr><td>tournament repeats</td><td><code>3AA81370</code> twice</td></tr><tr><td><code>scene.c</code> + <code>oled.c</code> on the host</td><td>ring and opponent where they belong</td></tr></tbody></table>
+<p><strong>Not measured — nothing here has run on the chip or in Wokwi:</strong></p>
+<ul><li>the cycle cost of a <code>match_step()</code> and of each strategy on the M0+;</li><li>whether x8 keeps up (<code>stats</code> → achieved speed);</li><li>whether the chip&#x27;s <code>$RESULT</code> hash equals the host&#x27;s <code>3AA81370</code> for seed 2026 — the claim the whole submission scheme rests on;</li><li>the OLED picture, the buzzer, the joystick feel.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 27: What Carries Forward</h2>
+<ul><li><strong>Contracts make teams.</strong> <code>strategy_step()</code> is lesson 12&#x27;s game loop and Part 3&#x27;s <code>control_step()</code> in miniature: a fixed interface, a fixed budget, fixed memory. Whoever is on the other side can be swapped — a bot, a joystick, a classmate.</li><li><strong>Simulate the plant, keep the controller real.</strong> The brains here are the C that would drive a real mini-sumo robot; only <code>world.c</code> would go.</li><li><strong>Determinism is a feature you build.</strong> One RNG per purpose, no hidden state, same-instant sensing, no FMA. Without it, no result in this lesson could be checked.</li><li><strong>Lesson 19 is yours.</strong> The final project starts from everything here: an RTOS, a display, a simulated world, a measured budget — and a way to prove what your code did.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:18_Robot_Competition', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:18_Robot_Competition') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

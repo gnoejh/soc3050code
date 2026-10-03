@@ -1,0 +1,2 @@
+# host/run.sh and run.bat write their build and flight logs here
+out/

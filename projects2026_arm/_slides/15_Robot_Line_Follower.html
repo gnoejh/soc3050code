@@ -1,0 +1,836 @@
+<title>Robot Line Follower: A Robot That Lives Inside the Chip</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Robot Line Follower: A Robot That Lives Inside the Chip</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Robot Line Follower: A Robot That Lives Inside the Chip</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>A robot races laps of a taped track on the OLED. Turn the knob up and it<br>goes faster — until a corner throws it off the line.</strong></p>
+<p>There is no robot. Its motors, its tyres, its seven light sensors and the<br>track itself are a <strong>world task</strong> inside the same firmware, running at the<br>top priority, 200 times a second. Your controller is a separate task that<br>sees only what a real line follower would see — seven numbers and two<br>encoder counts — and answers with two wheel speeds. That split is<br><strong>Software-In-The-Loop</strong>, and it is how the drone and robot lessons that<br>follow are all built.</p>
+<p>Figures marked <strong>measured on the host</strong> come from <code>host/sitl.c</code>, which races<br>the very same <code>world.c</code> and <code>control.c</code> on a PC. Nothing in this deck has yet<br>been watched running in Wokwi; slide 27 says exactly what that leaves open.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob: speed - ADC IN4</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - $LINE/$LAP</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - shell</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  buzzer - TIM3_CH1, lap beep</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B: next track</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A: start/stop</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL: manual/auto</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 365" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="reg" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  buzzer - TIM3_CH1, lap beep</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA4   an   knob: speed - ADC IN4</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - shell</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - $LINE/$LAP</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0</text>
+  <text x="76" y="220" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="198" width="29" height="34" rx="3"/>
+  <text x="102.5" y="212" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="198" width="29" height="34" rx="3"/>
+  <text x="134.5" y="212" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="198" width="29" height="34" rx="3"/>
+  <text x="166.5" y="212" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="198" width="29" height="34" rx="3"/>
+  <text x="198.5" y="212" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="198" width="29" height="34" rx="3"/>
+  <text x="230.5" y="212" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="198" width="29" height="34" rx="3"/>
+  <text x="262.5" y="212" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="198" width="29" height="34" rx="3"/>
+  <text x="294.5" y="212" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="198" width="29" height="34" rx="3"/>
+  <text x="326.5" y="212" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="198" width="29" height="34" rx="3"/>
+  <text x="358.5" y="212" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="198" width="29" height="34" rx="3"/>
+  <text x="390.5" y="212" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="198" width="29" height="34" rx="3"/>
+  <text x="422.5" y="212" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="198" width="29" height="34" rx="3"/>
+  <text x="454.5" y="212" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="198" width="29" height="34" rx="3"/>
+  <text x="486.5" y="212" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="198" width="29" height="34" rx="3"/>
+  <text x="518.5" y="212" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="198" width="29" height="34" rx="3"/>
+  <text x="550.5" y="212" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="198" width="29" height="34" rx="3"/>
+  <text x="582.5" y="212" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="252" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - OLED</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB5   in   button B: next track</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB4   in   button A: start/stop</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL: manual/auto</text>
+  <text x="310" y="357" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: The Race</h2>
+<table><thead><tr><th>You do</th><th>It does</th></tr></thead><tbody><tr><td>joystick up/down, <strong>A</strong></td><td>pick one of four tracks: OVAL, S-BENDS, HAIRPINS, FIGURE-8</td></tr><tr><td><strong>A</strong></td><td>lights out — the lap clock runs; <strong>A</strong> again: back to the line</td></tr><tr><td>knob</td><td>speed on the straights, 0..2000 mm/s</td></tr><tr><td><strong>B</strong></td><td>next track</td></tr><tr><td><strong>SEL</strong> (space)</td><td>manual: <em>you</em> drive with the joystick; the same timer judges you</td></tr><tr><td>serial monitor</td><td><code>kp 25</code>, <code>kd 1.5</code>, <code>noise 80</code>, <code>fail 3</code>, <code>stats</code> … live</td></tr></tbody></table>
+<p>Every finished lap beeps and prints <code>$LAP,&lt;track&gt;,&lt;ms&gt;*CS</code> — a frame with a<br>checksum, so <code>host/leaderboard.py</code> can rank the class without trusting anyone&#x27;s<br>typing.</p>
+<p><strong>Model → Map → Measure</strong> in this lesson: the robot and the controller are<br>the models; the RTOS tasks and two small structs are the map; the host race<br>results and the chip&#x27;s own cycle counts are the measurements.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: Software-In-The-Loop</h2>
+<figure class="diagram"><svg viewBox="0 0 640 230" role="img" aria-label="World task produces sensors_t for the control task, which returns actuators_t; display and ui tasks read both">
+  <rect class="box" x="20" y="40" width="200" height="110" rx="6"/>
+  <text x="120" y="64" text-anchor="middle" class="mono">world  (prio 5)</text>
+  <text x="120" y="84" text-anchor="middle" class="lbl">200 Hz - world.c, track.c</text>
+  <text x="120" y="102" text-anchor="middle" class="lbl">motors, tyres, friction circle</text>
+  <text x="120" y="120" text-anchor="middle" class="lbl">sensor bar, encoders</text>
+  <text x="120" y="138" text-anchor="middle" class="lbl">the judge: laps, DNF</text>
+  <rect class="hifill" x="420" y="40" width="200" height="110" rx="6"/>
+  <text x="520" y="64" text-anchor="middle" class="mono">control  (prio 4)</text>
+  <text x="520" y="84" text-anchor="middle" class="lbl">100 Hz - control.c</text>
+  <text x="520" y="102" text-anchor="middle" class="lbl">the ONLY code that would</text>
+  <text x="520" y="120" text-anchor="middle" class="lbl">ship on a real robot</text>
+  <path class="wire" d="M220 70 H412"/>
+  <path d="M420 70 l-10 -5 v10 z" fill="currentColor"/>
+  <text x="320" y="62" text-anchor="middle" class="mono">sensors_t</text>
+  <path class="wire" d="M420 120 H228"/>
+  <path d="M220 120 l10 -5 v10 z" fill="currentColor"/>
+  <text x="320" y="138" text-anchor="middle" class="mono">actuators_t</text>
+  <rect class="dash" x="160" y="180" width="320" height="38" rx="6"/>
+  <text x="320" y="204" text-anchor="middle" class="lbl">ui (50 Hz), shell, display (10 Hz) - read both, never steer</text>
+  <text x="320" y="24" text-anchor="middle" class="lbl">the dashed line between the boxes is the whole interface</text>
+</svg></figure>
+<p>The controller cannot cheat: it is never told where the robot is. Swap<br><code>world.c</code> for real sensor drivers and a motor driver and <strong><code>control.c</code> does<br>not change</strong>. Run it on a PC against the same <code>world.c</code> and it does not<br>change either — that is <code>host/sitl.c</code>, and it is why this lesson can quote<br>lap times without a simulator.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Contract — <code>control.h</code></h2>
+<pre class="lang-c"><code>typedef struct {
+    /* line[i]: reflectance 0..1000 - 1000 is black tape, ~100 is white floor.
+     * i = 0 is the RIGHTMOST sensor, i = 6 the leftmost, looking forward;
+     * sensor i sits (i - 3) * 13 mm to the left of the robot&#x27;s centreline.  */
+    uint16_t line[LINE_SENSORS];
+    int32_t  enc_left, enc_right;   /* wheel encoder counts since reset         */
+    int16_t  knob;                  /* the operator&#x27;s speed setting, 0..1000    */
+    uint32_t t_ms;                  /* time of this reading                     */
+} sensors_t;
+
+typedef struct {
+    int16_t left, right;            /* wheel speed commands, mm/s, +-2000       */
+} actuators_t;
+
+void control_step(const sensors_t *in, actuators_t *out);   /* at 100 Hz    */</code></pre>
+<p><strong>Integers at the boundary</strong> — readings arrive as ADC counts, motor drivers<br>take integer set-points. What happens inside <code>control_step()</code> is the<br>controller&#x27;s business; this one uses <code>float</code> (lesson 10 measured what each<br>soft-float operation costs on this core).</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Five Tasks, Five Rates</h2>
+<table><thead><tr><th>Task</th><th>Prio</th><th>Period</th><th>Job</th><th>Stack (words)</th></tr></thead><tbody><tr><td><code>world</code></td><td>5</td><td>5 ms</td><td><code>world_step()</code> + <code>world_sense()</code></td><td>160</td></tr><tr><td><code>control</code></td><td>4</td><td>10 ms</td><td><code>control_step()</code>, or the joystick in manual</td><td>160</td></tr><tr><td><code>ui</code></td><td>3</td><td>20 ms</td><td><code>pad_read()</code>, buttons, beeps, <code>$LINE</code> at 10 Hz, <code>$LAP</code></td><td>256</td></tr><tr><td><code>shell</code></td><td>2</td><td>on input</td><td><code>kp ki kd df slow thr</code>, <code>noise ambient fail</code>, <code>gains</code>, <code>stats</code></td><td>224</td></tr><tr><td><code>display</code></td><td>1</td><td>100 ms</td><td>the OLED: robot, laps, sensor bar</td><td>256</td></tr></tbody></table>
+<p><strong>Rate-monotonic</strong>: the shorter the period, the higher the priority (lesson<br>07). The world must never be late — a late physics step is a robot that<br>teleports. The display is the opposite: it gets whatever time is left, and<br>the I²C driver is polled, so its flush <em>is</em> CPU time.</p>
+<p>Stacks are sized from <code>gcc -fstack-usage</code> plus newlib&#x27;s printf frames (the<br>deepest chain is <code>send_frame()</code> → <code>vsnprintf()</code> → <code>_svfprintf_r</code>, ~460 bytes),<br>then checked live with <code>stats</code>. The build: <strong>FLASH 26 920 B, RAM 9 352 B</strong>.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Model 1 — Differential Drive</h2>
+<figure class="diagram"><svg viewBox="0 0 560 200" role="img" aria-label="Top view of a differential-drive robot: two wheels 100 mm apart, sensor bar 70 mm ahead">
+  <rect class="box" x="180" y="60" width="120" height="100" rx="8"/>
+  <rect class="reg" x="200" y="44" width="50" height="16"/>
+  <rect class="reg" x="200" y="160" width="50" height="16"/>
+  <text x="225" y="38" text-anchor="middle" class="lbl">left wheel  wl</text>
+  <text x="225" y="192" text-anchor="middle" class="lbl">right wheel  wr</text>
+  <circle cx="225" cy="110" r="4" fill="currentColor"/>
+  <text x="225" y="128" text-anchor="middle" class="lbl">axle (x, y)</text>
+  <path class="wire" d="M225 110 H360"/>
+  <rect class="hifill" x="360" y="60" width="10" height="100"/>
+  <text x="380" y="70" class="mono">7 sensors, 13 mm apart</text>
+  <text x="292" y="104" text-anchor="middle" class="lbl">70 mm</text>
+  <path class="dash" d="M225 110 H520"/>
+  <text x="470" y="104" class="lbl">heading th</text>
+  <path class="wire" d="M150 44 V176"/>
+  <text x="142" y="114" text-anchor="end" class="lbl">100 mm</text>
+</svg></figure>
+<pre><code>v     = (wl + wr) / 2           forward speed, mm/s
+omega = (wr - wl) / 100 mm      turn rate, rad/s: right wheel faster = turn left</code></pre>
+<p>To steer, a line follower does not turn a wheel — it <strong>speeds one side up<br>and slows the other</strong>. Everything the controller decides comes down to the<br>difference <code>wr - wl</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Model 2 — Motors Have Mass</h2>
+<pre class="lang-c"><code>    float dl = f_clamp((ul - world.wl) * (dt / MOTOR_TAU_S), -MOTOR_ACC_MMS2 * dt, MOTOR_ACC_MMS2 * dt);
+    float dr = f_clamp((ur - world.wr) * (dt / MOTOR_TAU_S), -MOTOR_ACC_MMS2 * dt, MOTOR_ACC_MMS2 * dt);
+    world.wl += dl;
+    world.wr += dr;</code></pre>
+<p>A first-order lag, <strong>τ = 40 ms</strong>, and a slew limit of <strong>8 m/s²</strong>. Ask for<br>1000 mm/s from standstill and you get 63% of it after 40 ms — and no faster<br>than the limit allows.</p>
+<p>Why model it? Because a controller tuned against a robot with no lag<br><strong>overshoots</strong> a real one. Every lap 1 in the results is ~80 ms slower than<br>lap 2 for exactly this reason: a standing start.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Model 3 — The Friction Circle</h2>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="Friction circle: braking, accelerating and cornering share one 0.7 g budget">
+  <circle class="reg" cx="140" cy="110" r="80"/>
+  <path class="dash" d="M140 20 V200 M50 110 H230"/>
+  <text x="140" y="16" text-anchor="middle" class="lbl">accelerate</text>
+  <text x="140" y="216" text-anchor="middle" class="lbl">brake</text>
+  <text x="236" y="114" class="lbl">corner</text>
+  <path class="hi" d="M140 110 L196 54"/>
+  <circle cx="196" cy="54" r="4" fill="currentColor"/>
+  <text x="200" y="48" class="lbl">0.7 g = 6867 mm/s^2</text>
+  <text x="300" y="60" class="mono">ask for more than the circle</text>
+  <text x="300" y="80" class="mono">and the tyres give the circle -</text>
+  <text x="300" y="100" class="mono">the robot points into the turn</text>
+  <text x="300" y="120" class="mono">and SLIDES out of it.</text>
+  <text x="300" y="160" class="lbl">corner speed limit:  v = sqrt(0.7 g x R)</text>
+</svg></figure>
+<pre class="lang-c"><code>    float ax = TYRE_K * (v * c - world.vx), ay = TYRE_K * (v * s - world.vy);
+    float a2 = ax * ax + ay * ay;
+    world.slipping = (uint8_t)(a2 &gt; MU_G_MMS2 * MU_G_MMS2);
+    if (world.slipping) {
+        float k = MU_G_MMS2 / f_sqrt(a2);          /* on the circle&#x27;s edge */</code></pre>
+<p>The wheels set where the robot <strong>points</strong>; the tyres pull its <strong>velocity</strong><br>toward that — by at most 0.7 g. This one limit is the whole game: speed is a<br>gamble against the tightest corner.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Encoders Count Wheels, Not Ground</h2>
+<pre class="lang-c"><code>    /* 4. encoders: what the wheels turned, slip or no slip */
+    world.dist_l += world.wl * dt;
+    world.dist_r += world.wr * dt;</code></pre>
+<p>360 ticks per revolution on a 16 mm wheel: <strong>3.58 ticks per mm</strong>. While the<br>friction circle is saturated the wheels keep turning and the robot slides<br>sideways, so the encoders report distance the robot never travelled — exactly<br>as real ones do.</p>
+<p>That is why this controller ignores them: odometry is only as good as the<br>grip. They are in <code>sensors_t</code> for Lab Part 8, and for lesson 16, which needs<br>them to know how far it has gone.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Model 4 — The Sensor Bar</h2>
+<figure class="diagram"><svg viewBox="0 0 600 170" role="img" aria-label="Seven sensor spots across a 19 mm tape; coverage ramps from 1 to 0 between 5.5 and 13.5 mm from the centreline">
+  <rect class="hifill" x="276" y="10" width="38" height="150"/>
+  <text x="295" y="168" text-anchor="middle" class="lbl">tape 19 mm</text>
+  <circle class="reg" cx="139" cy="85" r="8"/><circle class="reg" cx="191" cy="85" r="8"/>
+  <circle class="reg" cx="243" cy="85" r="8"/><circle class="hi"  cx="295" cy="85" r="8"/>
+  <circle class="hi"  cx="347" cy="85" r="8"/><circle class="reg" cx="399" cy="85" r="8"/>
+  <circle class="reg" cx="451" cy="85" r="8"/>
+  <text x="139" y="66" text-anchor="middle" class="mono">6</text><text x="191" y="66" text-anchor="middle" class="mono">5</text>
+  <text x="243" y="66" text-anchor="middle" class="mono">4</text><text x="295" y="66" text-anchor="middle" class="mono">3</text>
+  <text x="347" y="66" text-anchor="middle" class="mono">2</text><text x="399" y="66" text-anchor="middle" class="mono">1</text>
+  <text x="451" y="66" text-anchor="middle" class="mono">0</text>
+  <text x="139" y="118" text-anchor="middle" class="lbl">left</text>
+  <text x="451" y="118" text-anchor="middle" class="lbl">right</text>
+  <text x="520" y="90" class="lbl">13 mm pitch</text>
+</svg></figure>
+<pre class="lang-c"><code>        /* 1 with the spot wholly on tape, 0 wholly off, a ramp between */
+        world.cov[k] = f_clamp((TAPE_HALF_MM + SPOT_MM - dmin) / (2.0f * SPOT_MM), 0.0f, 1.0f);</code></pre>
+<p>Each sensor sees a 4 mm spot; <code>dmin</code> is its distance to the nearest piece of<br>centreline that has tape. The reading is then<br><code>100 + 800 × cov + ambient + noise</code>, clamped to 0..1000. The ramp is what<br>makes the position <em>interpolate</em> between sensors instead of jumping 13 mm at<br>a time.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Finding the Tape Cheaply</h2>
+<p>The track is up to 111 segments; seven sensors × 111 exact distances, 200<br>times a second, is ~155 000 distance calculations a second in soft float.<br>So <code>cover()</code> filters first, in integers:</p>
+<pre class="lang-c"><code>        if (ibx + reach &lt; lox || ibx - reach &gt; hix || iby + reach &lt; loy || iby - reach &gt; hiy) { continue; }
+        cand[nc++] = i;</code></pre>
+<p>A box test per segment against the bar&#x27;s centre — four compares — and the<br>exact <code>track_seg_dist()</code> only for the handful that pass — <strong>measured on the<br>host, 2.8 to 3.7 segments per step on average, 6 at most</strong>, out of 70–110.<br>On the FIGURE-8&#x27;s<br><strong>crossing</strong> both branches pass the test, so every sensor goes dark as the<br>robot crosses: the physics of the cross line falls out for free.</p>
+<p>The judge does the opposite: it searches only <strong>segments near the last<br>one</strong> (<code>k = -4 .. 6</code>), so at the crossing it stays on the branch the robot is<br>really on. Two searches, two different questions.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Tracks Are Turtle Programs</h2>
+<pre class="lang-c"><code>/* 1 OVAL - start mid-way along the bottom straight, heading east. */
+static const turtle_t oval[] = {
+    { 600, 0, 0 }, { 400, 180, 0 }, { 1200, 0, 0 }, { 400, 180, 0 }, { 600, 0, 0 },
+};</code></pre>
+<p>&quot;Straight 600 mm, then 180° left on a 400 mm radius…&quot;. <code>track_build()</code><br>walks the commands into points, cutting each arc into chords of<br><code>sqrt(8R)</code> mm so the polyline never strays more than <strong>1 mm</strong> from the true<br>arc — less than the sensor can see.</p>
+<p>A closed track is a checkable fact: the turtle must come home. Measured on<br>the host, before snapping the last point shut:</p>
+<table><thead><tr><th>Track</th><th>Points</th><th>Length</th><th>Box</th><th>Closure miss</th></tr></thead><tbody><tr><td>OVAL</td><td>71</td><td>4911 mm</td><td>1998 × 800</td><td>0.00 mm</td></tr><tr><td>S-BENDS</td><td>97</td><td>4638 mm</td><td>1760 × 700</td><td>0.00 mm</td></tr><tr><td>HAIRPINS</td><td>111</td><td>7076 mm</td><td>1819 × 720</td><td>0.00 mm</td></tr><tr><td>FIGURE-8</td><td>92</td><td>5634 mm</td><td>2026 × 840</td><td>0.00 mm</td></tr></tbody></table>
+</section>
+<section class="slide">
+<h2>Slide 12: Four Tracks, One Number Each</h2>
+<table><thead><tr><th>Track</th><th>Tightest radius</th><th>Corner limit √(0.7 g·R)</th><th>The trick</th></tr></thead><tbody><tr><td>OVAL</td><td>400 mm</td><td>1657 mm/s</td><td>none: learn the controls</td></tr><tr><td>S-BENDS</td><td>220 mm</td><td>1229 mm/s</td><td>the corner reverses — the error flips side fast</td></tr><tr><td>HAIRPINS</td><td>120 mm</td><td><strong>908 mm/s</strong></td><td>three U-turns, one of them to the right</td></tr><tr><td>FIGURE-8</td><td>420 mm</td><td>1698 mm/s</td><td>a <strong>crossing</strong> at 90°, and a 126 mm <strong>gap</strong> in the tape</td></tr></tbody></table>
+<p>The corner limit is physics, not code: no controller, however clever, takes<br>a 120 mm hairpin above ~0.9 m/s. A smart one slows down <em>before</em> it — which<br>needs to know a corner is coming. Lab Part 9.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The Judge</h2>
+<pre class="lang-c"><code>    if (world.halfway &amp;&amp; world.s &lt; 0.1f * L &amp;&amp; world.seg &lt; (track.n - 1) / 2) {
+        /* crossed the start line going forward, having been round */</code></pre>
+<ul><li><strong>Progress</strong> <code>s</code>: distance along the centreline of the nearest point.</li><li><strong>A lap</strong> counts only after passing half distance — reversing over the start line does not score.</li><li><strong>DNF, lost</strong>: no sensor over tape for <strong>1 s</strong> (<code>DNF_WHITE_MS</code>).</li><li><strong>DNF, off</strong>: robot centre more than <strong>150 mm</strong> from the line (<code>DNF_FAR_MM</code>) — cutting across a hairpin to the next straight is not a shortcut.</li></ul>
+<p>The judge lives in <code>world.c</code> because it uses the truth — where the robot<br>really is — which the controller is never told.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Control Step 1 — Where Is the Line?</h2>
+<pre class="lang-c"><code>        float w = (float)in-&gt;line[i] - g-&gt;thr;
+        if (w &lt;= 0.0f) { continue; }
+        float y = (float)((i - (LINE_SENSORS - 1) / 2) * SENSOR_PITCH_MM);
+        sw  += w;
+        swy += w * y;</code></pre>
+<p><code>pos = swy / sw</code> — the sensor positions, weighted by how much darker than the<br>threshold each reads. Worked: tape 5 mm left of centre.</p>
+<table><thead><tr><th>Sensor</th><th>y (mm)</th><th>distance</th><th>reading</th><th>weight (− 300)</th></tr></thead><tbody><tr><td>4</td><td>+13</td><td>8 mm</td><td>650</td><td>350</td></tr><tr><td>3</td><td>0</td><td>5 mm</td><td>900</td><td>600</td></tr><tr><td>2</td><td>−13</td><td>18 mm</td><td>100</td><td>—</td></tr></tbody></table>
+<p><code>pos = 350 × 13 / 950 = 4.8 mm</code>. Seven sensors 13 mm apart resolve a few<br>millimetres — the subtraction of <code>thr</code> is what keeps the white floor from<br>voting.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Control Step 2 — PID</h2>
+<pre class="lang-c"><code>    float d_raw = have_prev ? (e - e_prev) / dt : 0.0f;
+    d_filt += g-&gt;dfilt * (d_raw - d_filt);               /* first-order low-pass */
+    ...
+    float turn = g-&gt;kp * e + g-&gt;ki * i_acc + g-&gt;kd * d_filt;</code></pre>
+<p><code>left = v − turn</code>, <code>right = v + turn</code>. Defaults: <strong>kp 20, kd 1.0, ki 0,<br>dfilt 0.5</strong>.</p>
+<p><strong>Why P alone is not enough.</strong> The sensors sit 70 mm ahead of the axle, so<br>they see the robot&#x27;s <em>heading</em> error early — a free derivative, worth<br>70 mm ÷ v of lead: 70 ms at 1 m/s, but only 50 ms at 1.4 m/s. Meanwhile the<br>motors lag 40 ms. Speed up and the free lead shrinks below the lag, and P<br>alone starts to weave. D puts the lead back.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Steps 3 and 4 — Speed, and a Lost Line</h2>
+<pre class="lang-c"><code>    float v = base * (1.0f - g-&gt;slow * f_clamp(f_abs(e) / HALF_BAR_MM, 0.0f, 1.0f));</code></pre>
+<p><strong>Corner slow-down</strong>: a big error usually means a corner, so lose up to half<br>the speed (<code>slow 0.5</code>) as the line drifts to the bar&#x27;s edge.</p>
+<pre class="lang-c"><code>        if (f_abs(last_pos) &lt; GAP_POS_MM &amp;&amp; lost_ms &lt;= COAST_MS) {
+            ctl_state.lost = 1;                         /* a gap: straight on   */</code></pre>
+<p><strong>Lost line</strong>: the line was near the middle when it vanished → probably a<br><strong>gap</strong>: drive straight for up to 400 ms. It was at an edge → the robot<br>overshot a corner: <strong>spin toward that side</strong>. And if five or more sensors<br>are dark at once, it is a <strong>crossing</strong>: hold the last error and keep D and I<br>out of it.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Measured — Default Gains, Every Track</h2>
+<p><strong>Measured on the host</strong>: knob 500 (1000 mm/s), noise 15, five laps.</p>
+<table><thead><tr><th>Track</th><th>Lap 1</th><th>Laps 2–5</th><th>Max error</th><th>RMS error</th><th>Result</th></tr></thead><tbody><tr><td>OVAL</td><td>5.20 s</td><td>5.12 s</td><td>2.1 mm</td><td>1.2 mm</td><td>5 laps</td></tr><tr><td>S-BENDS</td><td>5.15 s</td><td>5.07 s</td><td>4.8 mm</td><td>1.6 mm</td><td>5 laps</td></tr><tr><td>HAIRPINS</td><td>7.54 s</td><td>7.46 s</td><td>3.6 mm</td><td>1.6 mm</td><td>5 laps</td></tr><tr><td>FIGURE-8</td><td>6.07 s</td><td>5.99 s</td><td>3.1 mm</td><td>1.3 mm</td><td>5 laps — crossing and gap</td></tr></tbody></table>
+<p>&quot;Error&quot; is the <strong>true</strong> distance of the robot&#x27;s centre from the tape, which<br>only the world knows. Laps 2–5 agree to 10 ms: with the noise seeded the same<br>way, the race is deterministic — run twice, identical numbers (test 7).</p>
+</section>
+<section class="slide">
+<h2>Slide 18: Measured — P vs PD vs PID</h2>
+<p><strong>Measured on the host</strong>: S-BENDS, knob <strong>700</strong> (1400 mm/s), noise 15.</p>
+<table><thead><tr><th>Controller</th><th>Best lap</th><th>Max error</th><th>RMS error</th><th>Result</th></tr></thead><tbody><tr><td>P only, kp 20</td><td>12.56 s</td><td>61.5 mm</td><td>27.5 mm</td><td>weaves, slides, recovers by spinning</td></tr><tr><td>P only, kp 10</td><td>13.19 s</td><td>47.7 mm</td><td>28.0 mm</td><td>lower gain does not cure it</td></tr><tr><td><strong>PD</strong>, kp 20 kd 1.0</td><td><strong>3.80 s</strong></td><td>12.8 mm</td><td><strong>5.4 mm</strong></td><td>clean</td></tr><tr><td>PID, ki 2</td><td>3.76 s</td><td>27.0 mm</td><td>7.0 mm</td><td>40 ms faster, sloppier</td></tr></tbody></table>
+<p>P alone is <strong>3.3× slower</strong> at this speed: it oscillates into the friction<br>limit, slides off, and the lost-line search drags it back. At 1000 mm/s<br>(slide 17&#x27;s speed) P alone is fine — the free lead of slide 15 is still<br>enough. <strong>The D term is what speed costs.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 19: Measured — How Fast Can It Go?</h2>
+<p><strong>Measured on the host</strong>: knob 300 → 1000 in steps of 25, 3 laps each; the<br>fastest setting before the first DNF.</p>
+<table><thead><tr><th>Track</th><th>slow 0.5 (default)</th><th>slow 0 (no slow-down)</th></tr></thead><tbody><tr><td>OVAL</td><td>2000 mm/s, best 2.81 s</td><td>2000 mm/s, 2.91 s</td></tr><tr><td>S-BENDS</td><td><strong>1550</strong> mm/s, 3.72 s</td><td>1350 mm/s, 4.26 s</td></tr><tr><td>HAIRPINS</td><td><strong>1350</strong> mm/s, 6.03 s</td><td>1150 mm/s, 6.68 s</td></tr><tr><td>FIGURE-8</td><td>2000 mm/s, 3.29 s</td><td>2000 mm/s, 3.37 s</td></tr></tbody></table>
+<p>On HAIRPINS the corner limit is 908 mm/s, yet the robot survives a 1350 mm/s<br>setting — because it slows <em>itself</em> in the corner. Without the slow-down it<br>is both <strong>200 mm/s less brave and 0.65 s slower</strong> per lap. On OVAL and<br>FIGURE-8 the wheel limit (2000) arrives before the friction limit does.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: Measured — Noise and the D Term</h2>
+<p><strong>Measured on the host</strong>: S-BENDS, knob 700. <em>Chatter</em> is the RMS change in<br><code>right − left</code> between control steps: how hard the motors buzz.</p>
+<table><thead><tr><th>Noise</th><th>dfilt 1.0 (none)</th><th>dfilt 0.5</th><th>dfilt 0.25</th></tr></thead><tbody><tr><td>0</td><td>3.81 s, 5.6 mm, <strong>238</strong></td><td>3.80 s, 5.3 mm, 120</td><td>3.84 s, 7.2 mm, 100</td></tr><tr><td>15</td><td>3.80 s, 5.5 mm, 256</td><td>3.80 s, 5.4 mm, 128</td><td>3.83 s, 7.2 mm, 103</td></tr><tr><td>80</td><td>3.82 s, 6.1 mm, <strong>602</strong></td><td>3.81 s, 5.7 mm, 256</td><td>3.85 s, 8.5 mm, 162</td></tr></tbody></table>
+<p><em>(best lap, RMS error, chatter mm/s)</em></p>
+<p>D differentiates noise: at noise 80 unfiltered, the motors are commanded<br><strong>2.4× as violently</strong>, for no gain in lap time. A filter halves it — but<br>filter too hard (0.25) and the RMS error grows by a third to a half, because a filter is a<br><strong>delay</strong>, and delay is what D was there to cancel. Even at noise 0 the<br>chatter is not zero: seven sensors make a staircase, and D sees every step.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: Measured — Broken Sensors, Bright Rooms</h2>
+<p><strong>Measured on the host</strong>, knob 500:</p>
+<table><thead><tr><th>Fault</th><th>OVAL best</th><th>S-BENDS best</th><th></th></tr></thead><tbody><tr><td>none</td><td>5.12 s</td><td>5.07 s</td><td></td></tr><tr><td>sensor 0 or 6 dead (an edge)</td><td>5.12 s</td><td>5.07 s</td><td>never needed at this speed</td></tr><tr><td><strong>sensor 3 dead</strong> (the centre)</td><td><strong>6.48 s</strong></td><td><strong>6.07 s</strong></td><td>a hole where the line should be</td></tr><tr><td>ambient +400, <code>thr 300</code></td><td>—</td><td>—</td><td>HAIRPINS: <strong>DNF</strong></td></tr><tr><td>ambient +400, <code>thr 650</code></td><td>—</td><td>5.09 s</td><td>HAIRPINS 7.46 s again</td></tr></tbody></table>
+<p>With the centre sensor dead, a centred line lights only its neighbours<br>faintly — below the threshold — so the controller thinks the line is<br><strong>lost</strong> while it is right underneath, and coasts. With 400 counts of<br>ambient light, the white floor reads 500 and <strong>every sensor votes</strong>. One<br>shell command — <code>thr 650</code> — is the whole fix: calibration, not cleverness.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: The OLED — Only What Moves</h2>
+<pre><code>+--------------------------------------------------------------------------------------------------------------------------------+
+|&#x27;&#x27;:&#x27;&#x27; &#x27;&#x27;&#x27;:&#x27;       :      .:                            .:           .:  :&#x27;&#x27;&#x27;&#x27;         :&#x27;&#x27;&#x27;.             &#x27;&#x27;&#x27;&#x27;:       :&#x27;&#x27;&#x27;&#x27;   .:  |
+|  :     &#x27;.        :       :                             :         .&#x27; :  &#x27;&#x27;&#x27;&#x27;.         :...&#x27;               .&#x27;        &#x27;&#x27;&#x27;&#x27;. .&#x27; :  |
+|                                                                                                                                |
+|               .&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;.          |
+|        :                                      ..&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;             |
+|        :                                       &#x27;.............................................   &#x27;&#x27;&#x27;&#x27; ..............            |
+|        :                                                                                       &#x27;&#x27;&#x27;:::              &#x27;.          |
+|                    &#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;:&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;&#x27;               |
+|.... .... :::: :::: .... .... ....    :   :  .:.  &#x27;...&#x27; &#x27;...&#x27; &#x27;...&#x27;       :  &#x27;. &#x27;...&#x27; :   :                                     |
++--------------------------------------------------------------------------------------------------------------------------------+</code></pre>
+<p><em>Excerpt of <code>run.bat</code>&#x27;s test 8: HAIRPINS after 9 s, drawn by this lesson&#x27;s<br><code>view.c</code> into <code>_lib/oled.c</code> on the PC, two pixel rows per text row. The robot<br>is the <code>:::</code> blob in the second U-turn; the bars at the bottom are the seven<br>sensors.</em></p>
+<p>The track is drawn <strong>once</strong>. The robot is a triangle drawn with <strong>XOR</strong>:<br>draw it again in the same place and it vanishes, restoring the tape under<br>it. So a frame dirties the robot&#x27;s one or two pages plus the two text rows.<br><strong>Measured on the host</strong> (test 9), racing with the display at 10 Hz: <strong>448 to<br>501 bytes per frame</strong> on the four tracks, against 1032 for a full repaint.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: Sharing Without Tearing</h2>
+<pre class="lang-c"><code>        actuators_t a;
+        __disable_irq(); a = sh_act; __enable_irq();</code></pre>
+<p>Every shared struct has <strong>one writer</strong>; readers copy it whole inside a<br>critical section a few microseconds long — lesson 03&#x27;s tearing rule. A<br>half-copied <code>sensors_t</code> is a sensor bar that never existed.</p>
+<p>Two things need more than that:</p>
+<ul><li><strong><code>track.pt</code></strong> is rewritten when you press <strong>B</strong> and read by the display while it draws: a <strong>mutex</strong>, <code>track_lock</code>. The world task (prio 5) can then wait on the display (prio 1) — priority inheritance (lesson 07) lends the display priority 5 until it lets go.</li><li><strong>Resetting the controller</strong> is the control task&#x27;s job, not the world&#x27;s: the world bumps <code>run_id</code>, and the control task calls <code>control_reset()</code> when it sees it change. One writer, again.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 24: Measuring on the Chip</h2>
+<p>The host can race the code but cannot time it — a PC has an FPU. On the<br>chip, <code>stats</code> reports what each step really costs:</p>
+<pre class="lang-c"><code>static uint32_t cycles_now(void)
+{
+    uint32_t ms, val;
+    do { ms = os_ticks(); val = SysTick-&gt;VAL; } while (ms != os_ticks());
+    return ms * (SysTick-&gt;LOAD + 1u) + (SysTick-&gt;LOAD - val);
+}</code></pre>
+<figure class="diagram"><svg width="830" viewBox="0 0 830 189" role="img" aria-label="SysTick as the kernel leaves it: reload 47999 = one 1 ms tick at 48 MHz; LOAD, 32 bits; VAL, 32 bits">
+<text x="415" y="16" text-anchor="middle" class="lbl">SysTick as the kernel leaves it: reload 47999 = one 1 ms tick at 48 MHz</text>
+<text x="16" y="59" class="mono">LOAD</text>
+<text x="16" y="74" class="lbl">SYST_RVR</text>
+<text x="16" y="89" class="mono lbl">= 0x0000BB7F</text>
+<text x="175.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="52" width="160.0" height="26"/>
+<rect class="hifill" x="334.4" y="52" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 52 V56 M794.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M774.4 52 V56 M774.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M754.4 52 V56 M754.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M734.4 52 V56 M734.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M714.4 52 V56 M714.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M694.4 52 V56 M694.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M674.4 52 V56 M674.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M654.4 52 V56 M654.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M634.4 52 V56 M634.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M614.4 52 V56 M614.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M594.4 52 V56 M594.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M574.4 52 V56 M574.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M554.4 52 V56 M554.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M534.4 52 V56 M534.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M514.4 52 V56 M514.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M494.4 52 V56 M494.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M474.4 52 V56 M474.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M454.4 52 V56 M454.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M434.4 52 V56 M434.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M414.4 52 V56 M414.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M394.4 52 V56 M394.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M374.4 52 V56 M374.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M354.4 52 V56 M354.4 74 V78"/>
+<text x="335.4" y="44" text-anchor="start" class="mono lbl">23</text>
+<text x="804.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="784.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="764.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="744.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="724.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="704.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="684.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="664.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="644.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="624.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="604.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="584.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="564.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="544.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="524.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="504.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="484.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="464.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="444.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="424.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="404.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="384.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="364.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="344.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="324.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="304.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="284.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="264.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="244.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="224.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="204.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="184.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="574.4" y="91" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="145" class="mono">VAL</text>
+<text x="16" y="160" class="lbl">SYST_CVR, counts DOWN</text>
+<text x="175.4" y="130" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="138" width="160.0" height="26"/>
+<text x="254.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="334.4" y="138" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 138 V142 M794.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M774.4 138 V142 M774.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M754.4 138 V142 M754.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M734.4 138 V142 M734.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M714.4 138 V142 M714.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M694.4 138 V142 M694.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M674.4 138 V142 M674.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M654.4 138 V142 M654.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M634.4 138 V142 M634.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M614.4 138 V142 M614.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M594.4 138 V142 M594.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M574.4 138 V142 M574.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M554.4 138 V142 M554.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M534.4 138 V142 M534.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M514.4 138 V142 M514.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M494.4 138 V142 M494.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M474.4 138 V142 M474.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M454.4 138 V142 M454.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M434.4 138 V142 M434.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M414.4 138 V142 M414.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M394.4 138 V142 M394.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M374.4 138 V142 M374.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M354.4 138 V142 M354.4 160 V164"/>
+<text x="335.4" y="130" text-anchor="start" class="mono lbl">23</text>
+<text x="574.4" y="151" text-anchor="middle" class="mono">CURRENT</text>
+</svg></figure>
+<p>The kernel&#x27;s millisecond count plus how far <code>VAL</code> has counted down gives a<br>cycle-accurate clock with no extra timer. The loop re-reads if a tick lands<br>between the two reads. <strong>Budget:</strong> the world step must fit in 240 000 cycles<br>(5 ms); the expectation is a few percent of that. The number itself has<br><strong>not yet been measured</strong> — it is the first thing to read in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: Telemetry and the Leaderboard</h2>
+<pre><code>$LINE,&lt;ms&gt;,&lt;est x10&gt;,&lt;true x10&gt;,&lt;cmd L&gt;,&lt;cmd R&gt;,&lt;speed&gt;,&lt;s&gt;,&lt;slip&gt;*CS     10 Hz
+$LAP,&lt;track&gt;,&lt;ms&gt;*CS                                                      every auto lap</code></pre>
+<p><code>est</code> is what the controller <em>believed</em> (<code>ctl_state.pos</code>), <code>true</code> what the<br>world <em>knows</em>. Plot both and the gap between them is your sensor model:</p>
+<pre><code>python ..\08_UART_And_Python_Host\host.py --file capture.txt --chart LINE,3,-400,400
+python host\leaderboard.py captures\*.txt</code></pre>
+<p><code>leaderboard.py</code> checks every <code>$LAP</code> checksum, keeps each student&#x27;s best lap<br>per track, and ranks them. Manual laps are printed but never framed: the<br>leaderboard ranks <strong>controllers</strong>, not thumbs.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: What Each Choice Costs</h2>
+<table><thead><tr><th>Choice</th><th>Cost</th><th>Saved</th></tr></thead><tbody><tr><td><code>fmath.h</code> instead of <code>sinf</code>/<code>cosf</code></td><td>—</td><td>~4 KB of flash (lesson 10)</td></tr><tr><td>float world on a no-FPU core</td><td>~50–100 cycles per operation</td><td>readable physics</td></tr><tr><td>integer box filter before exact distances</td><td>4 integer compares per segment</td><td>~97% of the exact distances</td></tr><tr><td>XOR robot + dirty pages</td><td>11 × 11 bit mask in RAM</td><td>~55% of the I²C traffic</td></tr><tr><td>stacks from <code>-fstack-usage</code></td><td>an hour of reading</td><td>2.4 KB of RAM (11 728 → 9 352 B)</td></tr><tr><td><code>TRACK_MAX_PTS</code> 128, <code>int16_t</code> mm</td><td>1 mm rounding</td><td>768 B vs float points</td></tr></tbody></table>
+<p>The first build linked at <strong>11 728 B of RAM</strong> — 95% of the chip — with<br>generous guessed stacks. Measuring the deepest call chain in each task cut<br>that to 9 352 B. Guess stacks and you run out of RAM; measure them, and<br>then check the guess with <code>stats</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 27: What Was Measured — and What Could Not Be</h2>
+<p><strong>Measured on the host</strong> (<code>host/run.bat</code>, exit code 0, all checks pass):<br>every track closes; default gains finish five laps of all four; the speed<br>sweep, P vs PD vs PID, noise vs filter, dead sensors, ambient light; two<br>identical runs give identical results; the OLED frame drawn by the real<br><code>view.c</code>.</p>
+<p><strong>Built for the chip</strong>: zero warnings, FLASH 26 920 B, RAM 9 352 B.</p>
+<p><strong>Not yet watched running in Wokwi.</strong> What that leaves open:</p>
+<ul><li><strong>Timing.</strong> Does the world step fit its 5 ms on a 48 MHz M0+ with soft float? <code>stats</code> will say. If it does not, every lap time on the chip will differ from the host&#x27;s, because world time is counted in steps.</li><li><strong>The display&#x27;s bus share.</strong> ~500 bytes a frame (measured on the host) at a polled 400 kHz is ~12 ms of CPU every 100 ms, at priority 1 — the bytes are counted, the milliseconds are estimated.</li><li><strong>Stacks.</strong> Sized by analysis; <code>stats</code> prints the real high-water marks.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 28: What Carries Forward</h2>
+<ul><li><strong>The contract.</strong> <code>control_step(const sensors_t *, actuators_t *)</code> is the shape of lessons 13–18: a drone&#x27;s IMU in, four motor commands out; a balancing robot&#x27;s tilt in, two torques out. Only the structs change.</li><li><strong>The world task.</strong> Physics inside the firmware, at the top priority, with a judge that knows the truth. Lesson 16 adds obstacles and a Python planner on the host; lesson 18 puts two robots in one world.</li><li><strong>The measurements.</strong> Every claim in this deck came from running code against code. When the robot is real, <code>$LINE</code> carries the same fields — and <code>host.py</code> charts them the same way.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:15_Robot_Line_Follower', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:15_Robot_Line_Follower') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

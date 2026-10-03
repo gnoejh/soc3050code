@@ -1,0 +1,10 @@
+# Wokwi VS Code extension reads this. The browser route does not need it.
+[wokwi]
+version = 1
+firmware = 'Main.hex'
+elf = 'Main.elf'
+# Serial port forwarding, as in lesson 08: the simulated USART2 becomes a TCP
+# server that pyserial reaches as rfc2217://localhost:4000 - the live route
+# for host\mission.py --port.
+rfc2217ServerPort = 4000
+gdbServerPort = 3333   # F5 in VS Code attaches arm-none-eabi-gdb here; see .vscode/launch.json

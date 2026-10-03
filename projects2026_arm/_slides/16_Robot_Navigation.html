@@ -1,0 +1,875 @@
+<title>Robot Navigation: Find the Way Across a Room You Have Never Seen</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Robot Navigation: Find the Way Across a Room You Have Never Seen</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Robot Navigation: Find the Way Across a Room You Have Never Seen</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>A robot drops into a maze it has never seen. Five rangefinders, two<br>wheels, a gyro — and 12 KB of RAM to remember the walls in. Press A and<br>watch it work out where it is, what is around it, and how to get out.</strong></p>
+<p>The OLED shows the robot&#x27;s <em>belief</em>: grey checker where it knows nothing,<br>blocks where it has seen a wall, a line for its plan, a filled disc where it<br>really is and a ring where it <em>thinks</em> it is. When the plan runs into a wall<br>it did not know about, it plans again. When a wall is closer than the plan<br>thinks, a dumber, faster layer slams on the brakes.</p>
+<p>There is no robot. The robot <strong>and the room</strong> are simulated on the same<br>Cortex-M0+, in two halves that share nothing but two small structs —<br><em>software in the loop</em>. Figures marked <strong>measured on the host</strong> come from<br><code>host/sitl.c</code>, which compiles the same C files on a PC and runs every level;<br>figures marked <strong>Renode</strong> come from running this firmware, unchanged except<br>for a test clock setup, on Renode&#x27;s Cortex-M0 model (lesson 07, slide 20).<br>Nothing here has been watched in Wokwi yet.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob: robot speed - ADC IN4</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - serial monitor</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - serial monitor</text>
+  <path class="dash" d="M686.8 319.0 L728.0 319.0"/>
+  <circle class="hifill" cx="686.8" cy="319.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="319.0" r="5" fill="none"/>
+  <text x="734.0" y="323.0" text-anchor="start" class="mono" font-size="13">PA5  LD4 - on when arrived (on-board)</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  TIM3_CH1 - buzzer</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B - next level, pull-up</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A - start / restart, pull-up</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL - show true walls, pull-up</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 380" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="68" text-anchor="middle" class="mono">out</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  TIM3_CH1 - buzzer</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA5   out  LD4 - on when arrived</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA4   an   knob: robot speed - ADC IN4</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - serial monitor</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - serial monitor</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1</text>
+  <text x="88" y="184" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0</text>
+  <text x="76" y="235" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="213" width="29" height="34" rx="3"/>
+  <text x="102.5" y="227" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="213" width="29" height="34" rx="3"/>
+  <text x="134.5" y="227" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="213" width="29" height="34" rx="3"/>
+  <text x="166.5" y="227" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="213" width="29" height="34" rx="3"/>
+  <text x="198.5" y="227" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="213" width="29" height="34" rx="3"/>
+  <text x="230.5" y="227" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="213" width="29" height="34" rx="3"/>
+  <text x="262.5" y="227" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="213" width="29" height="34" rx="3"/>
+  <text x="294.5" y="227" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="241" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="213" width="29" height="34" rx="3"/>
+  <text x="326.5" y="227" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="241" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="213" width="29" height="34" rx="3"/>
+  <text x="358.5" y="227" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="213" width="29" height="34" rx="3"/>
+  <text x="390.5" y="227" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="213" width="29" height="34" rx="3"/>
+  <text x="422.5" y="227" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="241" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="213" width="29" height="34" rx="3"/>
+  <text x="454.5" y="227" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="241" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="213" width="29" height="34" rx="3"/>
+  <text x="486.5" y="227" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="241" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="213" width="29" height="34" rx="3"/>
+  <text x="518.5" y="227" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="213" width="29" height="34" rx="3"/>
+  <text x="550.5" y="227" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="213" width="29" height="34" rx="3"/>
+  <text x="582.5" y="227" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB5   in   button B - next level, pull-up</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB4   in   button A - start / restart, pull-up</text>
+  <text x="88" y="327" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL - show true walls, pull-up</text>
+  <text x="310" y="372" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: The Problem in One Picture</h2>
+<figure class="diagram"><svg viewBox="0 0 640 250" role="img" aria-label="A robot at the start, a goal flag, walls it has not seen drawn dashed, and three questions: where am I, what is around me, how do I get there">
+  <rect class="box" x="10" y="10" width="400" height="230" rx="8"/>
+  <rect class="dash" x="150" y="40" width="20" height="150"/>
+  <rect class="dash" x="250" y="70" width="20" height="160"/>
+  <rect class="hifill" x="150" y="40" width="20" height="60"/>
+  <circle cx="60" cy="200" r="12" fill="currentColor"/>
+  <circle class="hi" cx="64" cy="196" r="16" fill="none"/>
+  <path class="wire" d="M60 200 L80 200"/>
+  <path class="wire" d="M360 60 V30"/><rect x="360" y="30" width="16" height="10" fill="currentColor"/>
+  <path class="dash" d="M76 190 C120 150 140 120 200 110 S320 90 360 60"/>
+  <text x="30" y="232" class="lbl">disc: where it is   ring: where it thinks it is</text>
+  <text x="180" y="30" class="lbl">dashed: walls it has not seen</text>
+  <text x="430" y="50" class="mono">1. Where am I?</text>
+  <text x="450" y="70" class="lbl">estimate: wheels + gyro</text>
+  <text x="430" y="115" class="mono">2. What is around me?</text>
+  <text x="450" y="135" class="lbl">map: five beams, a grid</text>
+  <text x="430" y="180" class="mono">3. How do I get there?</text>
+  <text x="450" y="200" class="lbl">plan: A*; follow; stay safe</text>
+</svg></figure>
+<p>Every mobile robot answers these three questions, all the time, all at once,<br>and each answer depends on the other two: a map is only as good as the pose it<br>was drawn from, and a plan only as good as the map. This lesson builds all<br>three on a 48 MHz chip with no FPU, and <strong>measures</strong> how good each one is.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: Software in the Loop — Two Halves, One Contract</h2>
+<figure class="diagram"><svg viewBox="0 0 660 230" role="img" aria-label="World task produces sensors_t, robot task's control_step consumes it and produces actuators_t back to the world. The world knows the truth; the robot only the structs.">
+  <defs><marker id="a16" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="20" y="40" width="220" height="150" rx="8"/>
+  <text x="130" y="65" text-anchor="middle" class="hi">world.c  (task, 20 ms)</text>
+  <text x="35" y="95" class="lbl">true map, true pose</text>
+  <text x="35" y="115" class="lbl">motor lag, wheel sizes</text>
+  <text x="35" y="135" class="lbl">gyro bias, beam noise</text>
+  <text x="35" y="155" class="lbl">collisions, the door</text>
+  <rect class="box" x="420" y="40" width="220" height="150" rx="8"/>
+  <text x="530" y="65" text-anchor="middle" class="hi">nav.c  (task, 40 ms)</text>
+  <text x="435" y="95" class="lbl">estimate the pose</text>
+  <text x="435" y="115" class="lbl">map the walls</text>
+  <text x="435" y="135" class="lbl">plan (A*), follow</text>
+  <text x="435" y="155" class="lbl">protect (reactive)</text>
+  <path class="wire" d="M240 85 H418" marker-end="url(#a16)"/>
+  <text x="330" y="78" text-anchor="middle" class="mono">sensors_t  28 B</text>
+  <path class="wire" d="M420 150 H242" marker-end="url(#a16)"/>
+  <text x="330" y="143" text-anchor="middle" class="mono">actuators_t  4 B</text>
+  <text x="330" y="215" text-anchor="middle" class="lbl">control_step(const sensors_t *in, actuators_t *out)   - the only call between them</text>
+</svg></figure>
+<pre class="lang-c"><code>typedef struct {
+    uint32_t t_ms;
+    int32_t  enc_l, enc_r;        /* cumulative encoder ticks, each wheel      */
+    int32_t  gyro_mrad_s;         /* yaw rate, mrad/s, CCW positive: has BIAS  */
+    uint16_t range_mm[N_RANGE];   /* RANGE_ANGLES_DEG order                    */
+    uint8_t  bumper;              /* 1 while the body is pressed against a wall */
+} sensors_t;</code></pre>
+<p><code>nav.c</code> <strong>never includes <code>world.h</code></strong>. Swap <code>world.c</code> for real encoders and<br>rangefinders and <code>nav.c</code> does not change — that is the whole point. The units<br>are hardware&#x27;s: ticks, millimetres, milliradians per second, integers.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The Arena — 32 × 14 Cells, Because 12 KB</h2>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>cell</td><td>10 cm; the arena is 3.2 m × 1.4 m</td></tr><tr><td>grid</td><td>32 × 14 = <strong>448 cells</strong>; drawn 4 × 4 px = 128 × 56 — the OLED, plus one text line</td></tr><tr><td>robot</td><td>round, radius 35 mm, wheelbase 60 mm, top wheel speed 400 mm/s</td></tr><tr><td>sensors</td><td>5 narrow beams at +60°, +30°, 0°, −30°, −60°, out to 600 mm; encoders; a gyro</td></tr><tr><td>levels</td><td>1 Pillars · 2 Corridors · 3 Trap · 4 Maze · 5 Door (<code>levels.c</code>)</td></tr></tbody></table>
+<p>Why not finer? Every per-cell array costs one byte (or two) <strong>per cell</strong>, and<br>the planner has four of them (slide 12). This lesson&#x27;s navigation state is<br>3288 B at 448 cells. At 5 cm cells — 64 × 28 = 1792 — it would be 13 KB: more<br>than the whole chip. A 10 m × 10 m flat at 10 cm would be 10 000 cells.<br><strong>Resolution is a memory decision</strong>, and real robots on small chips use<br>coarse grids, sliding windows, or quadtrees for exactly this reason.</p>
+<p>Coordinates: millimetres, <em>y up</em>, heading CCW from +x. A printed map lists its<br>top row (y = 13) first, and the frames (slide 21) use the same cells.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: The World Is a Little Wrong, on Purpose</h2>
+<pre class="lang-c"><code>#define SCALE_L        1.010f     /* true wheel size / datasheet wheel size     */
+#define SCALE_R        0.995f
+#define WHEELBASE_TRUE 61.5f      /* mm                                          */
+#define MOTOR_TAU_S    0.10f      /* first-order lag of each wheel               */
+#define GYRO_BIAS      0.004f     /* rad/s                                       */
+#define RAY_STEP_MM    25.0f      /* the beam is a line sampled this often       */
+#define DROPOUT_MASK   63u        /* 1 in 64 readings: no echo                   */</code></pre>
+<table><thead><tr><th>Reality</th><th>What it does to the robot</th></tr></thead><tbody><tr><td>motors lag 0.1 s</td><td>it cannot stop or turn instantly</td></tr><tr><td>wheels 1.0% / 0.5% off the datasheet, wheelbase 61.5 not 60</td><td>odometry <strong>drifts</strong></td></tr><tr><td>gyro bias 4 mrad/s, noise 2 mrad/s</td><td>integrate it raw and heading walks 14° a minute</td></tr><tr><td>beam sampled every 25 mm</td><td>a corner thinner than a step along the beam is <strong>never seen</strong></td></tr><tr><td>±(3 mm + 1.5%) noise; 1 echo in 64 lost</td><td>the map gets ghosts and holes</td></tr><tr><td>a wall stops the body, <strong>not the wheels</strong></td><td>a collision corrupts the odometry too</td></tr></tbody></table>
+<p>A simulator that is exactly what the code expects teaches nothing. Each of<br>these is one line in <code>world.c</code>, and each is a lab switch.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: The Layered Robot</h2>
+<figure class="diagram"><svg viewBox="0 0 640 300" role="img" aria-label="Five layers: estimate, map, plan, follow, protect. Plan and follow are deliberative and slow; protect is reactive and fast and can override everything above it.">
+  <defs><marker id="b16" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <text x="20" y="22" class="mono">sensors_t</text>
+  <rect class="reg" x="20" y="35"  width="300" height="36" rx="4"/><text x="35" y="58"  class="mono">1 ESTIMATE  wheels + gyro -> pose</text>
+  <rect class="reg" x="20" y="80"  width="300" height="36" rx="4"/><text x="35" y="103" class="mono">2 MAP       beams -> occupancy grid</text>
+  <rect class="hifill" x="20" y="125" width="300" height="36" rx="4"/><text x="35" y="148" class="mono">3 PLAN      A* on the grid</text>
+  <rect class="hifill" x="20" y="170" width="300" height="36" rx="4"/><text x="35" y="193" class="mono">4 FOLLOW    pure pursuit -> v, w</text>
+  <rect class="box" x="20" y="215" width="300" height="36" rx="4"/><text x="35" y="238" class="mono">5 PROTECT   brake, back off</text>
+  <text x="20" y="285" class="mono">actuators_t</text>
+  <text x="340" y="150" class="hi">deliberative</text>
+  <text x="340" y="170" class="lbl">slow (ms), clever, only as good as the map</text>
+  <text x="340" y="232" class="hi">reactive</text>
+  <text x="340" y="252" class="lbl">fast, dumb, trusts only this instant's beams</text>
+  <path class="wire" d="M330 233 C380 200 390 100 330 60" marker-end="url(#b16)"/>
+  <text x="400" y="95" class="lbl">may override everything above it</text>
+</svg></figure>
+<p>This is Brooks&#x27;s <em>subsumption</em> (1986) and Gat&#x27;s <em>three-layer</em> architecture<br>(1998), and it is how a car&#x27;s automatic emergency brake sits under the driver.<br>The deliberative layers make the robot <strong>smart</strong>; the reactive layer keeps it<br><strong>alive</strong> when they are wrong — and slide 18 measures how often they are.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Layer 1 — Dead Reckoning</h2>
+<pre class="lang-c"><code>float dl = (float)(in-&gt;enc_l - prev_l) * (1000.0f / TICKS_PER_M);
+float dr = (float)(in-&gt;enc_r - prev_r) * (1000.0f / TICKS_PER_M);
+float ds  = 0.5f * (dl + dr);
+float dth = (P.heading == HEAD_WHEELS)
+          ? (dr - dl) / (float)WHEELBASE_MM
+          : ((float)in-&gt;gyro_mrad_s * 0.001f - gyro_bias) * dt;
+float mid = eth + 0.5f * dth;
+ex += ds * m_cos(mid);
+ey += ds * m_sin(mid);</code></pre>
+<p>Distance from the wheels, <strong>heading from the gyro</strong>. Why not heading from the<br>wheels too? Because a 1.5% difference between the two wheels becomes<br>1.5% × 1000 mm / 60 mm = <strong>0.25 rad of heading error per metre</strong> — and a<br>heading error turns every metre after it sideways.</p>
+<p>Measured on the host, all 5 levels × 5 seeds:</p>
+<table><thead><tr><th>heading from</th><th>arrived</th><th>estimate error at the end (mean / worst)</th></tr></thead><tbody><tr><td>gyro, calibrated (default)</td><td><strong>25 / 25</strong></td><td>9 mm / 20 mm</td></tr><tr><td>gyro, <strong>not</strong> calibrated</td><td>16 / 25</td><td>144 mm / 476 mm</td></tr><tr><td><strong>wheels</strong></td><td><strong>0 / 25</strong></td><td>692 mm / 1172 mm</td></tr></tbody></table>
+<p>With heading from the wheels the map smears so badly that the robot ends up<br>&quot;proving&quot; every goal is walled in — and reports NOPATH.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Two Seconds of Standing Still</h2>
+<p>The gyro reads 4 mrad/s when nothing is turning. Integrate that and the<br>robot believes it is spinning, 14° a minute. So before it moves:</p>
+<pre class="lang-c"><code>if (mode == NAV_CALIB) {             /* standing still: the gyro&#x27;s reading IS its bias */
+    cal_sum += in-&gt;gyro_mrad_s;
+    if (++cal_n &gt;= CAL_SAMPLES) {    /* 50 samples = 2 s */
+        gyro_bias = (float)cal_sum / (float)cal_n * 0.001f;</code></pre>
+<p>The noise averages down as √N: 2 mrad/s over 50 samples leaves ~0.3 mrad/s.<br>The first version averaged 25 samples (1 s) at 3 mrad/s noise, and one seed in<br>ten came out at 2.4 mrad/s instead of 4 — a heading 6° off after a minute, and<br>a robot that mapped a wall one cell to the side and sealed its own corridor.<br><strong>Renode</strong> measured <code>gyro bias measured 4020 urad/s</code> on level 1. Every real<br>IMU driver does this at start-up; now you know why.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Layer 2 — An Occupancy Grid in Integers</h2>
+<figure class="diagram"><svg viewBox="0 0 640 200" role="img" aria-label="A beam from the robot crosses three cells, each gets minus 1; the cell where the echo lands gets plus 3.">
+  <g>
+    <rect class="reg" x="80"  y="70" width="60" height="60"/><text x="110" y="105" text-anchor="middle" class="mono">-1</text>
+    <rect class="reg" x="140" y="70" width="60" height="60"/><text x="170" y="105" text-anchor="middle" class="mono">-1</text>
+    <rect class="reg" x="200" y="70" width="60" height="60"/><text x="230" y="105" text-anchor="middle" class="mono">-1</text>
+    <rect class="hifill" x="260" y="70" width="60" height="60"/><text x="290" y="105" text-anchor="middle" class="mono">+3</text>
+    <rect class="reg" x="320" y="70" width="60" height="60"/><text x="350" y="105" text-anchor="middle" class="lbl">?</text>
+  </g>
+  <circle cx="50" cy="100" r="16" fill="currentColor"/>
+  <path class="wire" d="M66 100 H272"/>
+  <circle cx="272" cy="100" r="4" fill="currentColor"/>
+  <text x="272" y="60" text-anchor="middle" class="lbl">echo + 30 mm</text>
+  <text x="170" y="155" text-anchor="middle" class="lbl">the beam passed: probably floor</text>
+  <text x="350" y="155" text-anchor="middle" class="lbl">behind the wall: still unknown</text>
+  <text x="420" y="80" class="mono">v &gt;= +2   wall</text>
+  <text x="420" y="105" class="mono">v &lt;= -1   floor</text>
+  <text x="420" y="130" class="mono">otherwise unknown</text>
+  <text x="420" y="160" class="lbl">clamped to -4 .. +6</text>
+</svg></figure>
+<p>Each cell holds a <strong>signed count of evidence</strong> — the integer form of a<br>log-odds occupancy grid. One <code>int8_t</code> per cell: 448 bytes for the whole map.</p>
+<ul><li><strong>One</strong> hit makes a wall — so the door that slams in level 5 appears within one or two echoes.</li><li>Three passes un-make it — so a ghost from a noisy reading fades.</li><li>A lost echo (600 mm, &quot;nothing&quot;) only clears the first 450 mm: &quot;nothing there&quot; and &quot;the echo got lost&quot; read the same.</li></ul>
+<p>The hit is placed <strong>30 mm past</strong> the echo, so noise does not drop it into the<br>free cell in front of the wall. Every one of those numbers is a <code>#define</code> at the<br>top of <code>nav.c</code>, and every one is a lab knob.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Optimism — Unknown Is Assumed Free</h2>
+<p>The robot starts with every cell unknown. If the planner treated unknown as<br>wall, there would be no path at all. So it plans <strong>as if unknown cells were<br>floor</strong> (with a small extra cost of 3), drives, discovers, and replans.</p>
+<p>Level 4 at t = 20 s, measured on the host (<code>host/frame_maze.txt</code>, 2 × 2 pixels<br>per character — dots are unknown, blocks are walls it has found):</p>
+<pre><code>|##          ##          ##       ..     ##. . . . . . . . . . . |
+|##          ##          ## +:::::.      ## . . . . . . . . . . .|
+|##############    ######## :##############. . . . . . . . . . . |
+|##############    ######## :############## . . . . . . . . . . .|
+|. . . . . .       ##. . ##.:. . .   . . . . . . . . . . . . . . |
+|. . . . . . ##. ##. . . . . . . : . . . . . . . . . . . . .:: . |
+| . . . . . .## .## . . . . . . . : . . . . . . . . . . . .:#:. .|
+|. . . . . . . . . . . . . . . . . : . . . . . . . . . . . : . . |
+| . . . . . . . . . . . . . . . . . +:+:+:+:+:+:+:+:+:+:+:++: . .|</code></pre>
+<p>The plan (the <code>:+:+</code> line) cuts straight across the unexplored bottom half<br>to the flag — through walls that are really there. That is not a bug. It is<br>the cheapest assumption that lets the robot move at all; the price is paid in<br>replans: <strong>44.6 per run on the maze</strong>, measured on the host.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Layer 3 — A* in Four Lines</h2>
+<pre><code>open = {start};  g(start) = 0
+repeat:  take the open cell with the lowest  f = g + h
+         if it is the goal: follow the parents back - done
+         close it; offer each of its 8 neighbours a cheaper g</code></pre>
+<ul><li><strong>g</strong> — the cost so far. A step costs 10 straight, 14 diagonal (10 × √2, rounded), plus the costmap&#x27;s extra for entering the cell.</li><li><strong>h</strong> — a guess at the cost still to go that is <strong>never too high</strong>: the <em>octile</em> distance, <code>10·max(dx, dy) + 4·min(dx, dy)</code>, exactly what an empty grid would cost. Never overestimating is what makes A* return the cheapest path.</li><li><strong>No corner cutting</strong>: a diagonal step is refused if either cell beside it is a wall — two walls touching at a corner are a wall to a 7 cm robot.</li></ul>
+<p>All integers. There is not one float in <code>astar.c</code>. Measured on the host, the<br>&quot;no path&quot; cases are reported correctly: a goal sealed in a box gives <em>no path</em><br>after expanding <strong>exactly</strong> the 335 cells a flood fill says are reachable; a<br>goal inside a wall, after 0.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: The Costmap — Where Walls Become Numbers</h2>
+<pre class="lang-c"><code>out[CELL(x, y)] = c == MAP_OCC ? ASTAR_LETHAL : (c == MAP_UNKNOWN ? COST_UNKNOWN : 0);
+...
+/* keep-away cost: the highest that any nearby wall imposes (Chebyshev ring) */
+uint8_t want = (uint8_t)(base + (ring == 1 ? COST_INFLATE1 : COST_INFLATE2));</code></pre>
+<table><thead><tr><th>cell</th><th>cost to enter, on top of the step</th></tr></thead><tbody><tr><td>wall</td><td>255 = lethal: never</td></tr><tr><td>touching a wall (inflate ≥ 1)</td><td>+12</td></tr><tr><td>two cells from a wall (inflate 2)</td><td>+4</td></tr><tr><td>unknown</td><td>+3</td></tr><tr><td>known floor</td><td>0</td></tr></tbody></table>
+<p><strong>Inflation</strong> pushes the plan away from walls, so tracking error does not put<br>the body on them. This is ROS&#x27;s costmap in miniature. The planner knows nothing<br>about robots or beams — only this one byte per cell.</p>
+<p>Inflation has a price: level 4&#x27;s corridors are 2 cells wide, so <em>every</em> cell<br>touches a wall and the full-knowledge cost jumps from 532 to 1100 — the same<br>path, just dearer. Measured: <code>planner.py --level 4 --inflate 0</code> vs <code>--inflate 1</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: A* in 2112 Bytes</h2>
+<pre class="lang-c"><code>static uint16_t g[GRID_N];          /* the best cost found so far        896 B */
+static uint8_t  info[GRID_N];       /* closed flag + parent DIRECTION    448 B */
+static uint8_t  hpos[GRID_N];       /* where the cell sits in heap[]     448 B */
+static uint16_t heap[ASTAR_HEAP];   /* the open list, 160 slots          320 B */</code></pre>
+<ul><li>A parent is stored as the <strong>direction</strong> it came from — 3 bits, not a 16-bit cell index.</li><li>The open list is a binary heap with <strong>decrease-key</strong>: a cell offered a cheaper g moves up in place.</li><li>The sort key packs <code>(f, h, cell)</code> into one <code>uint32_t</code>, so comparing two cells is one unsigned compare — and the tie-break is part of the key.</li></ul>
+<p>The whole navigation state — map 448, costmap 448, path 256, A* 2112, vetoes<br>24 — is <strong>3288 B</strong>, measured with <code>sizeof</code> (and printed by the banner).</p>
+<p><strong>The first version used lazy deletion</strong> — push a duplicate, skip stale copies<br>— to save <code>hpos[]</code>. The host test&#x27;s sealed-goal case caught it: the duplicates<br>overflowed a 255-entry heap after 173 of 335 cells and the planner reported<br><em>no path</em> to a reachable goal. <strong>Measure before you save.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 13: How Big Does the Open List Get?</h2>
+<p>The heap has 160 slots because that number was measured, not guessed:</p>
+<table><thead><tr><th>Test (host)</th><th>open-list peak</th></tr></thead><tbody><tr><td>every robot run, every level, every lab switch</td><td><strong>83</strong></td></tr><tr><td>2000 random arenas, 10–35% wall, random start and goal</td><td><strong>94</strong></td></tr><tr><td>empty arena, corner to corner</td><td>69</td></tr><tr><td>goal sealed in a box (335 cells explored)</td><td>59</td></tr></tbody></table>
+<p>And if it ever fills, <code>astar_plan()</code> <strong>says so</strong> (<code>result.overflow</code>), the<br>robot counts it (<code>stats</code> → overflows), and the plan fails loudly — it never<br>silently drops a cell and returns a wrong path. Headroom you have measured is<br>engineering; headroom you have assumed is a bug report waiting to happen.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: What A* Costs on a Cortex-M0+</h2>
+<p>The planner times itself with SysTick (<code>nav_clock()</code>, slide 22). Measured:</p>
+<table><thead><tr><th></th><th>nodes expanded</th><th>time</th></tr></thead><tbody><tr><td>host PC, peak per level</td><td>244–349</td><td>50–75 µs</td></tr><tr><td><strong>Renode</strong>, level 1, peak</td><td>304</td><td>499 684 cycles = <strong>10.4 ms</strong></td></tr><tr><td><strong>Renode</strong>, level 4 (maze), peak</td><td>336</td><td>536 794 cycles = <strong>11.2 ms</strong></td></tr></tbody></table>
+<p>About <strong>1600 instructions per node</strong> on the M0+ — eight neighbours, three<br>bounds-and-lethal checks each, a heap with a 32-bit key computed on every<br>comparison — and roughly 170× the PC.</p>
+<p>Renode executes one instruction per clock tick, so these are <strong>instruction<br>counts</strong>, and they include time the higher-priority world task preempted the<br>planner. A real M0+ spends 2 cycles on a load and 2–3 on a taken branch, so<br>expect silicon to be somewhat <strong>slower</strong> than this, not faster. Not yet<br>measured on silicon or in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: The Timing Budget</h2>
+<table><thead><tr><th>Task</th><th>period</th><th>priority</th><th>measured peak (Renode)</th></tr></thead><tbody><tr><td>world: physics + 5 beams</td><td>20 ms</td><td>4</td><td>world_step <strong>2.7 ms</strong></td></tr><tr><td>robot: <code>control_step()</code> incl. A*</td><td>40 ms</td><td>3</td><td><strong>16.0 ms</strong></td></tr><tr><td>ui: pad, $NAV, OLED (every 5th)</td><td>20 ms</td><td>1</td><td>—</td></tr><tr><td>shell</td><td>on input</td><td>2</td><td>—</td></tr></tbody></table>
+<p>Worst of the five levels in Renode. <code>control_step()</code> uses at most 40% of its period, and only on the steps that<br>replan; most steps cost a few hundred µs. The world runs at a <strong>higher</strong><br>priority, so physics never waits for a slow plan — exactly as reality would<br>not wait for your robot to think.</p>
+<p>What would break first? A finer grid: A* work grows with the cells explored,<br>so 4× the cells is roughly 4× the time — a 45 ms plan in a 40 ms loop. Then<br>you replan less often, plan incrementally (D* Lite), or plan on a coarser grid.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: When to Replan</h2>
+<pre class="lang-c"><code>if (need_plan || path_len == 0u) {
+    plan(S.plans &gt; 0u);
+} else if (plan_invalid() || ...) {
+    plan(1);
+}</code></pre>
+<p><code>plan_invalid()</code> says the plan is dead when:</p>
+<ol><li>a cell on the rest of the path is now <strong>wall</strong> in the map;</li><li>a <strong>diagonal step</strong> on it now cuts the corner of a new wall;</li><li>the robot is more than 220 mm from the next few path cells (it backed off, braked, or its estimate jumped).</li></ol>
+<p>That is <em>D\</em> Lite lite*: no incremental search, just &quot;plan again from here<br>when the map proves the plan wrong&quot;. It costs a full A* each time —<br>affordable here at ≤ 11 ms (slide 14). Level 3&#x27;s trap shows it best: the first<br>plan drives straight into the U, the walls appear, and it plans out — <strong>2.8<br>replans a run, 0 collisions</strong>, measured on the host.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Layer 4 — Pure Pursuit</h2>
+<figure class="diagram"><svg viewBox="0 0 600 220" role="img" aria-label="Pure pursuit: a carrot point on the path at the lookahead distance; the robot drives the circular arc through it; curvature 2 sin(alpha) over L.">
+  <path class="dash" d="M40 190 L160 150 L260 140 L360 90 L520 60"/>
+  <circle cx="80" cy="190" r="10" fill="currentColor"/>
+  <path class="wire" d="M80 190 L120 190"/>
+  <circle class="hi" cx="300" cy="120" r="7" fill="none"/>
+  <text x="310" y="115" class="mono">carrot</text>
+  <path class="wire" d="M80 190 L300 120"/>
+  <path class="ok" d="M80 190 Q200 185 300 120" fill="none"/>
+  <text x="190" y="140" class="lbl">L</text>
+  <text x="130" y="185" class="lbl">alpha</text>
+  <text x="360" y="170" class="mono">curvature = 2 sin(alpha) / L</text>
+  <text x="360" y="195" class="mono">w = v * curvature</text>
+</svg></figure>
+<p>Pick the path point one <strong>lookahead</strong> (220 mm) ahead — the carrot — and drive<br>the circular arc through it. One line of geometry, and it is how most ground<br>robots and many self-driving stacks still follow a path.</p>
+<p>Two fixes it needed here, both found by the host test:</p>
+<ul><li><strong>Line of sight.</strong> Pure pursuit cuts corners by design; on level 4 the carrot sat <em>behind</em> the wall the path bent around and the robot drove at the wall for ever. Now the carrot is never a cell the body cannot reach in a straight line through the map.</li><li><strong>Sitting on the carrot.</strong> With the carrot 2 mm away, its bearing is pure noise and the robot spun in place for 120 s. Now it skips to the next cell.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 18: Layer 5 — The Reactive Brake</h2>
+<figure class="diagram"><svg viewBox="0 0 600 190" role="img" aria-label="The swept strip ahead of the robot: echoes inside it count, echoes outside it are ignored; the robot brakes if the nearest is closer than v squared over 2a plus a margin.">
+  <rect class="hifill" x="80" y="60" width="420" height="70"/>
+  <circle cx="60" cy="95" r="35" fill="none" stroke="currentColor"/>
+  <path class="wire" d="M60 95 L300 95"/>
+  <circle cx="300" cy="95" r="5" fill="currentColor"/><text x="310" y="90" class="lbl">counts</text>
+  <path class="wire" d="M60 95 L260 20"/>
+  <circle cx="260" cy="20" r="5" fill="currentColor"/><text x="270" y="25" class="lbl">ignored: beside the path</text>
+  <text x="290" y="155" class="mono">stop if gap &lt; 25 mm + v^2 / (2 x 1500 mm/s^2)</text>
+  <text x="290" y="178" class="lbl">strip = body width + 8 mm each side</text>
+</svg></figure>
+<p>For every echo: is it inside the strip the body will sweep if it drives<br>straight on? If the nearest one is closer than the stopping distance, <strong>v = 0</strong><br>— turning on the spot stays allowed, since a round robot cannot hit anything<br>by rotating. It never looks at the map, so a bad map cannot fool it.</p>
+<p>Measured on the host, all levels × 5 seeds:</p>
+<table><thead><tr><th></th><th>arrived</th><th>collisions per run</th></tr></thead><tbody><tr><td>reactive <strong>on</strong> (default)</td><td>25/25</td><td><strong>0.00</strong></td></tr><tr><td>reactive <strong>off</strong></td><td>23/25</td><td><strong>10.56</strong></td></tr><tr><td>reactive off <strong>and</strong> inflation 0</td><td>23/25</td><td><strong>18.52</strong></td></tr></tbody></table>
+<p>And every collision costs twice: the wheels keep turning against the wall, so<br>the odometry is wrong afterwards too — worst estimate error 8.4 m with the<br>brake off, 20 mm with it on.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: When the Layers Disagree</h2>
+<p>The plan says <em>through that gap</em>. The beams say <em>too close</em>. Neither gives<br>way, and the robot sits there for ever — this happened on level 5, in a<br>one-cell gap the first version of the level had.</p>
+<pre class="lang-c"><code>if (in-&gt;t_ms - blocked_since &gt; STUCK_MS) {          /* 1.5 s of being blocked */
+    veto_cell[veto_next]  = path[path_i + 1u];       /* &quot;not through there&quot;    */
+    veto_until[veto_next] = in-&gt;t_ms + VETO_MS;      /* ... for 20 s           */
+    need_plan = 1;
+}</code></pre>
+<p>The reactive layer <strong>wins</strong>, and tells the planner which cell it refuses; the<br>next plan treats it as lethal. And if a plan then finds no path, the robot does<br>not believe it at once — like a ROS stack&#x27;s <em>recovery behaviours</em> it first<br>forgets the vetoes, then forgets every wall seen only once or twice, and only<br>then reports <strong>NOPATH</strong>. A goal sealed in a box still gets NOPATH, after 23.9 s<br>of looking — measured on the host.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: Five Levels, Measured</h2>
+<p>Host, defaults (250 mm/s, inflate 1, reactive on, gyro heading), 5 seeds each:</p>
+<table><thead><tr><th>Level</th><th>arrived</th><th>time</th><th>driven / optimal</th><th>replans</th><th>collisions</th><th>estimate error</th><th>A* peak nodes</th></tr></thead><tbody><tr><td>1 Pillars</td><td>5/5</td><td>13.9 s</td><td>0.99</td><td>4.4</td><td>0</td><td>7 mm</td><td>304</td></tr><tr><td>2 Corridors</td><td>5/5</td><td>26.6 s</td><td>1.17</td><td>10.4</td><td>0</td><td>10 mm</td><td>307</td></tr><tr><td>3 Trap</td><td>5/5</td><td>19.3 s</td><td>1.25</td><td>2.8</td><td>0</td><td>8 mm</td><td>244</td></tr><tr><td>4 Maze</td><td>5/5</td><td>39.9 s</td><td>1.07</td><td>44.6</td><td>0</td><td>13 mm</td><td>336</td></tr><tr><td>5 Door</td><td>5/5</td><td>32.9 s</td><td>1.04</td><td>17.2</td><td>0</td><td>7 mm</td><td>349</td></tr></tbody></table>
+<p><em>Optimal</em> is A* with full knowledge of the final map; <em>driven</em> is the true<br>odometer. Under 1.0 is possible: pure pursuit cuts the grid&#x27;s 45° zigzags<br>and stops 120 mm short of the flag&#x27;s centre. The trap costs the most<br>detour (1.25) — it is built to.</p>
+<p>The firmware itself, in <strong>Renode</strong> (one run per level, its own fixed noise<br>seed): 14.6 s, 27.6 s, 19.0 s, 40.0 s and 29.0 s; 3, 12, 4, 43 and 14 replans;<br><strong>0 collisions on every level</strong>.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: The Python Tier — <code>host/planner.py</code></h2>
+<pre><code>python host/planner.py --level 3                 the level, and the A* path on it
+python host/planner.py --map mine.txt --frames   frames to paste into the serial monitor
+python host/planner.py --file capture.txt        read telemetry + check the board&#x27;s plan
+python host/planner.py --compare paths.txt       check every level against astar.c</code></pre>
+<p>Same costs, same neighbour order, same <code>(f, h, cell)</code> tie-break — so it finds<br>the <strong>same path, cell for cell</strong>, not merely the same cost. It reads the<br>levels from <code>levels.c</code> itself, so the two cannot drift apart.</p>
+<ul><li>On the host: <strong>15 of 15</strong> level × inflation combinations identical — path, cost <em>and</em> nodes expanded.</li><li>Against the <strong>Renode</strong> firmware: on every level the shell&#x27;s <code>dump</code> sent the robot&#x27;s half-built map and its plan 8 s in; <code>planner.py --file</code> re-planned that map — unknown cells and all — in Python. <strong>5 of 5 the same path, cell for cell</strong> (level 1: cost 187, 74 nodes, 16 cells).</li></ul>
+<p>Frames to the robot use lesson 08&#x27;s checksums: <code>$GOAL,x,y</code>, <code>$START,x,y</code>,<br><code>$MAP,y,hexbits</code> (bit 31 = x 0), <code>$LEVEL,6</code> for the custom map. The browser<br>route is copy and paste; <code>--port</code> sends them live.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: The Planner&#x27;s Stopwatch</h2>
+<pre class="lang-c"><code>uint32_t nav_clock(void)
+{
+    uint32_t ms, val;
+    do {
+        ms  = os_ticks();
+        val = SysTick-&gt;VAL;
+    } while (ms != os_ticks());
+    return ms * (SysTick-&gt;LOAD + 1u) + (SysTick-&gt;LOAD - val);
+}</code></pre>
+<figure class="diagram"><svg width="926" viewBox="0 0 926 165" role="img" aria-label="SysTick-&gt;LOAD, 32 bits; SysTick-&gt;VAL, 32 bits">
+<text x="16" y="35" class="mono">SysTick-&gt;LOAD</text>
+<text x="16" y="50" class="lbl">set by the kernel: 48 MHz / 1000 - 1</text>
+<text x="16" y="65" class="mono lbl">= 0x0000BB7F</text>
+<text x="271.4" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="909.4" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="270.4" y="28" width="160.0" height="26"/>
+<rect class="hifill" x="430.4" y="28" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M890.4 28 V32 M890.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M870.4 28 V32 M870.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M850.4 28 V32 M850.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M830.4 28 V32 M830.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M810.4 28 V32 M810.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M790.4 28 V32 M790.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M770.4 28 V32 M770.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M750.4 28 V32 M750.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M730.4 28 V32 M730.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M710.4 28 V32 M710.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M690.4 28 V32 M690.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M670.4 28 V32 M670.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M650.4 28 V32 M650.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M630.4 28 V32 M630.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M610.4 28 V32 M610.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M590.4 28 V32 M590.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M570.4 28 V32 M570.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M550.4 28 V32 M550.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M530.4 28 V32 M530.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M510.4 28 V32 M510.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M490.4 28 V32 M490.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M470.4 28 V32 M470.4 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M450.4 28 V32 M450.4 50 V54"/>
+<text x="431.4" y="20" text-anchor="start" class="mono lbl">23</text>
+<text x="900.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="880.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="860.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="840.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="820.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="800.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="780.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="760.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="740.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="720.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="700.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="680.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="660.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="640.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="620.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="600.4" y="41" text-anchor="middle" class="mono">1</text>
+<text x="580.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="560.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="540.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="520.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="500.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="480.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="460.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="440.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="420.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="400.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="380.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="360.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="340.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="320.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="300.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="280.4" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="670.4" y="67" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="121" class="mono">SysTick-&gt;VAL</text>
+<text x="16" y="136" class="lbl">counts DOWN to 0, once per ms</text>
+<text x="271.4" y="106" text-anchor="start" class="mono lbl">31</text>
+<text x="909.4" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="270.4" y="114" width="160.0" height="26"/>
+<text x="350.4" y="127" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="430.4" y="114" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M890.4 114 V118 M890.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M870.4 114 V118 M870.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M850.4 114 V118 M850.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M830.4 114 V118 M830.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M810.4 114 V118 M810.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M790.4 114 V118 M790.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M770.4 114 V118 M770.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M750.4 114 V118 M750.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M730.4 114 V118 M730.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M710.4 114 V118 M710.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M690.4 114 V118 M690.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M670.4 114 V118 M670.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M650.4 114 V118 M650.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M630.4 114 V118 M630.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M610.4 114 V118 M610.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M590.4 114 V118 M590.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M570.4 114 V118 M570.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M550.4 114 V118 M550.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M530.4 114 V118 M530.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M510.4 114 V118 M510.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M490.4 114 V118 M490.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M470.4 114 V118 M470.4 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M450.4 114 V118 M450.4 136 V140"/>
+<text x="431.4" y="106" text-anchor="start" class="mono lbl">23</text>
+<text x="670.4" y="127" text-anchor="middle" class="mono">CURRENT</text>
+</svg></figure>
+<p>The kernel owns SysTick (lesson 07): it counts down from 47 999 to 0 every<br>millisecond. Milliseconds × 48 000 plus how far <code>VAL</code> has counted is a 48 MHz<br>cycle counter — the M0+ has no <code>DWT-&gt;CYCCNT</code>. Reading <code>os_ticks()</code> on both<br>sides and retrying if it changed stops a tick between the two reads from<br>tearing the result (lesson 03). It wraps every 89 s; differences do not care.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: Fitting in 32 KB and 12 KB</h2>
+<p>First build: <strong>34 932 B of flash and 15 136 B of RAM</strong> (counting the linker&#x27;s<br>1.5 KB heap and main-stack reserve) — on a 32 KB / 12 KB chip. Now <strong>29 148 B<br>and 11 336 B</strong>. What got it there, each measured build to build:</p>
+<table><thead><tr><th>Change</th><th>Saved</th></tr></thead><tbody><tr><td><code>strtok()</code> → a 12-line <code>split()</code>: newlib&#x27;s strtok mallocs, asserts, and assert prints</td><td>3036 B flash</td></tr><tr><td><code>vprintf</code> → <code>vsnprintf</code> + <code>_write</code>; <code>atoi</code>/<code>strtoul</code> → 10 lines</td><td>917 B flash</td></tr><tr><td>one command dispatcher for typed words <em>and</em> <code>$frames</code></td><td>768 B flash</td></tr><tr><td>fmath&#x27;s inline <code>f_sin</code> etc. called through one out-of-line copy (<code>mathx.c</code>)</td><td>552 B flash</td></tr><tr><td>five task stacks of guessed size → four, sized from Renode&#x27;s high-water marks</td><td>2560 B RAM</td></tr><tr><td>A* 3136 → 2112 B (direction parents, a byte-wide <code>hpos</code>, a measured heap)</td><td>1024 B RAM</td></tr></tbody></table>
+<p>Measured stack use (Renode, after a full run and a <code>dump</code>): world 52 of 96<br>words, robot 174 of 224, ui 216 of 272, shell 254 of 304.</p>
+</section>
+<section class="slide">
+<h2>Slide 24: The OLED — Belief, Truth, and the Plan</h2>
+<p>Level 5 at t = 12 s, measured on the host (<code>host/frame_door.txt</code>, 2 × 2 px per<br>character; the full-size frame is in the file):</p>
+<pre><code>|. . .:: . . . . . . . . . . . . . . . . . . . . . . . . . . . . |
+| . .:#:. . . . . . . . . . . . . . . . . . . . . . . . . . . . .|
+| . .:+:: . . . . . . . . . . . . . . . . . . . . . . . . . . . .|
+|. . . . : . . . . . . . . . . . . . . . . . . . . . . . . . . . |
+|##   .   . . ::+:+:+:+:+:::+:+:+:+:::+:+:+:: . . . . . . . . . .|
+|##      ##     . .         . . .   . . . . . + . . . . . . . . .|
+|############################################.:. . . . . . . . . |
+|##                                          .:. . . . . . . . . |
+|.                                   .##+   ..   . . . . . . . . |
+| .                                  :###:::.     . . . . . . . .|</code></pre>
+<p>The door (far left of the long wall) has shut and been mapped; the plan now<br>runs right along the wall, up through the far gap and back to the flag. The<br>filled disc and the ring are the robot&#x27;s true and believed positions.</p>
+<p><code>view_draw()</code> writes only RAM; <code>oled_flush()</code> sends only the 8-row pages that<br>changed — and the host test renders the very same framebuffer as text.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: What Was Measured — and What Could Not Be</h2>
+<table><thead><tr><th>Claim</th><th>Evidence</th></tr></thead><tbody><tr><td>reaches the goal on all 5 levels, 0 collisions</td><td><strong>host</strong>, 25 runs; <strong>Renode</strong> firmware, levels 1–5</td></tr><tr><td>&quot;no path&quot; is correct</td><td><strong>host</strong>: sealed goal, goal in wall, start = goal, corner-touching wall</td></tr><tr><td>C and Python A* agree cell for cell</td><td><strong>host</strong> 15/15 full maps; <strong>Renode</strong> 5/5 half-built maps</td></tr><tr><td>A* ≈ 10–11 ms, ≈ 1600 instructions/node</td><td><strong>Renode</strong> instruction counts, not silicon cycles</td></tr><tr><td>stacks, RAM, control-loop budget</td><td><strong>Renode</strong> <code>stats</code>; <code>sizeof</code></td></tr><tr><td>the OLED picture</td><td><strong>host</strong> render of the same framebuffer code</td></tr></tbody></table>
+<p><strong>Not measured:</strong> anything in Wokwi — the OLED on the real panel, the<br>buttons, the knob, the buzzer, the joystick. In Renode the OLED was absent<br>(<code>bus timeout</code>, so nothing was flushed) and its ADC cannot read the knob, so<br>the Renode runs used the default speed. Silicon cycle counts are unmeasured;<br>expect them somewhat higher than Renode&#x27;s instruction counts.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: What Carries Forward</h2>
+<ul><li><strong>Software in the loop is how robots are built.</strong> Lesson 17&#x27;s balancing robot and lesson 18&#x27;s sumo use the same contract: a world, a <code>control_step()</code>, and a host test that runs a thousand trials overnight.</li><li><strong>Layering is how robots stay alive.</strong> Deliberative for clever, reactive for safe, and an explicit rule for when they disagree.</li><li><strong>Every array is RAM per cell.</strong> Grids, costmaps and planners are where small chips run out first; measure the peak, then size the buffer.</li><li><strong>The open-ended part</strong>: give the robot no goal at all. Drive to the nearest <em>frontier</em> — a free cell next to an unknown one — until there are none left. That is <em>exploration</em>, and it is Lab Part 9.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:16_Robot_Navigation', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:16_Robot_Navigation') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

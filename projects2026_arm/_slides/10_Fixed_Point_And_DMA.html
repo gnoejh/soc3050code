@@ -1,0 +1,1492 @@
+<title>Fixed Point and DMA: Maths Without an FPU, Data Without the CPU</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Fixed Point and DMA: Maths Without an FPU, Data Without the CPU</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Fixed Point and DMA: Maths Without an FPU, Data Without the CPU</h1>
+<h2>SOC3050 ARM Edition — Part 2, Systems</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>How fast is maths on a chip with no FPU? Race the number formats and find<br>out.</strong></p>
+<p>The Cortex-M0+ has no floating-point unit. Every <code>float</code> multiply is a<br>function call. So this lesson builds an <strong>arena</strong>: the same seven jobs — add,<br>multiply, divide, sine, rotate a point, a PI controller step, a 16-tap filter<br>— written in <code>int32</code>, <strong>Q15</strong>, <strong>Q16.16</strong> and <code>float</code>, timed with SysTick, and<br>ranked. Then the second half takes work off the CPU altogether: the <strong>DMA</strong><br>fills RAM with joystick readings while the processor does nothing at all.</p>
+<p>Figures marked <strong>measured on the host</strong> come from two programs in <code>host/</code>:<br><code>test_fix</code> (accuracy, against double precision) and <code>m0sim.py</code>, a Cortex-M0+<br>instruction model that executes this lesson&#x27;s own <code>Main.elf</code> and counts cycles<br>(slide 15). <strong>Nothing here has been watched running in Wokwi</strong> — and the DMA<br>half <em>cannot</em> be: Wokwi&#x27;s C031C6 does not implement DMA (slide 24).</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0, scanned by DMA</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1, scanned by DMA</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob - ADC IN4, scanned by DMA</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - serial monitor</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - serial monitor</text>
+  <path class="dash" d="M686.8 319.0 L728.0 319.0"/>
+  <circle class="hifill" cx="686.8" cy="319.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="319.0" r="5" fill="none"/>
+  <text x="734.0" y="323.0" text-anchor="start" class="mono" font-size="13">PA5  LD4 heartbeat (on-board)</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  buzzer - unused here (reset state)</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B - DMA / polled inputs</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A - run the arena</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL - unused here (reset state)</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 380" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="68" text-anchor="middle" class="mono">out</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   an   buzzer - unused here (reset state)</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA5   out  LD4 heartbeat</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA4   an   knob - ADC IN4, scanned by DMA</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - serial monitor</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - serial monitor</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1, scanned by DMA</text>
+  <text x="88" y="184" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0, scanned by DMA</text>
+  <text x="76" y="235" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="213" width="29" height="34" rx="3"/>
+  <text x="102.5" y="227" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="213" width="29" height="34" rx="3"/>
+  <text x="134.5" y="227" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="213" width="29" height="34" rx="3"/>
+  <text x="166.5" y="227" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="213" width="29" height="34" rx="3"/>
+  <text x="198.5" y="227" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="213" width="29" height="34" rx="3"/>
+  <text x="230.5" y="227" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="213" width="29" height="34" rx="3"/>
+  <text x="262.5" y="227" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="213" width="29" height="34" rx="3"/>
+  <text x="294.5" y="227" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="241" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="213" width="29" height="34" rx="3"/>
+  <text x="326.5" y="227" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="241" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="213" width="29" height="34" rx="3"/>
+  <text x="358.5" y="227" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="213" width="29" height="34" rx="3"/>
+  <text x="390.5" y="227" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="213" width="29" height="34" rx="3"/>
+  <text x="422.5" y="227" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="241" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="213" width="29" height="34" rx="3"/>
+  <text x="454.5" y="227" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="241" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="213" width="29" height="34" rx="3"/>
+  <text x="486.5" y="227" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="241" text-anchor="middle" class="mono">an</text>
+  <rect class="reg" x="504" y="213" width="29" height="34" rx="3"/>
+  <text x="518.5" y="227" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="213" width="29" height="34" rx="3"/>
+  <text x="550.5" y="227" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="213" width="29" height="34" rx="3"/>
+  <text x="582.5" y="227" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB5   in   button B - DMA / polled inputs</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB4   in   button A - run the arena</text>
+  <text x="88" y="327" class="mono lbl" xml:space="preserve">PB3   an   joystick SEL - unused here (reset state)</text>
+  <text x="310" y="372" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: The Arena</h2>
+<table><thead><tr><th>job</th><th>int32</th><th>Q15</th><th>Q16.16</th><th>float</th></tr></thead><tbody><tr><td>add, mul, div</td><td>✔</td><td>mul</td><td>✔</td><td>✔</td></tr><tr><td>sin</td><td></td><td>table</td><td></td><td><code>f_sin</code>, libm <code>sinf</code></td></tr><tr><td>rotate a 2D point</td><td></td><td>✔</td><td>✔</td><td>✔</td></tr><tr><td>PI controller step</td><td></td><td></td><td>✔</td><td>✔</td></tr><tr><td>16-tap FIR filter</td><td>✔</td><td>✔</td><td></td><td>✔</td></tr></tbody></table>
+<p>Every entry is a function in <code>bench.c</code> with one signature,<br><code>uint32_t fn(uint32_t n)</code>: run <em>n</em> iterations over 64 inputs, return a<br>checksum of every result. <code>Main.c</code> times each one with SysTick and prints a<br>leaderboard — cycles per iteration, how many times slower than the winner —<br>and what each format costs in flash.</p>
+<p><strong>Guess before you look</strong>: how much slower than an <code>int32</code> multiply is a<br><code>float</code> multiply on this chip? 2×? 10×? 100×? Write it down. Slide 16 has the<br>answer.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Same C, Two CPUs</h2>
+<p><code>host/kernel.c</code> rotates a point: four multiplies, two adds. The same file,<br>compiled twice by the vendored toolchain (<code>host/fpu_compare.bat</code>):</p>
+<pre><code>Cortex-M4F  -mfpu=fpv4-sp-d16 -mfloat-abi=hard        Cortex-M0+  -mfloat-abi=soft
+00000000 &lt;rotate&gt;:                                    00000000 &lt;rotate&gt;:
+  vldr      s15, [r1]                                   push  {r4, r5, r6, r7, lr}
+  vldr      s13, [r0]                                   ldr   r5, [r2, #0]
+  vnmul.f32 s14, s1, s15                                ...
+  vmul.f32  s15, s15, s0                                bl    __aeabi_fmul
+  vfma.f32  s14, s13, s0                                ...
+  vfma.f32  s15, s13, s1                                bl    __aeabi_fmul
+  vstr      s14, [r0]                                   bl    __aeabi_fsub
+  vstr      s15, [r1]                                   bl    __aeabi_fmul
+  bx        lr                                          bl    __aeabi_fmul
+                                                        bl    __aeabi_fadd
+       9 instructions, 34 bytes                         pop   {r4, r5, r6, r7, pc}
+                                                               32 instructions, 76 bytes</code></pre>
+<p>On the M4F a multiply is <strong>one instruction</strong> (<code>vmul.f32</code>), and the compiler<br>even fuses multiply-and-add into <code>vfma</code>. On the M0+ each is a <strong>call</strong> into<br>libgcc. The size line agrees: <code>kernel.c</code> is 60 bytes of <code>.text</code> for the M4F<br>and 130 for the M0+ — <em>before</em> counting the library it calls.</p>
+<p>This was <strong>compiled and disassembled, not run</strong>: no M4F is in this course. It<br>is the one question Part 2 originally wanted an F446RE for, and a compiler<br>answers it.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: What <code>__aeabi_fmul</code> Has to Do</h2>
+<p>A <code>float</code> is three fields packed in 32 bits. Multiplying two of them in<br>software means:</p>
+<figure class="diagram"><svg width="786" viewBox="0 0 786 120" role="img" aria-label="IEEE 754 single precision: value = (-1)^sign x 1.mantissa x 2^(exponent - 127); float, 32 bits">
+<text x="393" y="16" text-anchor="middle" class="lbl">IEEE 754 single precision: value = (-1)^sign x 1.mantissa x 2^(exponent - 127)</text>
+<text x="16" y="59" class="mono">float</text>
+<text x="16" y="74" class="lbl">32 bits</text>
+<text x="131.0" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="769.0" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="130.0" y="52" width="20.0" height="26"/>
+<rect class="reg" x="150.0" y="52" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M290.0 52 V56 M290.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M270.0 52 V56 M270.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M250.0 52 V56 M250.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M230.0 52 V56 M230.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M210.0 52 V56 M210.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M190.0 52 V56 M190.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M170.0 52 V56 M170.0 74 V78"/>
+<text x="151.0" y="44" text-anchor="start" class="mono lbl">30</text>
+<text x="309.0" y="44" text-anchor="end" class="mono lbl">23</text>
+<text x="230.0" y="65" text-anchor="middle" class="mono">exponent</text>
+<rect class="hifill" x="310.0" y="52" width="460.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M750.0 52 V56 M750.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M730.0 52 V56 M730.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M710.0 52 V56 M710.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M690.0 52 V56 M690.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M670.0 52 V56 M670.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M650.0 52 V56 M650.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M630.0 52 V56 M630.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M610.0 52 V56 M610.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M590.0 52 V56 M590.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M570.0 52 V56 M570.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M550.0 52 V56 M550.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M530.0 52 V56 M530.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M510.0 52 V56 M510.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M490.0 52 V56 M490.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M470.0 52 V56 M470.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M450.0 52 V56 M450.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M430.0 52 V56 M430.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M410.0 52 V56 M410.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M390.0 52 V56 M390.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M370.0 52 V56 M370.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M350.0 52 V56 M350.0 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M330.0 52 V56 M330.0 74 V78"/>
+<text x="540.0" y="65" text-anchor="middle" class="mono">mantissa</text>
+<path class="dash" d="M140.0 78 L145.8 84"/>
+<text x="145.8" y="91" text-anchor="middle" class="mono halo lbl">sign</text>
+</svg></figure>
+<ol><li>unpack: split sign, exponent, mantissa; put back the hidden leading 1</li><li>handle zero, infinity, NaN, denormals — every call checks</li><li>multiply two 24-bit mantissas — a 48-bit product, on a CPU whose <code>MULS</code> keeps 32</li><li>add the exponents, renormalise, <strong>round to nearest even</strong></li><li>check for overflow and underflow, pack</li></ol>
+<p>The M0+ does it in <strong>162 cycles</strong> per iteration of the multiply loop, against<br>15 for an integer multiply (<strong>measured on the host</strong>, slide 16). And it costs<br>flash: the soft-float routines this lesson links add up to <strong>4292 bytes</strong> —<br>13% of the chip — measured with <code>nm</code> (slide 17).</p>
+</section>
+<section class="slide">
+<h2>Slide 4: Fixed Point — an Integer With an Agreed Binary Point</h2>
+<figure class="diagram"><svg width="818" viewBox="0 0 818 189" role="img" aria-label="Two formats, to scale.  The bits are ordinary int32_t / int16_t - only the meaning differs.; Q16.16, 32 bits; Q15, 16 bits">
+<text x="409" y="16" text-anchor="middle" class="lbl">Two formats, to scale.  The bits are ordinary int32_t / int16_t - only the meaning differs.</text>
+<text x="16" y="59" class="mono">Q16.16</text>
+<text x="16" y="74" class="lbl">value = raw / 65536</text>
+<text x="162.6" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="800.6" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="161.6" y="52" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M461.6 52 V56 M461.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M441.6 52 V56 M441.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M421.6 52 V56 M421.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M401.6 52 V56 M401.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M381.6 52 V56 M381.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M361.6 52 V56 M361.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M341.6 52 V56 M341.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M321.6 52 V56 M321.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M301.6 52 V56 M301.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M281.6 52 V56 M281.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M261.6 52 V56 M261.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M241.6 52 V56 M241.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M221.6 52 V56 M221.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M201.6 52 V56 M201.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M181.6 52 V56 M181.6 74 V78"/>
+<text x="480.6" y="44" text-anchor="end" class="mono lbl">16</text>
+<text x="321.6" y="65" text-anchor="middle" class="mono">integer part (signed)</text>
+<rect class="hifill" x="481.6" y="52" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M781.6 52 V56 M781.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M761.6 52 V56 M761.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M741.6 52 V56 M741.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M721.6 52 V56 M721.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M701.6 52 V56 M701.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M681.6 52 V56 M681.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M661.6 52 V56 M661.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M641.6 52 V56 M641.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M621.6 52 V56 M621.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M601.6 52 V56 M601.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M581.6 52 V56 M581.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M561.6 52 V56 M561.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M541.6 52 V56 M541.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M521.6 52 V56 M521.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M501.6 52 V56 M501.6 74 V78"/>
+<text x="641.6" y="65" text-anchor="middle" class="mono">fraction</text>
+<text x="16" y="128" class="mono">Q15</text>
+<text x="16" y="143" class="lbl">value = raw / 32768</text>
+<text x="482.6" y="113" text-anchor="start" class="mono lbl">15</text>
+<text x="800.6" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="481.6" y="121" width="20.0" height="26"/>
+<rect class="hifill" x="501.6" y="121" width="300.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M781.6 121 V125 M781.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M761.6 121 V125 M761.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M741.6 121 V125 M741.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M721.6 121 V125 M721.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M701.6 121 V125 M701.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M681.6 121 V125 M681.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M661.6 121 V125 M661.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M641.6 121 V125 M641.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M621.6 121 V125 M621.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M601.6 121 V125 M601.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M581.6 121 V125 M581.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M561.6 121 V125 M561.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M541.6 121 V125 M541.6 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M521.6 121 V125 M521.6 143 V147"/>
+<text x="502.6" y="113" text-anchor="start" class="mono lbl">14</text>
+<text x="651.6" y="134" text-anchor="middle" class="mono">fraction</text>
+<text x="491.6" y="160" text-anchor="middle" class="mono halo lbl">sign</text>
+</svg></figure>
+<table><thead><tr><th></th><th>Q16.16</th><th>Q15 (Q1.15)</th></tr></thead><tbody><tr><td>C type</td><td><code>int32_t</code></td><td><code>int16_t</code></td></tr><tr><td>range</td><td>−32768 … +32767.99998</td><td>−1 … +0.99997</td></tr><tr><td>step (1 LSB)</td><td>1.5 × 10⁻⁵</td><td>3.1 × 10⁻⁵</td></tr><tr><td><code>0.5</code> is</td><td><code>32768</code></td><td><code>16384</code></td></tr></tbody></table>
+<p>The step is <strong>fixed</strong>: 1.5 × 10⁻⁵ whether the number is 0.001 or 30 000. A<br>float&#x27;s step scales with the number. That is the whole trade: fixed point<br>gives up range to keep integer speed.</p>
+<p><code>fix.h</code> builds constants at compile time — <code>Q16(0.8)</code> is <code>52429</code>, folded by the<br>compiler, so no float code reaches the chip.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: The Arithmetic Rules</h2>
+<pre><code>add     Qn + Qn  = Qn           plain integer add          (same binary point)
+mul     Qn x Qn  = Q2n          shift right by n afterwards
+          Q15    x Q15    = Q30     -&gt; 32 bits: ONE MULS
+          Q16.16 x Q16.16 = Q32.32  -&gt; 64 bits: __aeabi_lmul</code></pre>
+<p>From <code>fix.h</code>:</p>
+<pre class="lang-c"><code>static inline q15_t q15_mul(q15_t a, q15_t b)
+{
+    int32_t p = (int32_t)a * b;      /* Q30, fits in 32 bits          */
+    p += 1 &lt;&lt; 14;                    /* + half an LSB: round           */
+    return q15_sat32(p &gt;&gt; 15);       /* back to Q15, clamp -1 x -1     */
+}
+
+static inline q16_t q16_mul(q16_t a, q16_t b)
+{
+    int64_t p = (int64_t)a * b;      /* Q32.32: needs 64 bits          */
+    p += 1 &lt;&lt; 15;
+    return q16_sat64(p &gt;&gt; 16);
+}</code></pre>
+<p>Same three lines. One of them is ten times cheaper than the other, and the<br>difference is entirely whether the product fits in a register.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: Q15 Multiply, on the Chip</h2>
+<p><code>q15_mul</code> as the compiler emitted it in this lesson&#x27;s <code>Main.elf</code>:</p>
+<pre><code>08000ecc &lt;q15_mul&gt;:
+  movs  r3, #128
+  muls  r0, r1            &lt;- the multiply: 1 instruction
+  lsls  r3, r3, #7        r3 = 0x4000, half an LSB
+  adds  r0, r0, r3        round
+  movs  r3, #128
+  asrs  r0, r0, #15       back to Q15
+  lsls  r3, r3, #8        r3 = 0x8000
+  cmp   r0, r3            only ONE overflow test ...
+  blt.n 8000ee0
+  ldr   r0, [pc, #4]      ... clamp to 0x7FFF
+  sxth  r0, r0
+  bx    lr</code></pre>
+<p>Look at what is <em>missing</em>: a test for the bottom of the range. The compiler<br>proved that a Q15 × Q15 product can never be below −1, so it dropped the<br><code>&lt; -32768</code> branch from <code>q15_sat32</code>. Only −1 × −1 = +1 can overflow, and only<br>upwards.</p>
+<p><strong>Measured on the host</strong>: 34 cycles per iteration for the Q15 multiply loop,<br>against 15 for <code>int32</code> and 162 for <code>float</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Q16.16 Multiply Needs 64 Bits</h2>
+<p>The M0+&#x27;s <code>MULS</code> returns the <strong>low 32 bits</strong> of a product. Q16.16 needs the<br>middle 32 of a 64-bit product, so gcc calls <code>__aeabi_lmul</code> — four 16 × 16<br>multiplies stitched together:</p>
+<pre><code>080031c0 &lt;__aeabi_lmul&gt;:
+  ...
+  muls  r0, r5            lo x lo
+  muls  r1, r6            lo x hi
+  muls  r5, r3            hi x lo
+  muls  r6, r3            hi x hi
+  adds  r5, r5, r1        add the cross terms ...
+  ...                     ... and propagate the carries
+  muls  r2, r7            the high words&#x27; contribution
+  muls  r4, r3
+  ...
+  pop   {r4, r5, r6, r7, pc}</code></pre>
+<p>78 bytes of flash, and the whole Q16.16 multiply loop costs <strong>104 cycles per<br>iteration</strong> (<strong>measured on the host</strong>): faster than float&#x27;s 162, but three<br>times Q15&#x27;s 34.</p>
+<p>The rule this gives you: <strong>choose the narrowest Q format that holds your<br>numbers</strong>. Q15 for anything normalised to ±1 — samples, sines, gains;<br>Q16.16 only when you need the range.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Rounding — Truncation Drifts</h2>
+<p>Shifting right <strong>truncates toward −∞</strong>. Every product comes out low by up to<br>one LSB, half an LSB on average. Adding half an LSB before the shift rounds to<br>nearest instead.</p>
+<p><strong>Measured on the host</strong>, one million random Q15 products:</p>
+<table><thead><tr><th></th><th>mean error</th></tr></thead><tbody><tr><td>round to nearest (<code>q15_mul</code>)</td><td><strong>−0.0000 LSB</strong></td></tr><tr><td>truncate (<code>&gt;&gt; 15</code> alone)</td><td><strong>−0.4992 LSB</strong></td></tr></tbody></table>
+<p>A bias of −0.5 LSB looks harmless. Now put it inside a filter or an<br>integrator that runs a thousand times a second: the error does not average<br>out, it <strong>accumulates in one direction</strong>. An integrator built on truncating<br>multiplies drifts even with zero input.</p>
+<p>Cost of rounding: one <code>adds</code> (slide 6). Always pay it.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: Overflow — Saturate, Don&#x27;t Wrap</h2>
+<p>Integer overflow on this CPU wraps round: the largest positive number plus one<br>is the most negative. <strong>Measured on the host</strong> (<code>test_fix</code>, part 3):</p>
+<table><thead><tr><th>case</th><th>wrapping</th><th>saturating (<code>fix.h</code>)</th></tr></thead><tbody><tr><td>Q15 <code>0.75 + 0.5</code></td><td><strong>−0.75000</strong></td><td>+0.99997</td></tr><tr><td>Q15 <code>−1 × −1</code></td><td><strong>−1</strong> (32768 does not fit in <code>int16_t</code>)</td><td>+0.99997</td></tr><tr><td>Q16.16 <code>300 × 300</code></td><td>garbage</td><td>+32767.99998 (the top of the range)</td></tr><tr><td>Q16.16 <code>1 / 0</code></td><td>(a division by zero)</td><td>+32767.99998</td></tr></tbody></table>
+<p>A wrapped value is not slightly wrong — it has the <strong>wrong sign</strong>. In a motor<br>controller, &quot;full forward&quot; becomes &quot;full reverse&quot;. Saturation is still wrong,<br>but wrong in the safe direction.</p>
+<p><code>fix.h</code> keeps a deliberately broken <code>q15_add_wrap()</code> so Lab Part 4 can watch<br>the sign flip.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Guard Bits — Why the FIR&#x27;s Accumulator Is Safe</h2>
+<p>The 16-tap filter adds 16 Q30 products into one <code>int32_t</code>:</p>
+<pre class="lang-c"><code>int32_t acc = 0;
+for (j = 0; j &lt; 16; j++) acc += (int32_t)fir_h_q15[j] * x[k + j];
+return q15_sat32((acc + (1 &lt;&lt; 14)) &gt;&gt; 15);      /* round once, at the end */</code></pre>
+<p>Each product is up to 2³⁰. Sixteen of them could reach 2³⁴ — but the<br>coefficients are all positive and <strong>sum to 1</strong>, so the sum never exceeds the<br>largest input. That is a design property, not luck.</p>
+<p><strong>Measured on the host</strong>: scale the same coefficients to a gain of 4 and feed<br>a full-scale input:</p>
+<pre><code>FIR  gain 4, full-scale input: 32-bit sum -0.0004, 64-bit sum +3.9996</code></pre>
+<p>The 32-bit accumulator wrapped round to nearly zero. A filter that &quot;goes<br>quiet&quot; on its loudest input is the classic fixed-point bug. The cures: keep<br>the gain ≤ 1, scale inputs down (spend guard bits), or accumulate in 64 bits<br>and pay for it.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Division — No Instruction at All</h2>
+<p>The Cortex-M0+ has <strong>no divide instruction</strong>. ARMv6-M simply does not define<br>one. Every <code>/</code> is a call:</p>
+<table><thead><tr><th></th><th>routine</th><th>flash</th><th>cycles / iteration (host model)</th></tr></thead><tbody><tr><td><code>int32 / int32</code></td><td><code>__aeabi_idiv</code></td><td>470 B</td><td><strong>62</strong></td></tr><tr><td><code>float / float</code></td><td><code>__aeabi_fdiv</code></td><td>(in the 4292 B)</td><td><strong>457</strong></td></tr><tr><td>Q16.16 <code>(a &lt;&lt; 16) / b</code></td><td><code>__aeabi_ldivmod</code> (64-bit)</td><td>604 B</td><td><strong>663</strong></td></tr></tbody></table>
+<p>Q16.16 division loses to float: it needs a 64-by-64-bit divide, and libgcc&#x27;s<br>is general-purpose.</p>
+<p>The cure is old: <strong>divide by a constant? Multiply by its reciprocal.</strong><br><code>x / 10</code> becomes <code>q16_mul(x, Q16(0.1))</code> — 104 cycles instead of 663. The<br>compiler does this itself for integer constants; for fixed point, you do.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Sine, Three Ways</h2>
+<table><thead><tr><th></th><th>how</th><th>accuracy (<strong>host</strong>, all 65 536 angles)</th><th>cycles (host model)</th><th>flash</th></tr></thead><tbody><tr><td>libm <code>sinf</code></td><td>exact range reduction, polynomial kernels</td><td>1.3 × 10⁻⁷</td><td><strong>2982</strong></td><td><strong>4742 B</strong></td></tr><tr><td><code>f_sin</code> (<code>_lib/fmath.h</code>)</td><td>Taylor to x⁹, soft float</td><td>3.6 × 10⁻⁶</td><td><strong>1669</strong></td><td>inline, in the float routines</td></tr><tr><td><code>q15_sin</code> (<code>fix.c</code>)</td><td>65-entry quarter-wave table + interpolation</td><td>1.1 × 10⁻⁴</td><td><strong>58</strong></td><td><strong>198 B</strong></td></tr></tbody></table>
+<p>The table takes a <strong>binary angle</strong>: a full turn is 65 536, so the angle wraps<br>for free when the <code>uint16_t</code> overflows — no range reduction at all.</p>
+<pre class="lang-c"><code>uint32_t quadrant = angle &gt;&gt; 14;          /* bits 15:14 pick the quadrant   */
+uint32_t i = a &gt;&gt; 8, frac = a &amp; 0xFF;     /* bits 13:8 the entry, 7:0 between */
+int32_t  y = y0 + (((y1 - y0) * frac + 128) &gt;&gt; 8);</code></pre>
+<p>1.1 × 10⁻⁴ is 0.006° of angle error — finer than any hobby IMU can measure.<br>51× faster than <code>sinf</code>, and 24× less flash.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Measuring Cycles — SysTick as a Stopwatch</h2>
+<p>This lesson does not link the RTOS, so it owns SysTick — not as a 1 ms tick,<br>but as a free-running <strong>24-bit cycle counter</strong>:</p>
+<figure class="diagram"><svg width="851" viewBox="0 0 851 307" role="img" aria-label="SysTick configured by cycles_init(): CPU clock, no interrupt, counting; SysTick-&gt;CTRL, 32 bits; SysTick-&gt;LOAD, 32 bits; SysTick-&gt;VAL, 32 bits">
+<text x="425" y="16" text-anchor="middle" class="lbl">SysTick configured by cycles_init(): CPU clock, no interrupt, counting</text>
+<text x="16" y="59" class="mono">SysTick-&gt;CTRL</text>
+<text x="16" y="74" class="lbl">SYST_CSR</text>
+<text x="16" y="89" class="mono lbl">= 0x00000005</text>
+<text x="194.6" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="832.6" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="513.6" y="52" width="260.0" height="26"/>
+<rect class="dash" x="193.6" y="52" width="300.0" height="26"/>
+<rect class="reg" x="493.6" y="52" width="20.0" height="26"/>
+<text x="503.6" y="44" text-anchor="middle" class="mono lbl">16</text>
+<rect class="hifill" x="773.6" y="52" width="20.0" height="26"/>
+<text x="783.6" y="44" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="793.6" y="52" width="20.0" height="26"/>
+<text x="803.6" y="44" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="813.6" y="52" width="20.0" height="26"/>
+<text x="823.6" y="65" text-anchor="middle" class="mono">1</text>
+<text x="803.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="783.6" y="65" text-anchor="middle" class="mono">1</text>
+<text x="763.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="743.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="723.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="703.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="683.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="663.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="643.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="623.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="603.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="583.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="563.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="543.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="523.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="503.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="483.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="463.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="443.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="423.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="403.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="383.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="363.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="343.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="323.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="303.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="283.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="263.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="243.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="223.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="203.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M803.6 78 L803.6 100"/>
+<path class="dash" d="M823.6 78 L823.6 116"/>
+<text x="503.6" y="91" text-anchor="middle" class="mono halo lbl">COUNTFLAG</text>
+<text x="783.6" y="91" text-anchor="middle" class="mono halo">CLKSOURCE</text>
+<text x="803.6" y="107" text-anchor="middle" class="mono halo lbl">TICKINT</text>
+<text x="823.6" y="123" text-anchor="middle" class="mono halo">ENABLE</text>
+<text x="16" y="177" class="mono">SysTick-&gt;LOAD</text>
+<text x="16" y="192" class="lbl">SYST_RVR: the full range</text>
+<text x="16" y="207" class="mono lbl">= 0x00FFFFFF</text>
+<text x="194.6" y="162" text-anchor="start" class="mono lbl">31</text>
+<text x="832.6" y="162" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="193.6" y="170" width="160.0" height="26"/>
+<rect class="hifill" x="353.6" y="170" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M813.6 170 V174 M813.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M793.6 170 V174 M793.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M773.6 170 V174 M773.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M753.6 170 V174 M753.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M733.6 170 V174 M733.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M713.6 170 V174 M713.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M693.6 170 V174 M693.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M673.6 170 V174 M673.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M653.6 170 V174 M653.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M633.6 170 V174 M633.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M613.6 170 V174 M613.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M593.6 170 V174 M593.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M573.6 170 V174 M573.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M553.6 170 V174 M553.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M533.6 170 V174 M533.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M513.6 170 V174 M513.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M493.6 170 V174 M493.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M473.6 170 V174 M473.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M453.6 170 V174 M453.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M433.6 170 V174 M433.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M413.6 170 V174 M413.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M393.6 170 V174 M393.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M373.6 170 V174 M373.6 192 V196"/>
+<text x="354.6" y="162" text-anchor="start" class="mono lbl">23</text>
+<text x="823.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="803.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="783.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="763.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="743.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="723.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="703.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="683.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="663.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="643.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="623.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="603.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="583.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="563.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="543.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="523.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="503.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="483.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="463.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="443.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="423.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="403.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="383.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="363.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="343.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="323.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="303.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="283.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="263.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="243.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="223.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="203.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="593.6" y="209" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="263" class="mono">SysTick-&gt;VAL</text>
+<text x="16" y="278" class="lbl">SYST_CVR: counts DOWN</text>
+<text x="194.6" y="248" text-anchor="start" class="mono lbl">31</text>
+<text x="832.6" y="248" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="193.6" y="256" width="160.0" height="26"/>
+<text x="273.6" y="269" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="353.6" y="256" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M813.6 256 V260 M813.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M793.6 256 V260 M793.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M773.6 256 V260 M773.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M753.6 256 V260 M753.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M733.6 256 V260 M733.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M713.6 256 V260 M713.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M693.6 256 V260 M693.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M673.6 256 V260 M673.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M653.6 256 V260 M653.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M633.6 256 V260 M633.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M613.6 256 V260 M613.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M593.6 256 V260 M593.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M573.6 256 V260 M573.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M553.6 256 V260 M553.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M533.6 256 V260 M533.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M513.6 256 V260 M513.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M493.6 256 V260 M493.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M473.6 256 V260 M473.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M453.6 256 V260 M453.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M433.6 256 V260 M433.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M413.6 256 V260 M413.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M393.6 256 V260 M393.6 278 V282"/>
+<path class="reg" stroke-width="0.6" d="M373.6 256 V260 M373.6 278 V282"/>
+<text x="354.6" y="248" text-anchor="start" class="mono lbl">23</text>
+<text x="593.6" y="269" text-anchor="middle" class="mono">CURRENT</text>
+</svg></figure>
+<p>One count per CPU cycle, 20.8 ns. It counts <strong>down</strong>, and wraps every<br>2²⁴ cycles = 349 ms:</p>
+<pre class="lang-c"><code>static inline uint32_t cycles_since(uint32_t t0)
+{
+    return (t0 - SysTick-&gt;VAL) &amp; SysTick_LOAD_RELOAD_Msk;    /* 0xFFFFFF */
+}</code></pre>
+<p>Then, for each workload: time <code>fn(64)</code>, time <code>fn(0)</code>, subtract, divide by 64.<br>The subtraction cancels the call, the return and reading SysTick itself.<br>Best of three runs.</p>
+<p><code>cycles_init()</code> also <strong>checks that VAL moves</strong> before trusting it — lesson 09<br>met a simulator where SysTick was enabled and frozen.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: The Overhead You Must Subtract</h2>
+<p>Row 0 of the arena is a loop that does almost nothing:</p>
+<pre class="lang-c"><code>for (i = 0; i &lt; n; i++) { acc += (uint32_t)in_ia[i &amp; 63]; }</code></pre>
+<p><strong>12 cycles per iteration</strong> in the host model: compare, branch, mask, shift,<br>load, add, increment. Every other row <em>includes</em> those 12. An <code>int32</code> add row<br>measures 15 — so the add itself, plus a second load, is 3 cycles.</p>
+<p>The firmware prints both: <code>cyc/iter</code> (raw) and <code>net</code> (minus the baseline).</p>
+<p>This is the measurement lesson in miniature: <strong>measure the empty<br>experiment</strong>. A benchmark that does not know its own overhead reports the<br>loop, not the operation — and for <code>int32</code> the loop is 80% of the number.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: A Second Witness — the M0+ Model</h2>
+<p>Nothing can be run in Wokwi from here, so the cycle counts needed another<br>source. <code>host/m0sim.py</code> (Python standard library, about 500 lines):</p>
+<ul><li>loads <strong>this lesson&#x27;s <code>Main.elf</code></strong> — the same machine code, libgcc soft float and newlib <code>sinf</code> the board runs;</li><li>executes ARMv6-M Thumb instruction by instruction;</li><li>counts cycles from the Cortex-M0+ TRM&#x27;s timing table — ALU 1, load/store 2, taken branch 2, <code>BL</code> 3, <code>PUSH</code>/<code>POP</code> 1 + N;</li><li>calls <code>bench_seed(2026)</code> then every workload, exactly as <code>Main.c</code> does.</li></ul>
+<p><strong>And it checks itself</strong>: each workload returns a checksum of all its results.<br>For <strong>21 of 22</strong> workloads, the model&#x27;s checksum is <strong>bit-identical</strong> to the<br>PC&#x27;s (<code>test_fix</code>, compiled by host gcc from the same C). IEEE 754 requires<br><code>+ − × ÷</code> to round identically everywhere, so this is a strong test that both<br>the simulator and libgcc did exactly the right arithmetic. The 22nd is <code>sinf</code>:<br>newlib&#x27;s and MinGW&#x27;s are different code.</p>
+<p>Two assumptions, both printed: a <strong>single-cycle multiplier</strong> (an M0+ build<br>option; <code>--mul 32</code> tries the other) and <strong>zero wait states</strong> (a second column<br>adds a crude 1-wait-state model).</p>
+</section>
+<section class="slide">
+<h2>Slide 16: The Leaderboard</h2>
+<p><strong>Measured on the host</strong> (<code>m0sim.py</code>, cycles per iteration):</p>
+<table><thead><tr><th>job</th><th>winner</th><th></th><th></th><th></th><th>slowest ÷ winner</th></tr></thead><tbody><tr><td>add</td><td>int32 <strong>15</strong></td><td>Q16.16 41</td><td>float 129</td><td></td><td>8.6×</td></tr><tr><td>mul</td><td>int32 <strong>15</strong></td><td>Q15 34</td><td>Q16.16 104</td><td>float 162</td><td>10.8×</td></tr><tr><td>div</td><td>int32 <strong>62</strong></td><td>float 457</td><td>Q16.16 663</td><td></td><td>10.7×</td></tr><tr><td>sin</td><td>Q15 table <strong>58</strong></td><td><code>f_sin</code> 1669</td><td><code>sinf</code> 2982</td><td></td><td>51×</td></tr><tr><td>rot2d</td><td>Q15 <strong>127</strong></td><td>Q16.16 447</td><td>float 819</td><td></td><td>6.5×</td></tr><tr><td>PI step</td><td>Q16.16 <strong>356</strong></td><td>float 784</td><td></td><td></td><td>2.2×</td></tr><tr><td>fir16</td><td>int32 <strong>241</strong></td><td>Q15 302</td><td>float 4271</td><td></td><td>17.7×</td></tr></tbody></table>
+<p>With one flash wait state (the model&#x27;s second column) every number grows by<br>about 45%; the ranking does not change.</p>
+<p>Two surprises worth a minute: <strong>Q16.16 division loses to float</strong>, and the PI<br>controller is only 2.2× faster in fixed point — its four multiplies each need<br><code>__aeabi_lmul</code>, and the saturating adds need 64-bit arithmetic too.</p>
+<p>The firmware prints the same table from SysTick. Whether Wokwi agrees with<br>this model is <strong>Lab Part 2</strong> — nobody has looked yet.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: What Each Format Costs in Flash</h2>
+<p><strong>Measured</strong> with <code>arm-none-eabi-nm --size-sort -S</code> on this lesson&#x27;s<br><code>Main.elf</code>, added up by <code>host/flashcost.py</code>:</p>
+<table><thead><tr><th>format</th><th>brings in</th><th>bytes</th></tr></thead><tbody><tr><td>int32 <code>+ − ×</code></td><td>nothing — they are instructions</td><td><strong>0</strong></td></tr><tr><td>Q15 sine</td><td><code>quarter[]</code> + <code>q15_sin</code></td><td><strong>198</strong></td></tr><tr><td>Q16.16 multiply</td><td><code>__aeabi_lmul</code></td><td><strong>78</strong></td></tr><tr><td>Q16.16 divide</td><td><code>__aeabi_ldivmod</code>, <code>__divdi3</code> …</td><td><strong>604</strong></td></tr><tr><td>int32 divide</td><td><code>__aeabi_idiv</code></td><td><strong>470</strong></td></tr><tr><td>float</td><td><code>fadd fsub fmul fdiv</code>, compares, conversions</td><td><strong>4292</strong></td></tr><tr><td>libm <code>sinf</code></td><td><code>sinf</code>, kernels, <code>__kernel_rem_pio2f</code>, tables</td><td><strong>4742</strong></td></tr></tbody></table>
+<p>The whole lesson is 27 328 bytes of 32 768. Float and <code>sinf</code> together are<br><strong>9 KB — over a quarter of the chip</strong>. On a 32 KB part, flash is a budget like<br>cycles are.</p>
+<p>The grouping is a judgement (which routine &quot;belongs&quot; to which format); the<br>numbers are measured. They go stale when the code changes — re-run<br><code>flashcost.py</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: When Float Is Fine</h2>
+<p>Float is ten times slower. That matters only if you are short of cycles.<br>The budget arithmetic, with the host model&#x27;s numbers, at 48 MHz:</p>
+<pre><code>PI step, float   784 cycles x  500 Hz =   392 000 cycles/s =  0.82 % of the CPU
+FIR16,   float  4271 cycles x 1000 Hz = 4 271 000 cycles/s =  8.9 %  of the CPU
+FIR16,   Q15     302 cycles x 1000 Hz =   302 000 cycles/s =  0.63 % of the CPU</code></pre>
+<p>A control loop at a few hundred hertz — lessons 13–18&#x27;s drone and robots —<br>spends <strong>under 1%</strong> of the CPU on a float PI step. Even a hundred float<br>operations per loop at 250 Hz is about 4 M cycles/s, under 10%. <strong>Write it in<br>float</strong>, with <code>fmath.h</code> instead of libm. That is what the application<br>lessons do.</p>
+<p>Reach for fixed point when the rate is high (audio, a 10 kHz motor current<br>loop, filtering every ADC sample), when the budget is tight, or when the flash<br>is: Q15 does the FIR at 1 kHz for 0.63% and no soft-float library at all.</p>
+<p>The decision is arithmetic, not taste. <strong>Do the multiplication before you<br>choose.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 19: Accuracy Against Cost</h2>
+<p>Cheaper is no use if it is wrong. <strong>Measured on the host</strong>, max error against<br>double precision, and cycles from slide 16:</p>
+<table><thead><tr><th>job</th><th>format</th><th>max error</th><th>LSBs</th><th>cycles</th></tr></thead><tbody><tr><td>mul</td><td>Q15</td><td>1.4 × 10⁻⁵</td><td>0.47</td><td>34</td></tr><tr><td>mul</td><td>Q16.16</td><td>7.3 × 10⁻⁶</td><td>0.48</td><td>104</td></tr><tr><td>rot2d</td><td>Q15</td><td>3.0 × 10⁻⁵</td><td>0.97</td><td>127</td></tr><tr><td>rot2d</td><td>float</td><td>1.3 × 10⁻⁷</td><td>—</td><td>819</td></tr><tr><td>PI step</td><td>Q16.16</td><td>1.5 × 10⁻⁴</td><td><strong>9.5</strong></td><td>356</td></tr><tr><td>fir16</td><td>int32 (×256 coefficients)</td><td>3.9 × 10⁻³ of full scale</td><td><strong>8.0</strong></td><td>241</td></tr><tr><td>fir16</td><td>Q15</td><td>2.7 × 10⁻⁵</td><td>0.88</td><td>302</td></tr></tbody></table>
+<p>Two rows teach the hidden cost of fixed point: <strong>constants are quantised<br>too</strong>. The PI controller&#x27;s <code>dt = 0.01</code> becomes 655/65536 = 0.009995, and its<br>error is 9.5 LSB. The int FIR&#x27;s coefficients rounded to 1/256 carry 8 LSB of<br>error. Q15 rounds them to 1/32768, and is both nearly as fast and 100× more<br>accurate.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: DMA — a Second Bus Master</h2>
+<figure class="diagram"><svg viewBox="0 0 640 230" role="img" aria-label="DMA block diagram: the ADC raises a request, DMAMUX routes request 5 to DMA1 channel 1, which copies ADC1->DR into scan_buf in RAM over the bus while the CPU runs">
+  <rect class="box" x="20" y="20" width="120" height="56" rx="6"/>
+  <text x="80" y="44" text-anchor="middle" class="mono">CPU</text>
+  <text x="80" y="62" text-anchor="middle" class="lbl">Cortex-M0+</text>
+  <rect class="hifill" x="20" y="130" width="120" height="56" rx="6"/>
+  <text x="80" y="154" text-anchor="middle" class="mono">DMA1</text>
+  <text x="80" y="172" text-anchor="middle" class="lbl">channel 1</text>
+  <path class="wire" d="M140 48 H230 M140 158 H230 M230 30 V200"/>
+  <text x="236" y="120" class="lbl">bus</text>
+  <path class="wire" d="M230 60 H300 M230 170 H300"/>
+  <rect class="box" x="300" y="34" width="130" height="50" rx="6"/>
+  <text x="365" y="56" text-anchor="middle" class="mono">RAM</text>
+  <text x="365" y="73" text-anchor="middle" class="lbl">scan_buf[3]</text>
+  <rect class="box" x="300" y="146" width="130" height="50" rx="6"/>
+  <text x="365" y="168" text-anchor="middle" class="mono">ADC1</text>
+  <text x="365" y="185" text-anchor="middle" class="lbl">DR, IN0 IN1 IN4</text>
+  <rect class="hifill" x="490" y="146" width="130" height="50" rx="6"/>
+  <text x="555" y="168" text-anchor="middle" class="mono">DMAMUX</text>
+  <text x="555" y="185" text-anchor="middle" class="lbl">request 5 -&gt; ch 0</text>
+  <path class="dash" d="M430 171 H490"/>
+  <text x="460" y="164" text-anchor="middle" class="lbl">EOC</text>
+  <path class="dash" d="M555 196 V216 H80 V186"/>
+  <text x="330" y="212" text-anchor="middle" class="lbl">"a result is ready" - the request line</text>
+</svg></figure>
+<p>The DMA controller is a second <strong>bus master</strong>: it can read and write memory<br>and peripherals by itself. The ADC finishes a conversion and raises a<br><strong>request</strong>; the DMAMUX routes it to a channel; the channel copies <code>ADC1-&gt;DR</code><br>to the next slot of <code>scan_buf</code> and steps its pointer. The CPU is not<br>involved — not even an interrupt.</p>
+<p>The C031 has <strong>one</strong> DMA controller with <strong>three</strong> channels, and a DMAMUX in<br>front of it.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: The DMAMUX — Which Request, Which Channel</h2>
+<p>Two facts the CMSIS header does not contain, both from ST&#x27;s C0 LL driver:</p>
+<table><thead><tr><th>fact</th><th>source</th></tr></thead><tbody><tr><td>ADC1&#x27;s request is <strong>ID 5</strong></td><td><code>LL_DMAMUX_REQ_ADC1 = 0x00000005U</code>, <code>stm32c0xx_ll_dmamux.h</code></td></tr><tr><td>memory-to-memory is ID <strong>0</strong></td><td><code>LL_DMAMUX_REQ_MEM2MEM = 0x00000000U</code></td></tr><tr><td>DMAMUX channel <em>n</em> feeds DMA1 channel <em>n</em>+1</td><td><em>&quot;DMAMUX channel 0 to 6 are mapped to DMA1 channel 1 to 7&quot;</em>, <code>stm32c0xx_ll_dma.h</code></td></tr></tbody></table>
+<p>So the ADC&#x27;s request goes in <code>DMAMUX1_Channel0</code> to reach <code>DMA1_Channel1</code>:</p>
+<figure class="diagram"><svg width="862" viewBox="0 0 862 112" role="img" aria-label="DMAMUX1_Channel0-&gt;CCR, 32 bits">
+<text x="16" y="35" class="mono">DMAMUX1_Channel0-&gt;CCR</text>
+<text x="16" y="50" class="lbl">request 5 = ADC1</text>
+<text x="16" y="65" class="mono lbl">= 0x00000005</text>
+<text x="206.9" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="844.9" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="525.9" y="28" width="120.0" height="26"/>
+<rect class="dash" x="205.9" y="28" width="60.0" height="26"/>
+<rect class="reg" x="265.9" y="28" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M345.9 28 V32 M345.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M325.9 28 V32 M325.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M305.9 28 V32 M305.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M285.9 28 V32 M285.9 50 V54"/>
+<text x="266.9" y="20" text-anchor="start" class="mono lbl">28</text>
+<text x="364.9" y="20" text-anchor="end" class="mono lbl">24</text>
+<rect class="reg" x="365.9" y="28" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M445.9 28 V32 M445.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M425.9 28 V32 M425.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M405.9 28 V32 M405.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M385.9 28 V32 M385.9 50 V54"/>
+<text x="464.9" y="20" text-anchor="end" class="mono lbl">19</text>
+<rect class="reg" x="465.9" y="28" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M485.9 28 V32 M485.9 50 V54"/>
+<text x="504.9" y="20" text-anchor="end" class="mono lbl">17</text>
+<rect class="reg" x="505.9" y="28" width="20.0" height="26"/>
+<text x="515.9" y="20" text-anchor="middle" class="mono lbl">16</text>
+<rect class="reg" x="645.9" y="28" width="20.0" height="26"/>
+<text x="655.9" y="20" text-anchor="middle" class="mono lbl">9</text>
+<rect class="reg" x="665.9" y="28" width="20.0" height="26"/>
+<text x="675.9" y="20" text-anchor="middle" class="mono lbl">8</text>
+<rect class="hifill" x="685.9" y="28" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M825.9 28 V32 M825.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M805.9 28 V32 M805.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M785.9 28 V32 M785.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M765.9 28 V32 M765.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M745.9 28 V32 M745.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M725.9 28 V32 M725.9 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M705.9 28 V32 M705.9 50 V54"/>
+<text x="686.9" y="20" text-anchor="start" class="mono lbl">7</text>
+<text x="835.9" y="41" text-anchor="middle" class="mono">1</text>
+<text x="815.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="795.9" y="41" text-anchor="middle" class="mono">1</text>
+<text x="775.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="755.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="735.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="715.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="695.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="675.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="655.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="635.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="615.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="595.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="575.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="555.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="535.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="515.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="495.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="475.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="455.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="435.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="415.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="395.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="375.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="355.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="335.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="315.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="295.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="275.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="255.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="235.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="215.9" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M675.9 54 L675.9 76"/>
+<text x="315.9" y="67" text-anchor="middle" class="mono halo lbl">SYNC_ID</text>
+<text x="415.9" y="67" text-anchor="middle" class="mono halo lbl">NBREQ</text>
+<text x="485.9" y="67" text-anchor="middle" class="mono halo lbl">SPOL</text>
+<text x="515.9" y="67" text-anchor="middle" class="mono halo lbl">SE</text>
+<text x="655.9" y="67" text-anchor="middle" class="mono halo lbl">EGE</text>
+<text x="675.9" y="83" text-anchor="middle" class="mono halo lbl">SOIE</text>
+<text x="765.9" y="67" text-anchor="middle" class="mono halo">DMAREQ_ID</text>
+</svg></figure>
+<p>The synchronisation and event fields stay 0: no triggers, every request<br>passes straight through. The off-by-one between &quot;channel 0&quot; and &quot;channel 1&quot;<br>is the kind of thing that is wrong silently — and why both numbers are<br>cited, not remembered.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: One DMA Channel, Four Registers</h2>
+<pre class="lang-c"><code>DMA1_Channel1-&gt;CPAR  = (uint32_t)&amp;ADC1-&gt;DR;     /* from: the ADC result  */
+DMA1_Channel1-&gt;CMAR  = (uint32_t)scan_buf;      /* to:   our array       */
+DMA1_Channel1-&gt;CNDTR = 3;                       /* how many, then wrap   */
+DMA1_Channel1-&gt;CCR   = DMA_CCR_PSIZE_0 | DMA_CCR_MSIZE_0 | DMA_CCR_MINC
+                     | DMA_CCR_CIRC | DMA_CCR_PL_1 | DMA_CCR_EN;</code></pre>
+<figure class="diagram"><svg width="901" viewBox="0 0 901 222" role="img" aria-label="DMA1_Channel1 after scan_start(); DMA1_Channel1-&gt;CCR, 32 bits; DMA1_Channel1-&gt;CNDTR, 32 bits">
+<text x="450" y="16" text-anchor="middle" class="lbl">DMA1_Channel1 after scan_start()</text>
+<text x="16" y="59" class="mono">DMA1_Channel1-&gt;CCR</text>
+<text x="16" y="74" class="lbl">16-bit, MINC, circular, high, on</text>
+<text x="16" y="89" class="mono lbl">= 0x000025A1</text>
+<text x="245.8" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="52" width="340.0" height="26"/>
+<rect class="reg" x="584.8" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="604.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 52 V56 M624.8 74 V78"/>
+<text x="605.8" y="44" text-anchor="start" class="mono lbl">13</text>
+<text x="643.8" y="44" text-anchor="end" class="mono lbl">12</text>
+<rect class="hifill" x="644.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M664.8 52 V56 M664.8 74 V78"/>
+<text x="683.8" y="44" text-anchor="end" class="mono lbl">10</text>
+<rect class="hifill" x="684.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 52 V56 M704.8 74 V78"/>
+<text x="723.8" y="44" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="724.8" y="52" width="20.0" height="26"/>
+<text x="734.8" y="44" text-anchor="middle" class="mono lbl">7</text>
+<rect class="reg" x="744.8" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="764.8" y="52" width="20.0" height="26"/>
+<text x="774.8" y="44" text-anchor="middle" class="mono lbl">5</text>
+<rect class="reg" x="784.8" y="52" width="20.0" height="26"/>
+<rect class="reg" x="804.8" y="52" width="20.0" height="26"/>
+<rect class="reg" x="824.8" y="52" width="20.0" height="26"/>
+<rect class="reg" x="844.8" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="864.8" y="52" width="20.0" height="26"/>
+<text x="874.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="854.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="834.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="814.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="794.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="774.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="754.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="734.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="714.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="694.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="674.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="654.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="634.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="614.8" y="65" text-anchor="middle" class="mono">1</text>
+<text x="594.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="574.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="554.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="534.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="514.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="494.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="474.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="454.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="434.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="414.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="394.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="374.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="354.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="334.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="314.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="294.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="274.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="254.8" y="65" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M624.8 78 L624.8 100"/>
+<path class="dash" d="M704.8 78 L704.8 100"/>
+<path class="dash" d="M754.8 78 L754.8 100"/>
+<path class="dash" d="M794.8 78 L794.8 100"/>
+<path class="dash" d="M834.8 78 L834.8 100"/>
+<path class="dash" d="M874.8 78 L874.8 100"/>
+<text x="594.8" y="91" text-anchor="middle" class="mono halo lbl">MEM2MEM</text>
+<text x="624.8" y="107" text-anchor="middle" class="mono halo">PL</text>
+<text x="664.8" y="91" text-anchor="middle" class="mono halo">MSIZE</text>
+<text x="704.8" y="107" text-anchor="middle" class="mono halo">PSIZE</text>
+<text x="734.8" y="91" text-anchor="middle" class="mono halo">MINC</text>
+<text x="754.8" y="107" text-anchor="middle" class="mono halo lbl">PINC</text>
+<text x="774.8" y="91" text-anchor="middle" class="mono halo">CIRC</text>
+<text x="794.8" y="107" text-anchor="middle" class="mono halo lbl">DIR</text>
+<text x="814.8" y="91" text-anchor="middle" class="mono halo lbl">TEIE</text>
+<text x="834.8" y="107" text-anchor="middle" class="mono halo lbl">HTIE</text>
+<text x="854.8" y="91" text-anchor="middle" class="mono halo lbl">TCIE</text>
+<text x="874.8" y="107" text-anchor="middle" class="mono halo">EN</text>
+<text x="16" y="161" class="mono">DMA1_Channel1-&gt;CNDTR</text>
+<text x="16" y="176" class="lbl">transfers left</text>
+<text x="16" y="191" class="mono lbl">= 0x00000003</text>
+<text x="245.8" y="146" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="146" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="154" width="320.0" height="26"/>
+<rect class="hifill" x="564.8" y="154" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 154 V158 M864.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M844.8 154 V158 M844.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M824.8 154 V158 M824.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M804.8 154 V158 M804.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M784.8 154 V158 M784.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M764.8 154 V158 M764.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M744.8 154 V158 M744.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M724.8 154 V158 M724.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M704.8 154 V158 M704.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M684.8 154 V158 M684.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M664.8 154 V158 M664.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M644.8 154 V158 M644.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M624.8 154 V158 M624.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M604.8 154 V158 M604.8 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M584.8 154 V158 M584.8 176 V180"/>
+<text x="565.8" y="146" text-anchor="start" class="mono lbl">15</text>
+<text x="874.8" y="167" text-anchor="middle" class="mono">1</text>
+<text x="854.8" y="167" text-anchor="middle" class="mono">1</text>
+<text x="834.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="814.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="794.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="774.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="754.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="734.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="714.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="694.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="674.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="654.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="634.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="614.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="594.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="574.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="554.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="534.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="514.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="494.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="474.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="454.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="434.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="414.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="394.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="374.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="354.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="334.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="314.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="294.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="274.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="254.8" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="724.8" y="193" text-anchor="middle" class="mono halo">NDT</text>
+</svg></figure>
+<ul><li><code>PSIZE = MSIZE = 01</code>: 16-bit reads from <code>DR</code>, 16-bit writes to RAM.</li><li><code>MINC</code> but not <code>PINC</code>: the RAM address steps by 2; <code>DR</code> stays put.</li><li><code>CIRC</code>: when <code>CNDTR</code> reaches 0, reload it and <code>CMAR</code> — <strong>forever</strong>.</li><li><code>DIR = 0</code>: peripheral → memory.</li></ul>
+<p><code>CNDTR</code> counts <strong>down</strong>: it reads 3, 2, 1 — the number of slots left in this<br>round. Watching it move is the cheapest proof the DMA is alive (slide 24).</p>
+</section>
+<section class="slide">
+<h2>Slide 23: The ADC Side — Scan, Continuous, DMA</h2>
+<figure class="diagram"><svg width="818" viewBox="0 0 818 238" role="img" aria-label="ADC1 after scan_start(); ADC1-&gt;CFGR1, 32 bits; ADC1-&gt;CHSELR, 32 bits">
+<text x="409" y="16" text-anchor="middle" class="lbl">ADC1 after scan_start()</text>
+<text x="16" y="59" class="mono">ADC1-&gt;CFGR1</text>
+<text x="16" y="74" class="lbl">CONT, DMACFG, DMAEN</text>
+<text x="16" y="89" class="mono lbl">= 0x00002003</text>
+<text x="162.6" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="800.6" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="601.6" y="52" width="20.0" height="26"/>
+<rect class="dash" x="381.6" y="52" width="80.0" height="26"/>
+<rect class="dash" x="281.6" y="52" width="40.0" height="26"/>
+<rect class="dash" x="161.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="181.6" y="52" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M261.6 52 V56 M261.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M241.6 52 V56 M241.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M221.6 52 V56 M221.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M201.6 52 V56 M201.6 74 V78"/>
+<rect class="reg" x="321.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="341.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="361.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="461.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="481.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="501.6" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="521.6" y="52" width="20.0" height="26"/>
+<text x="531.6" y="44" text-anchor="middle" class="mono lbl">13</text>
+<rect class="reg" x="541.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="561.6" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M581.6 52 V56 M581.6 74 V78"/>
+<rect class="reg" x="621.6" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M661.6 52 V56 M661.6 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M641.6 52 V56 M641.6 74 V78"/>
+<rect class="reg" x="681.6" y="52" width="20.0" height="26"/>
+<rect class="reg" x="701.6" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M721.6 52 V56 M721.6 74 V78"/>
+<rect class="reg" x="741.6" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="761.6" y="52" width="20.0" height="26"/>
+<text x="771.6" y="44" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="781.6" y="52" width="20.0" height="26"/>
+<text x="791.6" y="65" text-anchor="middle" class="mono">1</text>
+<text x="771.6" y="65" text-anchor="middle" class="mono">1</text>
+<text x="751.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="731.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="711.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="691.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="671.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="651.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="631.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="611.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="591.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="571.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="551.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="531.6" y="65" text-anchor="middle" class="mono">1</text>
+<text x="511.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="491.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="471.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="451.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="431.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="411.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="391.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="371.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="351.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="331.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="311.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="291.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="271.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="251.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="231.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="211.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="191.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="171.6" y="65" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M351.6 78 L351.6 100"/>
+<path class="dash" d="M371.6 78 L371.6 116"/>
+<path class="dash" d="M491.6 78 L491.6 100"/>
+<path class="dash" d="M511.6 78 L511.6 116"/>
+<path class="dash" d="M551.6 78 L551.6 100"/>
+<path class="dash" d="M691.6 78 L691.6 100"/>
+<path class="dash" d="M751.6 78 L751.6 100"/>
+<path class="dash" d="M791.6 78 L791.6 116"/>
+<text x="231.6" y="91" text-anchor="middle" class="mono halo lbl">AWD1CH</text>
+<text x="331.6" y="91" text-anchor="middle" class="mono halo lbl">AWD1EN</text>
+<text x="351.6" y="107" text-anchor="middle" class="mono halo lbl">AWD1SGL</text>
+<text x="371.6" y="123" text-anchor="middle" class="mono halo lbl">CHSELRMOD</text>
+<text x="471.6" y="91" text-anchor="middle" class="mono halo lbl">DISCEN</text>
+<text x="491.6" y="107" text-anchor="middle" class="mono halo lbl">AUTOFF</text>
+<text x="511.6" y="123" text-anchor="middle" class="mono halo lbl">WAIT</text>
+<text x="531.6" y="91" text-anchor="middle" class="mono halo">CONT</text>
+<text x="551.6" y="107" text-anchor="middle" class="mono halo lbl">OVRMOD</text>
+<text x="581.6" y="91" text-anchor="middle" class="mono halo lbl">EXTEN</text>
+<text x="651.6" y="91" text-anchor="middle" class="mono halo lbl">EXTSEL</text>
+<text x="691.6" y="107" text-anchor="middle" class="mono halo lbl">ALIGN</text>
+<text x="721.6" y="91" text-anchor="middle" class="mono halo lbl">RES</text>
+<text x="751.6" y="107" text-anchor="middle" class="mono halo lbl">SCANDIR</text>
+<text x="771.6" y="91" text-anchor="middle" class="mono halo">DMACFG</text>
+<text x="791.6" y="123" text-anchor="middle" class="mono halo">DMAEN</text>
+<text x="16" y="177" class="mono">ADC1-&gt;CHSELR</text>
+<text x="16" y="192" class="lbl">IN0, IN1, IN4</text>
+<text x="16" y="207" class="mono lbl">= 0x00000013</text>
+<text x="162.6" y="162" text-anchor="start" class="mono lbl">31</text>
+<text x="800.6" y="162" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="161.6" y="170" width="180.0" height="26"/>
+<rect class="hifill" x="781.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="761.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="741.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="721.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="701.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="681.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="661.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="641.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="621.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="601.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="581.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="561.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="541.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="521.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="501.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="481.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="461.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="441.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="421.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="401.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="381.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="361.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="341.6" y="170" width="20.0" height="26"/>
+<text x="791.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="771.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="751.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="731.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="711.6" y="183" text-anchor="middle" class="mono">1</text>
+<text x="691.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="671.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="651.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="631.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="611.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="591.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="571.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="551.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="531.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="511.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="491.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="471.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="451.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="431.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="411.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="391.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="371.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="351.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="331.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="311.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="291.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="271.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="251.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="231.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="211.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="191.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="171.6" y="183" text-anchor="middle" class="mono lbl">0</text>
+<text x="791.6" y="209" text-anchor="middle" class="mono halo">0</text>
+<text x="771.6" y="209" text-anchor="middle" class="mono halo">1</text>
+<text x="711.6" y="209" text-anchor="middle" class="mono halo">4</text>
+</svg></figure>
+<ul><li><code>CHSELRMOD = 0</code>: <code>CHSELR</code> is a <strong>bitmask</strong>; <code>SCANDIR = 0</code> converts from the lowest channel up. So <code>scan_buf[0]</code> = PA0 (X), <code>[1]</code> = PA1 (Y), <code>[2]</code> = PA4 (knob). The order is the hardware&#x27;s, not yours.</li><li><code>CONT</code>: start the next scan without being asked.</li><li><code>DMAEN</code>: raise a DMA request at every end of conversion; <code>DMACFG = 1</code> (circular): keep raising them after the DMA&#x27;s count runs out.</li></ul>
+<p>The timing, from the settings: ADC clock 24 MHz (PCLK/2); sampling 160.5<br>cycles + <strong>12.5 cycles</strong> processing at 12 bits (ST&#x27;s HAL <code>adc.h</code>) = 173 cycles<br>= <strong>7.21 µs</strong> per conversion, <strong>21.6 µs</strong> per scan of three — about<br><strong>46 000 complete scans a second</strong>, written into RAM with the CPU idle.</p>
+<p><strong>Polled</strong>, the same three readings cost the CPU at least 3 × 7.21 µs =<br><strong>~1040 cycles of waiting</strong> each time. <strong>Via DMA</strong>, reading them is three<br>loads from RAM. The firmware times both (Lab Part 6).</p>
+</section>
+<section class="slide">
+<h2>Slide 24: Trust, But Watch — the Stuck-DMA Detector</h2>
+<p>Wokwi&#x27;s page for this board lists what it simulates. <strong>DMA is listed as not<br>implemented</strong> (also IWDG, PWR, RTC, SYSCFG, DBG). So in Wokwi the DMA cannot<br>run, and everything on slides 20–23 is <strong>predicted from RM0490 and ST&#x27;s<br>drivers — it cannot be observed in the simulator</strong>.</p>
+<p>The firmware is written for exactly this. It never <em>assumes</em> the DMA ran:</p>
+<pre class="lang-c"><code>for (i = 0; i &lt; SCAN_CH; i++) scan_buf[i] = 0xFFFF;   /* a 12-bit ADC never writes this */
+... start the ADC and the DMA ...
+for (i = 0; i &lt; SPIN_LIMIT; i++)
+    if (scan_buf[0] != 0xFFFF &amp;&amp; scan_buf[1] != 0xFFFF &amp;&amp; scan_buf[2] != 0xFFFF)
+        return 0;                                      /* proof: all three written      */
+scan_stop();                                           /* never moved: undo, and say so */
+return -1;</code></pre>
+<p><strong>In Wokwi, expect:</strong></p>
+<pre><code>  scan: DMA NEVER MOVED - buffer still 0xFFFF after the time limit.
+        EXPECTED IN WOKWI: its C031C6 model does not implement DMA (docs.wokwi.com).
+        On a real Nucleo this line says RUNNING.  Falling back to POLLED adc_read().</code></pre>
+<p>…and everything after it keeps working on polled reads. If the simulator<br>instead <em>faults</em> on the first DMA register access, a <code>HardFault_Handler</code><br>prints <code>!! HardFault during: the DMA demo</code> — and <code>USE_DMA 0</code> skips it.</p>
+<p>This is the lesson&#x27;s most transferable idea: <strong>a peripheral you cannot see<br>working must prove it is working</strong>, at run time, with a value it could not<br>produce by accident.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: Memory to Memory — and a Surprise in <code>memcpy</code></h2>
+<p>DMA needs no peripheral at all: <code>MEM2MEM = 1</code> makes a channel copy as fast as<br>the bus allows.</p>
+<figure class="diagram"><svg width="971" viewBox="0 0 971 230" role="img" aria-label="DMA1_Channel2-&gt;CCR, 32 bits; DMA1-&gt;ISR, 32 bits">
+<text x="16" y="35" class="mono">DMA1_Channel2-&gt;CCR</text>
+<text x="16" y="50" class="lbl">dma_copy(): 32-bit, both increment, mem2mem</text>
+<text x="16" y="65" class="mono lbl">= 0x00004AC1</text>
+<text x="316.2" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="954.2" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="28" width="340.0" height="26"/>
+<rect class="hifill" x="655.2" y="28" width="20.0" height="26"/>
+<text x="665.2" y="20" text-anchor="middle" class="mono lbl">14</text>
+<rect class="reg" x="675.2" y="28" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M695.2 28 V32 M695.2 50 V54"/>
+<rect class="hifill" x="715.2" y="28" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M735.2 28 V32 M735.2 50 V54"/>
+<text x="716.2" y="20" text-anchor="start" class="mono lbl">11</text>
+<text x="754.2" y="20" text-anchor="end" class="mono lbl">10</text>
+<rect class="hifill" x="755.2" y="28" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M775.2 28 V32 M775.2 50 V54"/>
+<text x="794.2" y="20" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="795.2" y="28" width="20.0" height="26"/>
+<text x="805.2" y="20" text-anchor="middle" class="mono lbl">7</text>
+<rect class="hifill" x="815.2" y="28" width="20.0" height="26"/>
+<text x="825.2" y="20" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="835.2" y="28" width="20.0" height="26"/>
+<rect class="reg" x="855.2" y="28" width="20.0" height="26"/>
+<rect class="reg" x="875.2" y="28" width="20.0" height="26"/>
+<rect class="reg" x="895.2" y="28" width="20.0" height="26"/>
+<rect class="reg" x="915.2" y="28" width="20.0" height="26"/>
+<rect class="hifill" x="935.2" y="28" width="20.0" height="26"/>
+<text x="945.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="925.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="905.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="885.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="865.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="845.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="825.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="805.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="785.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="765.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="745.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="725.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="705.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="685.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="665.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="645.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="625.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="605.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="585.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="565.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="545.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="525.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="505.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="485.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="465.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M695.2 54 L695.2 76"/>
+<path class="dash" d="M775.2 54 L775.2 76"/>
+<path class="dash" d="M825.2 54 L825.2 76"/>
+<path class="dash" d="M865.2 54 L865.2 76"/>
+<path class="dash" d="M905.2 54 L905.2 76"/>
+<path class="dash" d="M945.2 54 L945.2 76"/>
+<text x="665.2" y="67" text-anchor="middle" class="mono halo">MEM2MEM</text>
+<text x="695.2" y="83" text-anchor="middle" class="mono halo lbl">PL</text>
+<text x="735.2" y="67" text-anchor="middle" class="mono halo">MSIZE</text>
+<text x="775.2" y="83" text-anchor="middle" class="mono halo">PSIZE</text>
+<text x="805.2" y="67" text-anchor="middle" class="mono halo">MINC</text>
+<text x="825.2" y="83" text-anchor="middle" class="mono halo">PINC</text>
+<text x="845.2" y="67" text-anchor="middle" class="mono halo lbl">CIRC</text>
+<text x="865.2" y="83" text-anchor="middle" class="mono halo lbl">DIR</text>
+<text x="885.2" y="67" text-anchor="middle" class="mono halo lbl">TEIE</text>
+<text x="905.2" y="83" text-anchor="middle" class="mono halo lbl">HTIE</text>
+<text x="925.2" y="67" text-anchor="middle" class="mono halo lbl">TCIE</text>
+<text x="945.2" y="83" text-anchor="middle" class="mono halo">EN</text>
+<text x="16" y="137" class="mono">DMA1-&gt;ISR</text>
+<text x="16" y="152" class="lbl">done or failed?</text>
+<text x="316.2" y="122" text-anchor="start" class="mono lbl">31</text>
+<text x="954.2" y="122" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="130" width="400.0" height="26"/>
+<text x="515.2" y="143" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="715.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="735.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="755.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="775.2" y="130" width="20.0" height="26"/>
+<rect class="hifill" x="795.2" y="130" width="20.0" height="26"/>
+<text x="805.2" y="122" text-anchor="middle" class="mono lbl">7</text>
+<rect class="reg" x="815.2" y="130" width="20.0" height="26"/>
+<rect class="hifill" x="835.2" y="130" width="20.0" height="26"/>
+<text x="845.2" y="122" text-anchor="middle" class="mono lbl">5</text>
+<rect class="reg" x="855.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="875.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="895.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="915.2" y="130" width="20.0" height="26"/>
+<rect class="reg" x="935.2" y="130" width="20.0" height="26"/>
+<path class="dash" d="M745.2 156 L745.2 178"/>
+<path class="dash" d="M765.2 156 L765.2 194"/>
+<path class="dash" d="M805.2 156 L805.2 178"/>
+<path class="dash" d="M845.2 156 L845.2 194"/>
+<path class="dash" d="M885.2 156 L885.2 178"/>
+<path class="dash" d="M925.2 156 L925.2 194"/>
+<text x="725.2" y="169" text-anchor="middle" class="mono halo lbl">TEIF3</text>
+<text x="745.2" y="185" text-anchor="middle" class="mono halo lbl">HTIF3</text>
+<text x="765.2" y="201" text-anchor="middle" class="mono halo lbl">TCIF3</text>
+<text x="785.2" y="169" text-anchor="middle" class="mono halo lbl">GIF3</text>
+<text x="805.2" y="185" text-anchor="middle" class="mono halo">TEIF2</text>
+<text x="825.2" y="169" text-anchor="middle" class="mono halo lbl">HTIF2</text>
+<text x="845.2" y="201" text-anchor="middle" class="mono halo">TCIF2</text>
+<text x="865.2" y="169" text-anchor="middle" class="mono halo lbl">GIF2</text>
+<text x="885.2" y="185" text-anchor="middle" class="mono halo lbl">TEIF1</text>
+<text x="905.2" y="169" text-anchor="middle" class="mono halo lbl">HTIF1</text>
+<text x="925.2" y="201" text-anchor="middle" class="mono halo lbl">TCIF1</text>
+<text x="945.2" y="169" text-anchor="middle" class="mono halo lbl">GIF1</text>
+</svg></figure>
+<p>What it races: this build&#x27;s <code>memcpy</code>, from newlib-nano —</p>
+<pre><code>08004a32 &lt;memcpy&gt;:
+  ...
+  ldrb  r4, [r1, r3]     one BYTE at a time
+  strb  r4, [r0, r3]
+  adds  r3, #1
+  b.n   8004a36</code></pre>
+<p>newlib-nano is built for <strong>size</strong>, so its <code>memcpy</code> is a byte loop. <strong>Measured<br>on the host model</strong>: a 1 KB RAM-to-RAM copy takes <strong>10 251 cycles</strong> — about<br>10 cycles a byte. The DMA moves 32-bit words, and while it copies, the CPU is<br>free; the firmware counts how often it polled meanwhile.</p>
+<p>In Wokwi <code>dma_copy()</code> will report <code>NEVER COMPLETED</code> and the data <code>WRONG</code> —<br>the same missing DMA. On a Nucleo, the comparison is Lab Part 7.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: What Was Measured — and What Could Not Be</h2>
+<table><thead><tr><th>Claim</th><th>Evidence</th></tr></thead><tbody><tr><td>builds, zero warnings, FLASH 27 328 B, RAM 8016 B</td><td>the build</td></tr><tr><td>M4F <code>vmul.f32</code>/<code>vfma.f32</code> vs M0+ <code>bl __aeabi_fmul</code></td><td><strong>compiled and disassembled</strong> (<code>fpu_compare</code>)</td></tr><tr><td>every format&#x27;s accuracy, rounding bias, overflow cases</td><td><strong>measured on the host</strong>, <code>test_fix</code>: 15 checks pass</td></tr><tr><td>the leaderboard&#x27;s cycle counts</td><td><strong>host model</strong> of the M0+ running <code>Main.elf</code>; 21/22 checksums bit-identical to the PC</td></tr><tr><td>flash cost per format</td><td><strong>measured</strong>, <code>nm</code> on <code>Main.elf</code></td></tr><tr><td><code>memcpy</code> 1 KB = 10 251 cycles</td><td><strong>host model</strong></td></tr><tr><td>DMA register values, request ID 5, 46 000 scans/s</td><td><strong>predicted</strong> from the header, ST&#x27;s LL/HAL drivers and RM0490</td></tr><tr><td>the DMA actually moving</td><td><strong>cannot be observed in Wokwi</strong> (not implemented there); needs a real Nucleo</td></tr><tr><td>SysTick&#x27;s counts in Wokwi matching the model</td><td><strong>not yet looked at</strong> — Lab Part 2</td></tr></tbody></table>
+<p>The model assumes a single-cycle multiplier and ideal memory; the real chip<br>adds a flash wait state at 48 MHz. Whether Wokwi models <em>either</em> is unknown.<br>Three numbers — model, Wokwi, silicon — and so far we have one.</p>
+</section>
+<section class="slide">
+<h2>Slide 27: What Carries Forward</h2>
+<ul><li><strong>Write the application lessons in float — after doing the arithmetic.</strong> Lessons 13–18 run control loops at a few hundred hertz; slide 18 shows that costs about 1% of the CPU per controller. Use <code>fmath.h</code>, never libm&#x27;s <code>sinf</code>: 4.7 KB and twice the cycles.</li><li><strong>Fixed point is for rates and budgets.</strong> Filtering every ADC sample, audio, a fast motor current loop: Q15, rounded, saturated, with the accumulator&#x27;s guard bits designed in.</li><li><strong>Time things.</strong> SysTick-as-stopwatch, minus the empty loop, best of three: any later claim that something is &quot;fast enough&quot; should come with a number measured this way.</li><li><strong>DMA moves data; the CPU decides.</strong> On real silicon, lesson 09&#x27;s I²C reads and lesson 12&#x27;s OLED frames are DMA&#x27;s next jobs. In Wokwi they stay polled — and now you know how a program finds that out by itself.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:10_Fixed_Point_And_DMA', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:10_Fixed_Point_And_DMA') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

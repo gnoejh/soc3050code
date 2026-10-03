@@ -1,0 +1,1275 @@
+<title>Game: An Arcade on a 128×64 Screen</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Game: An Arcade on a 128×64 Screen</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Game: An Arcade on a 128×64 Screen</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>Three games, one joystick, 1 024 bytes of picture — and a bus that cannot<br>send all of them in time.</strong></p>
+<p>Part 3 starts here. Everything from Part 1 comes back at once: GPIO buttons<br>and their edges (05), a timer making sound (06), SysTick as a clock (06),<br>frames with checksums (08), the ADC and I²C (09). This lesson adds the two<br>models every interactive system is built on — <strong>a display you update by<br>difference</strong> and <strong>a loop that keeps time</strong> — and ends in something you will<br>want to show people: an arcade with SNAKE, BREAKOUT and FLAP.</p>
+<p>Figures marked <strong>measured on the host</strong> come from <code>host/test_games.c</code>, which<br>compiles the <em>real</em> game files and the <em>real</em> display driver with plain gcc and<br>plays them with scripted joysticks. Nothing in this deck was watched in Wokwi;<br>the last two slides say what that leaves open.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob - ADC IN4, game speed</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - serial monitor</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - SSD1306 OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - SSD1306 OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - serial monitor</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  TIM3_CH1 - buzzer</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B - pause, pull-up</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A - play/serve/flap, pull-up</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL - profiler mode, pull-up</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 365" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="reg" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  TIM3_CH1 - buzzer</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA4   an   knob - ADC IN4, game speed</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - serial monitor</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - serial monitor</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0</text>
+  <text x="76" y="220" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="198" width="29" height="34" rx="3"/>
+  <text x="102.5" y="212" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="198" width="29" height="34" rx="3"/>
+  <text x="134.5" y="212" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="198" width="29" height="34" rx="3"/>
+  <text x="166.5" y="212" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="198" width="29" height="34" rx="3"/>
+  <text x="198.5" y="212" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="198" width="29" height="34" rx="3"/>
+  <text x="230.5" y="212" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="198" width="29" height="34" rx="3"/>
+  <text x="262.5" y="212" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="198" width="29" height="34" rx="3"/>
+  <text x="294.5" y="212" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="198" width="29" height="34" rx="3"/>
+  <text x="326.5" y="212" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="198" width="29" height="34" rx="3"/>
+  <text x="358.5" y="212" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="198" width="29" height="34" rx="3"/>
+  <text x="390.5" y="212" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="198" width="29" height="34" rx="3"/>
+  <text x="422.5" y="212" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="198" width="29" height="34" rx="3"/>
+  <text x="454.5" y="212" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="198" width="29" height="34" rx="3"/>
+  <text x="486.5" y="212" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="198" width="29" height="34" rx="3"/>
+  <text x="518.5" y="212" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="198" width="29" height="34" rx="3"/>
+  <text x="550.5" y="212" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="198" width="29" height="34" rx="3"/>
+  <text x="582.5" y="212" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="252" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - SSD1306 OLED</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - SSD1306 OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB5   in   button B - pause, pull-up</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB4   in   button A - play/serve/flap, pull-up</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL - profiler mode, pull-up</text>
+  <text x="310" y="357" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: What You Are Building</h2>
+<figure class="diagram"><!-- shot:quad - generated by host/embed_shots.py from host/out/*.svg -->
+<svg viewBox="-4 -4 272 166" role="img" aria-label="The menu and the three games, rendered on the host from the real game code">
+  <g transform="translate(0 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M23 0h4v1h-4zM29 0h3v1h-3zM35 0h3v1h-3zM40 0h5v1h-5zM47 0h3v1h-3zM52 0h5v1h-5zM59 0h3v1h-3zM71 0h3v1h-3zM76 0h4v1h-4zM83 0h3v1h-3zM89 0h3v1h-3zM94 0h3v1h-3z M100 0h5v1h-5zM22 1h1v1h-1zM28 1h1v1h-1zM32 1h1v1h-1zM34 1h1v1h-1zM38 1h1v1h-1zM43 1h1v1h-1zM46 1h1v1h-1zM50 1h1v1h-1zM52 1h1v1h-1zM58 1h1v1h-1zM62 1h1v1h-1z M70 1h1v1h-1zM74 1h1v1h-1zM76 1h1v1h-1zM80 1h1v1h-1zM82 1h1v1h-1zM86 1h1v1h-1zM88 1h1v1h-1zM92 1h1v1h-1zM94 1h1v1h-1zM97 1h1v1h-1zM100 1h1v1h-1zM22 2h1v1h-1z M28 2h1v1h-1zM32 2h1v1h-1zM34 2h1v1h-1zM42 2h1v1h-1zM46 2h1v1h-1zM49 2h2v1h-2zM52 2h4v1h-4zM58 2h1v1h-1zM61 2h2v1h-2zM70 2h1v1h-1zM74 2h1v1h-1zM76 2h1v1h-1z M80 2h1v1h-1zM82 2h1v1h-1zM88 2h1v1h-1zM92 2h1v1h-1zM94 2h1v1h-1zM98 2h1v1h-1zM100 2h1v1h-1zM23 3h3v1h-3zM28 3h1v1h-1zM32 3h1v1h-1zM34 3h1v1h-1zM43 3h1v1h-1z M46 3h1v1h-1zM48 3h1v1h-1zM50 3h1v1h-1zM56 3h1v1h-1zM58 3h1v1h-1zM60 3h1v1h-1zM62 3h1v1h-1zM70 3h1v1h-1zM74 3h1v1h-1zM76 3h4v1h-4zM82 3h1v1h-1zM88 3h1v1h-1z M92 3h1v1h-1zM94 3h1v1h-1zM98 3h1v1h-1zM100 3h4v1h-4zM26 4h1v1h-1zM28 4h1v1h-1zM32 4h1v1h-1zM34 4h1v1h-1zM44 4h1v1h-1zM46 4h2v1h-2zM50 4h1v1h-1zM56 4h1v1h-1z M58 4h2v1h-2zM62 4h1v1h-1zM70 4h5v1h-5zM76 4h1v1h-1zM78 4h1v1h-1zM82 4h1v1h-1zM88 4h5v1h-5zM94 4h1v1h-1zM98 4h1v1h-1zM100 4h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1z M32 5h1v1h-1zM34 5h1v1h-1zM38 5h1v1h-1zM40 5h1v1h-1zM44 5h1v1h-1zM46 5h1v1h-1zM50 5h1v1h-1zM52 5h1v1h-1zM56 5h1v1h-1zM58 5h1v1h-1zM62 5h1v1h-1zM70 5h1v1h-1z M74 5h1v1h-1zM76 5h1v1h-1zM79 5h1v1h-1zM82 5h1v1h-1zM86 5h1v1h-1zM88 5h1v1h-1zM92 5h1v1h-1zM94 5h1v1h-1zM97 5h1v1h-1zM100 5h1v1h-1zM22 6h4v1h-4zM29 6h3v1h-3z M35 6h3v1h-3zM41 6h3v1h-3zM47 6h3v1h-3zM53 6h3v1h-3zM59 6h3v1h-3zM70 6h1v1h-1zM74 6h1v1h-1zM76 6h1v1h-1zM80 6h1v1h-1zM83 6h3v1h-3zM88 6h1v1h-1zM92 6h1v1h-1z M94 6h3v1h-3zM100 6h5v1h-5zM0 8h128v1h-128zM2 10h124v1h-124zM2 11h124v1h-124zM2 12h7v1h-7zM13 12h1v1h-1zM15 12h3v1h-3zM19 12h2v1h-2zM24 12h2v1h-2zM27 12h3v1h-3zM31 12h1v1h-1z M37 12h59v1h-59zM97 12h3v1h-3zM101 12h2v1h-2zM106 12h9v1h-9zM118 12h8v1h-8zM2 13h6v1h-6zM9 13h5v1h-5zM15 13h3v1h-3zM19 13h1v1h-1zM21 13h3v1h-3zM25 13h1v1h-1zM27 13h2v1h-2z M30 13h2v1h-2zM33 13h63v1h-63zM97 13h3v1h-3zM101 13h3v1h-3zM105 13h9v1h-9zM115 13h3v1h-3zM119 13h7v1h-7zM2 14h6v1h-6zM9 14h5v1h-5zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h3v1h-3z M25 14h1v1h-1zM27 14h1v1h-1zM29 14h3v1h-3zM33 14h63v1h-63zM97 14h3v1h-3zM101 14h3v1h-3zM105 14h9v1h-9zM115 14h2v1h-2zM119 14h7v1h-7zM2 15h7v1h-7zM12 15h2v1h-2zM15 15h1v1h-1z M17 15h1v1h-1zM19 15h1v1h-1zM21 15h3v1h-3zM25 15h1v1h-1zM28 15h4v1h-4zM36 15h60v1h-60zM101 15h3v1h-3zM105 15h9v1h-9zM115 15h1v1h-1zM117 15h1v1h-1zM119 15h7v1h-7zM2 16h10v1h-10z M13 16h1v1h-1zM15 16h2v1h-2zM19 16h1v1h-1zM25 16h1v1h-1zM27 16h1v1h-1zM29 16h3v1h-3zM33 16h63v1h-63zM97 16h3v1h-3zM101 16h3v1h-3zM105 16h9v1h-9zM116 16h2v1h-2zM119 16h7v1h-7z M2 17h10v1h-10zM13 17h1v1h-1zM15 17h3v1h-3zM19 17h1v1h-1zM21 17h3v1h-3zM25 17h1v1h-1zM27 17h2v1h-2zM30 17h2v1h-2zM33 17h63v1h-63zM97 17h3v1h-3zM101 17h3v1h-3zM105 17h9v1h-9z M115 17h3v1h-3zM119 17h7v1h-7zM2 18h6v1h-6zM12 18h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h1v1h-1zM37 18h59v1h-59zM97 18h3v1h-3z M101 18h2v1h-2zM106 18h9v1h-9zM118 18h8v1h-8zM2 19h124v1h-124zM2 20h124v1h-124zM8 23h4v1h-4zM14 23h4v1h-4zM20 23h5v1h-5zM27 23h3v1h-3zM32 23h1v1h-1zM36 23h1v1h-1zM39 23h3v1h-3z M44 23h1v1h-1zM48 23h1v1h-1zM50 23h5v1h-5zM96 23h1v1h-1zM100 23h1v1h-1zM103 23h3v1h-3zM115 23h3v1h-3zM8 24h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM18 24h1v1h-1zM20 24h1v1h-1z M26 24h1v1h-1zM30 24h1v1h-1zM32 24h1v1h-1zM35 24h1v1h-1zM38 24h1v1h-1zM42 24h1v1h-1zM44 24h1v1h-1zM48 24h1v1h-1zM52 24h1v1h-1zM96 24h1v1h-1zM100 24h1v1h-1zM104 24h1v1h-1z M114 24h1v1h-1zM118 24h1v1h-1zM8 25h1v1h-1zM12 25h1v1h-1zM14 25h1v1h-1zM18 25h1v1h-1zM20 25h1v1h-1zM26 25h1v1h-1zM30 25h1v1h-1zM32 25h1v1h-1zM34 25h1v1h-1zM38 25h1v1h-1z M42 25h1v1h-1zM44 25h1v1h-1zM48 25h1v1h-1zM52 25h1v1h-1zM96 25h1v1h-1zM100 25h1v1h-1zM104 25h1v1h-1zM114 25h1v1h-1zM117 25h2v1h-2zM8 26h4v1h-4zM14 26h4v1h-4zM20 26h4v1h-4z M26 26h1v1h-1zM30 26h1v1h-1zM32 26h2v1h-2zM38 26h1v1h-1zM42 26h1v1h-1zM44 26h1v1h-1zM48 26h1v1h-1zM52 26h1v1h-1zM96 26h5v1h-5zM104 26h1v1h-1zM114 26h1v1h-1zM116 26h1v1h-1z M118 26h1v1h-1zM8 27h1v1h-1zM12 27h1v1h-1zM14 27h1v1h-1zM16 27h1v1h-1zM20 27h1v1h-1zM26 27h5v1h-5zM32 27h1v1h-1zM34 27h1v1h-1zM38 27h1v1h-1zM42 27h1v1h-1zM44 27h1v1h-1z M48 27h1v1h-1zM52 27h1v1h-1zM96 27h1v1h-1zM100 27h1v1h-1zM104 27h1v1h-1zM114 27h2v1h-2zM118 27h1v1h-1zM8 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM17 28h1v1h-1zM20 28h1v1h-1z M26 28h1v1h-1zM30 28h1v1h-1zM32 28h1v1h-1zM35 28h1v1h-1zM38 28h1v1h-1zM42 28h1v1h-1zM44 28h1v1h-1zM48 28h1v1h-1zM52 28h1v1h-1zM96 28h1v1h-1zM100 28h1v1h-1zM104 28h1v1h-1z M114 28h1v1h-1zM118 28h1v1h-1zM8 29h4v1h-4zM14 29h1v1h-1zM18 29h1v1h-1zM20 29h5v1h-5zM26 29h1v1h-1zM30 29h1v1h-1zM32 29h1v1h-1zM36 29h1v1h-1zM39 29h3v1h-3zM45 29h3v1h-3z M52 29h1v1h-1zM96 29h1v1h-1zM100 29h1v1h-1zM103 29h3v1h-3zM115 29h3v1h-3zM8 34h5v1h-5zM14 34h1v1h-1zM21 34h3v1h-3zM26 34h4v1h-4zM96 34h1v1h-1zM100 34h1v1h-1zM103 34h3v1h-3z M115 34h3v1h-3zM8 35h1v1h-1zM14 35h1v1h-1zM20 35h1v1h-1zM24 35h1v1h-1zM26 35h1v1h-1zM30 35h1v1h-1zM96 35h1v1h-1zM100 35h1v1h-1zM104 35h1v1h-1zM114 35h1v1h-1zM118 35h1v1h-1z M8 36h1v1h-1zM14 36h1v1h-1zM20 36h1v1h-1zM24 36h1v1h-1zM26 36h1v1h-1zM30 36h1v1h-1zM96 36h1v1h-1zM100 36h1v1h-1zM104 36h1v1h-1zM114 36h1v1h-1zM117 36h2v1h-2zM8 37h4v1h-4z M14 37h1v1h-1zM20 37h1v1h-1zM24 37h1v1h-1zM26 37h4v1h-4zM96 37h5v1h-5zM104 37h1v1h-1zM114 37h1v1h-1zM116 37h1v1h-1zM118 37h1v1h-1zM8 38h1v1h-1zM14 38h1v1h-1zM20 38h5v1h-5z M26 38h1v1h-1zM96 38h1v1h-1zM100 38h1v1h-1zM104 38h1v1h-1zM114 38h2v1h-2zM118 38h1v1h-1zM8 39h1v1h-1zM14 39h1v1h-1zM20 39h1v1h-1zM24 39h1v1h-1zM26 39h1v1h-1zM96 39h1v1h-1z M100 39h1v1h-1zM104 39h1v1h-1zM114 39h1v1h-1zM118 39h1v1h-1zM8 40h1v1h-1zM14 40h5v1h-5zM20 40h1v1h-1zM24 40h1v1h-1zM26 40h1v1h-1zM96 40h1v1h-1zM100 40h1v1h-1zM103 40h3v1h-3z M115 40h3v1h-3zM9 46h4v1h-4zM14 46h4v1h-4zM20 46h5v1h-5zM26 46h5v1h-5zM32 46h3v1h-3zM44 46h7v1h-7zM53 46h7v1h-7zM62 46h7v1h-7zM71 46h7v1h-7zM80 46h7v1h-7zM8 47h1v1h-1z M14 47h1v1h-1zM18 47h1v1h-1zM20 47h1v1h-1zM26 47h1v1h-1zM32 47h1v1h-1zM35 47h1v1h-1zM44 47h7v1h-7zM53 47h7v1h-7zM62 47h7v1h-7zM71 47h7v1h-7zM80 47h1v1h-1zM86 47h1v1h-1z M8 48h1v1h-1zM14 48h1v1h-1zM18 48h1v1h-1zM20 48h1v1h-1zM26 48h1v1h-1zM32 48h1v1h-1zM36 48h1v1h-1zM44 48h7v1h-7zM53 48h7v1h-7zM62 48h7v1h-7zM71 48h7v1h-7zM80 48h1v1h-1z M86 48h1v1h-1zM9 49h3v1h-3zM14 49h4v1h-4zM20 49h4v1h-4zM26 49h4v1h-4zM32 49h1v1h-1zM36 49h1v1h-1zM44 49h7v1h-7zM53 49h7v1h-7zM62 49h7v1h-7zM71 49h7v1h-7zM80 49h1v1h-1z M86 49h1v1h-1zM12 50h1v1h-1zM14 50h1v1h-1zM20 50h1v1h-1zM26 50h1v1h-1zM32 50h1v1h-1zM36 50h1v1h-1zM44 50h7v1h-7zM53 50h7v1h-7zM62 50h7v1h-7zM71 50h7v1h-7zM80 50h1v1h-1z M86 50h1v1h-1zM12 51h1v1h-1zM14 51h1v1h-1zM20 51h1v1h-1zM26 51h1v1h-1zM32 51h1v1h-1zM35 51h1v1h-1zM44 51h7v1h-7zM53 51h7v1h-7zM62 51h7v1h-7zM71 51h7v1h-7zM80 51h1v1h-1z M86 51h1v1h-1zM8 52h4v1h-4zM14 52h1v1h-1zM20 52h5v1h-5zM26 52h5v1h-5zM32 52h3v1h-3zM44 52h7v1h-7zM53 52h7v1h-7zM62 52h7v1h-7zM71 52h7v1h-7zM80 52h7v1h-7zM11 56h3v1h-3z M22 56h4v1h-4zM28 56h1v1h-1zM35 56h3v1h-3zM40 56h1v1h-1zM44 56h1v1h-1zM59 56h4v1h-4zM64 56h5v1h-5zM71 56h3v1h-3zM77 56h3v1h-3zM82 56h1v1h-1zM86 56h1v1h-1zM94 56h4v1h-4z M101 56h3v1h-3zM107 56h3v1h-3zM112 56h1v1h-1zM116 56h1v1h-1zM10 57h1v1h-1zM14 57h1v1h-1zM17 57h2v1h-2zM22 57h1v1h-1zM26 57h1v1h-1zM28 57h1v1h-1zM34 57h1v1h-1zM38 57h1v1h-1z M40 57h1v1h-1zM44 57h1v1h-1zM58 57h1v1h-1zM66 57h1v1h-1zM72 57h1v1h-1zM76 57h1v1h-1zM80 57h1v1h-1zM82 57h1v1h-1zM85 57h1v1h-1zM89 57h2v1h-2zM94 57h1v1h-1zM98 57h1v1h-1z M102 57h1v1h-1zM106 57h1v1h-1zM110 57h1v1h-1zM112 57h1v1h-1zM115 57h1v1h-1zM10 58h1v1h-1zM14 58h1v1h-1zM17 58h2v1h-2zM22 58h1v1h-1zM26 58h1v1h-1zM28 58h1v1h-1zM34 58h1v1h-1z M38 58h1v1h-1zM40 58h1v1h-1zM44 58h1v1h-1zM58 58h1v1h-1zM66 58h1v1h-1zM72 58h1v1h-1zM76 58h1v1h-1zM82 58h1v1h-1zM84 58h1v1h-1zM89 58h2v1h-2zM94 58h1v1h-1zM98 58h1v1h-1z M102 58h1v1h-1zM106 58h1v1h-1zM112 58h1v1h-1zM114 58h1v1h-1zM10 59h1v1h-1zM14 59h1v1h-1zM22 59h4v1h-4zM28 59h1v1h-1zM34 59h1v1h-1zM38 59h1v1h-1zM41 59h1v1h-1zM43 59h1v1h-1z M59 59h3v1h-3zM66 59h1v1h-1zM72 59h1v1h-1zM76 59h1v1h-1zM82 59h2v1h-2zM94 59h4v1h-4zM102 59h1v1h-1zM106 59h1v1h-1zM112 59h2v1h-2zM10 60h5v1h-5zM17 60h2v1h-2zM22 60h1v1h-1z M28 60h1v1h-1zM34 60h5v1h-5zM42 60h1v1h-1zM62 60h1v1h-1zM66 60h1v1h-1zM72 60h1v1h-1zM76 60h1v1h-1zM82 60h1v1h-1zM84 60h1v1h-1zM89 60h2v1h-2zM94 60h1v1h-1zM102 60h1v1h-1z M106 60h1v1h-1zM112 60h1v1h-1zM114 60h1v1h-1zM10 61h1v1h-1zM14 61h1v1h-1zM17 61h2v1h-2zM22 61h1v1h-1zM28 61h1v1h-1zM34 61h1v1h-1zM38 61h1v1h-1zM42 61h1v1h-1zM62 61h1v1h-1z M66 61h1v1h-1zM72 61h1v1h-1zM76 61h1v1h-1zM80 61h1v1h-1zM82 61h1v1h-1zM85 61h1v1h-1zM89 61h2v1h-2zM94 61h1v1h-1zM102 61h1v1h-1zM106 61h1v1h-1zM110 61h1v1h-1zM112 61h1v1h-1z M115 61h1v1h-1zM10 62h1v1h-1zM14 62h1v1h-1zM22 62h1v1h-1zM28 62h5v1h-5zM34 62h1v1h-1zM38 62h1v1h-1zM42 62h1v1h-1zM58 62h4v1h-4zM66 62h1v1h-1zM71 62h3v1h-3zM77 62h3v1h-3z M82 62h1v1h-1zM86 62h1v1h-1zM94 62h1v1h-1zM101 62h3v1h-3zM107 62h3v1h-3zM112 62h1v1h-1zM116 62h1v1h-1z"/>
+    <text x="64" y="76" text-anchor="middle" class="lbl" font-size="6">menu</text>
+  </g>
+  <g transform="translate(136 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M1 0h4v1h-4zM6 0h1v1h-1zM10 0h1v1h-1zM13 0h3v1h-3zM18 0h1v1h-1zM22 0h1v1h-1zM24 0h5v1h-5zM117 0h3v1h-3zM122 0h5v1h-5zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h1v1h-1z M12 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM21 1h1v1h-1zM24 1h1v1h-1zM116 1h1v1h-1zM120 1h1v1h-1zM125 1h1v1h-1zM0 2h1v1h-1zM6 2h2v1h-2zM10 2h1v1h-1zM12 2h1v1h-1z M16 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM24 2h1v1h-1zM116 2h1v1h-1zM120 2h1v1h-1zM124 2h1v1h-1zM1 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1z M16 3h1v1h-1zM18 3h2v1h-2zM24 3h4v1h-4zM117 3h4v1h-4zM125 3h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h2v1h-2zM12 4h5v1h-5zM18 4h1v1h-1zM20 4h1v1h-1zM24 4h1v1h-1z M120 4h1v1h-1zM126 4h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM21 5h1v1h-1zM24 5h1v1h-1zM119 5h1v1h-1zM122 5h1v1h-1z M126 5h1v1h-1zM0 6h4v1h-4zM6 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM22 6h1v1h-1zM24 6h5v1h-5zM117 6h2v1h-2zM123 6h3v1h-3zM0 8h128v1h-128z M0 9h128v1h-128zM0 10h1v1h-1zM127 10h1v1h-1zM0 11h1v1h-1zM127 11h1v1h-1zM0 12h1v1h-1zM127 12h1v1h-1zM0 13h1v1h-1zM127 13h1v1h-1zM0 14h1v1h-1zM127 14h1v1h-1zM0 15h1v1h-1z M127 15h1v1h-1zM0 16h1v1h-1zM127 16h1v1h-1zM0 17h1v1h-1zM127 17h1v1h-1zM0 18h1v1h-1zM127 18h1v1h-1zM0 19h1v1h-1zM127 19h1v1h-1zM0 20h1v1h-1zM127 20h1v1h-1zM0 21h1v1h-1z M127 21h1v1h-1zM0 22h1v1h-1zM127 22h1v1h-1zM0 23h1v1h-1zM127 23h1v1h-1zM0 24h1v1h-1zM127 24h1v1h-1zM0 25h1v1h-1zM127 25h1v1h-1zM0 26h1v1h-1zM127 26h1v1h-1zM0 27h1v1h-1z M127 27h1v1h-1zM0 28h1v1h-1zM127 28h1v1h-1zM0 29h1v1h-1zM127 29h1v1h-1zM0 30h1v1h-1zM127 30h1v1h-1zM0 31h1v1h-1zM127 31h1v1h-1zM0 32h1v1h-1zM127 32h1v1h-1zM0 33h1v1h-1z M127 33h1v1h-1zM0 34h1v1h-1zM42 34h3v1h-3zM46 34h3v1h-3zM50 34h3v1h-3zM54 34h3v1h-3zM58 34h3v1h-3zM62 34h3v1h-3zM66 34h3v1h-3zM70 34h3v1h-3zM74 34h3v1h-3zM78 34h3v1h-3z M82 34h3v1h-3zM86 34h3v1h-3zM90 34h3v1h-3zM94 34h3v1h-3zM127 34h1v1h-1zM0 35h1v1h-1zM42 35h3v1h-3zM46 35h3v1h-3zM50 35h3v1h-3zM54 35h3v1h-3zM58 35h3v1h-3zM62 35h3v1h-3z M66 35h3v1h-3zM70 35h3v1h-3zM74 35h3v1h-3zM78 35h3v1h-3zM82 35h3v1h-3zM86 35h3v1h-3zM90 35h3v1h-3zM94 35h3v1h-3zM127 35h1v1h-1zM0 36h1v1h-1zM42 36h3v1h-3zM46 36h3v1h-3z M50 36h3v1h-3zM54 36h3v1h-3zM58 36h3v1h-3zM62 36h3v1h-3zM66 36h3v1h-3zM70 36h3v1h-3zM74 36h3v1h-3zM78 36h3v1h-3zM82 36h3v1h-3zM86 36h3v1h-3zM90 36h3v1h-3zM94 36h3v1h-3z M127 36h1v1h-1zM0 37h1v1h-1zM127 37h1v1h-1zM0 38h1v1h-1zM10 38h3v1h-3zM14 38h3v1h-3zM18 38h3v1h-3zM22 38h3v1h-3zM26 38h3v1h-3zM30 38h3v1h-3zM34 38h3v1h-3zM38 38h3v1h-3z M42 38h3v1h-3zM54 38h3v1h-3zM58 38h3v1h-3zM127 38h1v1h-1zM0 39h1v1h-1zM10 39h3v1h-3zM14 39h3v1h-3zM18 39h3v1h-3zM22 39h3v1h-3zM26 39h3v1h-3zM30 39h3v1h-3zM34 39h3v1h-3z M38 39h3v1h-3zM42 39h3v1h-3zM54 39h3v1h-3zM58 39h3v1h-3zM127 39h1v1h-1zM0 40h1v1h-1zM10 40h3v1h-3zM14 40h3v1h-3zM18 40h3v1h-3zM22 40h3v1h-3zM26 40h3v1h-3zM30 40h3v1h-3z M34 40h3v1h-3zM38 40h3v1h-3zM42 40h3v1h-3zM54 40h3v1h-3zM58 40h3v1h-3zM127 40h1v1h-1zM0 41h1v1h-1zM127 41h1v1h-1zM0 42h1v1h-1zM10 42h3v1h-3zM54 42h3v1h-3zM58 42h3v1h-3z M127 42h1v1h-1zM0 43h1v1h-1zM10 43h3v1h-3zM54 43h3v1h-3zM58 43h3v1h-3zM127 43h1v1h-1zM0 44h1v1h-1zM10 44h3v1h-3zM54 44h3v1h-3zM58 44h3v1h-3zM127 44h1v1h-1zM0 45h1v1h-1z M127 45h1v1h-1zM0 46h1v1h-1zM10 46h3v1h-3zM54 46h3v1h-3zM58 46h3v1h-3zM127 46h1v1h-1zM0 47h1v1h-1zM10 47h3v1h-3zM54 47h3v1h-3zM58 47h3v1h-3zM127 47h1v1h-1zM0 48h1v1h-1z M10 48h3v1h-3zM54 48h3v1h-3zM58 48h3v1h-3zM127 48h1v1h-1zM0 49h1v1h-1zM127 49h1v1h-1zM0 50h1v1h-1zM10 50h3v1h-3zM107 50h1v1h-1zM118 50h3v1h-3zM122 50h3v1h-3zM127 50h1v1h-1z M0 51h1v1h-1zM10 51h3v1h-3zM106 51h3v1h-3zM118 51h3v1h-3zM122 51h3v1h-3zM127 51h1v1h-1zM0 52h1v1h-1zM10 52h3v1h-3zM107 52h1v1h-1zM118 52h3v1h-3zM122 52h3v1h-3zM127 52h1v1h-1z M0 53h1v1h-1zM127 53h1v1h-1zM0 54h1v1h-1zM10 54h3v1h-3zM122 54h3v1h-3zM127 54h1v1h-1zM0 55h1v1h-1zM10 55h3v1h-3zM122 55h3v1h-3zM127 55h1v1h-1zM0 56h1v1h-1zM10 56h3v1h-3z M122 56h3v1h-3zM127 56h1v1h-1zM0 57h1v1h-1zM127 57h1v1h-1zM0 58h1v1h-1zM10 58h3v1h-3zM14 58h3v1h-3zM18 58h3v1h-3zM22 58h3v1h-3zM26 58h3v1h-3zM30 58h3v1h-3zM34 58h3v1h-3z M38 58h3v1h-3zM42 58h3v1h-3zM46 58h3v1h-3zM50 58h3v1h-3zM54 58h3v1h-3zM58 58h3v1h-3zM62 58h3v1h-3zM66 58h3v1h-3zM70 58h3v1h-3zM74 58h3v1h-3zM78 58h3v1h-3zM82 58h3v1h-3z M86 58h3v1h-3zM90 58h3v1h-3zM94 58h3v1h-3zM98 58h3v1h-3zM102 58h3v1h-3zM106 58h3v1h-3zM110 58h3v1h-3zM114 58h3v1h-3zM118 58h3v1h-3zM122 58h3v1h-3zM127 58h1v1h-1zM0 59h1v1h-1z M10 59h3v1h-3zM14 59h3v1h-3zM18 59h3v1h-3zM22 59h3v1h-3zM26 59h3v1h-3zM30 59h3v1h-3zM34 59h3v1h-3zM38 59h3v1h-3zM42 59h3v1h-3zM46 59h3v1h-3zM50 59h3v1h-3zM54 59h3v1h-3z M58 59h3v1h-3zM62 59h3v1h-3zM66 59h3v1h-3zM70 59h3v1h-3zM74 59h3v1h-3zM78 59h3v1h-3zM82 59h3v1h-3zM86 59h3v1h-3zM90 59h3v1h-3zM94 59h3v1h-3zM98 59h3v1h-3zM102 59h3v1h-3z M106 59h3v1h-3zM110 59h3v1h-3zM114 59h3v1h-3zM118 59h3v1h-3zM122 59h3v1h-3zM127 59h1v1h-1zM0 60h1v1h-1zM10 60h3v1h-3zM14 60h3v1h-3zM18 60h3v1h-3zM22 60h3v1h-3zM26 60h3v1h-3z M30 60h3v1h-3zM34 60h3v1h-3zM38 60h3v1h-3zM42 60h3v1h-3zM46 60h3v1h-3zM50 60h3v1h-3zM54 60h3v1h-3zM58 60h3v1h-3zM62 60h3v1h-3zM66 60h3v1h-3zM70 60h3v1h-3zM74 60h3v1h-3z M78 60h3v1h-3zM82 60h3v1h-3zM86 60h3v1h-3zM90 60h3v1h-3zM94 60h3v1h-3zM98 60h3v1h-3zM102 60h3v1h-3zM106 60h3v1h-3zM110 60h3v1h-3zM114 60h3v1h-3zM118 60h3v1h-3zM122 60h3v1h-3z M127 60h1v1h-1zM0 61h1v1h-1zM127 61h1v1h-1zM0 62h1v1h-1zM127 62h1v1h-1zM0 63h128v1h-128z"/>
+    <text x="64" y="76" text-anchor="middle" class="lbl" font-size="6">SNAKE</text>
+  </g>
+  <g transform="translate(0 82)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M0 0h4v1h-4zM6 0h4v1h-4zM12 0h5v1h-5zM19 0h3v1h-3zM24 0h1v1h-1zM28 0h1v1h-1zM31 0h3v1h-3zM36 0h1v1h-1zM40 0h1v1h-1zM42 0h5v1h-5zM116 0h5v1h-5zM122 0h5v1h-5z M0 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1zM24 1h1v1h-1zM27 1h1v1h-1zM30 1h1v1h-1zM34 1h1v1h-1zM36 1h1v1h-1z M40 1h1v1h-1zM44 1h1v1h-1zM119 1h1v1h-1zM125 1h1v1h-1zM0 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM10 2h1v1h-1zM12 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1z M26 2h1v1h-1zM30 2h1v1h-1zM34 2h1v1h-1zM36 2h1v1h-1zM40 2h1v1h-1zM44 2h1v1h-1zM56 2h4v1h-4zM62 2h4v1h-4zM68 2h4v1h-4zM118 2h1v1h-1zM124 2h1v1h-1zM0 3h4v1h-4z M6 3h4v1h-4zM12 3h4v1h-4zM18 3h1v1h-1zM22 3h1v1h-1zM24 3h2v1h-2zM30 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM40 3h1v1h-1zM44 3h1v1h-1zM56 3h4v1h-4zM62 3h4v1h-4z M68 3h4v1h-4zM119 3h1v1h-1zM125 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h1v1h-1zM18 4h5v1h-5zM24 4h1v1h-1zM26 4h1v1h-1zM30 4h1v1h-1z M34 4h1v1h-1zM36 4h1v1h-1zM40 4h1v1h-1zM44 4h1v1h-1zM56 4h4v1h-4zM62 4h4v1h-4zM68 4h4v1h-4zM120 4h1v1h-1zM126 4h1v1h-1zM0 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1z M9 5h1v1h-1zM12 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM24 5h1v1h-1zM27 5h1v1h-1zM30 5h1v1h-1zM34 5h1v1h-1zM36 5h1v1h-1zM40 5h1v1h-1zM44 5h1v1h-1zM56 5h4v1h-4z M62 5h4v1h-4zM68 5h4v1h-4zM116 5h1v1h-1zM120 5h1v1h-1zM122 5h1v1h-1zM126 5h1v1h-1zM0 6h4v1h-4zM6 6h1v1h-1zM10 6h1v1h-1zM12 6h5v1h-5zM18 6h1v1h-1zM22 6h1v1h-1z M24 6h1v1h-1zM28 6h1v1h-1zM31 6h3v1h-3zM37 6h3v1h-3zM44 6h1v1h-1zM117 6h3v1h-3zM123 6h3v1h-3zM0 8h128v1h-128zM0 9h1v1h-1zM127 9h1v1h-1zM0 10h1v1h-1zM127 10h1v1h-1z M0 11h1v1h-1zM127 11h1v1h-1zM0 12h1v1h-1zM127 12h1v1h-1zM0 13h1v1h-1zM4 13h9v1h-9zM14 13h9v1h-9zM24 13h9v1h-9zM34 13h9v1h-9zM44 13h9v1h-9zM54 13h9v1h-9zM64 13h9v1h-9z M74 13h9v1h-9zM84 13h9v1h-9zM94 13h9v1h-9zM104 13h9v1h-9zM127 13h1v1h-1zM0 14h1v1h-1zM4 14h9v1h-9zM14 14h9v1h-9zM24 14h9v1h-9zM34 14h9v1h-9zM44 14h9v1h-9zM54 14h9v1h-9z M64 14h9v1h-9zM74 14h9v1h-9zM84 14h9v1h-9zM94 14h9v1h-9zM104 14h9v1h-9zM127 14h1v1h-1zM0 15h1v1h-1zM4 15h9v1h-9zM14 15h9v1h-9zM24 15h9v1h-9zM34 15h9v1h-9zM44 15h9v1h-9z M54 15h9v1h-9zM64 15h9v1h-9zM74 15h9v1h-9zM84 15h9v1h-9zM94 15h9v1h-9zM104 15h9v1h-9zM127 15h1v1h-1zM0 16h1v1h-1zM127 16h1v1h-1zM0 17h1v1h-1zM127 17h1v1h-1zM0 18h1v1h-1z M4 18h9v1h-9zM14 18h9v1h-9zM24 18h9v1h-9zM34 18h9v1h-9zM44 18h9v1h-9zM54 18h9v1h-9zM64 18h9v1h-9zM74 18h9v1h-9zM84 18h9v1h-9zM94 18h9v1h-9zM104 18h9v1h-9zM127 18h1v1h-1z M0 19h1v1h-1zM4 19h9v1h-9zM14 19h9v1h-9zM24 19h9v1h-9zM34 19h9v1h-9zM44 19h9v1h-9zM54 19h9v1h-9zM64 19h9v1h-9zM74 19h9v1h-9zM84 19h9v1h-9zM94 19h9v1h-9zM104 19h9v1h-9z M127 19h1v1h-1zM0 20h1v1h-1zM4 20h9v1h-9zM14 20h9v1h-9zM24 20h9v1h-9zM34 20h9v1h-9zM44 20h9v1h-9zM54 20h9v1h-9zM64 20h9v1h-9zM74 20h9v1h-9zM84 20h9v1h-9zM94 20h9v1h-9z M104 20h9v1h-9zM127 20h1v1h-1zM0 21h1v1h-1zM127 21h1v1h-1zM0 22h1v1h-1zM118 22h2v1h-2zM127 22h1v1h-1zM0 23h1v1h-1zM4 23h9v1h-9zM14 23h9v1h-9zM24 23h9v1h-9zM34 23h9v1h-9z M44 23h9v1h-9zM54 23h9v1h-9zM64 23h9v1h-9zM74 23h9v1h-9zM84 23h9v1h-9zM94 23h9v1h-9zM104 23h9v1h-9zM118 23h2v1h-2zM127 23h1v1h-1zM0 24h1v1h-1zM4 24h9v1h-9zM14 24h9v1h-9z M24 24h9v1h-9zM34 24h9v1h-9zM44 24h9v1h-9zM54 24h9v1h-9zM64 24h9v1h-9zM74 24h9v1h-9zM84 24h9v1h-9zM94 24h9v1h-9zM104 24h9v1h-9zM127 24h1v1h-1zM0 25h1v1h-1zM4 25h9v1h-9z M14 25h9v1h-9zM24 25h9v1h-9zM34 25h9v1h-9zM44 25h9v1h-9zM54 25h9v1h-9zM64 25h9v1h-9zM74 25h9v1h-9zM84 25h9v1h-9zM94 25h9v1h-9zM104 25h9v1h-9zM127 25h1v1h-1zM0 26h1v1h-1z M127 26h1v1h-1zM0 27h1v1h-1zM127 27h1v1h-1zM0 28h1v1h-1zM4 28h9v1h-9zM14 28h9v1h-9zM24 28h9v1h-9zM34 28h9v1h-9zM44 28h9v1h-9zM54 28h9v1h-9zM64 28h9v1h-9zM74 28h9v1h-9z M84 28h9v1h-9zM94 28h9v1h-9zM127 28h1v1h-1zM0 29h1v1h-1zM4 29h9v1h-9zM14 29h9v1h-9zM24 29h9v1h-9zM34 29h9v1h-9zM44 29h9v1h-9zM54 29h9v1h-9zM64 29h9v1h-9zM74 29h9v1h-9z M84 29h9v1h-9zM94 29h9v1h-9zM127 29h1v1h-1zM0 30h1v1h-1zM4 30h9v1h-9zM14 30h9v1h-9zM24 30h9v1h-9zM34 30h9v1h-9zM44 30h9v1h-9zM54 30h9v1h-9zM64 30h9v1h-9zM74 30h9v1h-9z M84 30h9v1h-9zM94 30h9v1h-9zM127 30h1v1h-1zM0 31h1v1h-1zM127 31h1v1h-1zM0 32h1v1h-1zM127 32h1v1h-1zM0 33h1v1h-1zM127 33h1v1h-1zM0 34h1v1h-1zM127 34h1v1h-1zM0 35h1v1h-1z M127 35h1v1h-1zM0 36h1v1h-1zM127 36h1v1h-1zM0 37h1v1h-1zM127 37h1v1h-1zM0 38h1v1h-1zM127 38h1v1h-1zM0 39h1v1h-1zM127 39h1v1h-1zM0 40h1v1h-1zM127 40h1v1h-1zM0 41h1v1h-1z M127 41h1v1h-1zM0 42h1v1h-1zM127 42h1v1h-1zM0 43h1v1h-1zM127 43h1v1h-1zM0 44h1v1h-1zM127 44h1v1h-1zM0 45h1v1h-1zM127 45h1v1h-1zM0 46h1v1h-1zM127 46h1v1h-1zM0 47h1v1h-1z M127 47h1v1h-1zM0 48h1v1h-1zM127 48h1v1h-1zM0 49h1v1h-1zM127 49h1v1h-1zM0 50h1v1h-1zM127 50h1v1h-1zM0 51h1v1h-1zM127 51h1v1h-1zM0 52h1v1h-1zM127 52h1v1h-1zM0 53h1v1h-1z M127 53h1v1h-1zM0 54h1v1h-1zM127 54h1v1h-1zM0 55h1v1h-1zM127 55h1v1h-1zM0 56h1v1h-1zM127 56h1v1h-1zM0 57h1v1h-1zM127 57h1v1h-1zM0 58h1v1h-1zM127 58h1v1h-1zM0 59h1v1h-1z M127 59h1v1h-1zM0 60h1v1h-1zM110 60h16v1h-16zM127 60h1v1h-1zM0 61h1v1h-1zM110 61h16v1h-16zM127 61h1v1h-1zM0 62h1v1h-1zM127 62h1v1h-1zM0 63h1v1h-1zM127 63h1v1h-1z"/>
+    <text x="64" y="76" text-anchor="middle" class="lbl" font-size="6">BREAKOUT</text>
+  </g>
+  <g transform="translate(136 82)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M0 0h5v1h-5zM6 0h1v1h-1zM13 0h3v1h-3zM18 0h4v1h-4zM118 0h1v1h-1zM125 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM12 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1z M117 1h2v1h-2zM124 1h2v1h-2zM0 2h1v1h-1zM6 2h1v1h-1zM12 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM118 2h1v1h-1zM123 2h1v1h-1zM125 2h1v1h-1zM0 3h4v1h-4z M6 3h1v1h-1zM12 3h1v1h-1zM16 3h1v1h-1zM18 3h4v1h-4zM118 3h1v1h-1zM122 3h1v1h-1zM125 3h1v1h-1zM0 4h1v1h-1zM6 4h1v1h-1zM12 4h5v1h-5zM18 4h1v1h-1zM118 4h1v1h-1z M122 4h5v1h-5zM0 5h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM118 5h1v1h-1zM125 5h1v1h-1zM0 6h1v1h-1zM6 6h5v1h-5zM12 6h1v1h-1zM16 6h1v1h-1z M18 6h1v1h-1zM117 6h3v1h-3zM125 6h1v1h-1zM0 8h128v1h-128zM31 9h8v1h-8zM83 9h8v1h-8zM31 10h1v1h-1zM38 10h1v1h-1zM83 10h1v1h-1zM90 10h1v1h-1zM31 11h1v1h-1zM38 11h1v1h-1z M83 11h1v1h-1zM90 11h1v1h-1zM31 12h1v1h-1zM38 12h1v1h-1zM83 12h1v1h-1zM90 12h1v1h-1zM31 13h1v1h-1zM38 13h1v1h-1zM83 13h1v1h-1zM90 13h1v1h-1zM31 14h1v1h-1zM38 14h1v1h-1z M83 14h1v1h-1zM90 14h1v1h-1zM31 15h1v1h-1zM38 15h1v1h-1zM83 15h1v1h-1zM90 15h1v1h-1zM31 16h1v1h-1zM38 16h1v1h-1zM83 16h1v1h-1zM90 16h1v1h-1zM31 17h1v1h-1zM38 17h1v1h-1z M83 17h1v1h-1zM90 17h1v1h-1zM31 18h1v1h-1zM38 18h1v1h-1zM83 18h1v1h-1zM90 18h1v1h-1zM31 19h1v1h-1zM38 19h1v1h-1zM83 19h1v1h-1zM90 19h1v1h-1zM31 20h1v1h-1zM38 20h1v1h-1z M83 20h1v1h-1zM90 20h1v1h-1zM31 21h1v1h-1zM38 21h1v1h-1zM83 21h1v1h-1zM90 21h1v1h-1zM31 22h1v1h-1zM38 22h1v1h-1zM83 22h1v1h-1zM90 22h1v1h-1zM31 23h1v1h-1zM38 23h1v1h-1z M83 23h1v1h-1zM90 23h1v1h-1zM31 24h1v1h-1zM38 24h1v1h-1zM83 24h1v1h-1zM90 24h1v1h-1zM31 25h1v1h-1zM38 25h1v1h-1zM83 25h8v1h-8zM31 26h1v1h-1zM38 26h1v1h-1zM82 26h10v1h-10z M31 27h1v1h-1zM38 27h1v1h-1zM82 27h10v1h-10zM31 28h1v1h-1zM38 28h1v1h-1zM82 28h10v1h-10zM31 29h1v1h-1zM38 29h1v1h-1zM31 30h1v1h-1zM38 30h1v1h-1zM31 31h1v1h-1zM38 31h1v1h-1z M31 32h1v1h-1zM38 32h1v1h-1zM31 33h8v1h-8zM30 34h10v1h-10zM30 35h10v1h-10zM30 36h10v1h-10zM22 47h3v1h-3zM20 48h2v1h-2zM25 48h1v1h-1zM20 49h3v1h-3zM24 49h1v1h-1zM26 49h1v1h-1z M21 50h1v1h-1zM26 50h2v1h-2zM21 51h1v1h-1zM26 51h1v1h-1zM82 51h10v1h-10zM22 52h4v1h-4zM82 52h10v1h-10zM82 53h10v1h-10zM83 54h8v1h-8zM83 55h1v1h-1zM90 55h1v1h-1zM83 56h1v1h-1z M90 56h1v1h-1zM83 57h1v1h-1zM90 57h1v1h-1zM83 58h1v1h-1zM90 58h1v1h-1zM30 59h10v1h-10zM83 59h1v1h-1zM90 59h1v1h-1zM30 60h10v1h-10zM83 60h1v1h-1zM90 60h1v1h-1zM30 61h10v1h-10z M83 61h1v1h-1zM90 61h1v1h-1zM31 62h8v1h-8zM83 62h1v1h-1zM90 62h1v1h-1zM31 63h8v1h-8zM83 63h8v1h-8z"/>
+    <text x="64" y="76" text-anchor="middle" class="lbl" font-size="6">FLAP</text>
+  </g>
+</svg></figure>
+<p><em>Rendered on the host from the real game code</em> — the menu and the three games,<br>exactly as <code>oled.c</code>&#x27;s framebuffer held them (<code>host/out/*.svg</code>).</p>
+<table><thead><tr><th></th><th>Control</th><th>Ends when</th></tr></thead><tbody><tr><td><strong>SNAKE</strong></td><td>stick steers</td><td>you hit the wall or yourself</td></tr><tr><td><strong>BREAKOUT</strong></td><td>stick moves the paddle, A serves</td><td>three balls are lost</td></tr><tr><td><strong>FLAP</strong></td><td>A (or B, or stick up) flaps</td><td>you touch a pipe or the ground</td></tr></tbody></table>
+<p>The <strong>knob</strong> sets the speed, 1–5, in the menu. <strong>B</strong> pauses. Every finished game<br>prints a checksummed <code>$SCORE</code> line, so the class can keep a leaderboard (Lab<br>Part 7). The <strong>stick press</strong> switches the profiler between two ways of driving<br>the display — the experiment this deck is built around.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: Two Halves — Platform and Game</h2>
+<figure class="diagram"><svg viewBox="0 0 640 250" role="img" aria-label="Main.c is the only platform file; the arcade, engine and games are pure C, running on the chip or on a PC">
+  <rect class="box" x="10" y="20" width="200" height="210" rx="6"/>
+  <text x="110" y="42" text-anchor="middle" class="mono">Main.c</text>
+  <text x="110" y="60" text-anchor="middle" class="lbl">the platform: knows the chip</text>
+  <text x="24" y="90" class="lbl">SysTick: ms + µs stopwatch</text>
+  <text x="24" y="112" class="lbl">pad.c: stick, knob, A/B/SEL</text>
+  <text x="24" y="134" class="lbl">beep.c: TIM3 → buzzer</text>
+  <text x="24" y="156" class="lbl">printf: $SCORE, $PERF</text>
+  <text x="24" y="178" class="lbl">the loop: update / render</text>
+  <text x="24" y="200" class="lbl">i2c.c under oled_flush()</text>
+  <rect class="hifill" x="260" y="20" width="200" height="210" rx="6"/>
+  <text x="360" y="42" text-anchor="middle" class="mono">pure C</text>
+  <text x="360" y="60" text-anchor="middle" class="lbl">no stm32c031xx.h anywhere</text>
+  <rect class="reg" x="280" y="76" width="160" height="28" rx="3"/>
+  <text x="360" y="95" text-anchor="middle" class="mono">arcade.c</text>
+  <rect class="reg" x="280" y="114" width="48" height="28" rx="3"/>
+  <text x="304" y="133" text-anchor="middle" class="mono lbl">snake</text>
+  <rect class="reg" x="336" y="114" width="48" height="28" rx="3"/>
+  <text x="360" y="133" text-anchor="middle" class="mono lbl">brkout</text>
+  <rect class="reg" x="392" y="114" width="48" height="28" rx="3"/>
+  <text x="416" y="133" text-anchor="middle" class="mono lbl">flappy</text>
+  <rect class="reg" x="280" y="152" width="160" height="28" rx="3"/>
+  <text x="360" y="171" text-anchor="middle" class="mono">engine.c</text>
+  <rect class="reg" x="280" y="190" width="160" height="28" rx="3"/>
+  <text x="360" y="209" text-anchor="middle" class="mono">oled.c framebuffer</text>
+  <path class="wire" d="M210 125 H260"/>
+  <text x="235" y="118" text-anchor="middle" class="lbl">pad_t</text>
+  <path class="dash" d="M460 125 H500"/>
+  <rect class="box" x="500" y="80" width="130" height="90" rx="6"/>
+  <text x="565" y="104" text-anchor="middle" class="mono">host/</text>
+  <text x="565" y="124" text-anchor="middle" class="lbl">test_games.c</text>
+  <text x="565" y="142" text-anchor="middle" class="lbl">same files, gcc,</text>
+  <text x="565" y="158" text-anchor="middle" class="lbl">scripted stick</text>
+</svg></figure>
+<p>The games never read a clock, a pin or a register. They get a <code>pad_t</code> once per<br>tick, draw into RAM, and ask for sounds through one hook, <code>sfx()</code>. <strong>Main.c is<br>the only file that includes <code>stm32c031xx.h</code>.</strong> On a PC, <code>host/test_games.c</code><br>supplies <code>sfx()</code>, <code>on_score()</code> and a counting <code>i2c_write_read()</code>, and the same<br>three games run there unchanged.</p>
+<p>This split is the lesson&#x27;s most reusable idea. Part 3&#x27;s low-level contract,<br><code>control_step(sensors_t *, actuators_t *)</code>, is the same shape for a drone and a<br>robot: the &quot;game&quot; becomes a controller, and the PC a physics simulator.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: The SSD1306 — 1 KB of Picture at the End of Two Wires</h2>
+<p>The panel is a 128 × 64 OLED with its own controller, the SSD1306, at I²C<br>address <strong>0x3C</strong> (Wokwi&#x27;s <code>board-ssd1306</code> default; some modules use 0x3D). The<br>controller holds the picture in its own RAM and refreshes the glass by itself;<br>the MCU only writes into that RAM.</p>
+<figure class="diagram"><svg viewBox="0 0 640 230" role="img" aria-label="SSD1306 memory: 8 pages of 128 columns; each byte is a vertical strip of 8 pixels">
+  <text x="20" y="20" class="lbl">x = 0 → 127 (columns)</text>
+  <rect class="reg" x="80" y="30" width="384" height="22"/><text x="40" y="46" class="mono lbl">page 0</text>
+  <rect class="reg" x="80" y="52" width="384" height="22"/><text x="40" y="68" class="mono lbl">page 1</text>
+  <rect class="reg" x="80" y="74" width="384" height="22"/><text x="40" y="90" class="mono lbl">page 2</text>
+  <rect class="reg" x="80" y="96" width="384" height="22"/><text x="40" y="112" class="mono lbl">  ...</text>
+  <rect class="reg" x="80" y="118" width="384" height="22"/>
+  <rect class="reg" x="80" y="140" width="384" height="22"/>
+  <rect class="reg" x="80" y="162" width="384" height="22"/>
+  <rect class="reg" x="80" y="184" width="384" height="22"/><text x="40" y="200" class="mono lbl">page 7</text>
+  <rect class="hifill" x="236" y="52" width="3" height="22"/>
+  <path class="hi" d="M239 63 H500"/>
+  <rect class="hifill" x="500" y="40" width="26" height="140"/>
+  <text x="513" y="58" text-anchor="middle" class="mono lbl">b0</text>
+  <text x="513" y="78" text-anchor="middle" class="mono lbl">b1</text>
+  <text x="513" y="98" text-anchor="middle" class="mono lbl">b2</text>
+  <text x="513" y="118" text-anchor="middle" class="mono lbl">…</text>
+  <text x="513" y="172" text-anchor="middle" class="mono lbl">b7</text>
+  <text x="536" y="58" class="lbl">y = 8</text>
+  <text x="536" y="172" class="lbl">y = 15</text>
+  <text x="536" y="200" class="lbl">one byte = one column</text>
+  <text x="536" y="216" class="lbl">of 8 pixels, LSB on top</text>
+  <text x="272" y="225" text-anchor="middle" class="lbl">8 pages × 128 bytes = 1 024 bytes = 8 192 pixels</text>
+</svg></figure>
+<p>Not rows of pixels, as on a PC — <strong>vertical strips of eight</strong>. That one fact<br>shapes everything below: the unit of transfer is a byte that is a column, and<br>the natural unit of &quot;this part changed&quot; is a <strong>page</strong>, 8 rows deep.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: A Pixel Is a Bit — Which Byte, Which Bit</h2>
+<p>Pixel (<em>x</em>, <em>y</em>) is bit (<em>y</em> % 8) of byte <code>fb[y / 8][x]</code>. In <code>oled.c</code>:</p>
+<pre class="lang-c"><code>void oled_pixel(int x, int y, int colour)
+{
+    if ((unsigned)x &gt;= OLED_W || (unsigned)y &gt;= OLED_H) { return; }
+    uint8_t *b = &amp;fb[y &gt;&gt; 3][1 + x];
+    uint8_t  m = (uint8_t)(1u &lt;&lt; (y &amp; 7));
+    uint8_t  old = *b;
+    if (colour == OLED_ON)       { *b |= m; }
+    else if (colour == OLED_XOR) { *b ^= m; }
+    else                         { *b &amp;= (uint8_t)~m; }
+    if (*b != old) { dirty |= (uint8_t)(1u &lt;&lt; (y &gt;&gt; 3)); }
+}</code></pre>
+<p>The byte at <code>fb[1][40]</code> — column 40, rows 8 to 15 — with pixels (40, 9) and<br>(40, 12) lit:</p>
+<figure class="diagram"><svg width="408" viewBox="0 0 408 112" role="img" aria-label="fb[1][40], 8 bits">
+<text x="16" y="35" class="mono">fb[1][40]</text>
+<text x="16" y="50" class="lbl">column 40, page 1 = rows 8..15</text>
+<text x="16" y="65" class="mono lbl">= 0x12</text>
+<text x="233.0" y="20" text-anchor="start" class="mono lbl">7</text>
+<text x="391.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="232.0" y="28" width="20.0" height="26"/>
+<rect class="reg" x="252.0" y="28" width="20.0" height="26"/>
+<text x="262.0" y="20" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="272.0" y="28" width="20.0" height="26"/>
+<text x="282.0" y="20" text-anchor="middle" class="mono lbl">5</text>
+<rect class="hifill" x="292.0" y="28" width="20.0" height="26"/>
+<text x="302.0" y="20" text-anchor="middle" class="mono lbl">4</text>
+<rect class="reg" x="312.0" y="28" width="20.0" height="26"/>
+<text x="322.0" y="20" text-anchor="middle" class="mono lbl">3</text>
+<rect class="reg" x="332.0" y="28" width="20.0" height="26"/>
+<text x="342.0" y="20" text-anchor="middle" class="mono lbl">2</text>
+<rect class="hifill" x="352.0" y="28" width="20.0" height="26"/>
+<text x="362.0" y="20" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="372.0" y="28" width="20.0" height="26"/>
+<text x="382.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="362.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="342.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="322.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="302.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="282.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="262.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="242.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M242.0 54 L243.8 60"/>
+<path class="dash" d="M262.0 54 L262.0 76"/>
+<path class="dash" d="M302.0 54 L302.0 76"/>
+<path class="dash" d="M342.0 54 L342.0 76"/>
+<text x="243.8" y="67" text-anchor="middle" class="mono halo lbl">y15</text>
+<text x="262.0" y="83" text-anchor="middle" class="mono halo lbl">y14</text>
+<text x="282.0" y="67" text-anchor="middle" class="mono halo lbl">y13</text>
+<text x="302.0" y="83" text-anchor="middle" class="mono halo">y12</text>
+<text x="322.0" y="67" text-anchor="middle" class="mono halo lbl">y11</text>
+<text x="342.0" y="83" text-anchor="middle" class="mono halo lbl">y10</text>
+<text x="362.0" y="67" text-anchor="middle" class="mono halo">y9</text>
+<text x="382.0" y="67" text-anchor="middle" class="mono halo lbl">y8</text>
+</svg></figure>
+<p>Three details worth stealing:</p>
+<ul><li><code>(unsigned)x &gt;= OLED_W</code> clips both ends in one compare: a negative <code>x</code> becomes a huge unsigned number. Off-screen is never an error, so a sprite can slide off the edge.</li><li><code>y &gt;&gt; 3</code> and <code>y &amp; 7</code> are <code>/ 8</code> and <code>% 8</code> without the division the M0+ does not have.</li><li><strong>The last line</strong>: a page becomes dirty only if a byte <em>really changed</em>. Drawing a pixel that is already lit costs a few cycles and no bus at all.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 5: Every Write Starts With a Control Byte</h2>
+<p>Over I²C the SSD1306 receives one stream of bytes. The byte after the address<br>says what the rest are:</p>
+<figure class="diagram"><svg width="370" viewBox="0 0 370 214" role="img" aria-label="control, 8 bits; control, 8 bits">
+<text x="16" y="35" class="mono">control</text>
+<text x="16" y="50" class="lbl">0x00: commands follow</text>
+<text x="16" y="65" class="mono lbl">= 0x00</text>
+<text x="194.6" y="20" text-anchor="start" class="mono lbl">7</text>
+<text x="352.6" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="193.6" y="28" width="20.0" height="26"/>
+<rect class="hifill" x="213.6" y="28" width="20.0" height="26"/>
+<text x="223.6" y="20" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="233.6" y="28" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M333.6 28 V32 M333.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M313.6 28 V32 M313.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M293.6 28 V32 M293.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M273.6 28 V32 M273.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M253.6 28 V32 M253.6 50 V54"/>
+<text x="234.6" y="20" text-anchor="start" class="mono lbl">5</text>
+<text x="343.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="323.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="303.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="283.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="263.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="243.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="223.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="203.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M223.6 54 L223.6 76"/>
+<text x="203.6" y="67" text-anchor="middle" class="mono halo lbl">Co</text>
+<text x="223.6" y="83" text-anchor="middle" class="mono halo">D/C#</text>
+<text x="16" y="137" class="mono">control</text>
+<text x="16" y="152" class="lbl">0x40: pixel data follows</text>
+<text x="16" y="167" class="mono lbl">= 0x40</text>
+<text x="194.6" y="122" text-anchor="start" class="mono lbl">7</text>
+<text x="352.6" y="122" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="193.6" y="130" width="20.0" height="26"/>
+<rect class="hifill" x="213.6" y="130" width="20.0" height="26"/>
+<text x="223.6" y="122" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="233.6" y="130" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M333.6 130 V134 M333.6 152 V156"/>
+<path class="reg" stroke-width="0.6" d="M313.6 130 V134 M313.6 152 V156"/>
+<path class="reg" stroke-width="0.6" d="M293.6 130 V134 M293.6 152 V156"/>
+<path class="reg" stroke-width="0.6" d="M273.6 130 V134 M273.6 152 V156"/>
+<path class="reg" stroke-width="0.6" d="M253.6 130 V134 M253.6 152 V156"/>
+<text x="234.6" y="122" text-anchor="start" class="mono lbl">5</text>
+<text x="343.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="323.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="303.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="283.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="263.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="243.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<text x="223.6" y="143" text-anchor="middle" class="mono">1</text>
+<text x="203.6" y="143" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M223.6 156 L223.6 178"/>
+<text x="203.6" y="169" text-anchor="middle" class="mono halo lbl">Co</text>
+<text x="223.6" y="185" text-anchor="middle" class="mono halo">D/C#</text>
+</svg></figure>
+<p><code>D/C#</code> is data (1) or command (0); <code>Co</code> = 0 means &quot;no more control bytes, the<br>rest is all one kind&quot;. <code>oled.c</code> sends exactly two kinds of transfer:</p>
+<pre><code>S | 0x3C+W | A | 0x00 | A | cmd | A | cmd ... | P        commands
+S | 0x3C+W | A | 0x40 | A | px  | A | px  ... | P        128 pixel bytes</code></pre>
+<p>And one trick that costs nothing: each page in RAM is <strong>129</strong> bytes, the first<br>permanently <code>0x40</code>. So a page goes out as one <code>i2c_write_read(0x3C, fb[p], 129,<br>0, 0)</code> straight from the framebuffer — no copying into a transmit buffer:</p>
+<pre class="lang-c"><code>static uint8_t fb[OLED_PAGES][1 + OLED_W];  /* [0] = 0x40, then 128 */</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 6: Bringing the Panel Up — 16 Commands</h2>
+<p><code>oled_init()</code> sends the SSD1306&#x27;s power-up sequence, one command transfer each:</p>
+<table><thead><tr><th>Bytes</th><th>Command</th><th>Why</th></tr></thead><tbody><tr><td><code>AE</code></td><td>display off</td><td>configure in the dark</td></tr><tr><td><code>D5 80</code></td><td>clock divide</td><td>the default</td></tr><tr><td><code>A8 3F</code></td><td>multiplex 64</td><td>this panel has 64 rows</td></tr><tr><td><code>D3 00</code> · <code>40</code></td><td>offset 0, start line 0</td><td></td></tr><tr><td><strong><code>8D 14</code></strong></td><td><strong>charge pump on</strong></td><td><strong>without it the panel stays dark</strong></td></tr><tr><td><code>20 00</code></td><td>horizontal addressing</td><td>column, then page — slide 7</td></tr><tr><td><code>A1</code> · <code>C8</code></td><td>segment remap, COM scan down</td><td>x left→right, y top→bottom</td></tr><tr><td><code>DA 12</code></td><td>COM pin layout</td><td>for 64 rows</td></tr><tr><td><code>81 CF</code> · <code>D9 F1</code> · <code>DB 40</code></td><td>contrast, pre-charge, VCOMH</td><td></td></tr><tr><td><code>A4</code> · <code>A6</code> · <code>AF</code></td><td>show RAM, not inverted, <strong>on</strong></td><td></td></tr></tbody></table>
+<p>Checked against Adafruit&#x27;s <code>Adafruit_SSD1306</code> library, which sends the same<br>values for a 128×64 panel with the internal charge pump (plus <code>2E</code>, &quot;stop<br>scrolling&quot;, which is already the state after reset).</p>
+<p><strong>Measured on the host</strong> (the stub counts what <code>oled_init()</code> sends): <strong>32<br>transfers, 1 161 bytes</strong> — 16 commands, then a cleared screen, all 8 pages.</p>
+<p><code>8D 14</code> is the classic silent failure: every command ACKs, the RAM fills<br>perfectly, and the glass stays black because nothing generates its drive<br>voltage. It is lesson 09&#x27;s MPU6050 sleep bit, in a display.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Sending One Page</h2>
+<p><code>oled_flush()</code> sets a window, then pours bytes into it:</p>
+<pre class="lang-c"><code>const uint8_t win[6] = {0x21, 0, OLED_W - 1, 0x22, (uint8_t)p, (uint8_t)p};
+int rc = command(win, sizeof win);
+if (rc == 0) { rc = i2c_write_read(OLED_ADDR, fb[p], 1u + OLED_W, 0, 0); }</code></pre>
+<p><code>0x21</code> sets the column range, <code>0x22</code> the page range. In horizontal addressing<br>mode the SSD1306 advances its own pointer after every data byte, so 128 bytes<br>land in 128 columns without another address.</p>
+<p>The two <code>I2C1-&gt;CR2</code> values that carry it (lesson 09, slide 8) — 7 command<br>bytes, then 129 data bytes, each with <code>AUTOEND</code>:</p>
+<figure class="diagram"><svg width="914" viewBox="0 0 914 182" role="img" aria-label="I2C1-&gt;CR2, 32 bits; I2C1-&gt;CR2, 32 bits">
+<text x="16" y="35" class="mono">I2C1-&gt;CR2</text>
+<text x="16" y="50" class="lbl">the window: 0x00 + 6 command bytes</text>
+<text x="16" y="65" class="mono lbl">= 0x02072078</text>
+<text x="258.6" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="257.6" y="28" width="100.0" height="26"/>
+<rect class="reg" x="357.6" y="28" width="20.0" height="26"/>
+<rect class="hifill" x="377.6" y="28" width="20.0" height="26"/>
+<text x="387.6" y="20" text-anchor="middle" class="mono lbl">25</text>
+<rect class="reg" x="397.6" y="28" width="20.0" height="26"/>
+<rect class="hifill" x="417.6" y="28" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M557.6 28 V32 M557.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M537.6 28 V32 M537.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M517.6 28 V32 M517.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M497.6 28 V32 M497.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M477.6 28 V32 M477.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M457.6 28 V32 M457.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M437.6 28 V32 M437.6 50 V54"/>
+<text x="418.6" y="20" text-anchor="start" class="mono lbl">23</text>
+<text x="576.6" y="20" text-anchor="end" class="mono lbl">16</text>
+<rect class="reg" x="577.6" y="28" width="20.0" height="26"/>
+<rect class="reg" x="597.6" y="28" width="20.0" height="26"/>
+<rect class="hifill" x="617.6" y="28" width="20.0" height="26"/>
+<text x="627.6" y="20" text-anchor="middle" class="mono lbl">13</text>
+<rect class="reg" x="637.6" y="28" width="20.0" height="26"/>
+<rect class="reg" x="657.6" y="28" width="20.0" height="26"/>
+<rect class="reg" x="677.6" y="28" width="20.0" height="26"/>
+<rect class="reg" x="697.6" y="28" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M717.6 28 V32 M717.6 50 V54"/>
+<rect class="hifill" x="737.6" y="28" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M857.6 28 V32 M857.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M837.6 28 V32 M837.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M817.6 28 V32 M817.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M797.6 28 V32 M797.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M777.6 28 V32 M777.6 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M757.6 28 V32 M757.6 50 V54"/>
+<text x="738.6" y="20" text-anchor="start" class="mono lbl">7</text>
+<text x="876.6" y="20" text-anchor="end" class="mono lbl">1</text>
+<rect class="reg" x="877.6" y="28" width="20.0" height="26"/>
+<text x="887.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="867.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="847.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="827.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="807.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="787.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="767.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="747.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="727.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="707.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="687.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="667.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="647.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="627.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="607.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="587.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="567.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="547.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="527.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="507.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="487.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="467.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="447.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="427.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="407.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="387.6" y="41" text-anchor="middle" class="mono">1</text>
+<text x="367.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="347.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="327.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="307.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="287.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="267.6" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="387.6" y="67" text-anchor="middle" class="mono halo">AUTOEND</text>
+<text x="497.6" y="67" text-anchor="middle" class="mono halo">NBYTES</text>
+<text x="627.6" y="67" text-anchor="middle" class="mono halo">START</text>
+<text x="687.6" y="67" text-anchor="middle" class="mono halo lbl">RD_WRN</text>
+<text x="807.6" y="67" text-anchor="middle" class="mono halo">SADD</text>
+<text x="16" y="121" class="mono">I2C1-&gt;CR2</text>
+<text x="16" y="136" class="lbl">the page: 0x40 + 128 pixel bytes</text>
+<text x="16" y="151" class="mono lbl">= 0x02812078</text>
+<text x="258.6" y="106" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="257.6" y="114" width="100.0" height="26"/>
+<rect class="reg" x="357.6" y="114" width="20.0" height="26"/>
+<rect class="hifill" x="377.6" y="114" width="20.0" height="26"/>
+<text x="387.6" y="106" text-anchor="middle" class="mono lbl">25</text>
+<rect class="reg" x="397.6" y="114" width="20.0" height="26"/>
+<rect class="hifill" x="417.6" y="114" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M557.6 114 V118 M557.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M537.6 114 V118 M537.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M517.6 114 V118 M517.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M497.6 114 V118 M497.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M477.6 114 V118 M477.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M457.6 114 V118 M457.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M437.6 114 V118 M437.6 136 V140"/>
+<text x="418.6" y="106" text-anchor="start" class="mono lbl">23</text>
+<text x="576.6" y="106" text-anchor="end" class="mono lbl">16</text>
+<rect class="reg" x="577.6" y="114" width="20.0" height="26"/>
+<rect class="reg" x="597.6" y="114" width="20.0" height="26"/>
+<rect class="hifill" x="617.6" y="114" width="20.0" height="26"/>
+<text x="627.6" y="106" text-anchor="middle" class="mono lbl">13</text>
+<rect class="reg" x="637.6" y="114" width="20.0" height="26"/>
+<rect class="reg" x="657.6" y="114" width="20.0" height="26"/>
+<rect class="reg" x="677.6" y="114" width="20.0" height="26"/>
+<rect class="reg" x="697.6" y="114" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M717.6 114 V118 M717.6 136 V140"/>
+<rect class="hifill" x="737.6" y="114" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M857.6 114 V118 M857.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M837.6 114 V118 M837.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M817.6 114 V118 M817.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M797.6 114 V118 M797.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M777.6 114 V118 M777.6 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M757.6 114 V118 M757.6 136 V140"/>
+<text x="738.6" y="106" text-anchor="start" class="mono lbl">7</text>
+<text x="876.6" y="106" text-anchor="end" class="mono lbl">1</text>
+<rect class="reg" x="877.6" y="114" width="20.0" height="26"/>
+<text x="887.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="867.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="847.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="827.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="807.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="787.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="767.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="747.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="727.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="707.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="687.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="667.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="647.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="627.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="607.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="587.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="567.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="547.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="527.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="507.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="487.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="467.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="447.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="427.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="407.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="387.6" y="127" text-anchor="middle" class="mono">1</text>
+<text x="367.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="347.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="327.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="307.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="287.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="267.6" y="127" text-anchor="middle" class="mono lbl">0</text>
+<text x="387.6" y="153" text-anchor="middle" class="mono halo">AUTOEND</text>
+<text x="497.6" y="153" text-anchor="middle" class="mono halo">NBYTES</text>
+<text x="627.6" y="153" text-anchor="middle" class="mono halo">START</text>
+<text x="687.6" y="153" text-anchor="middle" class="mono halo lbl">RD_WRN</text>
+<text x="807.6" y="153" text-anchor="middle" class="mono halo">SADD</text>
+</svg></figure>
+<p><code>SADD</code> = <code>0x3C &lt;&lt; 1</code> = <code>0x78</code>; <code>NBYTES</code> = 7, then 129 (<code>0x81</code>). <code>NBYTES</code> is 8<br>bits wide, so 255 bytes is the most one transfer can carry — a 129-byte page<br>fits, a whole 1 024-byte screen would not.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: The Bus Budget — Arithmetic Before Code</h2>
+<p>An I²C byte is 9 clock periods (8 bits and the ACK). At 400 kHz, <strong>22.5 µs</strong>.</p>
+<table><thead><tr><th>One page</th><th style="text-align:right">Bytes on the wire</th><th style="text-align:right">Bits</th><th style="text-align:right">Time at 400 kHz</th></tr></thead><tbody><tr><td>window: address + <code>00</code> + 6</td><td style="text-align:right">8</td><td style="text-align:right">72 + START/STOP</td><td style="text-align:right">0.19 ms</td></tr><tr><td>pixels: address + <code>40</code> + 128</td><td style="text-align:right">130</td><td style="text-align:right">1 170 + START/STOP</td><td style="text-align:right">2.93 ms</td></tr><tr><td><strong>one page</strong></td><td style="text-align:right"><strong>138</strong></td><td style="text-align:right"></td><td style="text-align:right"><strong>3.12 ms</strong></td></tr><tr><td><strong>all 8 pages</strong></td><td style="text-align:right"><strong>1 104</strong></td><td style="text-align:right"></td><td style="text-align:right"><strong>24.9 ms</strong></td></tr></tbody></table>
+<p><strong>The frame budget at 50 updates per second is 20 ms. A full repaint does not<br>fit</strong> — before the game has computed anything, and with the CPU spinning on<br><code>TXIS</code> for all of it, because <code>i2c.c</code> is polled.</p>
+<p>The AVR edition hit the same wall from the other side: its KS0108 panel had an<br>8-bit <strong>parallel</strong> bus at 14 µs a byte, 14.3 ms for a full screen. Serial is<br>cheaper in pins and dearer in time. Same answer in both editions: <strong>do not<br>send what did not change.</strong></p>
+<p>These numbers are a model; the board measures the real one. <code>$PERF</code>&#x27;s<br><code>flush_us</code> field is that measurement (slide 14), and the real <code>TIMINGR</code> clock<br>is not exactly 400 kHz.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: The Framebuffer and Dirty Pages</h2>
+<figure class="diagram"><svg viewBox="0 0 640 210" role="img" aria-label="Drawing changes RAM and marks pages dirty; flush sends only dirty pages">
+  <rect class="box" x="10" y="30" width="180" height="150" rx="6"/>
+  <text x="100" y="52" text-anchor="middle" class="mono">draw calls</text>
+  <text x="100" y="76" text-anchor="middle" class="lbl">oled_pixel, rect,</text>
+  <text x="100" y="94" text-anchor="middle" class="lbl">text, sprite …</text>
+  <text x="100" y="130" text-anchor="middle" class="lbl">RAM only</text>
+  <text x="100" y="148" text-anchor="middle" class="lbl">no bus traffic</text>
+  <path class="wire" d="M190 105 H230"/>
+  <rect class="reg" x="230" y="30" width="200" height="18"/><text x="440" y="44" class="mono lbl">p0</text>
+  <rect class="hifill" x="230" y="48" width="200" height="18"/><text x="440" y="62" class="mono lbl">p1 dirty</text>
+  <rect class="reg" x="230" y="66" width="200" height="18"/><text x="440" y="80" class="mono lbl">p2</text>
+  <rect class="reg" x="230" y="84" width="200" height="18"/><text x="440" y="98" class="mono lbl">p3</text>
+  <rect class="hifill" x="230" y="102" width="200" height="18"/><text x="440" y="116" class="mono lbl">p4 dirty</text>
+  <rect class="reg" x="230" y="120" width="200" height="18"/><text x="440" y="134" class="mono lbl">p5</text>
+  <rect class="reg" x="230" y="138" width="200" height="18"/><text x="440" y="152" class="mono lbl">p6</text>
+  <rect class="reg" x="230" y="156" width="200" height="18"/><text x="440" y="170" class="mono lbl">p7</text>
+  <path class="hi" d="M500 57 H540 M500 111 H540"/>
+  <rect class="box" x="540" y="40" width="90" height="90" rx="6"/>
+  <text x="585" y="70" text-anchor="middle" class="mono">flush</text>
+  <text x="585" y="92" text-anchor="middle" class="lbl">2 pages</text>
+  <text x="585" y="110" text-anchor="middle" class="lbl">6.2 ms</text>
+  <text x="330" y="200" text-anchor="middle" class="lbl">dirty: one byte, bit p = page p changed since the last flush</text>
+</svg></figure>
+<p>Three rules, all in <code>oled.c</code>:</p>
+<ol><li><strong>Drawing is free on the bus.</strong> Every call edits <code>fb</code> in RAM.</li><li><strong>A page is dirty only if a byte in it actually changed</strong> (slide 4&#x27;s last line).</li><li><strong><code>oled_flush()</code> sends dirty pages only</strong>, and clears each bit once its page is sent. A page whose transfer failed stays dirty and is retried next time.</li></ol>
+<p><code>oled_clear()</code> follows rule 2 too: it marks a page dirty only if the page had<br>something in it, so clearing a blank screen costs nothing.</p>
+<p>The RAM bought for this is <strong>1 032 bytes</strong> (8 × 129) — 8 % of the C031&#x27;s<br>12 KB. On the AVR edition&#x27;s ATmega128 the same framebuffer was a quarter of all<br>its memory.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: The Trap — Clear, Then Redraw Everything</h2>
+<p>The simplest way to draw a frame is <code>oled_clear()</code>, then draw every object.<br>The picture comes out identical. The bus cost does not:</p>
+<table><thead><tr><th>Strategy</th><th>Pages dirty per SNAKE frame</th></tr></thead><tbody><tr><td>clear + redraw everything</td><td>every page anything is drawn on — the wall alone is in all 7 below the HUD. <strong>Measured on the host: 970 B per frame</strong>, 88 % of a full repaint</td></tr><tr><td><strong>erase what moved, draw what moved</strong></td><td>the new head, the old tail, maybe an apple: 1–3 pages. <strong>Measured: 129 B per frame</strong></td></tr></tbody></table>
+<p>Clearing changes every lit byte to 0, redrawing changes it back — two real<br>changes, so the page is dirty even though it ends up the same. Rule 2 cannot<br>see that the net effect was nothing.</p>
+<p>So every game here keeps the <strong>positions it last drew</strong> and, each frame,<br>erases those, then draws the new ones. SNAKE goes further and keeps a list of<br>the cells that changed:</p>
+<pre class="lang-c"><code>static void mark(int c)
+{
+    if (n_changed &lt; 8) { changed[n_changed++] = (uint16_t)c; }
+    else               { need_full = 1; }     /* too many: repaint all */
+}</code></pre>
+<p>Rule of thumb for any frame-based display: <strong>erase everything that moved, then<br>draw everything that moves.</strong> In that order an erase never cuts into something<br>drawn this frame.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Measured on the Host — What Dirty Pages Save</h2>
+<p>Each game played by its autopilot for up to 5 minutes, one flush per 20 ms<br>tick, every I²C byte counted by the stub. <strong>Measured on the host:</strong></p>
+<table><thead><tr><th>Game</th><th style="text-align:right">Dirty pages: bytes / frame</th><th style="text-align:right">mean bus time</th><th style="text-align:right">Full repaint</th><th style="text-align:right">Dirty ÷ full</th></tr></thead><tbody><tr><td>SNAKE</td><td style="text-align:right"><strong>129</strong></td><td style="text-align:right"><strong>2.92 ms</strong></td><td style="text-align:right">1 104 B, 24.92 ms</td><td style="text-align:right"><strong>11.7 %</strong></td></tr><tr><td>BREAKOUT</td><td style="text-align:right"><strong>220</strong></td><td style="text-align:right"><strong>4.96 ms</strong></td><td style="text-align:right">1 104 B, 24.92 ms</td><td style="text-align:right"><strong>19.9 %</strong></td></tr><tr><td>FLAP</td><td style="text-align:right"><strong>935</strong></td><td style="text-align:right"><strong>21.11 ms</strong></td><td style="text-align:right">1 104 B, 24.92 ms</td><td style="text-align:right"><strong>84.7 %</strong></td></tr></tbody></table>
+<p>SNAKE and BREAKOUT spend a sixth of the bus a full repaint would. <strong>FLAP barely<br>benefits</strong>: its pipes span the whole height and move every tick, so nearly<br>every page changes every frame, and 81 % of its frames need more than 20 ms of<br>bus. A scrolling game is the worst case for &quot;send what changed&quot; — which is why<br>game consoles of the 1980s scrolled in hardware, by changing where the display<br><em>starts reading</em> rather than rewriting the picture.</p>
+<p>SNAKE&#x27;s worst frame was 18.7 ms (6 pages): its 3-pixel cells at y = 14..16<br><strong>straddle two pages</strong>, so head, tail and apple can each dirty two.</p>
+<p>Lab Part 2 measures the same thing on the board: press the stick to switch<br><code>$PERF</code> between <code>DIRTY</code> and <code>FULL</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: The Game Loop — Update at a Fixed Rate, Render When Time Allows</h2>
+<figure class="diagram"><svg viewBox="0 0 640 170" role="img" aria-label="Fixed timestep: updates every 20 ms on a fixed grid; a slow render makes the next frame run two updates">
+  <path class="wire" d="M20 60 H620"/>
+  <text x="20" y="20" class="lbl">updates: every 20 ms of game time, never skipped</text>
+  <path class="hi" d="M40 50 V70 M140 50 V70 M240 50 V70 M340 50 V70 M440 50 V70 M540 50 V70"/>
+  <text x="40" y="44" text-anchor="middle" class="mono lbl">0</text>
+  <text x="140" y="44" text-anchor="middle" class="mono lbl">20</text>
+  <text x="240" y="44" text-anchor="middle" class="mono lbl">40</text>
+  <text x="340" y="44" text-anchor="middle" class="mono lbl">60</text>
+  <text x="440" y="44" text-anchor="middle" class="mono lbl">80</text>
+  <text x="540" y="44" text-anchor="middle" class="mono lbl">100 ms</text>
+  <rect class="hifill" x="44" y="90" width="20" height="24"/>
+  <rect class="hifill" x="144" y="90" width="124" height="24"/>
+  <text x="206" y="106" text-anchor="middle" class="lbl">full flush 25 ms</text>
+  <rect class="hifill" x="272" y="90" width="16" height="24"/>
+  <rect class="hifill" x="344" y="90" width="20" height="24"/>
+  <text x="280" y="134" text-anchor="middle" class="lbl">2 updates (40, 60 ms due)</text>
+  <text x="280" y="150" text-anchor="middle" class="lbl">then 1 render</text>
+  <text x="20" y="166" class="lbl">frames: whenever the last one has finished</text>
+</svg></figure>
+<p>Main.c&#x27;s loop, with the stopwatch lines left out:</p>
+<pre class="lang-c"><code>while ((int32_t)(ms - next) &gt;= 0) {
+    pad_read(&amp;pad);
+    if (pad.pressed &amp; PAD_SEL) { full_repaint ^= 1; }
+    arcade_step(&amp;pad);
+    updates++;
+    next += TICK_MS;
+    if (++ran == MAX_CATCHUP) {           /* hopelessly behind: give up */
+        next = ms + TICK_MS;              /* the lost time, rather than */
+        break;                            /* spiral into catching up    */
+    }
+}
+if (ran == 0) {               /* nothing due: sleep until the next tick */
+    __WFI();
+    continue;
+}
+sound_poll(ms);               /* start any effect the update asked for */
+arcade_draw();                /* RENDER: once, however many updates ran */
+if (full_repaint) { oled_invalidate(); }
+oled_flush();</code></pre>
+<p>A slow frame does not slow the game; it makes the <em>next</em> frame run two updates.<br><strong>Game speed is set by <code>next += TICK_MS</code>, picture smoothness by how long a<br>render takes</strong> — two different numbers, deliberately decoupled.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: Why a Fixed Step — and the Spiral of Death</h2>
+<p><strong>The alternative</strong>, &quot;measure how long the last frame took and move everything<br>by speed × dt&quot;, makes the game depend on the frame time: a slow flush means a<br>big step, a ball that jumps through a brick, physics that differs between your<br>board and your neighbour&#x27;s. A fixed step makes every update identical, which is<br>what makes the host test possible: <strong>same seed, same inputs, same pixels</strong>,<br>checked by hashing the framebuffer.</p>
+<p><code>MAX_CATCHUP</code> is the guard every fixed-step loop needs. If updates ever cost<br>more than 20 ms, catching up would take longer than the time it is catching up<br>on, and the loop would never render again — the <strong>spiral of death</strong>. After 4<br>updates in a row the loop gives up the lost time instead: the game slows down<br>rather than freezing.</p>
+<p><strong>Measured on the host</strong> — Main.c&#x27;s loop run against a simulated clock, each<br>frame costing its modelled bus time:</p>
+<table><thead><tr><th>Game</th><th>Mode</th><th style="text-align:right">Frames / s</th><th style="text-align:right">Updates / s</th><th style="text-align:right">Frames running 2 updates</th></tr></thead><tbody><tr><td>SNAKE</td><td>DIRTY</td><td style="text-align:right">50.0</td><td style="text-align:right">50.0</td><td style="text-align:right">0 %</td></tr><tr><td>SNAKE</td><td>FULL</td><td style="text-align:right">40.1</td><td style="text-align:right">50.0</td><td style="text-align:right">24.6 %</td></tr><tr><td>FLAP</td><td>DIRTY</td><td style="text-align:right">46.8</td><td style="text-align:right">50.0</td><td style="text-align:right">6.8 %</td></tr><tr><td>FLAP</td><td>FULL</td><td style="text-align:right">40.1</td><td style="text-align:right">50.0</td><td style="text-align:right">24.6 %</td></tr></tbody></table>
+<p><strong>Updates stay at 50 per second in every case.</strong> Only the picture rate moves.<br>These are <code>$PERF</code>&#x27;s <code>fps</code> and <code>ups</code> fields — the first two numbers to check on<br>the board.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: A Microsecond Stopwatch, Free, From SysTick</h2>
+<p>This lesson owns SysTick itself — one interrupt a millisecond:</p>
+<figure class="diagram"><svg width="934" viewBox="0 0 934 214" role="img" aria-label="SysTick-&gt;CTRL, 32 bits; SysTick-&gt;LOAD, 32 bits">
+<text x="16" y="35" class="mono">SysTick-&gt;CTRL</text>
+<text x="16" y="50" class="lbl">SysTick_Config(): core clock, IRQ, on</text>
+<text x="16" y="65" class="mono lbl">= 0x00000007</text>
+<text x="277.8" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="915.8" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="596.8" y="28" width="260.0" height="26"/>
+<rect class="dash" x="276.8" y="28" width="300.0" height="26"/>
+<rect class="reg" x="576.8" y="28" width="20.0" height="26"/>
+<text x="586.8" y="20" text-anchor="middle" class="mono lbl">16</text>
+<rect class="hifill" x="856.8" y="28" width="20.0" height="26"/>
+<text x="866.8" y="20" text-anchor="middle" class="mono lbl">2</text>
+<rect class="hifill" x="876.8" y="28" width="20.0" height="26"/>
+<text x="886.8" y="20" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="896.8" y="28" width="20.0" height="26"/>
+<text x="906.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="886.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="866.8" y="41" text-anchor="middle" class="mono">1</text>
+<text x="846.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="826.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="806.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="786.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="766.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="746.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="726.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="706.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="686.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="666.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="646.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="626.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="606.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="586.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="286.8" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M886.8 54 L886.8 76"/>
+<path class="dash" d="M906.8 54 L906.8 92"/>
+<text x="586.8" y="67" text-anchor="middle" class="mono halo lbl">COUNTFLAG</text>
+<text x="866.8" y="67" text-anchor="middle" class="mono halo">CLKSOURCE</text>
+<text x="886.8" y="83" text-anchor="middle" class="mono halo">TICKINT</text>
+<text x="906.8" y="99" text-anchor="middle" class="mono halo">ENABLE</text>
+<text x="16" y="153" class="mono">SysTick-&gt;LOAD</text>
+<text x="16" y="168" class="lbl">48 000 - 1: one wrap per ms</text>
+<text x="16" y="183" class="mono lbl">= 0x0000BB7F</text>
+<text x="277.8" y="138" text-anchor="start" class="mono lbl">31</text>
+<text x="915.8" y="138" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="276.8" y="146" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M416.8 146 V150 M416.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M396.8 146 V150 M396.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M376.8 146 V150 M376.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M356.8 146 V150 M356.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M336.8 146 V150 M336.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M316.8 146 V150 M316.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M296.8 146 V150 M296.8 168 V172"/>
+<text x="435.8" y="138" text-anchor="end" class="mono lbl">24</text>
+<rect class="hifill" x="436.8" y="146" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M896.8 146 V150 M896.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M876.8 146 V150 M876.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M856.8 146 V150 M856.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M836.8 146 V150 M836.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M816.8 146 V150 M816.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M796.8 146 V150 M796.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M776.8 146 V150 M776.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M756.8 146 V150 M756.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M736.8 146 V150 M736.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M716.8 146 V150 M716.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M696.8 146 V150 M696.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M676.8 146 V150 M676.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M656.8 146 V150 M656.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M636.8 146 V150 M636.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M616.8 146 V150 M616.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M596.8 146 V150 M596.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M576.8 146 V150 M576.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M556.8 146 V150 M556.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M536.8 146 V150 M536.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M516.8 146 V150 M516.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M496.8 146 V150 M496.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M476.8 146 V150 M476.8 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M456.8 146 V150 M456.8 168 V172"/>
+<text x="906.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="886.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="866.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="846.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="826.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="806.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="786.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="766.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="746.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="726.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="706.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="686.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="666.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="646.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="626.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="606.8" y="159" text-anchor="middle" class="mono">1</text>
+<text x="586.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="286.8" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="676.8" y="185" text-anchor="middle" class="mono halo">RELOAD</text>
+</svg></figure>
+<p>Between interrupts <code>VAL</code> counts down from 47 999 at 48 MHz, so<br><code>(LOAD − VAL) / 48</code> is the microseconds since the last tick:</p>
+<pre class="lang-c"><code>static uint32_t now_us(void)
+{
+    uint32_t m, v;
+    do {                     /* ms ticked while we read VAL? again */
+        m = ms;
+        v = SysTick-&gt;VAL;
+    } while (m != ms);
+    return m * 1000u + (SysTick-&gt;LOAD - v) / (SystemCoreClock / 1000000u);
+}</code></pre>
+<p>The loop is lesson 03&#x27;s torn read: <code>ms</code> and <code>VAL</code> are two values that change<br>independently, and reading them in the wrong instant pairs a new <code>VAL</code> with an<br>old <code>ms</code>, 1 ms out. Re-reading until <code>ms</code> holds still fixes it with no<br>interrupts masked.</p>
+<p>The stopwatch times <code>oled_flush()</code> (<code>flush_us</code>, <code>max_us</code>) and the whole frame<br>(<code>busy %</code>). Once a second:</p>
+<pre><code>$PERF,&lt;fps&gt;,&lt;ups&gt;,&lt;flush_us&gt;,&lt;max_us&gt;,&lt;bytes/frame&gt;,&lt;busy %&gt;,&lt;DIRTY|FULL&gt;*CS</code></pre>
+</section>
+<section class="slide">
+<h2>Slide 15: One Loop, or the RTOS?</h2>
+<p>Lesson 07 built a kernel. This lesson does not link it, and that is a decision,<br>not an oversight.</p>
+<table><thead><tr><th></th><th>Superloop (this lesson)</th><th>RTOS tasks</th></tr></thead><tbody><tr><td>work to do</td><td>one chain: input → update → draw → flush</td><td>separate activities with separate deadlines</td></tr><tr><td>shared data</td><td>none — one thread owns everything</td><td>the framebuffer, touched by update/draw <em>and</em> flush</td></tr><tr><td>what tasks would need</td><td>—</td><td>a mutex or a second 1 KB buffer, or the flush sends a half-drawn frame (lesson 03&#x27;s tearing, on glass)</td></tr><tr><td>timing</td><td><code>next += 20</code> and <code>__WFI()</code></td><td><code>os_delay_until()</code> — the same idea</td></tr><tr><td>determinism</td><td>the host test replays it exactly</td><td>preemption points vary run to run</td></tr></tbody></table>
+<p>A game is a <strong>single pipeline</strong>: nothing can usefully run while the frame is<br>being computed, and the flush must not overlap the drawing. Splitting it into<br>tasks buys locking and no parallelism.</p>
+<p><strong>The RTOS earns its place when deadlines differ.</strong> A drone reads its IMU and<br>runs its attitude loop hundreds of times a second, and might show status on<br>this same OLED a few times a second — and a 25 ms flush must not delay the<br>motors. There the display belongs in a low-priority task, exactly as lesson 09<br>put its shell at the bottom.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Input — Levels, Edges and Zones</h2>
+<p><code>pad_read()</code> returns three views of the buttons (lesson 05&#x27;s debouncer, two<br>samples must agree):</p>
+<pre class="lang-c"><code>p-&gt;pressed  = (uint8_t)(now &amp; ~stable);   /* went down since the last read */
+p-&gt;released = (uint8_t)(stable &amp; ~now);   /* came up                       */
+p-&gt;down     = now;                        /* held                          */</code></pre>
+<p>Games choose the view that fits the action:</p>
+<table><thead><tr><th>Action</th><th>Uses</th><th>Why</th></tr></thead><tbody><tr><td>FLAP&#x27;s flap</td><td><code>pressed</code></td><td>holding the button must not flap 50 times a second</td></tr><tr><td>BREAKOUT&#x27;s serve</td><td><code>pressed</code></td><td></td></tr><tr><td>SNAKE&#x27;s steering</td><td>stick <strong>level</strong>, larger axis past 35 %</td><td>a held direction is a held intention</td></tr><tr><td>menu up / down</td><td>stick <strong>zone edge</strong></td><td>crossing ±50 % once = one step</td></tr></tbody></table>
+<p>The stick is two ADC channels scaled to −100…100 with a dead zone, so a released<br>stick reads exactly 0. Wokwi&#x27;s joystick reads <strong>0 V at the right</strong> (its<br>documentation says so); <code>pad.c</code> flips it, so <em>x</em> &gt; 0 is always right.</p>
+<p>Edges are only as good as the sampling: <code>pressed</code> is set for <strong>one</strong> call of<br><code>pad_read()</code>. That is why the loop reads the pad inside the update loop — once<br>per tick, never skipped — and not once per frame.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Sprites — and Why <code>const</code> Is Enough on ARM</h2>
+<p>FLAP&#x27;s bird is two 8 × 6 frames in the panel&#x27;s own format — one byte per<br>column, bit 0 at the top:</p>
+<pre class="lang-c"><code>/*     frame 0 (wings up)    frame 1 (wings down)
+ *       ..###...              ..###...
+ *       ##...#..              .#...#..
+ *       ###.#.#.              .#..#.#.
+ *       .#....##              ##....##
+ *       .#....#.              ###...#.
+ *       ..####..              ..####..                  */
+static const uint8_t bird[2][BIRD_W] = {
+    { 0x06, 0x1E, 0x25, 0x21, 0x25, 0x22, 0x1C, 0x08 },
+    { 0x18, 0x1E, 0x31, 0x21, 0x25, 0x22, 0x1C, 0x08 },
+};</code></pre>
+<p>Column 2 of frame 0 reads down <code>#</code>, <code>.</code>, <code>#</code>, <code>.</code>, <code>.</code>, <code>#</code> → bits 0, 2, 5 →<br><code>0x25</code>. <code>host/sprite.py</code> does that turn for you from ASCII art (Lab Part 4).</p>
+<table><thead><tr><th></th><th>AVR edition (<code>_game.c</code>)</th><th>This edition</th></tr></thead><tbody><tr><td>font and sprites</td><td><code>PROGMEM</code> + <code>pgm_read_byte()</code></td><td>plain <code>const</code></td></tr><tr><td>why</td><td>Harvard: flash and RAM are separate address spaces</td><td>one address space: a load reads either</td></tr><tr><td>RAM</td><td>4 KB; framebuffer = 25 %</td><td>12 KB; framebuffer = 8 %</td></tr><tr><td>whole arcade, <code>.data + .bss</code></td><td>1 372 B (lesson 24)</td><td><strong>2 712 B</strong> (this build)</td></tr></tbody></table>
+<p>On ARM <code>const</code> data goes to <code>.rodata</code>, which the linker script places in flash,<br>and the CPU reads it with an ordinary <code>ldrb</code>. Forget <code>const</code> and the table is<br>copied into RAM at boot — it still works, silently costing RAM.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: Physics in Two Lines — and Fixed Point</h2>
+<p>FLAP, every tick (positions and speeds in 1/256 px):</p>
+<pre class="lang-c"><code>vy += GRAVITY;          /* 28/256 px per tick^2   = 273 px/s^2 */
+by += vy;               /* a flap SETS vy = -400  = -78 px/s   */</code></pre>
+<p>That is <strong>Euler integration</strong>: velocity integrates acceleration, position<br>integrates velocity. Lesson 13&#x27;s drone altitude is these two lines with a motor<br>instead of a button.</p>
+<p><strong>Measured on the host</strong>, and predicted by hand first: with no input the bird<br>hovers until tick 150, then falls 28·<em>n</em>(<em>n</em>+1)/2/256 px in <em>n</em> ticks. It hits<br>the ground (27 px below) when <em>n</em>(<em>n</em>+1) ≥ 494, so <em>n</em> = 22 — <strong>tick 171</strong>. The<br>test asserts exactly 171. A model you can predict is a model you can test.</p>
+<p><strong>Why fixed point bites — a bug the host test found in this lesson.</strong> The<br>paddle first moved <code>px += in-&gt;x * 4 / 100</code> in whole pixels. For any stick under<br>25 %, <code>x * 4 / 100</code> is <strong>0</strong>: a gentle push did nothing. The autopilot kept<br>missing balls three pixels from the paddle. The fix keeps the paddle in 1/256<br>px too:</p>
+<pre class="lang-c"><code>pxf += (int32_t)in-&gt;x * (4 &lt;&lt; FP) / 100;    /* in 1/256 px */
+px   = (int)(pxf &gt;&gt; FP);</code></pre>
+<p>Integer maths has no rounding errors — it has <em>truncation</em> errors, and they<br>are always towards zero.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: Collision — Four Comparisons</h2>
+<pre class="lang-c"><code>static inline int aabb(int ax, int ay, int aw, int ah,
+                       int bx, int by, int bw, int bh)
+{
+    return ax &lt; bx + bw &amp;&amp; bx &lt; ax + aw &amp;&amp; ay &lt; by + bh &amp;&amp; by &lt; ay + ah;
+}</code></pre>
+<p>Two <strong>axis-aligned bounding boxes</strong> overlap unless one is entirely left of,<br>right of, above or below the other. Every collision in the arcade is this one<br>function — ball and brick, ball and paddle, bird and pipe.</p>
+<p>Making it <em>feel</em> right is the craft:</p>
+<ul><li><strong>FLAP shrinks the bird&#x27;s box by a pixel all round.</strong> A hit you can see is fair; a hit on a corner pixel feels like a bug.</li><li><strong>BREAKOUT decides the bounce from where the ball <em>was</em>.</strong> If it already overlapped the brick&#x27;s columns a tick ago it came through the top or bottom (flip <em>vy</em>); otherwise through a side (flip <em>vx</em>).</li><li><strong>Where the ball meets the paddle sets its angle</strong> — the centre sends it straight up, the ends at 45°. It is the only control the player has.</li><li><strong>No tunnelling</strong>: one step must be smaller than the thinnest thing it can hit. Bricks are 3 px, the paddle 2 px, the ball 2 px, so the ball&#x27;s speed is capped below 3 px per tick.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 20: Randomness You Can Replay — xorshift32</h2>
+<pre class="lang-c"><code>uint32_t rng_next(void)
+{
+    uint32_t x = rng_state;
+    x ^= x &lt;&lt; 13;
+    x ^= x &gt;&gt; 17;
+    x ^= x &lt;&lt; 5;
+    return rng_state = x;
+}
+uint32_t rng_below(uint32_t n) { return ((rng_next() &gt;&gt; 16) * n) &gt;&gt; 16; }</code></pre>
+<p>Marsaglia&#x27;s xorshift: three shifts, three XORs, a period of 2³² − 1, and no<br>divide anywhere — <code>rng_below</code> scales with one <code>MULS</code> instead of <code>%</code>, which on<br>the M0+ would be a library call. The AVR edition used the 16-bit version<br>(shifts 7, 9, 8), period 65 535.</p>
+<p><strong>Deterministic on purpose.</strong> The arcade seeds it with the <strong>tick on which you<br>pressed A</strong>. You cannot hit the same 20 ms tick twice, so every game is new; a<br>test that presses A on a scripted tick gets the same game every time.<br><strong>Measured on the host:</strong> same seed → the same 2 934 ticks, score and<br>framebuffer hash; a different seed → apples elsewhere.</p>
+<p>Not for secrets: anyone who sees a few outputs can predict the rest. For where<br>an apple goes, it is perfect.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: Sound — a Sequencer on a Timer</h2>
+<p><code>beep.c</code> is lesson 06&#x27;s PWM pointed at a buzzer: TIM3 at 1 MHz, <code>ARR + 1</code> =<br>10⁶ / Hz sets the pitch, <code>CCR1</code> = half of it makes a square wave. <strong>The hardware<br>keeps the tone going with no CPU</strong> — 440 Hz is <code>ARR</code> = 2272.</p>
+<p>An effect is a short list of <code>{Hz, ms}</code>, and <code>0 Hz</code> is a rest:</p>
+<pre class="lang-c"><code>static const note_t T_EAT[]    = {{1200, 25}, {1600, 25}, {0, 0}};
+static const note_t T_OVER[]   = {{392, 150}, {0, 30}, {330, 150}, {0, 30},
+                                  {262, 300}, {0, 0}};
+static const note_t T_HIGH[]   = {{523, 80}, {659, 80}, {784, 80}, {1047, 80},
+                                  {0, 40}, {1047, 200}, {0, 0}};</code></pre>
+<p><code>sound_poll()</code> runs every pass of the loop and starts the next note when the<br>last one has ended. A game only ever says <code>sfx(SFX_EAT)</code>; it has no idea a<br>timer exists — on the host the same call increments a counter, and the test<br>asserts the counts (an apple eaten is an <code>SFX_EAT</code>).</p>
+<p>One honest limit: the loop polls, so during a 25 ms full flush a note can<br>overrun by up to 25 ms. Nobody hears it. An interrupt-driven sequencer would<br>fix it — at the cost of sharing <code>playing</code> with an ISR (lesson 03 again).</p>
+</section>
+<section class="slide">
+<h2>Slide 22: SNAKE</h2>
+<figure class="diagram"><!-- shot:snake - generated by host/embed_shots.py from host/out/*.svg -->
+<svg viewBox="-4 -4 136 72" role="img" aria-label="snake, rendered on the host from the real game code">
+  <g transform="translate(0 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M1 0h4v1h-4zM6 0h1v1h-1zM10 0h1v1h-1zM13 0h3v1h-3zM18 0h1v1h-1zM22 0h1v1h-1zM24 0h5v1h-5zM117 0h3v1h-3zM122 0h5v1h-5zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h1v1h-1z M12 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM21 1h1v1h-1zM24 1h1v1h-1zM116 1h1v1h-1zM120 1h1v1h-1zM125 1h1v1h-1zM0 2h1v1h-1zM6 2h2v1h-2zM10 2h1v1h-1zM12 2h1v1h-1z M16 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM24 2h1v1h-1zM116 2h1v1h-1zM120 2h1v1h-1zM124 2h1v1h-1zM1 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1z M16 3h1v1h-1zM18 3h2v1h-2zM24 3h4v1h-4zM117 3h4v1h-4zM125 3h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h2v1h-2zM12 4h5v1h-5zM18 4h1v1h-1zM20 4h1v1h-1zM24 4h1v1h-1z M120 4h1v1h-1zM126 4h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM21 5h1v1h-1zM24 5h1v1h-1zM119 5h1v1h-1zM122 5h1v1h-1z M126 5h1v1h-1zM0 6h4v1h-4zM6 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM22 6h1v1h-1zM24 6h5v1h-5zM117 6h2v1h-2zM123 6h3v1h-3zM0 8h128v1h-128z M0 9h128v1h-128zM0 10h1v1h-1zM127 10h1v1h-1zM0 11h1v1h-1zM127 11h1v1h-1zM0 12h1v1h-1zM127 12h1v1h-1zM0 13h1v1h-1zM127 13h1v1h-1zM0 14h1v1h-1zM127 14h1v1h-1zM0 15h1v1h-1z M127 15h1v1h-1zM0 16h1v1h-1zM127 16h1v1h-1zM0 17h1v1h-1zM127 17h1v1h-1zM0 18h1v1h-1zM127 18h1v1h-1zM0 19h1v1h-1zM127 19h1v1h-1zM0 20h1v1h-1zM127 20h1v1h-1zM0 21h1v1h-1z M127 21h1v1h-1zM0 22h1v1h-1zM127 22h1v1h-1zM0 23h1v1h-1zM127 23h1v1h-1zM0 24h1v1h-1zM127 24h1v1h-1zM0 25h1v1h-1zM127 25h1v1h-1zM0 26h1v1h-1zM127 26h1v1h-1zM0 27h1v1h-1z M127 27h1v1h-1zM0 28h1v1h-1zM127 28h1v1h-1zM0 29h1v1h-1zM127 29h1v1h-1zM0 30h1v1h-1zM127 30h1v1h-1zM0 31h1v1h-1zM127 31h1v1h-1zM0 32h1v1h-1zM127 32h1v1h-1zM0 33h1v1h-1z M127 33h1v1h-1zM0 34h1v1h-1zM42 34h3v1h-3zM46 34h3v1h-3zM50 34h3v1h-3zM54 34h3v1h-3zM58 34h3v1h-3zM62 34h3v1h-3zM66 34h3v1h-3zM70 34h3v1h-3zM74 34h3v1h-3zM78 34h3v1h-3z M82 34h3v1h-3zM86 34h3v1h-3zM90 34h3v1h-3zM94 34h3v1h-3zM127 34h1v1h-1zM0 35h1v1h-1zM42 35h3v1h-3zM46 35h3v1h-3zM50 35h3v1h-3zM54 35h3v1h-3zM58 35h3v1h-3zM62 35h3v1h-3z M66 35h3v1h-3zM70 35h3v1h-3zM74 35h3v1h-3zM78 35h3v1h-3zM82 35h3v1h-3zM86 35h3v1h-3zM90 35h3v1h-3zM94 35h3v1h-3zM127 35h1v1h-1zM0 36h1v1h-1zM42 36h3v1h-3zM46 36h3v1h-3z M50 36h3v1h-3zM54 36h3v1h-3zM58 36h3v1h-3zM62 36h3v1h-3zM66 36h3v1h-3zM70 36h3v1h-3zM74 36h3v1h-3zM78 36h3v1h-3zM82 36h3v1h-3zM86 36h3v1h-3zM90 36h3v1h-3zM94 36h3v1h-3z M127 36h1v1h-1zM0 37h1v1h-1zM127 37h1v1h-1zM0 38h1v1h-1zM10 38h3v1h-3zM14 38h3v1h-3zM18 38h3v1h-3zM22 38h3v1h-3zM26 38h3v1h-3zM30 38h3v1h-3zM34 38h3v1h-3zM38 38h3v1h-3z M42 38h3v1h-3zM54 38h3v1h-3zM58 38h3v1h-3zM127 38h1v1h-1zM0 39h1v1h-1zM10 39h3v1h-3zM14 39h3v1h-3zM18 39h3v1h-3zM22 39h3v1h-3zM26 39h3v1h-3zM30 39h3v1h-3zM34 39h3v1h-3z M38 39h3v1h-3zM42 39h3v1h-3zM54 39h3v1h-3zM58 39h3v1h-3zM127 39h1v1h-1zM0 40h1v1h-1zM10 40h3v1h-3zM14 40h3v1h-3zM18 40h3v1h-3zM22 40h3v1h-3zM26 40h3v1h-3zM30 40h3v1h-3z M34 40h3v1h-3zM38 40h3v1h-3zM42 40h3v1h-3zM54 40h3v1h-3zM58 40h3v1h-3zM127 40h1v1h-1zM0 41h1v1h-1zM127 41h1v1h-1zM0 42h1v1h-1zM10 42h3v1h-3zM54 42h3v1h-3zM58 42h3v1h-3z M127 42h1v1h-1zM0 43h1v1h-1zM10 43h3v1h-3zM54 43h3v1h-3zM58 43h3v1h-3zM127 43h1v1h-1zM0 44h1v1h-1zM10 44h3v1h-3zM54 44h3v1h-3zM58 44h3v1h-3zM127 44h1v1h-1zM0 45h1v1h-1z M127 45h1v1h-1zM0 46h1v1h-1zM10 46h3v1h-3zM54 46h3v1h-3zM58 46h3v1h-3zM127 46h1v1h-1zM0 47h1v1h-1zM10 47h3v1h-3zM54 47h3v1h-3zM58 47h3v1h-3zM127 47h1v1h-1zM0 48h1v1h-1z M10 48h3v1h-3zM54 48h3v1h-3zM58 48h3v1h-3zM127 48h1v1h-1zM0 49h1v1h-1zM127 49h1v1h-1zM0 50h1v1h-1zM10 50h3v1h-3zM107 50h1v1h-1zM118 50h3v1h-3zM122 50h3v1h-3zM127 50h1v1h-1z M0 51h1v1h-1zM10 51h3v1h-3zM106 51h3v1h-3zM118 51h3v1h-3zM122 51h3v1h-3zM127 51h1v1h-1zM0 52h1v1h-1zM10 52h3v1h-3zM107 52h1v1h-1zM118 52h3v1h-3zM122 52h3v1h-3zM127 52h1v1h-1z M0 53h1v1h-1zM127 53h1v1h-1zM0 54h1v1h-1zM10 54h3v1h-3zM122 54h3v1h-3zM127 54h1v1h-1zM0 55h1v1h-1zM10 55h3v1h-3zM122 55h3v1h-3zM127 55h1v1h-1zM0 56h1v1h-1zM10 56h3v1h-3z M122 56h3v1h-3zM127 56h1v1h-1zM0 57h1v1h-1zM127 57h1v1h-1zM0 58h1v1h-1zM10 58h3v1h-3zM14 58h3v1h-3zM18 58h3v1h-3zM22 58h3v1h-3zM26 58h3v1h-3zM30 58h3v1h-3zM34 58h3v1h-3z M38 58h3v1h-3zM42 58h3v1h-3zM46 58h3v1h-3zM50 58h3v1h-3zM54 58h3v1h-3zM58 58h3v1h-3zM62 58h3v1h-3zM66 58h3v1h-3zM70 58h3v1h-3zM74 58h3v1h-3zM78 58h3v1h-3zM82 58h3v1h-3z M86 58h3v1h-3zM90 58h3v1h-3zM94 58h3v1h-3zM98 58h3v1h-3zM102 58h3v1h-3zM106 58h3v1h-3zM110 58h3v1h-3zM114 58h3v1h-3zM118 58h3v1h-3zM122 58h3v1h-3zM127 58h1v1h-1zM0 59h1v1h-1z M10 59h3v1h-3zM14 59h3v1h-3zM18 59h3v1h-3zM22 59h3v1h-3zM26 59h3v1h-3zM30 59h3v1h-3zM34 59h3v1h-3zM38 59h3v1h-3zM42 59h3v1h-3zM46 59h3v1h-3zM50 59h3v1h-3zM54 59h3v1h-3z M58 59h3v1h-3zM62 59h3v1h-3zM66 59h3v1h-3zM70 59h3v1h-3zM74 59h3v1h-3zM78 59h3v1h-3zM82 59h3v1h-3zM86 59h3v1h-3zM90 59h3v1h-3zM94 59h3v1h-3zM98 59h3v1h-3zM102 59h3v1h-3z M106 59h3v1h-3zM110 59h3v1h-3zM114 59h3v1h-3zM118 59h3v1h-3zM122 59h3v1h-3zM127 59h1v1h-1zM0 60h1v1h-1zM10 60h3v1h-3zM14 60h3v1h-3zM18 60h3v1h-3zM22 60h3v1h-3zM26 60h3v1h-3z M30 60h3v1h-3zM34 60h3v1h-3zM38 60h3v1h-3zM42 60h3v1h-3zM46 60h3v1h-3zM50 60h3v1h-3zM54 60h3v1h-3zM58 60h3v1h-3zM62 60h3v1h-3zM66 60h3v1h-3zM70 60h3v1h-3zM74 60h3v1h-3z M78 60h3v1h-3zM82 60h3v1h-3zM86 60h3v1h-3zM90 60h3v1h-3zM94 60h3v1h-3zM98 60h3v1h-3zM102 60h3v1h-3zM106 60h3v1h-3zM110 60h3v1h-3zM114 60h3v1h-3zM118 60h3v1h-3zM122 60h3v1h-3z M127 60h1v1h-1zM0 61h1v1h-1zM127 61h1v1h-1zM0 62h1v1h-1zM127 62h1v1h-1zM0 63h128v1h-128z"/>
+  </g>
+</svg></figure>
+<p><em>Rendered on the host from the real game code</em> — tick 2000 of the autopilot.</p>
+<p>The body is a <strong>ring buffer of cell numbers</strong> (cy × 31 + cx): moving is <em>push<br>a head, pop a tail</em>, O(1) however long it grows. A <strong>bitmap</strong>, one bit per<br>cell, answers &quot;is this snake?&quot; in one test, so biting yourself is not a walk<br>along the body. 403 cells: 806 B of ring + 51 B of bitmap.</p>
+<p>The bite test allows one cell of the body: the tail, which moves out of the<br>way on the same tick (unless the snake is growing). An early draft popped the<br>tail <em>before</em> testing, so a fatal move had already shortened the snake — the<br>host test&#x27;s &quot;length = 3 + 2 × apples&quot; check caught it, one cell out.</p>
+<p>Every fifth apple shortens the move period by a tick; the knob sets where it<br>starts (8 ticks per move at level 1, 4 at level 5).</p>
+<p><strong>Measured on the host</strong>, level 3: the autopilot ate <strong>42 apples</strong> in 58.7 s,<br>length <strong>87</strong> = 3 + 2 × 42, score <strong>126</strong> = 3 × 42. With no input the snake<br>hits the wall on <strong>tick 126</strong> — predicted 21 moves × 6 ticks.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: BREAKOUT</h2>
+<figure class="diagram"><!-- shot:breakout - generated by host/embed_shots.py from host/out/*.svg -->
+<svg viewBox="-4 -4 136 72" role="img" aria-label="breakout, rendered on the host from the real game code">
+  <g transform="translate(0 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M0 0h4v1h-4zM6 0h4v1h-4zM12 0h5v1h-5zM19 0h3v1h-3zM24 0h1v1h-1zM28 0h1v1h-1zM31 0h3v1h-3zM36 0h1v1h-1zM40 0h1v1h-1zM42 0h5v1h-5zM116 0h5v1h-5zM122 0h5v1h-5z M0 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1zM24 1h1v1h-1zM27 1h1v1h-1zM30 1h1v1h-1zM34 1h1v1h-1zM36 1h1v1h-1z M40 1h1v1h-1zM44 1h1v1h-1zM119 1h1v1h-1zM125 1h1v1h-1zM0 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM10 2h1v1h-1zM12 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1z M26 2h1v1h-1zM30 2h1v1h-1zM34 2h1v1h-1zM36 2h1v1h-1zM40 2h1v1h-1zM44 2h1v1h-1zM56 2h4v1h-4zM62 2h4v1h-4zM68 2h4v1h-4zM118 2h1v1h-1zM124 2h1v1h-1zM0 3h4v1h-4z M6 3h4v1h-4zM12 3h4v1h-4zM18 3h1v1h-1zM22 3h1v1h-1zM24 3h2v1h-2zM30 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM40 3h1v1h-1zM44 3h1v1h-1zM56 3h4v1h-4zM62 3h4v1h-4z M68 3h4v1h-4zM119 3h1v1h-1zM125 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h1v1h-1zM18 4h5v1h-5zM24 4h1v1h-1zM26 4h1v1h-1zM30 4h1v1h-1z M34 4h1v1h-1zM36 4h1v1h-1zM40 4h1v1h-1zM44 4h1v1h-1zM56 4h4v1h-4zM62 4h4v1h-4zM68 4h4v1h-4zM120 4h1v1h-1zM126 4h1v1h-1zM0 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1z M9 5h1v1h-1zM12 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM24 5h1v1h-1zM27 5h1v1h-1zM30 5h1v1h-1zM34 5h1v1h-1zM36 5h1v1h-1zM40 5h1v1h-1zM44 5h1v1h-1zM56 5h4v1h-4z M62 5h4v1h-4zM68 5h4v1h-4zM116 5h1v1h-1zM120 5h1v1h-1zM122 5h1v1h-1zM126 5h1v1h-1zM0 6h4v1h-4zM6 6h1v1h-1zM10 6h1v1h-1zM12 6h5v1h-5zM18 6h1v1h-1zM22 6h1v1h-1z M24 6h1v1h-1zM28 6h1v1h-1zM31 6h3v1h-3zM37 6h3v1h-3zM44 6h1v1h-1zM117 6h3v1h-3zM123 6h3v1h-3zM0 8h128v1h-128zM0 9h1v1h-1zM127 9h1v1h-1zM0 10h1v1h-1zM127 10h1v1h-1z M0 11h1v1h-1zM127 11h1v1h-1zM0 12h1v1h-1zM127 12h1v1h-1zM0 13h1v1h-1zM4 13h9v1h-9zM14 13h9v1h-9zM24 13h9v1h-9zM34 13h9v1h-9zM44 13h9v1h-9zM54 13h9v1h-9zM64 13h9v1h-9z M74 13h9v1h-9zM84 13h9v1h-9zM94 13h9v1h-9zM104 13h9v1h-9zM127 13h1v1h-1zM0 14h1v1h-1zM4 14h9v1h-9zM14 14h9v1h-9zM24 14h9v1h-9zM34 14h9v1h-9zM44 14h9v1h-9zM54 14h9v1h-9z M64 14h9v1h-9zM74 14h9v1h-9zM84 14h9v1h-9zM94 14h9v1h-9zM104 14h9v1h-9zM127 14h1v1h-1zM0 15h1v1h-1zM4 15h9v1h-9zM14 15h9v1h-9zM24 15h9v1h-9zM34 15h9v1h-9zM44 15h9v1h-9z M54 15h9v1h-9zM64 15h9v1h-9zM74 15h9v1h-9zM84 15h9v1h-9zM94 15h9v1h-9zM104 15h9v1h-9zM127 15h1v1h-1zM0 16h1v1h-1zM127 16h1v1h-1zM0 17h1v1h-1zM127 17h1v1h-1zM0 18h1v1h-1z M4 18h9v1h-9zM14 18h9v1h-9zM24 18h9v1h-9zM34 18h9v1h-9zM44 18h9v1h-9zM54 18h9v1h-9zM64 18h9v1h-9zM74 18h9v1h-9zM84 18h9v1h-9zM94 18h9v1h-9zM104 18h9v1h-9zM127 18h1v1h-1z M0 19h1v1h-1zM4 19h9v1h-9zM14 19h9v1h-9zM24 19h9v1h-9zM34 19h9v1h-9zM44 19h9v1h-9zM54 19h9v1h-9zM64 19h9v1h-9zM74 19h9v1h-9zM84 19h9v1h-9zM94 19h9v1h-9zM104 19h9v1h-9z M127 19h1v1h-1zM0 20h1v1h-1zM4 20h9v1h-9zM14 20h9v1h-9zM24 20h9v1h-9zM34 20h9v1h-9zM44 20h9v1h-9zM54 20h9v1h-9zM64 20h9v1h-9zM74 20h9v1h-9zM84 20h9v1h-9zM94 20h9v1h-9z M104 20h9v1h-9zM127 20h1v1h-1zM0 21h1v1h-1zM127 21h1v1h-1zM0 22h1v1h-1zM118 22h2v1h-2zM127 22h1v1h-1zM0 23h1v1h-1zM4 23h9v1h-9zM14 23h9v1h-9zM24 23h9v1h-9zM34 23h9v1h-9z M44 23h9v1h-9zM54 23h9v1h-9zM64 23h9v1h-9zM74 23h9v1h-9zM84 23h9v1h-9zM94 23h9v1h-9zM104 23h9v1h-9zM118 23h2v1h-2zM127 23h1v1h-1zM0 24h1v1h-1zM4 24h9v1h-9zM14 24h9v1h-9z M24 24h9v1h-9zM34 24h9v1h-9zM44 24h9v1h-9zM54 24h9v1h-9zM64 24h9v1h-9zM74 24h9v1h-9zM84 24h9v1h-9zM94 24h9v1h-9zM104 24h9v1h-9zM127 24h1v1h-1zM0 25h1v1h-1zM4 25h9v1h-9z M14 25h9v1h-9zM24 25h9v1h-9zM34 25h9v1h-9zM44 25h9v1h-9zM54 25h9v1h-9zM64 25h9v1h-9zM74 25h9v1h-9zM84 25h9v1h-9zM94 25h9v1h-9zM104 25h9v1h-9zM127 25h1v1h-1zM0 26h1v1h-1z M127 26h1v1h-1zM0 27h1v1h-1zM127 27h1v1h-1zM0 28h1v1h-1zM4 28h9v1h-9zM14 28h9v1h-9zM24 28h9v1h-9zM34 28h9v1h-9zM44 28h9v1h-9zM54 28h9v1h-9zM64 28h9v1h-9zM74 28h9v1h-9z M84 28h9v1h-9zM94 28h9v1h-9zM127 28h1v1h-1zM0 29h1v1h-1zM4 29h9v1h-9zM14 29h9v1h-9zM24 29h9v1h-9zM34 29h9v1h-9zM44 29h9v1h-9zM54 29h9v1h-9zM64 29h9v1h-9zM74 29h9v1h-9z M84 29h9v1h-9zM94 29h9v1h-9zM127 29h1v1h-1zM0 30h1v1h-1zM4 30h9v1h-9zM14 30h9v1h-9zM24 30h9v1h-9zM34 30h9v1h-9zM44 30h9v1h-9zM54 30h9v1h-9zM64 30h9v1h-9zM74 30h9v1h-9z M84 30h9v1h-9zM94 30h9v1h-9zM127 30h1v1h-1zM0 31h1v1h-1zM127 31h1v1h-1zM0 32h1v1h-1zM127 32h1v1h-1zM0 33h1v1h-1zM127 33h1v1h-1zM0 34h1v1h-1zM127 34h1v1h-1zM0 35h1v1h-1z M127 35h1v1h-1zM0 36h1v1h-1zM127 36h1v1h-1zM0 37h1v1h-1zM127 37h1v1h-1zM0 38h1v1h-1zM127 38h1v1h-1zM0 39h1v1h-1zM127 39h1v1h-1zM0 40h1v1h-1zM127 40h1v1h-1zM0 41h1v1h-1z M127 41h1v1h-1zM0 42h1v1h-1zM127 42h1v1h-1zM0 43h1v1h-1zM127 43h1v1h-1zM0 44h1v1h-1zM127 44h1v1h-1zM0 45h1v1h-1zM127 45h1v1h-1zM0 46h1v1h-1zM127 46h1v1h-1zM0 47h1v1h-1z M127 47h1v1h-1zM0 48h1v1h-1zM127 48h1v1h-1zM0 49h1v1h-1zM127 49h1v1h-1zM0 50h1v1h-1zM127 50h1v1h-1zM0 51h1v1h-1zM127 51h1v1h-1zM0 52h1v1h-1zM127 52h1v1h-1zM0 53h1v1h-1z M127 53h1v1h-1zM0 54h1v1h-1zM127 54h1v1h-1zM0 55h1v1h-1zM127 55h1v1h-1zM0 56h1v1h-1zM127 56h1v1h-1zM0 57h1v1h-1zM127 57h1v1h-1zM0 58h1v1h-1zM127 58h1v1h-1zM0 59h1v1h-1z M127 59h1v1h-1zM0 60h1v1h-1zM110 60h16v1h-16zM127 60h1v1h-1zM0 61h1v1h-1zM110 61h16v1h-16zM127 61h1v1h-1zM0 62h1v1h-1zM127 62h1v1h-1zM0 63h1v1h-1zM127 63h1v1h-1z"/>
+  </g>
+</svg></figure>
+<p><em>Rendered on the host from the real game code</em> — tick 900 of the autopilot.</p>
+<p>48 bricks are <strong>four 16-bit words</strong>: bit <em>c</em> of <code>rows[r]</code> is the brick in row<br><em>r</em>, column <em>c</em>. Break one with an AND, test &quot;all gone&quot; with four compares.<br>Top rows pay more; higher levels pay more and give you a narrower paddle<br>(20 px at level 1, 12 at level 5). Clear a wave and the next is faster.</p>
+<p><strong>Measured on the host</strong>, level 3: the autopilot (it predicts where the ball<br>will land) played the full 5 minutes — <strong>188 bricks, 3 waves, score 1 395,<br>no ball lost</strong>. With no input, the ball serves itself after 3 s and the game<br>ends on <strong>tick 599</strong> after three misses.</p>
+</section>
+<section class="slide">
+<h2>Slide 24: FLAP</h2>
+<figure class="diagram"><!-- shot:flap - generated by host/embed_shots.py from host/out/*.svg -->
+<svg viewBox="-4 -4 136 72" role="img" aria-label="flap, rendered on the host from the real game code">
+  <g transform="translate(0 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M0 0h5v1h-5zM6 0h1v1h-1zM13 0h3v1h-3zM18 0h4v1h-4zM118 0h1v1h-1zM125 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM12 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1z M117 1h2v1h-2zM124 1h2v1h-2zM0 2h1v1h-1zM6 2h1v1h-1zM12 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM118 2h1v1h-1zM123 2h1v1h-1zM125 2h1v1h-1zM0 3h4v1h-4z M6 3h1v1h-1zM12 3h1v1h-1zM16 3h1v1h-1zM18 3h4v1h-4zM118 3h1v1h-1zM122 3h1v1h-1zM125 3h1v1h-1zM0 4h1v1h-1zM6 4h1v1h-1zM12 4h5v1h-5zM18 4h1v1h-1zM118 4h1v1h-1z M122 4h5v1h-5zM0 5h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM118 5h1v1h-1zM125 5h1v1h-1zM0 6h1v1h-1zM6 6h5v1h-5zM12 6h1v1h-1zM16 6h1v1h-1z M18 6h1v1h-1zM117 6h3v1h-3zM125 6h1v1h-1zM0 8h128v1h-128zM31 9h8v1h-8zM83 9h8v1h-8zM31 10h1v1h-1zM38 10h1v1h-1zM83 10h1v1h-1zM90 10h1v1h-1zM31 11h1v1h-1zM38 11h1v1h-1z M83 11h1v1h-1zM90 11h1v1h-1zM31 12h1v1h-1zM38 12h1v1h-1zM83 12h1v1h-1zM90 12h1v1h-1zM31 13h1v1h-1zM38 13h1v1h-1zM83 13h1v1h-1zM90 13h1v1h-1zM31 14h1v1h-1zM38 14h1v1h-1z M83 14h1v1h-1zM90 14h1v1h-1zM31 15h1v1h-1zM38 15h1v1h-1zM83 15h1v1h-1zM90 15h1v1h-1zM31 16h1v1h-1zM38 16h1v1h-1zM83 16h1v1h-1zM90 16h1v1h-1zM31 17h1v1h-1zM38 17h1v1h-1z M83 17h1v1h-1zM90 17h1v1h-1zM31 18h1v1h-1zM38 18h1v1h-1zM83 18h1v1h-1zM90 18h1v1h-1zM31 19h1v1h-1zM38 19h1v1h-1zM83 19h1v1h-1zM90 19h1v1h-1zM31 20h1v1h-1zM38 20h1v1h-1z M83 20h1v1h-1zM90 20h1v1h-1zM31 21h1v1h-1zM38 21h1v1h-1zM83 21h1v1h-1zM90 21h1v1h-1zM31 22h1v1h-1zM38 22h1v1h-1zM83 22h1v1h-1zM90 22h1v1h-1zM31 23h1v1h-1zM38 23h1v1h-1z M83 23h1v1h-1zM90 23h1v1h-1zM31 24h1v1h-1zM38 24h1v1h-1zM83 24h1v1h-1zM90 24h1v1h-1zM31 25h1v1h-1zM38 25h1v1h-1zM83 25h8v1h-8zM31 26h1v1h-1zM38 26h1v1h-1zM82 26h10v1h-10z M31 27h1v1h-1zM38 27h1v1h-1zM82 27h10v1h-10zM31 28h1v1h-1zM38 28h1v1h-1zM82 28h10v1h-10zM31 29h1v1h-1zM38 29h1v1h-1zM31 30h1v1h-1zM38 30h1v1h-1zM31 31h1v1h-1zM38 31h1v1h-1z M31 32h1v1h-1zM38 32h1v1h-1zM31 33h8v1h-8zM30 34h10v1h-10zM30 35h10v1h-10zM30 36h10v1h-10zM22 47h3v1h-3zM20 48h2v1h-2zM25 48h1v1h-1zM20 49h3v1h-3zM24 49h1v1h-1zM26 49h1v1h-1z M21 50h1v1h-1zM26 50h2v1h-2zM21 51h1v1h-1zM26 51h1v1h-1zM82 51h10v1h-10zM22 52h4v1h-4zM82 52h10v1h-10zM82 53h10v1h-10zM83 54h8v1h-8zM83 55h1v1h-1zM90 55h1v1h-1zM83 56h1v1h-1z M90 56h1v1h-1zM83 57h1v1h-1zM90 57h1v1h-1zM83 58h1v1h-1zM90 58h1v1h-1zM30 59h10v1h-10zM83 59h1v1h-1zM90 59h1v1h-1zM30 60h10v1h-10zM83 60h1v1h-1zM90 60h1v1h-1zM30 61h10v1h-10z M83 61h1v1h-1zM90 61h1v1h-1zM31 62h8v1h-8zM83 62h1v1h-1zM90 62h1v1h-1zM31 63h8v1h-8zM83 63h8v1h-8z"/>
+  </g>
+</svg></figure>
+<p><em>Rendered on the host from the real game code</em> — tick 700 of the autopilot.</p>
+<p>Three pipes, recycled: one that leaves on the left reappears 156 px to the<br>right with a new random gap. The gap shrinks with the level (26 px at level 1,<br>18 at 5) and the pace rises a little every 5 pipes.</p>
+<p><strong>Measured on the host</strong>, level 3: the autopilot passed <strong>97 pipes</strong> in 71 s<br>before it clipped one. Its rule: flap when the bird&#x27;s feet are within 3 px of<br>the bottom of the gap. Its <em>first</em> rule — flap below the gap&#x27;s middle — scored<br>20: a flap climbs ~11 px, and from the middle that hits the top pipe. Physics<br>first, then tactics.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: The Arcade — a State Machine</h2>
+<figure class="diagram"><svg viewBox="0 0 640 210" role="img" aria-label="Arcade states: MENU, PLAY, PAUSE, OVER and their transitions">
+  <rect class="box" x="20" y="60" width="110" height="44" rx="6"/><text x="75" y="87" text-anchor="middle" class="mono">MENU</text>
+  <rect class="hifill" x="200" y="60" width="110" height="44" rx="6"/><text x="255" y="87" text-anchor="middle" class="mono">PLAY</text>
+  <rect class="box" x="200" y="130" width="110" height="34" rx="6"/><text x="255" y="152" text-anchor="middle" class="mono">PAUSE</text>
+  <rect class="box" x="400" y="60" width="110" height="44" rx="6"/><text x="455" y="87" text-anchor="middle" class="mono">OVER</text>
+  <path class="wire" d="M130 82 H200"/><text x="165" y="76" text-anchor="middle" class="lbl">A</text>
+  <path class="wire" d="M310 82 H400"/><text x="355" y="76" text-anchor="middle" class="lbl">step() = 1</text>
+  <path class="wire" d="M240 104 V130"/><path class="wire" d="M270 130 V104"/>
+  <text x="232" y="122" text-anchor="end" class="lbl">B</text><text x="278" y="122" class="lbl">B</text>
+  <path class="wire" d="M455 60 V30 H255 V60"/><text x="355" y="24" text-anchor="middle" class="lbl">A: again (same game, new seed)</text>
+  <path class="wire" d="M455 104 V190 H75 V104"/><text x="470" y="160" class="lbl">B: menu</text>
+  <text x="530" y="87" class="lbl">score → $SCORE</text>
+</svg></figure>
+<figure class="diagram"><!-- shot:gameover - generated by host/embed_shots.py from host/out/*.svg -->
+<svg viewBox="-4 -4 136 72" role="img" aria-label="gameover, rendered on the host from the real game code">
+  <g transform="translate(0 0)">
+    <rect x="-1.5" y="-1.5" width="131" height="67" rx="2" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+    <path fill="currentColor" d="M1 0h4v1h-4zM6 0h1v1h-1zM10 0h1v1h-1zM13 0h3v1h-3zM18 0h1v1h-1zM22 0h1v1h-1zM24 0h5v1h-5zM112 0h1v1h-1zM116 0h5v1h-5zM123 0h3v1h-3zM0 1h1v1h-1zM6 1h1v1h-1z M10 1h1v1h-1zM12 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM21 1h1v1h-1zM24 1h1v1h-1zM111 1h2v1h-2zM120 1h1v1h-1zM122 1h1v1h-1zM126 1h1v1h-1zM0 2h1v1h-1zM6 2h2v1h-2z M10 2h1v1h-1zM12 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM24 2h1v1h-1zM112 2h1v1h-1zM119 2h1v1h-1zM126 2h1v1h-1zM1 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1z M10 3h1v1h-1zM12 3h1v1h-1zM16 3h1v1h-1zM18 3h2v1h-2zM24 3h4v1h-4zM112 3h1v1h-1zM118 3h1v1h-1zM125 3h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h2v1h-2zM12 4h5v1h-5z M18 4h1v1h-1zM20 4h1v1h-1zM24 4h1v1h-1zM112 4h1v1h-1zM117 4h1v1h-1zM124 4h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1z M21 5h1v1h-1zM24 5h1v1h-1zM112 5h1v1h-1zM117 5h1v1h-1zM123 5h1v1h-1zM0 6h4v1h-4zM6 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM22 6h1v1h-1z M24 6h5v1h-5zM111 6h3v1h-3zM117 6h1v1h-1zM122 6h5v1h-5zM0 8h128v1h-128zM0 9h128v1h-128zM0 10h1v1h-1zM90 10h3v1h-3zM94 10h3v1h-3zM98 10h3v1h-3zM102 10h3v1h-3zM127 10h1v1h-1z M0 11h1v1h-1zM90 11h3v1h-3zM94 11h3v1h-3zM98 11h3v1h-3zM102 11h3v1h-3zM127 11h1v1h-1zM0 12h1v1h-1zM90 12h3v1h-3zM94 12h3v1h-3zM98 12h3v1h-3zM102 12h3v1h-3zM127 12h1v1h-1z M0 13h1v1h-1zM8 13h112v1h-112zM127 13h1v1h-1zM0 14h1v1h-1zM8 14h1v1h-1zM119 14h1v1h-1zM127 14h1v1h-1zM0 15h1v1h-1zM8 15h1v1h-1zM10 15h108v1h-108zM119 15h1v1h-1zM127 15h1v1h-1z M0 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM117 16h1v1h-1zM119 16h1v1h-1zM127 16h1v1h-1zM0 17h1v1h-1zM8 17h1v1h-1zM10 17h1v1h-1zM117 17h1v1h-1zM119 17h1v1h-1zM127 17h1v1h-1z M0 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM38 18h3v1h-3zM44 18h3v1h-3zM49 18h1v1h-1zM53 18h1v1h-1zM55 18h5v1h-5zM68 18h3v1h-3zM73 18h1v1h-1zM77 18h1v1h-1zM79 18h5v1h-5z M85 18h4v1h-4zM117 18h1v1h-1zM119 18h1v1h-1zM127 18h1v1h-1zM0 19h1v1h-1zM8 19h1v1h-1zM10 19h1v1h-1zM37 19h1v1h-1zM41 19h1v1h-1zM43 19h1v1h-1zM47 19h1v1h-1zM49 19h2v1h-2z M52 19h2v1h-2zM55 19h1v1h-1zM67 19h1v1h-1zM71 19h1v1h-1zM73 19h1v1h-1zM77 19h1v1h-1zM79 19h1v1h-1zM85 19h1v1h-1zM89 19h1v1h-1zM117 19h1v1h-1zM119 19h1v1h-1zM127 19h1v1h-1z M0 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM37 20h1v1h-1zM43 20h1v1h-1zM47 20h1v1h-1zM49 20h1v1h-1zM51 20h1v1h-1zM53 20h1v1h-1zM55 20h1v1h-1zM67 20h1v1h-1zM71 20h1v1h-1z M73 20h1v1h-1zM77 20h1v1h-1zM79 20h1v1h-1zM85 20h1v1h-1zM89 20h1v1h-1zM117 20h1v1h-1zM119 20h1v1h-1zM127 20h1v1h-1zM0 21h1v1h-1zM8 21h1v1h-1zM10 21h1v1h-1zM37 21h1v1h-1z M39 21h3v1h-3zM43 21h1v1h-1zM47 21h1v1h-1zM49 21h1v1h-1zM51 21h1v1h-1zM53 21h1v1h-1zM55 21h4v1h-4zM67 21h1v1h-1zM71 21h1v1h-1zM73 21h1v1h-1zM77 21h1v1h-1zM79 21h4v1h-4z M85 21h4v1h-4zM117 21h1v1h-1zM119 21h1v1h-1zM127 21h1v1h-1zM0 22h1v1h-1zM8 22h1v1h-1zM10 22h1v1h-1zM37 22h1v1h-1zM41 22h1v1h-1zM43 22h5v1h-5zM49 22h1v1h-1zM53 22h1v1h-1z M55 22h1v1h-1zM67 22h1v1h-1zM71 22h1v1h-1zM73 22h1v1h-1zM77 22h1v1h-1zM79 22h1v1h-1zM85 22h1v1h-1zM87 22h1v1h-1zM117 22h1v1h-1zM119 22h1v1h-1zM127 22h1v1h-1zM0 23h1v1h-1z M8 23h1v1h-1zM10 23h1v1h-1zM37 23h1v1h-1zM41 23h1v1h-1zM43 23h1v1h-1zM47 23h1v1h-1zM49 23h1v1h-1zM53 23h1v1h-1zM55 23h1v1h-1zM67 23h1v1h-1zM71 23h1v1h-1zM74 23h1v1h-1z M76 23h1v1h-1zM79 23h1v1h-1zM85 23h1v1h-1zM88 23h1v1h-1zM117 23h1v1h-1zM119 23h1v1h-1zM127 23h1v1h-1zM0 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM38 24h4v1h-4zM43 24h1v1h-1z M47 24h1v1h-1zM49 24h1v1h-1zM53 24h1v1h-1zM55 24h5v1h-5zM68 24h3v1h-3zM75 24h1v1h-1zM79 24h5v1h-5zM85 24h1v1h-1zM89 24h1v1h-1zM117 24h1v1h-1zM119 24h1v1h-1zM127 24h1v1h-1z M0 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM117 25h1v1h-1zM119 25h1v1h-1zM127 25h1v1h-1zM0 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM117 26h1v1h-1zM119 26h1v1h-1zM127 26h1v1h-1z M0 27h1v1h-1zM8 27h1v1h-1zM10 27h1v1h-1zM117 27h1v1h-1zM119 27h1v1h-1zM127 27h1v1h-1zM0 28h1v1h-1zM8 28h1v1h-1zM10 28h1v1h-1zM38 28h4v1h-4zM44 28h3v1h-3zM50 28h3v1h-3z M55 28h4v1h-4zM61 28h5v1h-5zM75 28h1v1h-1zM79 28h5v1h-5zM86 28h3v1h-3zM117 28h1v1h-1zM119 28h1v1h-1zM127 28h1v1h-1zM0 29h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM37 29h1v1h-1z M43 29h1v1h-1zM47 29h1v1h-1zM49 29h1v1h-1zM53 29h1v1h-1zM55 29h1v1h-1zM59 29h1v1h-1zM61 29h1v1h-1zM74 29h2v1h-2zM83 29h1v1h-1zM85 29h1v1h-1zM89 29h1v1h-1zM117 29h1v1h-1z M119 29h1v1h-1zM127 29h1v1h-1zM0 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM37 30h1v1h-1zM43 30h1v1h-1zM49 30h1v1h-1zM53 30h1v1h-1zM55 30h1v1h-1zM59 30h1v1h-1zM61 30h1v1h-1z M75 30h1v1h-1zM82 30h1v1h-1zM89 30h1v1h-1zM117 30h1v1h-1zM119 30h1v1h-1zM127 30h1v1h-1zM0 31h1v1h-1zM8 31h1v1h-1zM10 31h1v1h-1zM38 31h3v1h-3zM43 31h1v1h-1zM49 31h1v1h-1z M53 31h1v1h-1zM55 31h4v1h-4zM61 31h4v1h-4zM75 31h1v1h-1zM81 31h1v1h-1zM88 31h1v1h-1zM117 31h1v1h-1zM119 31h1v1h-1zM127 31h1v1h-1zM0 32h1v1h-1zM8 32h1v1h-1zM10 32h1v1h-1z M41 32h1v1h-1zM43 32h1v1h-1zM49 32h1v1h-1zM53 32h1v1h-1zM55 32h1v1h-1zM57 32h1v1h-1zM61 32h1v1h-1zM75 32h1v1h-1zM80 32h1v1h-1zM87 32h1v1h-1zM117 32h1v1h-1zM119 32h1v1h-1z M127 32h1v1h-1zM0 33h1v1h-1zM8 33h1v1h-1zM10 33h1v1h-1zM41 33h1v1h-1zM43 33h1v1h-1zM47 33h1v1h-1zM49 33h1v1h-1zM53 33h1v1h-1zM55 33h1v1h-1zM58 33h1v1h-1zM61 33h1v1h-1z M75 33h1v1h-1zM80 33h1v1h-1zM86 33h1v1h-1zM117 33h1v1h-1zM119 33h1v1h-1zM127 33h1v1h-1zM0 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM37 34h4v1h-4zM44 34h3v1h-3zM50 34h3v1h-3z M55 34h1v1h-1zM59 34h1v1h-1zM61 34h5v1h-5zM74 34h3v1h-3zM80 34h1v1h-1zM85 34h5v1h-5zM117 34h1v1h-1zM119 34h1v1h-1zM127 34h1v1h-1zM0 35h1v1h-1zM8 35h1v1h-1zM10 35h1v1h-1z M117 35h1v1h-1zM119 35h1v1h-1zM127 35h1v1h-1zM0 36h1v1h-1zM8 36h1v1h-1zM10 36h1v1h-1zM117 36h1v1h-1zM119 36h1v1h-1zM127 36h1v1h-1zM0 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1z M117 37h1v1h-1zM119 37h1v1h-1zM127 37h1v1h-1zM0 38h1v1h-1zM8 38h1v1h-1zM10 38h1v1h-1zM37 38h1v1h-1zM41 38h1v1h-1zM43 38h5v1h-5zM49 38h1v1h-1zM53 38h1v1h-1zM61 38h1v1h-1z M65 38h1v1h-1zM68 38h3v1h-3zM74 38h3v1h-3zM79 38h1v1h-1zM83 38h1v1h-1zM87 38h1v1h-1zM117 38h1v1h-1zM119 38h1v1h-1zM127 38h1v1h-1zM0 39h1v1h-1zM8 39h1v1h-1zM10 39h1v1h-1z M37 39h1v1h-1zM41 39h1v1h-1zM43 39h1v1h-1zM49 39h1v1h-1zM53 39h1v1h-1zM61 39h1v1h-1zM65 39h1v1h-1zM69 39h1v1h-1zM73 39h1v1h-1zM77 39h1v1h-1zM79 39h1v1h-1zM83 39h1v1h-1z M87 39h1v1h-1zM117 39h1v1h-1zM119 39h1v1h-1zM127 39h1v1h-1zM0 40h1v1h-1zM8 40h1v1h-1zM10 40h1v1h-1zM37 40h2v1h-2zM41 40h1v1h-1zM43 40h1v1h-1zM49 40h1v1h-1zM53 40h1v1h-1z M61 40h1v1h-1zM65 40h1v1h-1zM69 40h1v1h-1zM73 40h1v1h-1zM79 40h1v1h-1zM83 40h1v1h-1zM87 40h1v1h-1zM117 40h1v1h-1zM119 40h1v1h-1zM127 40h1v1h-1zM0 41h1v1h-1zM8 41h1v1h-1z M10 41h1v1h-1zM37 41h1v1h-1zM39 41h1v1h-1zM41 41h1v1h-1zM43 41h4v1h-4zM49 41h1v1h-1zM51 41h1v1h-1zM53 41h1v1h-1zM61 41h5v1h-5zM69 41h1v1h-1zM73 41h1v1h-1zM75 41h3v1h-3z M79 41h5v1h-5zM87 41h1v1h-1zM117 41h1v1h-1zM119 41h1v1h-1zM127 41h1v1h-1zM0 42h1v1h-1zM8 42h1v1h-1zM10 42h1v1h-1zM37 42h1v1h-1zM40 42h2v1h-2zM43 42h1v1h-1zM49 42h1v1h-1z M51 42h1v1h-1zM53 42h1v1h-1zM61 42h1v1h-1zM65 42h1v1h-1zM69 42h1v1h-1zM73 42h1v1h-1zM77 42h1v1h-1zM79 42h1v1h-1zM83 42h1v1h-1zM87 42h1v1h-1zM117 42h1v1h-1zM119 42h1v1h-1z M127 42h1v1h-1zM0 43h1v1h-1zM8 43h1v1h-1zM10 43h1v1h-1zM37 43h1v1h-1zM41 43h1v1h-1zM43 43h1v1h-1zM49 43h1v1h-1zM51 43h1v1h-1zM53 43h1v1h-1zM61 43h1v1h-1zM65 43h1v1h-1z M69 43h1v1h-1zM73 43h1v1h-1zM77 43h1v1h-1zM79 43h1v1h-1zM83 43h1v1h-1zM117 43h1v1h-1zM119 43h1v1h-1zM127 43h1v1h-1zM0 44h1v1h-1zM8 44h1v1h-1zM10 44h1v1h-1zM37 44h1v1h-1z M41 44h1v1h-1zM43 44h5v1h-5zM50 44h1v1h-1zM52 44h1v1h-1zM61 44h1v1h-1zM65 44h1v1h-1zM68 44h3v1h-3zM74 44h4v1h-4zM79 44h1v1h-1zM83 44h1v1h-1zM87 44h1v1h-1zM117 44h1v1h-1z M119 44h1v1h-1zM127 44h1v1h-1zM0 45h1v1h-1zM8 45h1v1h-1zM10 45h1v1h-1zM117 45h1v1h-1zM119 45h1v1h-1zM127 45h1v1h-1zM0 46h1v1h-1zM8 46h1v1h-1zM10 46h1v1h-1zM117 46h1v1h-1z M119 46h1v1h-1zM127 46h1v1h-1zM0 47h1v1h-1zM8 47h1v1h-1zM10 47h1v1h-1zM117 47h1v1h-1zM119 47h1v1h-1zM127 47h1v1h-1zM0 48h1v1h-1zM8 48h1v1h-1zM10 48h1v1h-1zM23 48h3v1h-3z M35 48h3v1h-3zM41 48h3v1h-3zM47 48h3v1h-3zM53 48h3v1h-3zM58 48h1v1h-1zM62 48h1v1h-1zM70 48h4v1h-4zM82 48h1v1h-1zM86 48h1v1h-1zM88 48h5v1h-5zM94 48h1v1h-1zM98 48h1v1h-1z M100 48h1v1h-1zM104 48h1v1h-1zM117 48h1v1h-1zM119 48h1v1h-1zM127 48h1v1h-1zM0 49h1v1h-1zM8 49h1v1h-1zM10 49h1v1h-1zM22 49h1v1h-1zM26 49h1v1h-1zM29 49h2v1h-2zM34 49h1v1h-1z M38 49h1v1h-1zM40 49h1v1h-1zM44 49h1v1h-1zM46 49h1v1h-1zM50 49h1v1h-1zM54 49h1v1h-1zM58 49h1v1h-1zM62 49h1v1h-1zM70 49h1v1h-1zM74 49h1v1h-1zM77 49h2v1h-2zM82 49h2v1h-2z M85 49h2v1h-2zM88 49h1v1h-1zM94 49h1v1h-1zM98 49h1v1h-1zM100 49h1v1h-1zM104 49h1v1h-1zM117 49h1v1h-1zM119 49h1v1h-1zM127 49h1v1h-1zM0 50h1v1h-1zM8 50h1v1h-1zM10 50h1v1h-1z M22 50h1v1h-1zM26 50h1v1h-1zM29 50h2v1h-2zM34 50h1v1h-1zM38 50h1v1h-1zM40 50h1v1h-1zM46 50h1v1h-1zM50 50h1v1h-1zM54 50h1v1h-1zM58 50h2v1h-2zM62 50h1v1h-1zM70 50h1v1h-1z M74 50h1v1h-1zM77 50h2v1h-2zM82 50h1v1h-1zM84 50h1v1h-1zM86 50h1v1h-1zM88 50h1v1h-1zM94 50h2v1h-2zM98 50h1v1h-1zM100 50h1v1h-1zM104 50h1v1h-1zM117 50h1v1h-1zM119 50h1v1h-1z M127 50h1v1h-1zM0 51h1v1h-1zM8 51h1v1h-1zM10 51h1v1h-1zM22 51h1v1h-1zM26 51h1v1h-1zM34 51h1v1h-1zM38 51h1v1h-1zM40 51h1v1h-1zM42 51h3v1h-3zM46 51h1v1h-1zM50 51h1v1h-1z M54 51h1v1h-1zM58 51h1v1h-1zM60 51h1v1h-1zM62 51h1v1h-1zM70 51h4v1h-4zM82 51h1v1h-1zM84 51h1v1h-1zM86 51h1v1h-1zM88 51h4v1h-4zM94 51h1v1h-1zM96 51h1v1h-1zM98 51h1v1h-1z M100 51h1v1h-1zM104 51h1v1h-1zM117 51h1v1h-1zM119 51h1v1h-1zM127 51h1v1h-1zM0 52h1v1h-1zM8 52h1v1h-1zM10 52h1v1h-1zM22 52h5v1h-5zM29 52h2v1h-2zM34 52h5v1h-5zM40 52h1v1h-1z M44 52h1v1h-1zM46 52h5v1h-5zM54 52h1v1h-1zM58 52h1v1h-1zM61 52h2v1h-2zM70 52h1v1h-1zM74 52h1v1h-1zM77 52h2v1h-2zM82 52h1v1h-1zM86 52h1v1h-1zM88 52h1v1h-1zM94 52h1v1h-1z M97 52h2v1h-2zM100 52h1v1h-1zM104 52h1v1h-1zM117 52h1v1h-1zM119 52h1v1h-1zM127 52h1v1h-1zM0 53h1v1h-1zM8 53h1v1h-1zM10 53h1v1h-1zM22 53h1v1h-1zM26 53h1v1h-1zM29 53h2v1h-2z M34 53h1v1h-1zM38 53h1v1h-1zM40 53h1v1h-1zM44 53h1v1h-1zM46 53h1v1h-1zM50 53h1v1h-1zM54 53h1v1h-1zM58 53h1v1h-1zM62 53h1v1h-1zM70 53h1v1h-1zM74 53h1v1h-1zM77 53h2v1h-2z M82 53h1v1h-1zM86 53h1v1h-1zM88 53h1v1h-1zM94 53h1v1h-1zM98 53h1v1h-1zM100 53h1v1h-1zM104 53h1v1h-1zM117 53h1v1h-1zM119 53h1v1h-1zM127 53h1v1h-1zM0 54h1v1h-1zM8 54h1v1h-1z M10 54h1v1h-1zM22 54h1v1h-1zM26 54h1v1h-1zM34 54h1v1h-1zM38 54h1v1h-1zM41 54h4v1h-4zM46 54h1v1h-1zM50 54h1v1h-1zM53 54h3v1h-3zM58 54h1v1h-1zM62 54h1v1h-1zM70 54h4v1h-4z M82 54h1v1h-1zM86 54h1v1h-1zM88 54h5v1h-5zM94 54h1v1h-1zM98 54h1v1h-1zM101 54h3v1h-3zM117 54h1v1h-1zM119 54h1v1h-1zM127 54h1v1h-1zM0 55h1v1h-1zM8 55h1v1h-1zM10 55h1v1h-1z M117 55h1v1h-1zM119 55h1v1h-1zM127 55h1v1h-1zM0 56h1v1h-1zM8 56h1v1h-1zM10 56h1v1h-1zM117 56h1v1h-1zM119 56h1v1h-1zM127 56h1v1h-1zM0 57h1v1h-1zM8 57h1v1h-1zM10 57h108v1h-108z M119 57h1v1h-1zM127 57h1v1h-1zM0 58h1v1h-1zM8 58h1v1h-1zM119 58h1v1h-1zM127 58h1v1h-1zM0 59h1v1h-1zM8 59h112v1h-112zM127 59h1v1h-1zM0 60h1v1h-1zM127 60h1v1h-1zM0 61h1v1h-1z M127 61h1v1h-1zM0 62h1v1h-1zM127 62h1v1h-1zM0 63h128v1h-128z"/>
+  </g>
+</svg></figure>
+<p><em>Rendered on the host from the real game code</em> — game over after the<br>autopilot&#x27;s SNAKE, a new high score, <code>NEW HIGH!</code> mid-blink.</p>
+<p><code>OVER</code> ignores buttons for 0.75 s, so the frantic press that lost the game does<br>not also skip its score. <code>NEW HIGH!</code> blinks by drawing itself with <code>XOR</code>:<br>drawing it twice restores the pixels, so nothing about the screen has to be<br>remembered.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: <code>$SCORE</code> — a Class Leaderboard With a Checksum</h2>
+<p>Every finished game prints one line, built by <code>score_frame()</code> with lesson 08&#x27;s<br><code>proto_checksum()</code>:</p>
+<pre><code>$SCORE,SNAKE,172*2E</code></pre>
+<p><code>host/leaderboard.py</code> reads players&#x27; pasted lines (one file per player),<br><strong>drops any line whose checksum is wrong</strong>, and prints the top ten per game.<br><strong>Measured on the host:</strong> the frame the test game produced passes<br><code>proto_check()</code>; the same line with one digit changed, <code>$SCORE,SNAKE,9*2A</code>,<br>fails it.</p>
+<p>What the checksum does and does not do:</p>
+<table><thead><tr><th>Catches</th><th>Misses</th></tr></thead><tbody><tr><td>a digit mistyped while copying</td><td>a score made up and checksummed by hand</td></tr><tr><td>a truncated line</td><td>two errors that cancel in the XOR</td></tr></tbody></table>
+<p>Two hex digits detect <strong>accidents</strong>, not <strong>intent</strong>. Stopping a cheat needs a<br>secret only the board knows — a message authentication code — and then you<br>are designing a security protocol. Lab Part 7 is a challenge with honest<br>players.</p>
+</section>
+<section class="slide">
+<h2>Slide 27: What the Host Test Proves</h2>
+<p><code>host/run.sh</code> (or <code>run.bat</code>) compiles the five game files and <code>_lib/oled.c</code> and<br><code>_lib/proto.c</code> with gcc, then runs:</p>
+<table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>SNAKE eats, grows by 2 per apple, scores level × apples</td><td>42 apples, length 87, score 126</td></tr><tr><td>SNAKE with no input dies on the predicted tick</td><td>126</td></tr><tr><td>same seed + inputs → same framebuffer hash; new seed → different</td><td>✓</td></tr><tr><td>BREAKOUT breaks bricks, score rises</td><td>188 bricks, 3 waves</td></tr><tr><td>BREAKOUT with no input: auto-serve, 3 misses, game over</td><td>tick 599</td></tr><tr><td>FLAP passes pipes</td><td>97</td></tr><tr><td>FLAP with no input falls on the predicted tick</td><td>171</td></tr><tr><td>dirty pages cut SNAKE&#x27;s bus bytes by &gt; 4×</td><td>129 vs 1 104 B</td></tr><tr><td>a full repaint exceeds the 20 ms tick</td><td>24.92 ms</td></tr><tr><td>menu, A to play, game over, <code>$SCORE</code> passes the checksum, high score kept</td><td>✓</td></tr></tbody></table>
+<p><strong>20 checks, all passing; the program exits non-zero if any fails.</strong> It also<br>writes every screenshot in this deck to <code>host/out/</code>, as ASCII and SVG.</p>
+<p>What it cannot prove: that the SSD1306 in Wokwi accepts these bytes, how long<br><code>i2c.c</code> really takes per byte, or whether the game is <em>fun</em>. That needs the<br>simulator and a person.</p>
+</section>
+<section class="slide">
+<h2>Slide 28: Flash and RAM</h2>
+<p>From this build (<code>arm-none-eabi-size -A Main.elf</code>):</p>
+<table><thead><tr><th>Section</th><th style="text-align:right">Bytes</th><th>What</th></tr></thead><tbody><tr><td><code>.text</code></td><td style="text-align:right">14 092</td><td>code: three games, menu, engine, oled, i2c, pad, adc, beep, printf</td></tr><tr><td><code>.rodata</code></td><td style="text-align:right">1 568</td><td>the font (475 B), sprites, note tables, strings</td></tr><tr><td><code>.data</code></td><td style="text-align:right">132</td><td>initialised variables</td></tr><tr><td><code>.bss</code></td><td style="text-align:right">2 580</td><td>framebuffer 1 032, snake ring 806, the rest</td></tr><tr><td>stack + heap</td><td style="text-align:right">1 536</td><td>reserved by the linker script</td></tr></tbody></table>
+<p><strong>FLASH 15 980 B of 32 KB (48.8 %), RAM 4 248 B of 12 KB (34.6 %).</strong> Room for<br>a fourth game — Lab Part 8.</p>
+<p>The largest piece of code is not a game: newlib-nano&#x27;s <code>printf</code> machinery<br>(<code>_vfprintf_r</code>, <code>_svfprintf_r</code>, <code>_printf_i</code>) is <strong>1 568 B</strong>, pulled in by the<br>HUD&#x27;s <code>snprintf</code> and the serial frames — twice the largest game function,<br><code>breakout_step</code> (752 B). Measured with <code>arm-none-eabi-nm --size-sort</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 29: What Was Measured — and What Could Not Be</h2>
+<p><strong>Measured on the host</strong>, with the real game and display code:</p>
+<ul><li>every game played for minutes by an autopilot, and ended at a <strong>predicted tick</strong> with no input;</li><li>the bytes <code>oled_flush()</code> puts on the bus per frame, dirty vs full: <strong>SNAKE 129 B, BREAKOUT 220 B, FLAP 935 B, full 1 104 B</strong>;</li><li>bus time from a 400 kHz model: <strong>24.92 ms</strong> for a full frame, <strong>3.1 ms</strong> a page;</li><li>the loop against a simulated clock: <strong>50 updates/s always</strong>, 40.1 fps when every frame is a full repaint;</li><li>the <code>$SCORE</code> frame&#x27;s checksum, the high score, the screenshots.</li></ul>
+<p><strong>Not measured, because nothing here ran in Wokwi:</strong></p>
+<ul><li>the real flush time — <code>i2c.c</code> is polled and its <code>TIMINGR</code> is not exactly 400 kHz; <code>$PERF</code>&#x27;s <code>flush_us</code> will say;</li><li>whether Wokwi&#x27;s SSD1306 accepts the init sequence and the 129-byte page writes (it documents support for Adafruit&#x27;s library, which sends the same commands);</li><li>CPU time of update and draw (<code>busy %</code> minus the flush);</li><li>whether the keys <code>a</code> and <code>b</code> reach the buttons while the joystick has focus;</li><li>whether it is fun at level 3.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 30: What Carries Forward</h2>
+<ul><li><strong>Pure C core, thin platform.</strong> Part 3&#x27;s <code>control_step()</code> contract is this split: the controller is pure C, Main.c is the hardware, and a PC runs the controller against physics before any motor turns.</li><li><strong>Fixed timestep.</strong> A drone&#x27;s attitude loop is <code>next += period</code> with a deadline that matters more than a frame rate; the RTOS version of the same line is lesson 07&#x27;s <code>os_delay_until()</code>.</li><li><strong>Euler integration in fixed point</strong> is the drone&#x27;s altitude and the robot&#x27;s odometry.</li><li><strong>The bus budget.</strong> The app board&#x27;s MPU6050 sits on these same two wires. A 25 ms flush in the middle of a control loop would freeze it — so a display there belongs in a low-priority task that sends a dirty page at a time.</li><li><strong>DMA.</strong> Lesson 10 moves a transfer like this one off the CPU entirely: start it, do something else, take one interrupt at the end.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:12_Game', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:12_Game') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

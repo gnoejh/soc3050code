@@ -524,7 +524,7 @@ def main(argv):
         if os.path.isfile(rp):
             for l in open(rp, encoding="utf-8").read().split("\n")[1:6]:
                 if l.strip():
-                    focus = l.strip()
+                    focus = l.strip().replace("**", "")   # Markdown bold is not HTML
                     break
         cards.append(
             '    <li><a class="card" href="{f}.html">'

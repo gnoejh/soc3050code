@@ -1,0 +1,289 @@
+# 12 — Game
+
+**Part 3, lesson 1 — the first application.**
+Target: ST Nucleo-C031C6 (STM32C031C6, Cortex-M0+ at 48 MHz), on the **app
+board**: SSD1306 OLED, joystick, buttons A/B, knob, buzzer.
+
+An arcade — **SNAKE, BREAKOUT and FLAP** behind a menu, with sound, a speed
+knob, a pause, game-over and high-score screens — on a 128×64 OLED over I²C.
+The lesson teaches the display driver `_lib/oled.c` (the SSD1306's page memory,
+the I²C control byte, the init sequence, the framebuffer and dirty pages, and
+the bus budget: a full frame is ~25 ms of I²C, more than the 20 ms tick), and a
+game engine (fixed-timestep loop, input edges, sprites, AABB collision,
+xorshift RNG, fixed-point physics, a sound sequencer, a SysTick microsecond
+stopwatch). Every finished game prints a checksummed `$SCORE` frame for a class
+leaderboard; a `$PERF` frame each second reports fps, updates/s, flush time and
+bytes per frame. All game logic is pure C, and `host/test_games.c` plays it on
+a PC with scripted joysticks.
+
+## Files
+
+| | |
+|---|---|
+| `Slide.md` | the lecture: title, two pin-map slides, 30 slides |
+| `Lab.md` | the lab: nine parts, ~2 hours, **nothing handed in**; ends in a class high-score challenge and a game of your own |
+| `Main.c` | **the platform** — the only file that includes `stm32c031xx.h`: SysTick ms + µs stopwatch, the fixed-timestep loop, the sound sequencer, `$SCORE` and `$PERF` frames |
+| `engine.h`, `engine.c` | **subject.** The `game_t` contract, `sfx()` hook, xorshift32, `aabb()`, HUD and message box. Pure C |
+| `arcade.h`, `arcade.c` | menu / play / pause / game-over state machine, high scores, `score_frame()`. Pure C |
+| `snake.c`, `breakout.c`, `flappy.c` | the three games: ring buffer + bitmap; bricks as bitmasks; Euler physics and a sprite. Pure C |
+| `build.bat` | `LIBS=retarget i2c oled adc pad beep proto` — no `os` (slide 15) |
+| `simulate.bat`, `diagram.json`, `wokwi.toml` | the app board, copied unchanged from `_targets/app-board-diagram.json` |
+| `host/test_games.c` | **the host test**: real game files + real `_lib/oled.c`/`proto.c`, a counting I²C stub; 20 checks, bus table, simulated loop, screenshots; `--playtest` for Lab Part 6 |
+| `host/run.bat`, `host/run.sh` | build and run it with plain `gcc` |
+| `host/embed_shots.py` | rewrites the deck's screenshot blocks from `host/out/*.svg` |
+| `host/sprite.py` | ASCII art → the column bytes `oled_sprite()` wants (Lab Part 4) |
+| `host/leaderboard.py` | the class table from pasted `$SCORE` lines, checksums verified (Lab Part 7) |
+| `host/out/` | screenshots written by the test, `.txt` (below) and `.svg` (in the deck) |
+
+## Build and run
+
+```
+build.bat        # FLASH 15980 B / 32 KB, RAM 4248 B / 12 KB, zero warnings
+simulate.bat
+host\run.bat     # or: bash host/run.sh  - plain gcc, no board needed
+```
+
+`arm-none-eabi-size -A`: `.text` 14 092, `.rodata` 1 568, `.data` 132,
+`.bss` 2 580 (framebuffer 1 032, snake ring 806). The arcade's `.data + .bss`
+is 2 712 B of 12 KB; the AVR edition's lesson 24 arcade used 1 372 B of 4 KB.
+
+**Controls:** stick steers / chooses, **A** plays, serves and flaps, **B**
+pauses, **knob** = speed 1–5 (in the menu), **stick press** toggles `$PERF`
+between `DIRTY` (send changed pages) and `FULL` (send all eight).
+
+## Facts checked against sources, not memory
+
+| Fact | Source |
+|---|---|
+| SSD1306 init values `AE, D5 80, A8 3F, D3 00, 40, 8D 14, 20 00, A1, C8, DA 12, 81 CF, D9 F1, DB 40, A4, A6, AF` | `_lib/oled.c`, compared with Adafruit's `Adafruit_SSD1306.cpp` `begin()` (128×64, `SWITCHCAPVCC`), which also sends `2E` (stop scroll) |
+| `0x20` memory mode, `0x21` column address, `0x22` page address, `0xA6`/`0xA7` normal/invert, `0x8D` charge pump | `Adafruit_SSD1306.h` `#define`s |
+| control byte `0x00` = commands, `0x40` = data (bit 6 D/C#, bit 7 Co) | SSD1306 datasheet's I²C write format, as `oled.c` uses it |
+| `board-ssd1306` pins GND/VCC/SCL/SDA, `i2cAddress` default `0x3c` | Wokwi `board-ssd1306` page |
+| joystick HORZ 0 V = right, VERT 0 V = bottom; SEL; arrow keys after focusing it | Wokwi `wokwi-analog-joystick` page |
+| pushbutton `key`: "only active when the simulation is running and the diagram has focus" | Wokwi `wokwi-pushbutton` page |
+| buzzer pins 1 (−) / 2 (+); a PWM square wave plays its frequency | Wokwi `wokwi-buzzer` page |
+| I²C1 `CR2`: `SADD` 7:1, `RD_WRN` 10, `START` 13, `NBYTES` 23:16 (8 bits: ≤ 255 per transfer), `AUTOEND` 25 | `stm32c031xx.h` (`I2C_CR2_*`), as in lesson 09 |
+| `SysTick_Config()` sets `LOAD = ticks − 1`, `VAL = 0`, `CTRL = CLKSOURCE | TICKINT | ENABLE`; `RELOAD` is 24 bits | `core_cm0plus.h` |
+| `__WFI()` | `cmsis_gcc.h` |
+| every register and bit name used in code and slides (`SysTick->LOAD/VAL/CTRL`, `TIM3` / `TIM_CCMR1_OC1M`, `OC1PE`, `TIM_CCER_CC1E`, `I2C_CR2_*`, `I2C_ISR_*`) | grepped present in `stm32c031xx.h` / `core_cm0plus.h` |
+| AVR comparison: KS0108 14 µs/byte, 14.3 ms full frame; lesson 24 `.bss` 1 306, SRAM 1 372; 16-bit xorshift shifts 7, 9, 8; `PROGMEM` font | `CLAUDE.md` §9e and `shared_libs/_game.c` |
+| xorshift32 shifts 13, 17, 5; period 2³² − 1 | Marsaglia, "Xorshift RNGs" (2003) — from memory, not re-fetched |
+
+## Verified by execution — on the host
+
+`host/run.bat` compiles `engine.c`, `arcade.c`, `snake.c`, `breakout.c`,
+`flappy.c`, `_lib/oled.c` and `_lib/proto.c` with MinGW gcc 15.2 (`-Wall
+-Wextra`, zero warnings) and replaces only `i2c_write_read()` (counts bytes,
+models 9 bits per byte at 400 kHz), `sfx()` and `on_score()`. **20 checks, all
+pass; exits non-zero on any failure.**
+
+| Test | Measured on the host |
+|---|---|
+| SNAKE autopilot, level 3 | 42 apples in 58.7 s, length 87 = 3 + 2 × 42, score 126 = 3 × 42 |
+| SNAKE, no input | hits the wall on tick **126** = predicted 21 moves × 6 ticks |
+| determinism | same seed + inputs → same 2 934 ticks, score, framebuffer hash; other seed → different |
+| BREAKOUT autopilot, level 3 | 5 min: 188 bricks, 3 waves, score 1 395, no ball lost |
+| BREAKOUT, no input | auto-serves after 3 s, three misses, game over on tick 599 |
+| FLAP autopilot, level 3 | 97 pipes in 71.3 s |
+| FLAP, no input | hovers to tick 150, lands on tick **171** = predicted 149 + 22 |
+| `oled_init()` | 32 transfers, 1 161 bytes |
+| bus per frame, dirty pages | SNAKE 129 B / 2.92 ms (worst 18.7 ms), BREAKOUT 220 B / 4.96 ms, FLAP 935 B / 21.11 ms |
+| bus per frame, full repaint | 1 104 B / **24.92 ms** — over the 20 ms tick |
+| SNAKE drawn clear-and-redraw (Lab Part 3) | 970 B / frame — the dirty-page check fails, as it should |
+| loop vs a simulated clock | 50 updates/s in every case; fps 50 (SNAKE, BREAKOUT dirty), 46.8 (FLAP dirty), 40.1 (any full repaint) |
+| arcade | menu navigation, A to play, game over reported once, `$SCORE,SNAKE,172*2E` passes `proto_check()`, high score kept, an edited score (`*2A`) rejected |
+| `--playtest`, FLAP pipes at levels 1–5 | 135, 93, 63, 15, 4 — a cliff between 3 and 4 (Lab Part 6) |
+
+**Two bugs the host test found in this lesson's own first draft**, both fixed
+and both now taught:
+
+1. **Integer truncation in the paddle.** `px += in->x * 4 / 100` in whole
+   pixels is 0 for any stick under 25 %, so a gentle push never moved the
+   paddle; the autopilot kept missing by 3 px. Now the paddle is in 1/256 px
+   (slide 18).
+2. **A bite test after the tail moved.** SNAKE popped its tail before checking
+   for a bite, so a fatal move had already shortened the snake: the
+   length-equals-3-plus-twice-apples check was off by one. Now the bite test
+   comes first, with the tail cell allowed (slide 22).
+
+### Screenshots — rendered on the host from the real game code
+
+The framebuffer after the real code ran, two pixel rows per character (`'` top,
+`.` bottom, `:` both). The deck shows the same frames as SVG.
+
+SNAKE, tick 2000 of the autopilot:
+
+```
++--------------------------------------------------------------------------------------------------------------------------------+
+|.'''' :   : .'''. :  .' :''''                                                                                       .'''. ''':' |
+|'...  :'. : :   : :.'   :...                                                                                        '...:   '.  |
+|    : :  ': :''': : '.  :                                                                                              .' .   : |
+|''''  '   ' '   ' '   ' '''''                                                                                        ''    '''  |
+|::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                         ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: :::                              :|
+|:                                         ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' '''                              :|
+|:         ::: ::: ::: ::: ::: ::: ::: ::: :::         ::: :::                                                                  :|
+|:         ''' ''' ''' ''' ''' ''' ''' ''' '''         ''' '''                                                                  :|
+|:         :::                                         ::: :::                                                                  :|
+|:         '''                                         ''' '''                                                                  :|
+|:         :::                                         ::: :::                                                                  :|
+|:         '''                                         ''' '''                                                                  :|
+|:         :::                                                                                             .:.         ::: :::  :|
+|:         '''                                                                                              '          ''' '''  :|
+|:         :::                                                                                                             :::  :|
+|:         '''                                                                                                             '''  :|
+|:         ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: ::: :::  :|
+|:         ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' ''' '''  :|
+|:..............................................................................................................................:|
++--------------------------------------------------------------------------------------------------------------------------------+
+```
+
+BREAKOUT, tick 900:
+
+```
++--------------------------------------------------------------------------------------------------------------------------------+
+|:'''. :'''. :'''' .'''. :  .' .'''. :   : '':''                                                                     ''':' ''':' |
+|:...' :...' :...  :   : :.'   :   : :   :   :           ::::  ::::  ::::                                              '.    '.  |
+|:   : : '.  :     :''': : '.  :   : :   :   :           ::::  ::::  ::::                                            .   : .   : |
+|''''  '   ' ''''' '   ' '   '  '''   '''    '                                                                        '''   '''  |
+|:'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''':|
+|:                                                                                                                              :|
+|:   ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........              :|
+|:   ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: :::::::::              :|
+|:                                                                                                                              :|
+|:   ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: :::::::::              :|
+|:   ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' '''''''''              :|
+|:   ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........     ::       :|
+|:   ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: :::::::::              :|
+|:                                                                                                                              :|
+|:   ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: ::::::::: :::::::::                        :|
+|:   ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' ''''''''' '''''''''                        :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                                              :|
+|:                                                                                                             :::::::::::::::: :|
+|:                                                                                                                              :|
++--------------------------------------------------------------------------------------------------------------------------------+
+```
+
+FLAP, tick 700:
+
+```
++--------------------------------------------------------------------------------------------------------------------------------+
+|:'''' :     .'''. :'''.                                                                                              .:     .:  |
+|:...  :     :   : :...'                                                                                               :   .' :  |
+|:     :     :''': :                                                                                                   :   ''':' |
+|'     ''''' '   ' '                                                                                                  '''     '  |
+|'''''''''''''''''''''''''''''''::::::::''''''''''''''''''''''''''''''''''''''''''''::::::::'''''''''''''''''''''''''''''''''''''|
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :      :                                     |
+|                               :      :                                            :......:                                     |
+|                               :      :                                           ::::::::::                                    |
+|                               :      :                                           ''''''''''                                    |
+|                               :      :                                                                                         |
+|                               :......:                                                                                         |
+|                              ::::::::::                                                                                        |
+|                              ''''''''''                                                                                        |
+|                                                                                                                                |
+|                                                                                                                                |
+|                                                                                                                                |
+|                                                                                                                                |
+|                      ...                                                                                                       |
+|                    ::. .'.                                                                                                     |
+|                     :    :'                                                      ..........                                    |
+|                      ''''                                                        ::::::::::                                    |
+|                                                                                   :'''''':                                     |
+|                                                                                   :      :                                     |
+|                              ..........                                           :      :                                     |
+|                              ::::::::::                                           :      :                                     |
+|                               ::::::::                                            :......:                                     |
++--------------------------------------------------------------------------------------------------------------------------------+
+```
+
+The menu:
+
+```
++--------------------------------------------------------------------------------------------------------------------------------+
+|                      .'''' .'''. .'''. ''':' .'''. :'''' .'''.       .'''. :'''. .'''. .'''. :''.  :''''                       |
+|                      '...  :   : :       '.  : .': ''''. : .':       :   : :...' :     :   : :   : :...                        |
+|                          : :   : :   . .   : :'  : .   : :'  :       :''': : '.  :   . :''': :  .' :                           |
+|                      ''''   '''   '''   '''   '''   '''   '''        '   ' '   '  '''  '   ' '''   '''''                       |
+|''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''|
+|  ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::  |
+|  ::::::'....: ::: :'...': ::'.: ....::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: ::: ::. .::::::::'...':::::::  |
+|  ::::::.''':: .': : ::: : '.::: ''':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: ''' ::: ::::::::: :'. :::::::  |
+|  :::::::::: : ::. : ... : :.':: ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: ::: ::: ::::::::: .:: :::::::  |
+|  ::::::....::.:::.:.:::.:.:::.:.....:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.:::.::...:::::::::...::::::::  |
+|  ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  |
+|        ....  ....  .....  ...  .   .  ...  .   . .....                                         .   .  ...         ...          |
+|        :   : :   : :     :   : : .'  :   : :   :   :                                           :   :   :         :  .:         |
+|        :'''. :':'  :'''  :...: :'.   :   : :   :   :                                           :''':   :         :.' :         |
+|        :...' :  '. :.... :   : :  '. '...' '...'   :                                           :   :  .:.        '...'         |
+|                                                                                                                                |
+|                                                                                                                                |
+|        :'''' :     .'''. :'''.                                                                 :   :  ':'        .'''.         |
+|        :...  :     :   : :...'                                                                 :...:   :         : .':         |
+|        :     :     :''': :                                                                     :   :   :         :'  :         |
+|        '     ''''' '   ' '                                                                     '   '  '''         '''          |
+|                                                                                                                                |
+|                                                                                                                                |
+|        .'''' :'''. :'''' :'''' :''.        :::::::  :::::::  :::::::  :::::::  :''''':                                         |
+|        '...  :...' :...  :...  :   :       :::::::  :::::::  :::::::  :::::::  :     :                                         |
+|            : :     :     :     :  .'       :::::::  :::::::  :::::::  :::::::  :     :                                         |
+|        ''''  '     ''''' ''''' '''         '''''''  '''''''  '''''''  '''''''  '''''''                                         |
+|                                                                                                                                |
+|          .'''.  ..   :'''. :     .'''. :   :             .'''' '':''  ':'  .'''. :  .'  ..   :'''.  ':'  .'''. :  .'           |
+|          :   :  ''   :...' :     :   : '. .'             '...    :     :   :     :.'    ''   :...'   :   :     :.'             |
+|          :''':  ::   :     :     :''':   :                   :   :     :   :   . : '.   ::   :       :   :   . : '.            |
+|          '   '       '     ''''' '   '   '               ''''    '    '''   '''  '   '       '      '''   '''  '   '           |
++--------------------------------------------------------------------------------------------------------------------------------+
+```
+
+## Status
+
+**Builds with zero warnings** (FLASH 15 980 B, RAM 4 248 B). **The host test
+passes all 20 checks** with the numbers above. Nothing here has been run on
+silicon, in Renode or in Wokwi.
+
+**Not yet watched running in Wokwi.** When someone does, the first three
+things to look at:
+
+1. **Does the OLED show the menu?** The banner's OLED line must say
+   *initialised*; then the screen must not stay dark. A dark screen with an OK
+   banner points at the init sequence (`8D 14`, the charge pump) or at Wokwi
+   rejecting a 129-byte data transfer.
+2. **The first `$PERF` lines in SNAKE**, `DIRTY` then `FULL` (stick press):
+   the host predicts ~50 / 50 fps/ups and ~3 ms flush dirty, ~40 / 50 and
+   ~25 ms full. `ups` must stay 50; the real `flush_us` for a full frame is the
+   measurement this lesson exists to make.
+3. **The controls**: does the stick's HORZ run the right way (right = right
+   after `pad.c`'s flip), and do the `a`/`b` keys reach the buttons while the
+   joystick has focus? FLAP is only playable if they do.

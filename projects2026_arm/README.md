@@ -16,7 +16,10 @@ _targets/c031c6-pins.json every pin name Wokwi accepts for the board -> MCU pin
 _startup/c031c6/          shared startup.c + link.ld - linked by any lesson without its own
 _lib/                     shared modules a lesson names in LIBS: retarget (printf -> USART2,
                           weak _write), os (lesson 07's kernel), uart + proto (lesson 08's
-                          interrupt UART and frame format); gpio.h is header-only
+                          interrupt UART and frame format), i2c + adc (lesson 09's drivers),
+                          oled (SSD1306 framebuffer), pad (joystick, buttons, knob), beep
+                          (buzzer on TIM3); gpio.h and fmath.h are header-only
+_targets/app-board-diagram.json  the app board every lesson from 10 on starts from
 _slides/                  generated decks + board-pins.html - do not edit, re-render instead
 _docs/                    the board manual (ST UM2953), copied beside the decks on render
 _notebooks/               the Colab workbench, one notebook for the course
@@ -30,6 +33,16 @@ _notebooks/               the Colab workbench, one notebook for the course
 07_RTOS/                  Part 1 - a preemptive kernel from scratch; priority inversion
 08_UART_And_Python_Host/  Part 1 - interrupt UART, checksummed frames, host.py
 09_Sensors_And_Buses/     Part 1 - ADC, I2C (MPU6050), SPI (MAX7219)
+10_Fixed_Point_And_DMA/   Part 2 - a benchmark arena: float vs Q15/Q16 vs int; DMA ADC scan
+11_Faults_Watchdog_Power/ Part 2 - the crash lab: HardFault decoding, watchdogs, WFI
+12_Game/                  Part 3 - an arcade on the OLED: Snake, Breakout, Flap
+13_Drone_Attitude/        Part 3 - a simulated quadcopter: IMU fusion, cascaded PID, mixer
+14_Drone_Missions/        Part 3 - position hold, waypoint missions from Python, failsafes
+15_Robot_Line_Follower/   Part 3 - PID line following on four tracks, lap leaderboard
+16_Robot_Navigation/      Part 3 - occupancy mapping, A* replanning, a reactive layer
+17_Robot_Balancing/       Part 3 - a wheeled inverted pendulum: PID vs LQR (lqr.py)
+18_Robot_Competition/     Part 3 - a sumo tournament: your strategy vs five bots
+19_Final_Project/         Part 3 - the project brief, rubric and a template firmware
 _spike/                   Phase 0 proof of concept - throwaway, see below
 ```
 
@@ -249,24 +262,44 @@ on both. The course stands alone; it does not depend on SOC4180GH.
 | | 07 | RTOS — PendSV switch, MSP/PSP, mutex, queue, HardFault ◐ | |
 | | 08 | UART_And_Python_Host — ring buffer, framed protocol, `host.py` ◐ | |
 | | 09 | Sensors_And_Buses — ADC, I²C (MPU6050), SPI (MAX7219) ◐ | |
-| 2 Systems | 10 | F446RE_FPU_DMA — port, FPU vs fixed point, DMA | F446RE / Renode |
-| | 11 | Faults_Watchdog_Power — CFSR, watchdog, WFI; HAL vs CMSIS | |
-| 3 Applications | 12 | Game — SSD1306 engine + arcade | Wokwi |
-| | 13 | Drone_Attitude — IMU fusion, attitude loops, motor mixing | Webots (proposed) |
-| | 14 | Drone_Missions — position hold, MAVLink missions from Python | |
-| | 15 | Robot_Line_Follower | |
-| | 16 | Robot_Navigation — obstacles, Python path planner | |
-| | 17 | Robot_Balancing — PID vs LQR | |
-| | 18 | Robot_Competition — sumo tournament | |
-| | 19 | Final_Project | |
+| 2 Systems | 10 | Fixed_Point_And_DMA — float vs fixed point on a core with no FPU, the M4F's FPU read from a real disassembly, DMA ◐ | C031C6 / Wokwi (app board) |
+| | 11 | Faults_Watchdog_Power — HardFault decoding on ARMv6-M, CFSR as the M4 has it, watchdogs, WFI; HAL vs CMSIS ◐ | |
+| 3 Applications | 12 | Game — SSD1306 engine + arcade ◐ | C031C6 / Wokwi (app board) |
+| | 13 | Drone_Attitude — IMU fusion, attitude loops, motor mixing ◐ | simulated inside the firmware |
+| | 14 | Drone_Missions — position hold, missions from Python, failsafes ◐ | |
+| | 15 | Robot_Line_Follower ◐ | |
+| | 16 | Robot_Navigation — mapping, A*, Python path planner ◐ | |
+| | 17 | Robot_Balancing — PID vs LQR ◐ | |
+| | 18 | Robot_Competition — sumo tournament ◐ | |
+| | 19 | Final_Project ◐ | |
 
 **Two tiers in Part 3, as in real systems:** C on the MCU (RTOS tasks) owns
 sensors, filters, control loops and failsafes; Python on the host owns
 missions, planning, telemetry and scoring. The low-level contract is
-`_hal/control.h`'s `control_step(sensors_t*, actuators_t*)`.
+`control_step(const sensors_t *, actuators_t *)`, declared in each
+application lesson's own `control.h` (16 calls its header `sim.h`).
 
 ✅ taught and watched running · ◐ written, zero warnings, **not yet watched in
-Wokwi** — 06–09 were partly *run* in Renode instead (below).
+Wokwi** — 06–09 were partly *run* in Renode instead (below); 10–19 were
+verified by host tests instead (see "Parts 2 and 3").
+
+**Re-scoped 2026-10-03, when Parts 2 and 3 were written.** Two rows above
+changed from the agreed plan, both for the same reason: the planned tool was
+not on this machine, so nothing written for it could have been checked.
+
+- *10 and 11 moved from the F446RE in Renode to the C031C6 in Wokwi.* Renode
+  is not vendored (the spike below said it would be; it was not) and no
+  STM32F4 device headers are in `tools/cmsis/`. The Cortex-M4F survives where
+  it teaches most: lesson 10 compiles the same C for it with the vendored
+  `thumb/v7e-m+fp/hard` multilib and quotes the real `vmul.f32` against the
+  M0+'s `bl __aeabi_fmul`; lesson 11 draws the M4's `CFSR`, labelled as not
+  on this chip.
+- *13–18 simulate the drone and the robots inside the firmware, not in
+  Webots.* Webots, MuJoCo and PyBullet are not installed, and the repository
+  promises a clone needs no downloads. A world task steps the physics and
+  synthesises the sensors; the student's controller sees only the sensors.
+  That is the Software-In-The-Loop architecture real drone stacks use, and it
+  runs in the same free Wokwi tab as every other lesson.
 
 **Spikes, and what became of them:**
 
@@ -279,10 +312,12 @@ Wokwi** — 06–09 were partly *run* in Renode instead (below).
   copy-and-paste into `host.py --file`; the VS Code extension's documented
   `rfc2217ServerPort` is the live route; a real board is a COM port. No
   lesson had to move.
-- *Before 10* — Renode vendored, and a `nucleo_f446re.repl` written.
-- *Before 13* — Webots installs on student Windows machines and flies a
-  Crazyflie under an external C controller, with a MAVLink route for 14.
-  Fallbacks: ArduPilot/PX4 SITL or gym-pybullet-drones; MuJoCo for robots.
+- *Before 10* — a `nucleo_f446re.repl` was written (`_spike/f446re/`), but
+  Renode itself was **never vendored**; this line used to say it was. Lessons
+  10 and 11 moved to the C031C6 instead (above).
+- *Before 13* — **not done.** Webots was proposed and never installed or
+  tested. Lessons 13–18 simulate inside the firmware instead (above); the
+  Webots route stays open for a future edition.
 
 ### How lessons 06–09 were run without Wokwi
 
@@ -300,6 +335,63 @@ papering over it.
 
 The numbering in `_spike/FINDINGS.md` (EXTI as "lesson 06") predates this
 syllabus; EXTI is lesson 05.
+
+## Parts 2 and 3: the app board, and a chip that simulates its own robot
+
+**One circuit for lessons 10–19**, as the AVR edition had one shared board:
+`_targets/app-board-diagram.json`. Each lesson's `diagram.json` is a copy (13
+adds an MPU6050 beside the OLED). `_lib/pad.h` is its pin table:
+
+| Pin | Part | Shared module |
+|---|---|---|
+| PA0, PA1 | analog joystick HORZ, VERT (Wokwi: HORZ reads 0 V at the *right*; `pad.c` flips it) | `pad` + `adc` |
+| PA4 | potentiometer, "the knob" | `pad` + `adc` |
+| PB3, PB4, PB5 | joystick SEL, buttons A and B (keys space, a, b) | `pad` |
+| PA6 | buzzer, TIM3_CH1 | `beep` |
+| PB8, PB9 | I²C1: SSD1306 OLED at 0x3C (and the MPU6050 at 0x68) | `i2c` + `oled` |
+| PA2, PA3 | USART2 to the serial monitor | `retarget` / `uart` |
+
+`_lib/oled.c` keeps a 1 KB framebuffer and sends only the 8-row pages that
+changed: measured on the host, one moved pixel costs 136 bytes on the bus
+instead of 1088, and an unchanged frame costs nothing. Its drawing half is
+pure C, so every application lesson's host test can print a real frame as
+ASCII art. `_lib/fmath.h` replaces libm's `sinf`/`cosf` (about 4 KB of flash)
+with polynomials good to 4e-6.
+
+**Lessons 13–18 put the physics on the chip.** A world task integrates the
+drone or robot at 500 Hz–1 kHz and synthesises noisy sensors; a controller
+task — the student's code — sees only `sensors_t` and writes only
+`actuators_t`. The same pure-C world and controller compile on a PC, so each
+lesson ships a `host/` test (`host/run.bat`, or `run.sh`) that flies, drives
+or races them and fails on a bad result.
+
+**What was verified, 2026-10-03.** Every lesson builds with zero warnings and
+every host test passes:
+
+| Lesson | FLASH / RAM | Host test, headline |
+|---|---|---|
+| 10 | 27 328 / 8 016 | Q15/Q16 maths 15/15; a Cortex-M0+ instruction model (`host/m0sim.py`) runs `Main.elf` and agrees with the PC on 21 of 22 workloads |
+| 11 | 25 300 / 5 256 | 107/107; the fault decoder agrees with `objdump` on all 2327 load, store, branch and trap instructions in the image |
+| 12 | 15 980 / 4 248 | 20/20; each game played by script; Snake costs 129 bus bytes a frame against 1104 for a full repaint |
+| 13 | 26 224 / 10 848 | 24/24; a 20° roll step settles in 0.34 s with 0.3 % overshoot |
+| 14 | 27 428 / 10 520 | default mission 57.7 s in still air, 61.0 s in 8 m/s wind; all failsafes fire |
+| 15 | 26 920 / 9 352 | all four tracks, five laps each, no DNF; PD beats P-only 3.80 s to 12.56 s a lap |
+| 16 | 29 148 / 11 336 | 25/25 runs reach the goal, 0 collisions; `planner.py` and the C A* agree 15/15 |
+| 17 | 23 892 / 10 144 | LQR survives the biggest push (0.78 N s); the cascaded PID settles faster and carries more payload |
+| 18 | 27 056 / 9 608 | a 1500-match league in 1.9 s, identical hash on two runs and at -O0/-O2/-Os |
+| 19 | 16 576 / 10 280 | 15/15; the template's health and watchdog logic |
+
+**Wokwi does not implement DMA, IWDG, PWR or RTC** on this board, and WWDG is
+"implemented, not tested" ([Wokwi's board page](https://docs.wokwi.com/parts/board-st-nucleo-c031c6)).
+Lesson 10 detects a DMA channel that never moves and falls back to polled
+reads, saying which path ran. Lessons 11 and 19 keep the real IWDG code for
+silicon and add a software watchdog the simulator can show.
+
+**Not yet watched in Wokwi — any of 10–19.** Each README's Status section
+lists the first three things to look at. The largest open questions are
+on-chip ones a PC cannot answer: real cycles per control step, task stack
+high-water marks (every lesson prints them on `stats`), and whether lesson
+18's `$RESULT` hash from the chip matches the host league's.
 
 ## The `_spike/` directory
 
@@ -498,9 +590,11 @@ peripheral registers has not been confirmed; Lab 05 Part 8 says so.
   dependence on a hosted service staying free. That risk is accepted, and
   `_startup/` is structured per-target so a port is a new `_targets/*.bat`
   plus a startup file, not a rewrite.
-- **Target B** for the application track is the F446RE under Renode. Its
-  multilib (`thumb/v7e-m+fp/hard`) is kept in the vendored prune, so nothing
-  blocks it.
+- **Target B** was to be the F446RE under Renode for the application track.
+  **Superseded 2026-10-03:** the application track runs on Target A, with the
+  physics simulated in the firmware (see "Parts 2 and 3"). The F446RE's
+  multilib (`thumb/v7e-m+fp/hard`) is still kept, and lesson 10 compiles for
+  it to read FPU instructions.
 
 ## Conventions
 

@@ -21,7 +21,7 @@
 </style>
 <div class="wrap">
   <h1>SOC3050 &mdash; STM32 Lecture Decks</h1>
-  <p class="sub">10 decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
+  <p class="sub">20 decks, 2026 ARM edition. Arrow keys to move, <code>o</code> for an overview, <code>p</code> to print or save as PDF.</p>
   <p class="sub"><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a> &mdash; the reference behind every deck, also pinned to the top of each slide.</p>
   <p class="sub"><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Nucleo-64 board manual, UM2953 (PDF)</a> &mdash; the real board: header pinouts, solder bridges, schematics. Read this for what a pin <em>is</em>; read the pin-name page below for what Wokwi <em>calls</em> it. Also <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">on st.com</a>.</p>
   <p class="sub"><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">ST Nucleo-C031C6 on Wokwi</a> &mdash; the board every lesson from Part 1 runs on, free in the browser. Its page also lists the peripherals Wokwi does <em>not</em> model, which is worth reading before planning any lab.</p>
@@ -32,11 +32,21 @@
     <li><a class="card" href="01_Instruction_Set.html"><span class="n">01</span><span class="t">Instruction Set: What the Processor Actually Does</span><span class="f"></span></a></li>
     <li><a class="card" href="02_Development.html"><span class="n">02</span><span class="t">Development: From Text to a Chip That Runs</span><span class="f"></span></a></li>
     <li><a class="card" href="03_Execution_Concurrency.html"><span class="n">03</span><span class="t">Execution and Concurrency: When Two Things Run at Once</span><span class="f"></span></a></li>
-    <li><a class="card" href="04_Startup_And_LinkerScript.html"><span class="n">04</span><span class="t">Startup and the Linker Script: Building the Ground You Stand On</span><span class="f">**Part 1, lesson 1 — the first lesson with code.**</span></a></li>
-    <li><a class="card" href="05_GPIO_And_Interrupts.html"><span class="n">05</span><span class="t">GPIO and Interrupts: One Pin, Two Ways to Listen</span><span class="f">**Part 1, lesson 2.**</span></a></li>
-    <li><a class="card" href="06_Time_And_Timers.html"><span class="n">06</span><span class="t">Time and Timers: Letting the Hardware Keep Time</span><span class="f">**Part 1, lesson 3.**</span></a></li>
-    <li><a class="card" href="07_RTOS.html"><span class="n">07</span><span class="t">RTOS: Writing the Thing That Runs Your Tasks</span><span class="f">**Part 1, lesson 4.**</span></a></li>
-    <li><a class="card" href="08_UART_And_Python_Host.html"><span class="n">08</span><span class="t">UART and a Python Host: Talking to the Board, Properly</span><span class="f">**Part 1, lesson 5.**</span></a></li>
-    <li><a class="card" href="09_Sensors_And_Buses.html"><span class="n">09</span><span class="t">Sensors and Buses: Three Ways the World Gets In</span><span class="f">**Part 1, lesson 6 — the last of Part 1.**</span></a></li>
+    <li><a class="card" href="04_Startup_And_LinkerScript.html"><span class="n">04</span><span class="t">Startup and the Linker Script: Building the Ground You Stand On</span><span class="f">Part 1, lesson 1 — the first lesson with code.</span></a></li>
+    <li><a class="card" href="05_GPIO_And_Interrupts.html"><span class="n">05</span><span class="t">GPIO and Interrupts: One Pin, Two Ways to Listen</span><span class="f">Part 1, lesson 2.</span></a></li>
+    <li><a class="card" href="06_Time_And_Timers.html"><span class="n">06</span><span class="t">Time and Timers: Letting the Hardware Keep Time</span><span class="f">Part 1, lesson 3.</span></a></li>
+    <li><a class="card" href="07_RTOS.html"><span class="n">07</span><span class="t">RTOS: Writing the Thing That Runs Your Tasks</span><span class="f">Part 1, lesson 4.</span></a></li>
+    <li><a class="card" href="08_UART_And_Python_Host.html"><span class="n">08</span><span class="t">UART and a Python Host: Talking to the Board, Properly</span><span class="f">Part 1, lesson 5.</span></a></li>
+    <li><a class="card" href="09_Sensors_And_Buses.html"><span class="n">09</span><span class="t">Sensors and Buses: Three Ways the World Gets In</span><span class="f">Part 1, lesson 6 — the last of Part 1.</span></a></li>
+    <li><a class="card" href="10_Fixed_Point_And_DMA.html"><span class="n">10</span><span class="t">Fixed Point and DMA: Maths Without an FPU, Data Without the CPU</span><span class="f">Part 2, lesson 1 — Systems.</span></a></li>
+    <li><a class="card" href="11_Faults_Watchdog_Power.html"><span class="n">11</span><span class="t">Faults, Watchdog, Power: the Crash Lab</span><span class="f">Part 2, lesson 2 — Systems.</span></a></li>
+    <li><a class="card" href="12_Game.html"><span class="n">12</span><span class="t">Game: An Arcade on a 128×64 Screen</span><span class="f">Part 3, lesson 1 — the first application.</span></a></li>
+    <li><a class="card" href="13_Drone_Attitude.html"><span class="n">13</span><span class="t">Drone Attitude: Flying a Quadcopter That Does Not Exist</span><span class="f">Part 3, Applications — lesson 2 of 8: the first drone.</span></a></li>
+    <li><a class="card" href="14_Drone_Missions.html"><span class="n">14</span><span class="t">Drone Missions: Where to Go, and How to Come Home</span><span class="f">Part 3, Applications — lesson 3 of 8: position hold, missions from Python,</span></a></li>
+    <li><a class="card" href="15_Robot_Line_Follower.html"><span class="n">15</span><span class="t">Robot Line Follower: A Robot That Lives Inside the Chip</span><span class="f">Part 3, Applications — the first robot.</span></a></li>
+    <li><a class="card" href="16_Robot_Navigation.html"><span class="n">16</span><span class="t">Robot Navigation: Find the Way Across a Room You Have Never Seen</span><span class="f">Part 3, Applications — the first robot lesson after the line follower.</span></a></li>
+    <li><a class="card" href="17_Robot_Balancing.html"><span class="n">17</span><span class="t">Robot Balancing: PID vs LQR</span><span class="f">Part 3, Applications — lesson 17.</span></a></li>
+    <li><a class="card" href="18_Robot_Competition.html"><span class="n">18</span><span class="t">Robot Competition: A Sumo Tournament Inside the Chip</span><span class="f">Part 3, Applications — a sumo tournament.</span></a></li>
+    <li><a class="card" href="19_Final_Project.html"><span class="n">19</span><span class="t">Final Project: Build Something Worth Showing</span><span class="f">Part 3, the last lesson.</span></a></li>
   </ol>
 </div>

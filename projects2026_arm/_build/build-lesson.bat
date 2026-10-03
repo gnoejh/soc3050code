@@ -91,6 +91,8 @@ for %%L in (%LIBS%) do (
 )
 
 REM ---- compile + link ------------------------------------------------------
+REM  -lm links the maths library (sinf, sqrtf...) that the Part 2 and 3 lessons
+REM  use; --gc-sections drops it entirely from any lesson that calls nothing in it.
 REM  --specs=nano.specs picks newlib-nano.  We do NOT use nosys.specs: this
 REM  edition implements its own _write/_read/_sbrk so printf reaches USART2,
 REM  which also removes the seven "not implemented" link warnings nosys emits.
@@ -110,7 +112,8 @@ REM  which also removes the seven "not implemented" link warnings nosys emits.
     -Wl,--gc-sections ^
     -Wl,-Map=Main.map ^
     -Wl,--print-memory-usage ^
-    -o Main.elf
+    -o Main.elf ^
+    -lm
 if errorlevel 1 (
     echo.
     echo Build FAILED.

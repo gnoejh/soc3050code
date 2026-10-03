@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "author": "SOC3050",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-st-nucleo-c031c6", "id": "nucleo", "top": 0, "left": 0, "attrs": {} },
+    { "type": "board-ssd1306",          "id": "oled",   "top": -150, "left": 40,  "attrs": { "i2cAddress": "0x3c" } },
+    { "type": "wokwi-analog-joystick",  "id": "stick",  "top": 40,   "left": -260, "attrs": {} },
+    { "type": "wokwi-pushbutton",       "id": "btnA",   "top": 260,  "left": -250, "attrs": { "color": "blue",  "label": "A", "key": "a" } },
+    { "type": "wokwi-pushbutton",       "id": "btnB",   "top": 260,  "left": -160, "attrs": { "color": "red",   "label": "B", "key": "b" } },
+    { "type": "wokwi-potentiometer",    "id": "knob",   "top": 340,  "left": -250, "attrs": { "value": "500" } },
+    { "type": "wokwi-buzzer",           "id": "buzzer", "top": -150, "left": -200, "attrs": { "volume": "0.2" } },
+    { "type": "wokwi-mpu6050",          "id": "imu",    "top": -150, "left": 260, "attrs": {} }
+  ],
+  "connections": [
+    [ "nucleo:PA2", "$serialMonitor:RX", "", [] ],
+    [ "nucleo:PA3", "$serialMonitor:TX", "", [] ],
+
+    [ "oled:SCL", "nucleo:PB8",   "blue",   [] ],
+    [ "oled:SDA", "nucleo:PB9",   "violet", [] ],
+    [ "oled:VCC", "nucleo:3V3.1", "red",    [] ],
+    [ "oled:GND", "nucleo:GND.1", "black",  [] ],
+
+    [ "imu:SCL", "nucleo:PB8",   "blue",   [] ],
+    [ "imu:SDA", "nucleo:PB9",   "violet", [] ],
+    [ "imu:VCC", "nucleo:3V3.1", "red",    [] ],
+    [ "imu:GND", "nucleo:GND.1", "black",  [] ],
+
+    [ "stick:HORZ", "nucleo:PA0",   "orange", [] ],
+    [ "stick:VERT", "nucleo:PA1",   "yellow", [] ],
+    [ "stick:SEL",  "nucleo:PB3",   "green",  [] ],
+    [ "stick:VCC",  "nucleo:3V3.2", "red",    [] ],
+    [ "stick:GND",  "nucleo:GND.2", "black",  [] ],
+
+    [ "btnA:1.r", "nucleo:PB4",   "blue",  [] ],
+    [ "btnA:2.r", "nucleo:GND.3", "black", [] ],
+    [ "btnB:1.r", "nucleo:PB5",   "red",   [] ],
+    [ "btnB:2.r", "nucleo:GND.3", "black", [] ],
+
+    [ "knob:SIG", "nucleo:PA4",   "orange", [] ],
+    [ "knob:VCC", "nucleo:3V3.2", "red",    [] ],
+    [ "knob:GND", "nucleo:GND.4", "black",  [] ],
+
+    [ "buzzer:2", "nucleo:PA6",   "green", [] ],
+    [ "buzzer:1", "nucleo:GND.4", "black", [] ]
+  ],
+  "dependencies": {}
+}

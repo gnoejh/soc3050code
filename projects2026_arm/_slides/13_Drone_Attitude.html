@@ -1,0 +1,908 @@
+<title>Drone Attitude: Flying a Quadcopter That Does Not Exist</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Drone Attitude: Flying a Quadcopter That Does Not Exist</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Drone Attitude: Flying a Quadcopter That Does Not Exist</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a></p>
+<p><strong>A quadcopter flies on a 48 MHz chip with no FPU — and you tune it by<br>turning a knob.</strong></p>
+<p>Press A: four motor bars spool up on the OLED and an artificial horizon<br>settles level. Push the joystick: the horizon tilts 20° in a third of a<br>second. Press B: a gust hits it at 229°/s and it is back within 3° in 0.17 s.<br>Turn the knob too far: it buzzes. Too little: it wobbles itself into the<br>ground. None of it needs a drone — the drone is a physics model running on<br>the same chip, in its own task, and your flight controller cannot tell.</p>
+<p>Figures marked <strong>measured on the host</strong> come from <code>host/sitl.c</code>, which links<br>this lesson&#x27;s own <code>world.c</code> and <code>control.c</code> into a PC program. Cycle counts<br>come from lesson 10&#x27;s Cortex-M0+ model running this lesson&#x27;s <code>Main.elf</code>.<br>Nothing on these slides was watched in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0, roll</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1, pitch</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob - ADC IN4, rate Kp</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - serial monitor</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED 0x3C + MPU6050 0x68</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  buzzer - TIM3_CH1</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B - gust</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A - arm</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL - SIM/MPU mode</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 365" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="reg" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  buzzer - TIM3_CH1</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA4   an   knob - ADC IN4, rate Kp</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - serial monitor</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1, pitch</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0, roll</text>
+  <text x="76" y="220" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="198" width="29" height="34" rx="3"/>
+  <text x="102.5" y="212" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="198" width="29" height="34" rx="3"/>
+  <text x="134.5" y="212" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="198" width="29" height="34" rx="3"/>
+  <text x="166.5" y="212" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="198" width="29" height="34" rx="3"/>
+  <text x="198.5" y="212" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="198" width="29" height="34" rx="3"/>
+  <text x="230.5" y="212" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="198" width="29" height="34" rx="3"/>
+  <text x="262.5" y="212" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="198" width="29" height="34" rx="3"/>
+  <text x="294.5" y="212" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="198" width="29" height="34" rx="3"/>
+  <text x="326.5" y="212" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="198" width="29" height="34" rx="3"/>
+  <text x="358.5" y="212" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="198" width="29" height="34" rx="3"/>
+  <text x="390.5" y="212" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="198" width="29" height="34" rx="3"/>
+  <text x="422.5" y="212" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="198" width="29" height="34" rx="3"/>
+  <text x="454.5" y="212" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="198" width="29" height="34" rx="3"/>
+  <text x="486.5" y="212" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="198" width="29" height="34" rx="3"/>
+  <text x="518.5" y="212" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="198" width="29" height="34" rx="3"/>
+  <text x="550.5" y="212" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="198" width="29" height="34" rx="3"/>
+  <text x="582.5" y="212" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="252" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED 0x3C + MPU6050 0x68</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB5   in   button B - gust</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB4   in   button A - arm</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL - SIM/MPU mode</text>
+  <text x="310" y="357" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: How Do We Fly a Drone Without a Drone?</h2>
+<p>Split the program in two, and let them talk through <strong>one narrow contract</strong>:</p>
+<figure class="diagram"><svg viewBox="0 0 640 270" role="img" aria-label="Software in the loop: a world task and a controller task exchange sensors_t and actuators_t; the same controller links into a PC test and into a real drone">
+  <defs><marker id="d13a" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="20" y="30" width="190" height="96" rx="6"/>
+  <text x="115" y="52" text-anchor="middle" class="mono">task "world"  500 Hz</text>
+  <text x="115" y="74" text-anchor="middle" class="mono">world.c</text>
+  <text x="115" y="94" text-anchor="middle" class="lbl">rigid body, 4 motors,</text>
+  <text x="115" y="110" text-anchor="middle" class="lbl">IMU: noise, bias, vibration</text>
+  <rect class="hifill" x="430" y="30" width="190" height="96" rx="6"/>
+  <text x="525" y="52" text-anchor="middle" class="mono">task "ctrl"  250 Hz</text>
+  <text x="525" y="74" text-anchor="middle" class="mono">control.c</text>
+  <text x="525" y="94" text-anchor="middle" class="lbl">filter, angle + rate loops,</text>
+  <text x="525" y="110" text-anchor="middle" class="lbl">mixer, failsafes - YOURS</text>
+  <path class="wire" d="M210 58 H426" marker-end="url(#d13a)"/>
+  <text x="320" y="48" text-anchor="middle" class="mono">sensors_t</text>
+  <path class="wire" d="M430 100 H214" marker-end="url(#d13a)"/>
+  <text x="320" y="116" text-anchor="middle" class="mono">actuators_t</text>
+  <text x="320" y="80" text-anchor="middle" class="lbl">control_step(in, out)</text>
+  <path class="dash" d="M500 126 V176"/>
+  <path class="dash" d="M550 126 V176"/>
+  <rect class="reg" x="380" y="180" width="140" height="56" rx="6"/>
+  <text x="450" y="200" text-anchor="middle" class="mono">host/sitl.c</text>
+  <text x="450" y="220" text-anchor="middle" class="lbl">same control.c, on a PC</text>
+  <rect class="reg" x="530" y="180" width="100" height="56" rx="6"/>
+  <text x="580" y="200" text-anchor="middle" class="mono">a drone</text>
+  <text x="580" y="220" text-anchor="middle" class="lbl">MPU6050 + ESCs</text>
+  <text x="180" y="200" text-anchor="middle" class="hi">The controller sees only sensors_t</text>
+  <text x="180" y="222" text-anchor="middle" class="hi">and writes only actuators_t.</text>
+</svg></figure>
+<p>This is <strong>Software-In-The-Loop (SITL)</strong>: the real flight code, flown against a<br>simulated aircraft. ArduPilot and PX4 are developed this way; the flight<br>controller&#x27;s source does not change when the aircraft becomes real. Here the<br>aircraft is <code>world.c</code>, the &quot;simulator&quot; is a task on the same Cortex-M0+, and<br><code>host/sitl.c</code> is the same idea on a PC — where it can fly 30 seconds in a<br>blink and <em>grade</em> the result.</p>
+<p>The syllabus proposed Webots for this lesson. It is not installed here and<br>could not be verified, so the plant moved inside the firmware — which turns<br>out to teach more: the plant has a CPU cost, and slide 22 measures it.</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Contract</h2>
+<p><code>control.h</code> is the whole interface. Everything the flight controller may know:</p>
+<pre class="lang-c"><code>typedef struct {
+    float    gyro[3];       /* body rates p, q, r                 rad/s      */
+    float    accel[3];      /* specific force, body frame         m/s^2      */
+    uint32_t seq;           /* +1 per new IMU sample; unchanged = stale      */
+    uint8_t  imu_ok;        /* 0 = the driver says the IMU failed            */
+    /* the pilot - a radio receiver is a sensor too, from here */
+    float    rc_roll;       /* roll  setpoint                     rad        */
+    float    rc_pitch;      /* pitch setpoint                     rad        */
+    float    rc_yaw_rate;   /* yaw-rate setpoint                  rad/s      */
+    float    rc_throttle;   /* collective thrust                  0..1       */
+    uint8_t  rc_arm;        /* arm switch                         0/1        */
+} sensors_t;
+
+typedef struct {
+    float    motor[4];      /* M0..M3 command, 0..1 (0 = stopped)            */
+    uint8_t  armed;
+} actuators_t;
+
+void control_step(const sensors_t *in, actuators_t *out);</code></pre>
+<p>Three design choices worth copying:</p>
+<ul><li><strong>No clock in the interface.</strong> <code>control_step()</code> is called at exactly <code>CTRL_HZ</code> (250) and counts on it — so the host test flies about four minutes of simulated flight in about one second (measured), and gets the answers the chip would get in four minutes.</li><li><strong><code>seq</code> makes staleness visible.</strong> A frozen driver that keeps returning the last reading looks perfectly healthy — unless every sample carries a count.</li><li><strong>The pilot is an input.</strong> A radio receiver is just another sensor.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3: Frames and Signs</h2>
+<p>The aerospace convention, <strong>FRD</strong>: body <em>x</em> forward, <em>y</em> right, <em>z</em> <strong>down</strong>.</p>
+<figure class="diagram"><svg viewBox="0 0 600 250" role="img" aria-label="X quadcopter seen from above: four motors with spin directions, body x forward and y right">
+  <defs><marker id="d13b" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <path class="wire" d="M90 50 L210 170 M210 50 L90 170"/>
+  <rect class="box" x="132" y="92" width="36" height="36" rx="4"/>
+  <circle class="hifill" cx="90" cy="50" r="26"/>
+  <circle class="reg" cx="210" cy="50" r="26"/>
+  <circle class="reg" cx="210" cy="170" r="26"/>
+  <circle class="hifill" cx="90" cy="170" r="26"/>
+  <text x="90" y="44" text-anchor="middle" class="mono">M0 FL</text>
+  <text x="90" y="60" text-anchor="middle" class="lbl">CW</text>
+  <text x="210" y="44" text-anchor="middle" class="mono">M1 FR</text>
+  <text x="210" y="60" text-anchor="middle" class="lbl">CCW</text>
+  <text x="210" y="164" text-anchor="middle" class="mono">M2 RR</text>
+  <text x="210" y="180" text-anchor="middle" class="lbl">CW</text>
+  <text x="90" y="164" text-anchor="middle" class="mono">M3 RL</text>
+  <text x="90" y="180" text-anchor="middle" class="lbl">CCW</text>
+  <path class="wire" d="M150 110 V20" marker-end="url(#d13b)"/>
+  <text x="160" y="16" class="mono">x fwd</text>
+  <path class="wire" d="M150 110 H270" marker-end="url(#d13b)"/>
+  <text x="276" y="110" class="mono">y right</text>
+  <text x="150" y="222" text-anchor="middle" class="lbl">seen from above; z points into the page (down)</text>
+  <text x="330" y="50" class="mono">roll  + : right side down   (p)</text>
+  <text x="330" y="80" class="mono">pitch + : nose up           (q)</text>
+  <text x="330" y="110" class="mono">yaw   + : nose to the right (r)</text>
+  <text x="330" y="150" class="lbl">Left motors (shaded) push harder: roll +.</text>
+  <text x="330" y="170" class="lbl">Front motors push harder: pitch +.</text>
+  <text x="330" y="190" class="lbl">CCW props push harder: yaw +.</text>
+</svg></figure>
+<p>Level and still, the accelerometer reads <strong>(0, 0, −9.81)</strong>. It measures the<br>force <em>holding it up</em> — specific force — which points up, and up is −<em>z</em>.<br>Get one of these signs wrong and the controller pushes the wrong way. Lab<br>Part 6 does that on purpose.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: The Plant — a Quadcopter on a Gimbal</h2>
+<p><code>world.c</code> is a rigid body that <strong>rotates freely about its centre of mass</strong> —<br>the classic attitude test stand. It cannot climb or drift; position is<br>lesson 14&#x27;s.</p>
+<table><thead><tr><th>Parameter</th><th>Value</th><th>Why that number</th></tr></thead><tbody><tr><td>mass, arm</td><td>0.5 kg, 0.12 m</td><td>a 250-class quad</td></tr><tr><td>inertia <em>Ixx, Iyy, Izz</em></td><td>0.004, 0.004, 0.007 kg·m²</td><td>yaw is hardest to turn</td></tr><tr><td>thrust per motor</td><td>0–4 N, linear in command</td><td>thrust/weight 3.3</td></tr><tr><td>motor lag</td><td>first order, τ = 30 ms</td><td>props have inertia</td></tr><tr><td>drag torque</td><td>0.016 m × thrust</td><td>the only thing that yaws a quad</td></tr><tr><td>rate</td><td>500 Hz (<code>WORLD_DT</code> = 2 ms)</td><td>twice the controller</td></tr></tbody></table>
+<p>Each step: motors lag toward their clamped commands; the X geometry turns<br>four thrusts into three torques; <strong>Euler&#x27;s equations</strong> turn torques into<br>angular acceleration,</p>
+<pre><code>I w&#x27; = tau - w x (I w) - c w</code></pre>
+<p>and a <strong>quaternion</strong> integrates the rates, so no attitude is singular — a<br>flipped drone is just upside down, not a division by zero. Past 90° of tilt<br>the world latches <code>crashed</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Four Thrusts, Three Torques</h2>
+<p>With each motor at (±<em>d</em>, ±<em>d</em>), <em>d</em> = arm/√2 = 0.085 m, straight from<br><code>world_step()</code>:</p>
+<pre class="lang-c"><code>float tx = d * (T[0] + T[3] - T[1] - T[2]);              /* roll  */
+float ty = d * (T[0] + T[1] - T[2] - T[3]);              /* pitch */
+float tz = w-&gt;k_drag * (T[1] + T[3] - T[0] - T[2]);      /* yaw   */</code></pre>
+<p>What it means for control: a differential command of <em>u</em> on the four motors<br>(±<em>u</em> each) gives a roll acceleration of</p>
+<pre><code>d * 4 * (u * 4 N) / Ixx = 0.085 * 16 / 0.004 * u  =  339 u   rad/s^2</code></pre>
+<p>So a 10 % differential (<em>u</em> = 0.1) spins the drone up at 34 rad/s² — about<br>1 900 °/s². Strong, but <strong>30 ms late</strong> (the motor lag) and <strong>clipped at<br>0 and 1</strong>: a motor cannot spin backwards, and cannot spin faster than full.<br>Both facts come back on slides 16 and 19.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: The Simulated IMU — Built to Be Annoying</h2>
+<p><code>world_sense()</code> produces what an MPU6050 bolted to the frame would report:</p>
+<table><thead><tr><th>Imperfection</th><th>In <code>world.c</code></th><th>What it does to you</th></tr></thead><tbody><tr><td>gyro <strong>bias</strong></td><td>+0.8, −0.6, +0.4 °/s, plus a slow random walk</td><td>integrated, it drifts without limit</td></tr><tr><td>gyro noise</td><td>0.3 °/s, 1σ</td><td>small</td></tr><tr><td>accel noise</td><td>0.3 m/s² (0.03 g), 1σ</td><td>small</td></tr><tr><td><strong>motor vibration</strong></td><td>6 m/s² × mean motor: ~0.19 g at hover</td><td>tilt from accel jumps by degrees</td></tr><tr><td><strong>low-pass filter</strong></td><td>first order, 44 Hz (the chip&#x27;s <code>DLPF_CFG = 3</code>)</td><td>smooth — and ~4 ms <strong>late</strong></td></tr></tbody></table>
+<p>Gravity in the body frame is the third row of the rotation matrix; the<br>accelerometer reads minus it. The noise is a seeded xorshift generator, so a<br>host run repeats bit for bit — a test that fails &quot;sometimes&quot; is worth<br>nothing.</p>
+<p><strong>Why a gimbal, honestly.</strong> In free flight an accelerometer at the centre of<br>mass mostly measures <em>thrust</em>, not gravity: a tilted drone accelerating<br>sideways can read straight &quot;down&quot;. Real filters still work because of drag<br>and because on average the drone is not accelerating — a subtlety this<br>model avoids by holding the centre of mass still.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Tilt From Gravity — Right on Average, Noisy Every Sample</h2>
+<p>Gravity is a fixed arrow in the world. Seen in the body frame it leans:</p>
+<pre class="lang-c"><code>s.roll_acc  = f_atan2(-ay, -az);                       /* from gravity  */
+s.pitch_acc = f_atan2(ax, f_sqrt(ay * ay + az * az));</code></pre>
+<p><code>f_atan2</code> and <code>f_sqrt</code> are <code>fmath.h</code>&#x27;s — a dozen multiplies each, instead of<br>libm&#x27;s ~4 KB.</p>
+<p>The accelerometer <strong>never drifts</strong>: gravity does not move. But it sees every<br>other acceleration too, and on a quad that means the motors&#x27; shake: 0.19 g of<br>vibration is an 11° wobble in a single sample.</p>
+<p><strong>Measured on the host</strong> (slide 11): flying on the accelerometer alone<br>(<code>alpha = 0</code>), the estimate is off by <strong>3.2° RMS, 7.2° worst</strong>, and jumps<br><strong>6.0° from one 4 ms step to the next.</strong></p>
+</section>
+<section class="slide">
+<h2>Slide 8: Tilt From the Gyro — Smooth, and Wrong by Tomorrow</h2>
+<p>A gyro measures rate. Integrate it:</p>
+<pre><code>roll(t + dt) = roll(t) + p * dt          (small angles: roll&#x27; = p)</code></pre>
+<p>No vibration problem: rate sensors barely notice linear shaking. But every<br>error is integrated too, and a <strong>constant bias integrates into a ramp</strong>:<br>0.8 °/s is 48° a minute.</p>
+<p><strong>Measured on the host</strong> (<code>alpha = 1</code>, gyro only): after 30 s the estimate is<br><strong>14.5° RMS from the truth, 26° at worst</strong>. And the drone? It flew &quot;level&quot; —<br>level <em>according to its estimate</em> — while the true attitude leaned 26° and<br>climbing.</p>
+<p>The failsafe did not fire. It watches the <strong>estimate</strong>, and the estimate<br>said 0°. <em>A failsafe is only as good as the number it checks.</em></p>
+</section>
+<section class="slide">
+<h2>Slide 9: The Complementary Filter</h2>
+<p>Each sensor is good where the other is bad. So take the <strong>slow</strong> part of the<br>accelerometer and the <strong>fast</strong> part of the gyro:</p>
+<figure class="diagram"><svg viewBox="0 0 600 190" role="img" aria-label="Complementary filter: gyro integrated and high-passed, accelerometer tilt low-passed, summed into the estimate">
+  <defs><marker id="d13c" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <rect class="box" x="10" y="20" width="90" height="40" rx="5"/>
+  <text x="55" y="40" text-anchor="middle" class="mono">gyro p</text>
+  <path class="wire" d="M100 40 H136" marker-end="url(#d13c)"/>
+  <rect class="reg" x="140" y="20" width="80" height="40" rx="5"/>
+  <text x="180" y="40" text-anchor="middle" class="mono">∫ dt</text>
+  <path class="wire" d="M220 40 H256" marker-end="url(#d13c)"/>
+  <rect class="hifill" x="260" y="20" width="130" height="40" rx="5"/>
+  <text x="325" y="34" text-anchor="middle" class="mono">high-pass</text>
+  <text x="325" y="50" text-anchor="middle" class="lbl">weight alpha</text>
+  <rect class="box" x="10" y="120" width="90" height="40" rx="5"/>
+  <text x="55" y="140" text-anchor="middle" class="mono">accel</text>
+  <path class="wire" d="M100 140 H136" marker-end="url(#d13c)"/>
+  <rect class="reg" x="140" y="120" width="80" height="40" rx="5"/>
+  <text x="180" y="140" text-anchor="middle" class="mono">atan2</text>
+  <path class="wire" d="M220 140 H256" marker-end="url(#d13c)"/>
+  <rect class="hifill" x="260" y="120" width="130" height="40" rx="5"/>
+  <text x="325" y="134" text-anchor="middle" class="mono">low-pass</text>
+  <text x="325" y="150" text-anchor="middle" class="lbl">weight 1 - alpha</text>
+  <circle class="reg" cx="450" cy="90" r="16"/>
+  <text x="450" y="91" text-anchor="middle" class="mono">+</text>
+  <path class="wire" d="M390 40 L438 80" marker-end="url(#d13c)"/>
+  <path class="wire" d="M390 140 L438 100" marker-end="url(#d13c)"/>
+  <path class="wire" d="M466 90 H520" marker-end="url(#d13c)"/>
+  <text x="560" y="84" text-anchor="middle" class="mono">roll</text>
+  <text x="560" y="102" text-anchor="middle" class="lbl">estimate</text>
+</svg></figure>
+<p>In code it is one line per axis — the two filters share one state:</p>
+<pre class="lang-c"><code>float a = t-&gt;alpha;
+s.roll  = a * (s.roll  + in-&gt;gyro[0] * CTRL_DT) + (1.0f - a) * s.roll_acc;
+s.pitch = a * (s.pitch + in-&gt;gyro[1] * CTRL_DT) + (1.0f - a) * s.pitch_acc;</code></pre>
+<p>The crossover is a time constant: <strong>τ = α·dt / (1 − α)</strong>. At α = 0.98 and<br>dt = 4 ms, τ = 0.196 s. Faster than τ, trust the gyro; slower, trust gravity.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: What a Gyro Bias Costs, Predicted</h2>
+<p>In steady state the filter&#x27;s output stops moving, so the gyro&#x27;s push and the<br>accelerometer&#x27;s pull must balance. Work it through and the leftover error is</p>
+<pre><code>error = bias × τ  =  0.8 °/s × 0.196 s  =  0.16°</code></pre>
+<p>— a <strong>constant</strong>, not a ramp. That is the whole point: the accelerometer<br>bounds the drift the gyro would otherwise accumulate forever.</p>
+<p>And the trade is now visible as one number:</p>
+<ul><li><strong>bigger τ</strong> (α → 1): less vibration gets through, more bias error stays;</li><li><strong>smaller τ</strong> (α → 0): bias error shrinks, vibration noise grows.</li></ul>
+<p>Measured on the next slide: at α = 0.98 the true error is <strong>0.20° RMS</strong> —<br>the predicted 0.16° plus the noise that leaks through.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Alpha, Measured</h2>
+<p><strong>Measured on the host</strong>: 30 s hovering at 0°, gyro bias +0.8 / −0.6 °/s,<br>motor vibration on. <em>Error</em> is the estimate minus the true roll; <em>jitter</em> is<br>how much the estimate moves per 4 ms step — what the horizon on the OLED<br>would show.</p>
+<table><thead><tr><th>alpha</th><th>τ</th><th>error RMS</th><th>error max</th><th>jitter RMS</th><th>true tilt max</th></tr></thead><tbody><tr><td>0 (accel only)</td><td>0</td><td>3.18°</td><td>7.18°</td><td>5.97°</td><td>0.7°</td></tr><tr><td>0.90</td><td>36 ms</td><td>0.33°</td><td>1.32°</td><td>0.33°</td><td>0.7°</td></tr><tr><td><strong>0.98</strong> (default)</td><td>196 ms</td><td><strong>0.20°</strong></td><td><strong>0.57°</strong></td><td>0.064°</td><td>0.5°</td></tr><tr><td>0.995</td><td>0.8 s</td><td>0.60°</td><td>0.79°</td><td>0.016°</td><td>0.8°</td></tr><tr><td>1 (gyro only)</td><td>∞</td><td>14.54°</td><td>26.15°</td><td>0.002°</td><td><strong>26.2°</strong></td></tr></tbody></table>
+<p>Read across the rows: jitter falls monotonically, error has a <strong>minimum</strong> —<br>at 0.995 the bias term (0.8 °/s × 0.8 s ≈ 0.64°) has overtaken the noise.<br>Pick α by measuring, not by folklore. Lab Part 3 does it in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: Two Loops, One Inside the Other</h2>
+<figure class="diagram"><svg viewBox="0 0 640 220" role="img" aria-label="Cascaded control: angle P loop outside, rate PID loop inside, mixer, plant, feedback from the estimator and the gyro">
+  <defs><marker id="d13d" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <text x="30" y="60" text-anchor="middle" class="mono">stick</text>
+  <path class="wire" d="M50 60 H76" marker-end="url(#d13d)"/>
+  <circle class="reg" cx="90" cy="60" r="12"/><text x="90" y="61" text-anchor="middle" class="mono">-</text>
+  <path class="wire" d="M102 60 H126" marker-end="url(#d13d)"/>
+  <rect class="box" x="130" y="38" width="90" height="44" rx="5"/>
+  <text x="175" y="56" text-anchor="middle" class="mono">angle P</text>
+  <text x="175" y="72" text-anchor="middle" class="lbl">x9, clamp 200°/s</text>
+  <path class="wire" d="M220 60 H256" marker-end="url(#d13d)"/>
+  <circle class="reg" cx="270" cy="60" r="12"/><text x="270" y="61" text-anchor="middle" class="mono">-</text>
+  <path class="wire" d="M282 60 H306" marker-end="url(#d13d)"/>
+  <rect class="hifill" x="310" y="38" width="90" height="44" rx="5"/>
+  <text x="355" y="56" text-anchor="middle" class="mono">rate PID</text>
+  <text x="355" y="72" text-anchor="middle" class="lbl">knob x Kp</text>
+  <path class="wire" d="M400 60 H426" marker-end="url(#d13d)"/>
+  <rect class="box" x="430" y="38" width="70" height="44" rx="5"/>
+  <text x="465" y="61" text-anchor="middle" class="mono">mixer</text>
+  <path class="wire" d="M500 60 H526" marker-end="url(#d13d)"/>
+  <rect class="box" x="530" y="38" width="90" height="44" rx="5"/>
+  <text x="575" y="56" text-anchor="middle" class="mono">world</text>
+  <text x="575" y="72" text-anchor="middle" class="lbl">motors, body</text>
+  <path class="wire" d="M575 82 V120 H270 V76" marker-end="url(#d13d)"/>
+  <text x="430" y="114" text-anchor="middle" class="lbl">gyro rate p - the inner loop, every 4 ms</text>
+  <path class="wire" d="M575 120 V170 H90 V76" marker-end="url(#d13d)"/>
+  <rect class="box" x="290" y="152" width="130" height="36" rx="5"/>
+  <text x="355" y="171" text-anchor="middle" class="mono">compl. filter</text>
+  <text x="200" y="196" text-anchor="middle" class="lbl">estimated angle - the outer loop</text>
+</svg></figure>
+<p>The <strong>outer</strong> loop turns an angle error into a <em>rate</em> request: 10° off asks<br>for 90 °/s back, never more than 200 °/s. The <strong>inner</strong> loop turns a rate<br>error into differential thrust. Why not one loop? The inner loop sees the<br>gyro directly — fast, clean, no filter delay — and tames the body&#x27;s inertia;<br>the outer loop then only has to steer a well-behaved rate servo. That is<br>how ArduPilot, PX4 and Betaflight&#x27;s angle mode are built.</p>
+<p><strong>The rule:</strong> the inner loop must be several times faster than the outer.<br>Slide 19 shows what happens when it is not.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The Rate PID, Line by Line</h2>
+<pre class="lang-c"><code>float d = -(meas - *meas_prev) * CTRL_HZ;
+*meas_prev = meas;
+*dfilt += 0.5f * (d - *dfilt);
+
+float u_free = k * t-&gt;rate_kp * e + t-&gt;rate_kd * *dfilt + *integ;
+float u = f_clamp(u_free, -t-&gt;max_out, t-&gt;max_out);</code></pre>
+<table><thead><tr><th>Term</th><th>Gain</th><th>Job</th></tr></thead><tbody><tr><td>P</td><td>0.12 × knob</td><td>1 rad/s off → 12 % differential thrust</td></tr><tr><td>I</td><td>0.15</td><td>trims out what P cannot: a motor slightly weaker than the rest</td></tr><tr><td>D</td><td>0.0008, on the <strong>measurement</strong>, low-passed</td><td>damping without a &quot;derivative kick&quot; when the setpoint steps</td></tr><tr><td>clamp</td><td>±0.25</td><td>no axis may take more than a quarter of the motor range</td></tr></tbody></table>
+<p>D on the measurement rather than the error: when the stick jumps, the error<br>jumps, and d(error)/dt is a spike that would slam the motors. The<br>measurement never jumps — it is a body with inertia.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: Anti-Windup</h2>
+<p>Hold the drone level by hand while the stick asks for 30° of roll. The<br>error never shrinks, so the integrator <strong>grows without limit</strong>. Let go, and<br>all that stored &quot;push harder&quot; comes out at once.</p>
+<pre class="lang-c"><code>if (!t-&gt;anti_windup) {
+    *integ += t-&gt;rate_ki * e * CTRL_DT;
+} else if (u == u_free &amp;&amp; !motors_saturated) {
+    *integ = f_clamp(*integ + t-&gt;rate_ki * e * CTRL_DT, -t-&gt;i_limit, t-&gt;i_limit);
+}</code></pre>
+<p>Stop integrating while the output is pinned — more integral cannot help,<br>it can only be unwound later. <strong>Measured on the host</strong> (<code>world.locked</code> holds<br>it for 2 s, then lets go — the shell&#x27;s <code>hold</code> does the same in Wokwi):</p>
+<table><thead><tr><th>anti-windup</th><th>peak roll</th><th>within 2° of 30° by</th><th>end state</th></tr></thead><tbody><tr><td>on</td><td>29.8°</td><td>0.28 s</td><td>flying</td></tr><tr><td><strong>off</strong></td><td><strong>179.5°</strong></td><td>never</td><td><strong>flipped; tilt failsafe</strong></td></tr></tbody></table>
+<p>One <code>if</code>. The difference between a hover and an upside-down drone. The<br>controller also zeroes every integrator while disarmed or at zero throttle:<br>an integrator that winds up on the grass flips the drone on take-off.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: The X Mixer</h2>
+<p>Three torque commands and a throttle in, four motors out — the inverse of<br>slide 5:</p>
+<pre class="lang-c"><code>m[0] = th + r + u_p - u_y;      /* FL, CW   */
+m[1] = th - r + u_p + u_y;      /* FR, CCW  */
+m[2] = th - r - u_p - u_y;      /* RR, CW   */
+m[3] = th + r - u_p + u_y;      /* RL, CCW  */</code></pre>
+<p>Check one column against the geometry: roll + needs the <strong>left</strong> motors<br>(M0, M3) up and the right ones down — <code>+r, -r, -r, +r</code>. ✓</p>
+<p>Flip that one sign (<code>mix 1</code> → <code>mix -1</code> in the shell, or<br><code>ctrl_tune.mix_roll_sign</code>) and every correction becomes a push the wrong<br>way. <strong>Measured on the host</strong>, flipped in hover: <strong>tilt failsafe after<br>0.36 s, then a crash.</strong> Positive feedback does not drift — it runs away<br>exponentially. Every first flight of a real drone starts with checking these<br>signs by hand, props off.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Saturation — Asking for More Than Exists</h2>
+<p>A motor cannot do −10 % or 130 %. Three clamps, three different reasons:</p>
+<table><thead><tr><th>Clamp</th><th>Where</th><th>Why</th></tr></thead><tbody><tr><td>rate setpoint ±200 °/s</td><td>angle loop</td><td>a 60° stick error must not ask for 540 °/s</td></tr><tr><td>axis output ±0.25</td><td>rate loop</td><td>roll must not starve pitch of motor range</td></tr><tr><td>motor 0..1</td><td>after the mixer</td><td>physics; and it raises <code>saturated</code></td></tr></tbody></table>
+<p><code>saturated</code> feeds back into the anti-windup on the next step, so an<br>integrator never winds against a motor that is already at its limit. At<br>hover (throttle 0.35) a motor can go down by at most 0.35 before it stops —<br>asymmetric authority, one reason real drones hover near half throttle.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: When Not to Fly</h2>
+<p>Most of a real flight controller is rules. <code>control_step()</code> applies these<br>every 4 ms:</p>
+<table><thead><tr><th>Rule</th><th>Threshold</th><th>Why</th></tr></thead><tbody><tr><td>arm only with <strong>throttle low</strong></td><td>&lt; 0.05</td><td>a drone that arms at half throttle leaps at your face</td></tr><tr><td>arm only after <strong>0.5 s of good samples</strong></td><td><code>CTRL_SETTLE_STEPS</code> 125</td><td>right after reset the estimate has not caught up</td></tr><tr><td>arm only when <strong>level</strong></td><td>&lt; 25°</td><td>not upside down in the grass</td></tr><tr><td><strong>disarm</strong> past 60° tilt</td><td><code>CTRL_TILT_LIMIT</code></td><td>it is crashing; stop the props</td></tr><tr><td><strong>disarm</strong> on a non-finite or absurd reading</td><td>NaN, &gt; 2000 °/s, &gt; 16 g</td><td>a broken IMU must not fly</td></tr><tr><td><strong>disarm</strong> if <code>seq</code> freezes</td><td>5 steps = 20 ms</td><td>a dead driver returns the last value forever</td></tr><tr><td>re-arm only after the switch is <strong>cycled</strong></td><td></td><td>a failsafe must not re-arm itself</td></tr></tbody></table>
+<p>The settle rule was found by the host test: the first version armed a drone<br>held at 30°, because the estimate and the sensor&#x27;s filter both still said<br>&quot;level&quot; a few milliseconds after reset.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: The Failsafes, Measured</h2>
+<p><strong>Measured on the host</strong>, each case its own run:</p>
+<table><thead><tr><th>Case</th><th>Armed?</th><th>Reason</th><th>When</th></tr></thead><tbody><tr><td>arm with throttle 0.5</td><td>no</td><td>THROTTLE</td><td></td></tr><tr><td>arm while held at 30°</td><td>no</td><td>TILT</td><td></td></tr><tr><td>kick of 15 rad/s (860 °/s) in hover</td><td>no</td><td>TILT</td><td>84 ms after the hit, true tilt 63°</td></tr><tr><td>gyro reads NaN once</td><td>no</td><td>SENSOR</td><td>the first control step</td></tr><tr><td>IMU sample counter freezes</td><td>no</td><td>STALE</td><td>20 ms</td></tr><tr><td>after a failsafe, switch still on</td><td>no</td><td></td><td></td></tr><tr><td>switch off, then on</td><td><strong>yes</strong></td><td></td><td></td></tr></tbody></table>
+<p>The NaN case is worth a second look: <code>!(f_abs(x) &lt; 35.0f)</code> — written<br>&quot;not less than&quot; rather than &quot;greater than&quot; — because <strong>every comparison with<br>NaN is false</strong>. <code>x &gt; 35</code> lets a NaN through; <code>!(x &lt; 35)</code> catches it.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: Too Little, Too Much — the Knob</h2>
+<p>The knob multiplies the rate loop&#x27;s Kp, logarithmically: each eighth of a<br>turn doubles it, ×0.125 to ×8. <strong>Measured on the host</strong>, 20° roll step:</p>
+<table><thead><tr><th>Kp scale</th><th>rise</th><th>overshoot</th><th>settle (±1°)</th><th>rate RMS after 2 s</th><th></th></tr></thead><tbody><tr><td>×0.125</td><td>0.16 s</td><td><strong>194 %</strong></td><td>never</td><td><strong>235 °/s</strong></td><td>swings to 59°, 1° short of the failsafe</td></tr><tr><td>×0.25</td><td>0.13 s</td><td>44.5 %</td><td>2.17 s</td><td>7.2 °/s</td><td>sloppy</td></tr><tr><td>×0.5</td><td>0.12 s</td><td>13.5 %</td><td>0.57 s</td><td>1.0 °/s</td><td></td></tr><tr><td><strong>×1</strong></td><td>0.20 s</td><td>0.3 %</td><td><strong>0.34 s</strong></td><td>1.1 °/s</td><td>default</td></tr><tr><td>×2</td><td>0.20 s</td><td>0.4 %</td><td>0.35 s</td><td>1.0 °/s</td><td></td></tr><tr><td>×4</td><td>0.23 s</td><td>0.4 %</td><td>0.37 s</td><td>1.1 °/s</td><td></td></tr><tr><td>×8</td><td>0.19 s</td><td>2.1 %</td><td>0.37 s</td><td><strong>19.2 °/s</strong></td><td><strong>buzzes</strong></td></tr></tbody></table>
+<p><strong>Too low</strong> is not &quot;slow&quot;: when the inner loop is slower than the outer<br>(slide 12) the cascade <strong>oscillates</strong> — the outer loop asks, the inner<br>cannot deliver in time, the outer asks harder. <strong>Too high</strong> buzzes: the loop is full of lag —<br>the sensor&#x27;s 44 Hz filter, 4 ms of sampling and computing, the motors&#x27; 30 ms<br>— and at ×8 the loop is fast enough that those lags add up to half a cycle<br>of the oscillation, where a correction arrives just in time to push the<br>wrong way. The ±0.25 clamp keeps the buzz small — on a real<br>quad it is the hot-motor whine every pilot learns to hear.</p>
+</section>
+<section class="slide">
+<h2>Slide 20: Five Tasks on One Core</h2>
+<table><thead><tr><th>Task</th><th>Rate</th><th>Priority</th><th>Does</th></tr></thead><tbody><tr><td>world</td><td>500 Hz</td><td>5 (most urgent)</td><td><code>world_step</code> + <code>world_sense</code> → <code>g_sens</code></td></tr><tr><td>ctrl</td><td>250 Hz</td><td>4</td><td><code>g_sens</code> → <code>control_step</code> → <code>g_act</code></td></tr><tr><td>pilot</td><td>50 Hz</td><td>3</td><td>joystick, buttons, knob, throttle ramp, <code>$ATT</code> at 25 Hz, beeps</td></tr><tr><td>shell</td><td>on input</td><td>2</td><td><code>stats</code>, <code>alpha</code>, <code>aw</code>, <code>mix</code>, <code>kick</code>, <code>hold</code></td></tr><tr><td>disp</td><td>15 Hz</td><td>1</td><td>horizon, motor bars, flush to the OLED</td></tr></tbody></table>
+<p>The physics is the most urgent task because physics waits for nobody. The<br>structs cross between tasks inside two-line critical sections (lesson 03&#x27;s<br>tearing):</p>
+<pre class="lang-c"><code>__disable_irq(); in = g_sens; __enable_irq();</code></pre>
+<p>A whole <code>sensors_t</code> is 52 bytes — a torn copy would pair this step&#x27;s gyro<br>with last step&#x27;s accelerometer.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: Counting Cycles With SysTick</h2>
+<p>The kernel owns SysTick at 1 kHz: <code>LOAD</code> = 47 999, and <code>VAL</code> counts <strong>down</strong><br>at 48 MHz.</p>
+<figure class="diagram"><svg width="830" viewBox="0 0 830 172" role="img" aria-label="SysTick, 0xE000E010 - the kernel set it up; we only read VAL; LOAD, 32 bits; VAL, 32 bits">
+<text x="415" y="16" text-anchor="middle" class="lbl">SysTick, 0xE000E010 - the kernel set it up; we only read VAL</text>
+<text x="16" y="59" class="mono">LOAD</text>
+<text x="16" y="74" class="lbl">SYST_RVR, 47999 here</text>
+<text x="175.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="52" width="160.0" height="26"/>
+<text x="254.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="334.4" y="52" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 52 V56 M794.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M774.4 52 V56 M774.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M754.4 52 V56 M754.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M734.4 52 V56 M734.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M714.4 52 V56 M714.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M694.4 52 V56 M694.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M674.4 52 V56 M674.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M654.4 52 V56 M654.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M634.4 52 V56 M634.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M614.4 52 V56 M614.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M594.4 52 V56 M594.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M574.4 52 V56 M574.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M554.4 52 V56 M554.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M534.4 52 V56 M534.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M514.4 52 V56 M514.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M494.4 52 V56 M494.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M474.4 52 V56 M474.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M454.4 52 V56 M454.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M434.4 52 V56 M434.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M414.4 52 V56 M414.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M394.4 52 V56 M394.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M374.4 52 V56 M374.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M354.4 52 V56 M354.4 74 V78"/>
+<text x="335.4" y="44" text-anchor="start" class="mono lbl">23</text>
+<text x="574.4" y="65" text-anchor="middle" class="mono">RELOAD</text>
+<text x="16" y="128" class="mono">VAL</text>
+<text x="16" y="143" class="lbl">SYST_CVR, counts down</text>
+<text x="175.4" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="121" width="160.0" height="26"/>
+<text x="254.4" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="334.4" y="121" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 121 V125 M794.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M774.4 121 V125 M774.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M754.4 121 V125 M754.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M734.4 121 V125 M734.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M714.4 121 V125 M714.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M694.4 121 V125 M694.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M674.4 121 V125 M674.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M654.4 121 V125 M654.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M634.4 121 V125 M634.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M614.4 121 V125 M614.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M594.4 121 V125 M594.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M574.4 121 V125 M574.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M554.4 121 V125 M554.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M534.4 121 V125 M534.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M514.4 121 V125 M514.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M494.4 121 V125 M494.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M474.4 121 V125 M474.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M454.4 121 V125 M454.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M434.4 121 V125 M434.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M414.4 121 V125 M414.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M394.4 121 V125 M394.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M374.4 121 V125 M374.4 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M354.4 121 V125 M354.4 143 V147"/>
+<text x="335.4" y="113" text-anchor="start" class="mono lbl">23</text>
+<text x="574.4" y="134" text-anchor="middle" class="mono">CURRENT</text>
+</svg></figure>
+<p>Read <code>VAL</code> before and after; the difference is cycles, if the code takes less<br>than one tick (one wrap at most):</p>
+<pre class="lang-c"><code>static inline uint32_t cyc_elapsed(uint32_t v0, uint32_t v1)
+{
+    return v0 &gt;= v1 ? v0 - v1 : v0 + (SysTick-&gt;LOAD + 1u) - v1;
+}</code></pre>
+<p>Interrupts are <strong>off</strong> for the measurement, so neither the tick nor another<br>task lands in the middle — which is why only <strong>one step in 64</strong> is timed:<br>holding interrupts off for ~0.7 ms costs received UART bytes if done often.<br>Type <code>stats</code> and the firmware prints its own numbers. Lesson 10 builds the<br>same instrument.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: The Budget — the Plant Costs More Than the Pilot</h2>
+<p>Nothing could be run in Wokwi from here, so the budget has a second witness:<br>lesson 10&#x27;s <strong>Cortex-M0+ instruction model</strong> (<code>10_Fixed_Point_And_DMA/host/m0sim.py</code>)<br>runs this lesson&#x27;s <code>Main.elf</code> — the same machine code, libgcc&#x27;s soft float<br>and all — through a take-off and a 20° step. <code>host/cycles.py</code>, 1 flash wait<br>state:</p>
+<table><thead><tr><th>Version</th><th><code>world_step</code></th><th><code>world_sense</code></th><th><code>control_step</code> flying</th><th>world + control CPU</th></tr></thead><tbody><tr><td>first draft</td><td>18 789</td><td>38 097</td><td>25 926</td><td><strong>72.8 %</strong></td></tr><tr><td>divides hoisted; noise from integers</td><td>17 405</td><td>21 710</td><td>25 936</td><td>54.3 %</td></tr><tr><td>vibration from a 64-entry sine table</td><td><strong>17 402</strong></td><td><strong>16 489</strong></td><td><strong>25 938</strong></td><td><strong>48.8 %</strong></td></tr></tbody></table>
+<p>Mean cycles per call. With zero wait states the same build is 34.1 %.</p>
+<p>The <strong>simulated IMU cost more than the flight controller</strong>: four float<br>uniforms per Gaussian sample, and <code>f_sin</code>/<code>f_cos</code> with range reduction,<br>500 times a second. On a real drone that cost is zero — the world is free.<br>The fixes are lesson 10&#x27;s: integers where precision does not matter (it is<br>noise), divisions done once at start-up. The controller&#x27;s own 26 000 cycles<br>(540 µs of every 4 000) are 2 × <code>f_atan2</code>, an <code>f_sqrt</code> and the PIDs.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: The Artificial Horizon</h2>
+<p>The left half of the OLED is a pilot&#x27;s attitude indicator:</p>
+<pre class="lang-c"><code>float s = f_sin(roll), c = f_cos(roll);
+float slope = s / c, cy = 32.0f + pitch * DEG;
+for (int x = 1; x &lt; 63; x++) {
+    int y = (int)(cy - ((float)x - 32.0f) * slope);
+    oled_vline(x, y, 63 - y, OLED_ON);     /* fill the ground */
+}</code></pre>
+<p>Roll right and the <strong>horizon</strong> tilts the other way — its right end rises;<br>pitch up and it drops, 1 pixel per degree. The aircraft symbol is drawn with<br>XOR so it shows over sky and ground. In SIM mode a <strong>dotted line</strong> is the<br><em>true</em> horizon from the world — what no real pilot ever gets to see. The gap<br>between the two lines is the estimator&#x27;s error, live.</p>
+<p>The right half: mode and state, four motor bars laid out as seen from above<br>(FL FR / RL RR), roll and pitch, the knob&#x27;s Kp, alpha, and the measured loop<br>rate and frame rate.</p>
+</section>
+<section class="slide">
+<h2>Slide 24: The Real Sensor — MPU Mode</h2>
+<p>Joystick <strong>SEL</strong> swaps the world for the Wokwi MPU6050 at <code>0x68</code>, on the<br>OLED&#x27;s I²C wires. Same <code>control_step()</code>, same estimator; <code>rc_arm</code> is forced<br>to 0 — <strong>nothing flies on a slider</strong>.</p>
+<figure class="diagram"><svg width="382" viewBox="0 0 382 292" role="img" aria-label="MPU6050 registers (layout from the Adafruit_MPU6050 driver); CONFIG, 8 bits; GYRO_CONFIG, 8 bits; PWR_MGMT_1, 8 bits">
+<text x="191" y="16" text-anchor="middle" class="lbl">MPU6050 registers (layout from the Adafruit_MPU6050 driver)</text>
+<text x="16" y="59" class="mono">CONFIG</text>
+<text x="16" y="74" class="lbl">0x1A, = 3: 44 Hz</text>
+<text x="16" y="89" class="mono lbl">= 0x03</text>
+<text x="207.4" y="44" text-anchor="start" class="mono lbl">7</text>
+<text x="365.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="206.4" y="52" width="100.0" height="26"/>
+<rect class="hifill" x="306.4" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M346.4 52 V56 M346.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M326.4 52 V56 M326.4 74 V78"/>
+<text x="307.4" y="44" text-anchor="start" class="mono lbl">2</text>
+<text x="356.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="336.4" y="65" text-anchor="middle" class="mono">1</text>
+<text x="316.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="296.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="276.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="256.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="236.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="216.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="336.4" y="91" text-anchor="middle" class="mono halo">DLPF_CFG</text>
+<text x="16" y="145" class="mono">GYRO_CONFIG</text>
+<text x="16" y="160" class="lbl">0x1B, left at 0: 250 deg/s</text>
+<text x="207.4" y="130" text-anchor="start" class="mono lbl">7</text>
+<text x="365.4" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="306.4" y="138" width="60.0" height="26"/>
+<text x="336.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="206.4" y="138" width="60.0" height="26"/>
+<text x="236.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="266.4" y="138" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M286.4 138 V142 M286.4 160 V164"/>
+<text x="267.4" y="130" text-anchor="start" class="mono lbl">4</text>
+<text x="305.4" y="130" text-anchor="end" class="mono lbl">3</text>
+<text x="286.4" y="177" text-anchor="middle" class="mono halo lbl">FS_SEL</text>
+<text x="16" y="231" class="mono">PWR_MGMT_1</text>
+<text x="16" y="246" class="lbl">0x6B, = 0: awake</text>
+<text x="16" y="261" class="mono lbl">= 0x00</text>
+<text x="207.4" y="216" text-anchor="start" class="mono lbl">7</text>
+<text x="365.4" y="216" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="246.4" y="224" width="120.0" height="26"/>
+<rect class="dash" x="206.4" y="224" width="20.0" height="26"/>
+<rect class="hifill" x="226.4" y="224" width="20.0" height="26"/>
+<text x="236.4" y="216" text-anchor="middle" class="mono lbl">6</text>
+<text x="356.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="336.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="316.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="296.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="276.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="256.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="236.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="216.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="236.4" y="263" text-anchor="middle" class="mono halo">SLEEP</text>
+</svg></figure>
+<p>One 14-byte read from <code>0x3B</code> gets accel X, Y, Z, temperature, gyro X, Y, Z,<br>big-endian. At the reset ranges, 16 384 LSB per g and 131 LSB per °/s. The<br>chip is taken as mounted X forward, <strong>Y left</strong>, Z up, so body <em>y</em> = −chip Y<br>and body <em>z</em> = −chip Z.</p>
+<p><strong>One bus, two tasks.</strong> The display holds the bus mutex for a whole flush —<br>about 1 KB, ~25 ms at 400 kHz. In MPU mode the control task waits behind<br>it, then catches up with several back-to-back reads (<code>stats</code> counts late<br>wake-ups). Fine for an estimator lab; on a real drone the IMU gets <strong>its own<br>SPI bus</strong> for exactly this reason.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: Telemetry for the Host</h2>
+<p>Every 40 ms, a lesson 08 frame with its checksum:</p>
+<pre><code>$ATT,&lt;ms&gt;,&lt;roll&gt;,&lt;pitch&gt;,&lt;roll set&gt;,&lt;pitch set&gt;,&lt;true roll&gt;,&lt;true pitch&gt;,&lt;M0&gt;,&lt;M1&gt;,&lt;M2&gt;,&lt;M3&gt;,&lt;armed&gt;,&lt;Kp x100&gt;*CS</code></pre>
+<p>Angles in tenths of a degree, motors in thousandths — integers, because<br><code>printf</code> here has no float support. In MPU mode it is<br><code>$EST,&lt;ms&gt;,&lt;roll&gt;,&lt;pitch&gt;,&lt;accel-only roll&gt;,&lt;accel-only pitch&gt;</code>.</p>
+<pre><code>python ..\08_UART_And_Python_Host\host.py --file cap.txt --chart ATT,2,-300,300</code></pre>
+<p>charts the estimated roll (field 2) from a capture; field 6 is the truth.<br>Chart both in turn and you have slide 11&#x27;s error, from the simulator, by<br>hand.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: What Was Measured — and What Could Not Be</h2>
+<p><strong>Measured on the host</strong> (<code>host/run.bat</code>, 24 checks, all pass): step<br>responses (roll rise 0.20 s, settle 0.34 s, overshoot 0.3 %), a gust of<br>229 °/s rejected in 0.17 s with an 11° peak, all six failsafe cases, the<br>alpha table, the gain sweep, anti-windup on and off, and the flipped mixer.<br>The same <code>world.c</code> and <code>control.c</code> compile into the firmware unchanged.</p>
+<p><strong>Measured by lesson 10&#x27;s M0+ model</strong> (<code>host/cycles.py</code>): the cycle<br>budget — 48.8 % of the CPU for world plus controller at 1 wait state.</p>
+<p><strong>Not measured:</strong> anything on Wokwi. Not the display, not the buttons, not<br>the MPU6050&#x27;s axes, not what <code>stats</code> prints. The M0+ model is a timing<br>table, not silicon: Wokwi&#x27;s own cycle count is a third opinion, and the<br>firmware prints it.</p>
+<p><strong>Not modelled:</strong> translation (a gimbal, slide 6), battery sag, propeller<br>aerodynamics beyond linear thrust, frame flex. A real drone is harder.</p>
+</section>
+<section class="slide">
+<h2>Slide 27: What Carries Forward</h2>
+<ul><li><strong>The contract.</strong> Lesson 14 adds position: the same <code>sensors_t</code> grows a barometer and a position fix, and the attitude controller you tuned here becomes the inner loop of a position loop — a third level of cascade.</li><li><strong>Measure before you optimise.</strong> The plant cost more than the controller, and nobody would have guessed which line. A cycle count found it in one run.</li><li><strong>The failsafe list.</strong> Every robot in lessons 15–18 has its own version of &quot;disarm when the estimate is absurd, when the sensor is stale, when the operator lets go&quot; — and the same blind spot: it can only check what it can see.</li><li><strong>Integrators wind, signs flip, loops buzz.</strong> Lesson 17&#x27;s balancing robot is this lesson&#x27;s roll axis, standing on two wheels with gravity pulling it over — PID against LQR.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:13_Drone_Attitude', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:13_Drone_Attitude') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

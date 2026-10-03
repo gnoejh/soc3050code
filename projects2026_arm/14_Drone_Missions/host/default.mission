@@ -1,0 +1,17 @@
+# default.mission - the mission button A flies, as a text file.
+# The same five waypoints as fc_mission_default() in flight.c.
+#
+#   wp    X  Y  ALT      metres: east, north, up - home is 0 0
+#   param NAME VALUE     any $PARAM the drone knows (integer, see Slide 18)
+#
+# Lines starting with # are comments.  Every waypoint must lie inside the
+# fence (50 m radius, 30 m ceiling) or the drone refuses $MISSION,START.
+
+param CRUISE 400        # cm/s - 4 m/s along each leg
+param ACCEPT 100        # cm   - a waypoint counts as reached within 1 m
+
+wp   20.0    0.0    6.0
+wp   25.0   20.0    8.0
+wp    0.0   30.0   10.0
+wp  -20.0   15.0    8.0
+wp  -15.0  -10.0    6.0

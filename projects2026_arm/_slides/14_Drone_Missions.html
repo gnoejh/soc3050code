@@ -1,0 +1,1429 @@
+<title>Drone Missions: Where to Go, and How to Come Home</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1c1f; --muted: #5b6270; --rule: #dfe3ea;
+    --accent: #1f5fa8; --code-bg: #f5f7fa; --code-fg: #22262b;
+    --th-bg: #eef2f7; --mark: #0a7a4a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+      --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+      --th-bg: #1f242c; --mark: #56d39a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --fg: #e6e9ee; --muted: #9aa3b2; --rule: #2b313b;
+    --accent: #78b4f0; --code-bg: #1b1f26; --code-fg: #dfe4ec;
+    --th-bg: #1f242c; --mark: #56d39a;
+  }
+
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .slide {
+    display: none; box-sizing: border-box; min-height: 100vh;
+    padding: 4.6rem 4rem 5rem; max-width: 1180px; margin: 0 auto;
+  }
+  .slide.active { display: block; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.65rem; margin: 0 0 1rem; color: var(--accent); letter-spacing: -.01em; }
+  h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  ul, ol { margin: .5rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .28rem 0; }
+  a { color: var(--accent); }
+  code {
+    background: var(--code-bg); color: var(--code-fg); padding: .1em .35em;
+    border-radius: 4px; font-size: .89em;
+    font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .85rem 1rem; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+  table { border-collapse: collapse; margin: .8rem 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--rule); padding: .38rem .7rem; text-align: left; }
+  th { background: var(--th-bg); }
+  strong { font-weight: 650; }
+
+  .topbar {
+    position: fixed; left: 0; right: 0; top: 0; height: 2.2rem; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .topbar .spacer { flex: 1; }
+  .topbar .deck-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ---- diagrams -------------------------------------------------------
+     A ```svg block lands here.  Shapes inherit the page colour through
+     currentColor, so one diagram works in both themes.  The helper classes
+     save every deck from restating the same fills and strokes. */
+  .diagram { margin: 1.1rem 0; text-align: center; color: var(--fg); }
+  .diagram svg { max-width: 100%; height: auto; overflow: visible; }
+  .diagram text {
+    fill: currentColor; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; dominant-baseline: middle;
+  }
+  .diagram .mono   { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .diagram .lbl    { fill: var(--muted); font-size: 11px; }
+  .diagram .box    { fill: var(--code-bg); stroke: currentColor; stroke-width: 1.5; }
+  .diagram .reg    { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .diagram .hi     { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .diagram .hifill { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .ok     { fill: none; stroke: var(--mark); stroke-width: 2; }
+  .diagram .wire   { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .diagram text.hi { fill: var(--accent); stroke: none; font-weight: 600; }
+  .diagram .halo   { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .diagram .dash   { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .diagram figcaption { color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+
+  .topbar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 2.6rem;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.2rem;
+    background: var(--bg); border-top: 1px solid var(--rule);
+    font-size: .8rem; color: var(--muted);
+  }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; color: var(--muted); background: none;
+    border: 1px solid var(--rule); border-radius: 5px; padding: .1rem .55rem;
+    cursor: pointer;
+  }
+  .bar button:hover { color: var(--fg); }
+
+  /* overview grid */
+  body.grid .slide {
+    display: block; min-height: 0; padding: 1rem; margin: 0;
+    border: 1px solid var(--rule); border-radius: 8px;
+    zoom: .42; cursor: pointer; overflow: hidden; height: 44rem;
+  }
+  body.grid #deck {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .8rem; padding: 3rem 1rem 4rem;
+  }
+
+  @media print {
+    .bar, .topbar { display: none; }
+    .slide { display: block !important; page-break-after: always; min-height: 0; padding: 1.2cm; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+
+<div class="topbar">
+  <span><a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual (PDF)</a></span>
+  <span><a href="UM2953_Nucleo64_MB1717.pdf" target="_blank" rel="noopener">Board manual (PDF)</a></span>
+  <span><a href="https://docs.wokwi.com/parts/board-st-nucleo-c031c6" target="_blank" rel="noopener">Nucleo-C031C6 board</a></span>
+  <span><a href="board-pins.html" target="_blank" rel="noopener">Board pins</a></span>
+  <span><a href="https://colab.research.google.com/github/gnoejh/soc3050code/blob/main/projects2026_arm/_notebooks/SOC3050_ARM.ipynb" target="_blank" rel="noopener">Open in Colab</a></span>
+  <span class="spacer"></span>
+  <span class="deck-name">Drone Missions: Where to Go, and How to Come Home</span>
+</div>
+
+<div id="deck">
+<section class="slide">
+<h1>Drone Missions: Where to Go, and How to Come Home</h1>
+<h2>SOC3050 ARM Edition — Part 3, Applications</h2>
+<p><strong>Reference</strong>: <a href="https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">STM32 Reference Manual</a> ·<br><strong>Board manual</strong>: <a href="https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf" target="_blank" rel="noopener">UM2953, STM32 Nucleo-64 boards (MB1717)</a> ·<br><strong>Protocol</strong>: <a href="https://mavlink.io/en/services/mission.html" target="_blank" rel="noopener">MAVLink mission protocol</a></p>
+<p><strong>Press A. A drone takes off, flies five waypoints in a gale, comes home and<br>lands on the spot it left — and if you push it past the fence or drain its<br>battery, it decides to come home on its own.</strong></p>
+<p>Lesson 13 kept a drone level. This lesson makes it <em>go somewhere</em>: position<br>hold, missions sent from Python, and the failsafes every real autopilot has.<br>There is no drone in Wokwi, so the firmware carries one — a simulated aircraft<br>in its own RTOS task, seen by the flight computer only through noisy, late<br>sensors.</p>
+<p>Every number marked <strong>measured on the host</strong> comes from <code>host/run.sh</code>, which<br>compiles this lesson&#x27;s own <code>world.c</code>, <code>flight.c</code>, <code>mavlite.c</code> and <code>ui.c</code> with<br>the PC&#x27;s gcc and flies them. Nothing in this deck was watched in Wokwi.</p>
+</section>
+<section class="slide">
+<h2>The Board: This Lesson&#x27;s Pins</h2>
+<p>Before any register, find the pins. Every highlighted dot is a header pin that<br>this lesson&#x27;s <code>diagram.json</code> wires something to — the same circuit you paste<br>into Wokwi — at its position on the Nucleo-C031C6, to scale. A label reads<br><em>MCU pin (header name, if different)</em> and what the pin does here.</p>
+<p>The two outer double rows are ST&#x27;s <strong>morpho</strong> headers, which reach every pin<br>of the chip; the two inner single rows are the <strong>Arduino</strong>-compatible header<br>(A0–A5 on the left, D0–D15 on the right). Some MCU pins appear on both — PA5 is<br>also <code>D13</code> — so the highlighted position is the one this lesson&#x27;s wire uses.<br>The real board&#x27;s headers are drawn in its manual, UM2953 (top bar).</p>
+<figure class="diagram"><!-- pinmap:board - generated by _build/pinmap.py; edit the lesson's diagram.json or pinmap.py, not this -->
+<svg viewBox="0 0 1020 609" role="img" aria-label="Nucleo-C031C6 headers to scale, with this lesson's pins highlighted">
+  <text x="510" y="18" text-anchor="middle" class="lbl">Nucleo-C031C6 headers, to scale, as Wokwi lays them out - this lesson's wires highlighted</text>
+  <rect class="box" x="300" y="46" width="420" height="502" rx="10"/>
+  <text x="510" y="80" text-anchor="middle" class="lbl">Nucleo-C031C6 (MB1717)</text>
+  <text x="510" y="98" text-anchor="middle" class="lbl">headers only - components not drawn</text>
+  <circle cx="316.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="316.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="332.0" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="361.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="702.0" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="395.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="501.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="686.8" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="242.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="258.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="273.3" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="288.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="303.8" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="319.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="334.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="349.5" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="364.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="380.0" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="410.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="425.7" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="440.9" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="456.2" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="471.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="486.6" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="655.8" cy="501.4" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <circle cx="656.1" cy="517.1" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <text x="324" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <text x="362" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="656" y="582" text-anchor="middle" class="lbl">Arduino</text>
+  <text x="694" y="566" text-anchor="middle" class="lbl">ST morpho</text>
+  <circle cx="332.0" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="316.8" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="361.8" cy="349.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="288.5" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="380.0" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <circle cx="332.0" cy="395.2" r="4" fill="currentColor" fill-opacity="0.45"/>
+  <path class="dash" d="M332.0 440.9 L292.0 440.9"/>
+  <circle class="hifill" cx="332.0" cy="440.9" r="5"/>
+  <circle class="hi" cx="332.0" cy="440.9" r="5" fill="none"/>
+  <text x="286.0" y="444.9" text-anchor="end" class="mono" font-size="13">PA0  joystick HORZ - ADC IN0</text>
+  <path class="dash" d="M332.0 456.2 L292.0 456.2"/>
+  <circle class="hifill" cx="332.0" cy="456.2" r="5"/>
+  <circle class="hi" cx="332.0" cy="456.2" r="5" fill="none"/>
+  <text x="286.0" y="460.2" text-anchor="end" class="mono" font-size="13">PA1  joystick VERT - ADC IN1</text>
+  <path class="dash" d="M332.0 471.4 L292.0 471.4"/>
+  <circle class="hifill" cx="332.0" cy="471.4" r="5"/>
+  <circle class="hi" cx="332.0" cy="471.4" r="5" fill="none"/>
+  <text x="286.0" y="475.4" text-anchor="end" class="mono" font-size="13">PA4  knob = wind - ADC IN4</text>
+  <path class="dash" d="M316.8 517.1 L292.0 517.1"/>
+  <circle class="hifill" cx="316.8" cy="517.1" r="5"/>
+  <circle class="hi" cx="316.8" cy="517.1" r="5" fill="none"/>
+  <text x="286.0" y="521.1" text-anchor="end" class="mono" font-size="13">PA2  USART2 TX - mission link</text>
+  <path class="dash" d="M686.8 258.0 L728.0 258.0"/>
+  <circle class="hifill" cx="686.8" cy="258.0" r="5"/>
+  <circle class="hi" cx="686.8" cy="258.0" r="5" fill="none"/>
+  <text x="734.0" y="262.0" text-anchor="start" class="mono" font-size="13">PB8  I2C1 SCL - OLED</text>
+  <path class="dash" d="M686.8 273.3 L728.0 273.3"/>
+  <circle class="hifill" cx="686.8" cy="273.3" r="5"/>
+  <circle class="hi" cx="686.8" cy="273.3" r="5" fill="none"/>
+  <text x="734.0" y="277.3" text-anchor="start" class="mono" font-size="13">PB9  I2C1 SDA - OLED</text>
+  <path class="dash" d="M702.0 303.8 L728.0 303.8"/>
+  <circle class="hifill" cx="702.0" cy="303.8" r="5"/>
+  <circle class="hi" cx="702.0" cy="303.8" r="5" fill="none"/>
+  <text x="734.0" y="307.8" text-anchor="start" class="mono" font-size="13">PA3  USART2 RX - mission link</text>
+  <path class="dash" d="M686.8 334.2 L728.0 334.2"/>
+  <circle class="hifill" cx="686.8" cy="334.2" r="5"/>
+  <circle class="hi" cx="686.8" cy="334.2" r="5" fill="none"/>
+  <text x="734.0" y="338.2" text-anchor="start" class="mono" font-size="13">PA6  buzzer - TIM3_CH1</text>
+  <path class="dash" d="M686.8 425.7 L728.0 425.7"/>
+  <circle class="hifill" cx="686.8" cy="425.7" r="5"/>
+  <circle class="hi" cx="686.8" cy="425.7" r="5" fill="none"/>
+  <text x="734.0" y="429.7" text-anchor="start" class="mono" font-size="13">PB5  button B - return to launch</text>
+  <path class="dash" d="M686.8 440.9 L728.0 440.9"/>
+  <circle class="hifill" cx="686.8" cy="440.9" r="5"/>
+  <circle class="hi" cx="686.8" cy="440.9" r="5" fill="none"/>
+  <text x="734.0" y="444.9" text-anchor="start" class="mono" font-size="13">PB4  button A - fly mission</text>
+  <path class="dash" d="M686.8 471.4 L728.0 471.4"/>
+  <circle class="hifill" cx="686.8" cy="471.4" r="5"/>
+  <circle class="hi" cx="686.8" cy="471.4" r="5" fill="none"/>
+  <text x="734.0" y="475.4" text-anchor="start" class="mono" font-size="13">PB3  joystick SEL - HOLD</text>
+  <text x="510" y="604" text-anchor="middle" class="lbl">grey dots: power and ground wires (3V3, GND)</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>The Chip: The Same Pins, as Port Bits</h2>
+<p>Inside the chip the header positions disappear: every pin is <strong>one bit<br>position in its port&#x27;s registers</strong>. Pin <em>n</em> of GPIOA is bit <em>n</em> of<br><code>GPIOA-&gt;IDR</code>, bits 2*n*+1 : 2*n* of <code>GPIOA-&gt;MODER</code>, and so on (lesson 05,<br>slide 4). Each cell below is one pin, drawn in register order, marked with how<br>this lesson configures it.</p>
+<figure class="diagram"><!-- pinmap:chip - generated by _build/pinmap.py; edit pinmap.py's LESSONS table, not this -->
+<svg viewBox="0 0 620 365" role="img" aria-label="Ports as register bits, with this lesson's pins marked">
+  <text x="310" y="18" text-anchor="middle" class="lbl">Inside the chip: each port is 16 pins, drawn in register order - pin 15 left, pin 0 right</text>
+  <text x="76" y="62" text-anchor="end" class="mono">GPIOA</text>
+  <rect class="reg" x="88" y="40" width="29" height="34" rx="3"/>
+  <text x="102.5" y="54" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="40" width="29" height="34" rx="3"/>
+  <text x="134.5" y="54" text-anchor="middle" class="mono lbl">14</text>
+  <text x="134.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="152" y="40" width="29" height="34" rx="3"/>
+  <text x="166.5" y="54" text-anchor="middle" class="mono lbl">13</text>
+  <text x="166.5" y="68" text-anchor="middle" class="lbl">SWD</text>
+  <rect class="reg" x="184" y="40" width="29" height="34" rx="3"/>
+  <text x="198.5" y="54" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="40" width="29" height="34" rx="3"/>
+  <text x="230.5" y="54" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="40" width="29" height="34" rx="3"/>
+  <text x="262.5" y="54" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="reg" x="280" y="40" width="29" height="34" rx="3"/>
+  <text x="294.5" y="54" text-anchor="middle" class="mono lbl">9</text>
+  <rect class="reg" x="312" y="40" width="29" height="34" rx="3"/>
+  <text x="326.5" y="54" text-anchor="middle" class="mono lbl">8</text>
+  <rect class="reg" x="344" y="40" width="29" height="34" rx="3"/>
+  <text x="358.5" y="54" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="hifill" x="376" y="40" width="29" height="34" rx="3"/>
+  <text x="390.5" y="54" text-anchor="middle" class="mono lbl">6</text>
+  <text x="390.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="reg" x="408" y="40" width="29" height="34" rx="3"/>
+  <text x="422.5" y="54" text-anchor="middle" class="mono lbl">5</text>
+  <rect class="hifill" x="440" y="40" width="29" height="34" rx="3"/>
+  <text x="454.5" y="54" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="472" y="40" width="29" height="34" rx="3"/>
+  <text x="486.5" y="54" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="504" y="40" width="29" height="34" rx="3"/>
+  <text x="518.5" y="54" text-anchor="middle" class="mono lbl">2</text>
+  <text x="518.5" y="68" text-anchor="middle" class="mono">af1</text>
+  <rect class="hifill" x="536" y="40" width="29" height="34" rx="3"/>
+  <text x="550.5" y="54" text-anchor="middle" class="mono lbl">1</text>
+  <text x="550.5" y="68" text-anchor="middle" class="mono">an</text>
+  <rect class="hifill" x="568" y="40" width="29" height="34" rx="3"/>
+  <text x="582.5" y="54" text-anchor="middle" class="mono lbl">0</text>
+  <text x="582.5" y="68" text-anchor="middle" class="mono">an</text>
+  <text x="88" y="94" class="mono lbl" xml:space="preserve">PA6   af1  buzzer - TIM3_CH1</text>
+  <text x="88" y="109" class="mono lbl" xml:space="preserve">PA4   an   knob = wind - ADC IN4</text>
+  <text x="88" y="124" class="mono lbl" xml:space="preserve">PA3   af1  USART2 RX - mission link</text>
+  <text x="88" y="139" class="mono lbl" xml:space="preserve">PA2   af1  USART2 TX - mission link</text>
+  <text x="88" y="154" class="mono lbl" xml:space="preserve">PA1   an   joystick VERT - ADC IN1</text>
+  <text x="88" y="169" class="mono lbl" xml:space="preserve">PA0   an   joystick HORZ - ADC IN0</text>
+  <text x="76" y="220" text-anchor="end" class="mono">GPIOB</text>
+  <rect class="reg" x="88" y="198" width="29" height="34" rx="3"/>
+  <text x="102.5" y="212" text-anchor="middle" class="mono lbl">15</text>
+  <rect class="reg" x="120" y="198" width="29" height="34" rx="3"/>
+  <text x="134.5" y="212" text-anchor="middle" class="mono lbl">14</text>
+  <rect class="reg" x="152" y="198" width="29" height="34" rx="3"/>
+  <text x="166.5" y="212" text-anchor="middle" class="mono lbl">13</text>
+  <rect class="reg" x="184" y="198" width="29" height="34" rx="3"/>
+  <text x="198.5" y="212" text-anchor="middle" class="mono lbl">12</text>
+  <rect class="reg" x="216" y="198" width="29" height="34" rx="3"/>
+  <text x="230.5" y="212" text-anchor="middle" class="mono lbl">11</text>
+  <rect class="reg" x="248" y="198" width="29" height="34" rx="3"/>
+  <text x="262.5" y="212" text-anchor="middle" class="mono lbl">10</text>
+  <rect class="hifill" x="280" y="198" width="29" height="34" rx="3"/>
+  <text x="294.5" y="212" text-anchor="middle" class="mono lbl">9</text>
+  <text x="294.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="hifill" x="312" y="198" width="29" height="34" rx="3"/>
+  <text x="326.5" y="212" text-anchor="middle" class="mono lbl">8</text>
+  <text x="326.5" y="226" text-anchor="middle" class="mono">af6</text>
+  <rect class="reg" x="344" y="198" width="29" height="34" rx="3"/>
+  <text x="358.5" y="212" text-anchor="middle" class="mono lbl">7</text>
+  <rect class="reg" x="376" y="198" width="29" height="34" rx="3"/>
+  <text x="390.5" y="212" text-anchor="middle" class="mono lbl">6</text>
+  <rect class="hifill" x="408" y="198" width="29" height="34" rx="3"/>
+  <text x="422.5" y="212" text-anchor="middle" class="mono lbl">5</text>
+  <text x="422.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="440" y="198" width="29" height="34" rx="3"/>
+  <text x="454.5" y="212" text-anchor="middle" class="mono lbl">4</text>
+  <text x="454.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="hifill" x="472" y="198" width="29" height="34" rx="3"/>
+  <text x="486.5" y="212" text-anchor="middle" class="mono lbl">3</text>
+  <text x="486.5" y="226" text-anchor="middle" class="mono">in</text>
+  <rect class="reg" x="504" y="198" width="29" height="34" rx="3"/>
+  <text x="518.5" y="212" text-anchor="middle" class="mono lbl">2</text>
+  <rect class="reg" x="536" y="198" width="29" height="34" rx="3"/>
+  <text x="550.5" y="212" text-anchor="middle" class="mono lbl">1</text>
+  <rect class="reg" x="568" y="198" width="29" height="34" rx="3"/>
+  <text x="582.5" y="212" text-anchor="middle" class="mono lbl">0</text>
+  <text x="88" y="252" class="mono lbl" xml:space="preserve">PB9   af6  I2C1 SDA - OLED</text>
+  <text x="88" y="267" class="mono lbl" xml:space="preserve">PB8   af6  I2C1 SCL - OLED</text>
+  <text x="88" y="282" class="mono lbl" xml:space="preserve">PB5   in   button B - return to launch</text>
+  <text x="88" y="297" class="mono lbl" xml:space="preserve">PB4   in   button A - fly mission</text>
+  <text x="88" y="312" class="mono lbl" xml:space="preserve">PB3   in   joystick SEL - HOLD</text>
+  <text x="310" y="357" text-anchor="middle" class="lbl">in = MODER 00 · out = 01 · afN = 10 with AFR = N · an = 11 - lesson 05, slides 4-5</text>
+</svg></figure>
+</section>
+<section class="slide">
+<h2>Slide 1: Two Tiers, as in Real Drones</h2>
+<p>Every serious drone splits the work the same way:</p>
+<table><thead><tr><th></th><th>On the aircraft (C, RTOS)</th><th>On the ground (Python)</th></tr></thead><tbody><tr><td><strong>real world</strong></td><td>PX4, ArduPilot on a flight controller</td><td>QGroundControl, Mission Planner</td></tr><tr><td><strong>here</strong></td><td><code>flight.c</code> in the <code>ctl</code> task</td><td><code>host/mission.py</code></td></tr><tr><td><strong>owns</strong></td><td>estimation, control loops, modes, <strong>failsafes</strong></td><td>the mission, the log, the score</td></tr><tr><td><strong>rate</strong></td><td>50 Hz, hard deadline</td><td>whenever a human clicks</td></tr><tr><td><strong>if the link dies</strong></td><td>keeps flying, decides for itself</td><td>can only watch</td></tr></tbody></table>
+<p>The rule that follows: <strong>anything that must happen in time, or must happen<br>when nobody is listening, lives on the aircraft.</strong> The ground station sends<br><em>intentions</em> — &quot;fly these points&quot;, &quot;come home&quot; — never stick movements.</p>
+<p>The link between them is lesson 08&#x27;s <code>$BODY*CS</code> frame, carrying a cut-down<br>MAVLink (slide 20).</p>
+</section>
+<section class="slide">
+<h2>Slide 2: The Whole Machine</h2>
+<figure class="diagram"><svg viewBox="0 0 760 300" role="img" aria-label="Five RTOS tasks: world steps the simulated drone, ctl runs the flight computer through sensors and actuators, link and tel talk to the Python host, ui reads the controls and draws the OLED">
+  <rect class="hifill" x="20" y="30" width="180" height="70" rx="6"/>
+  <text x="110" y="55" text-anchor="middle" class="mono">world  100 Hz</text>
+  <text x="110" y="77" text-anchor="middle" class="lbl">world.c: aircraft, wind, battery</text>
+  <rect class="box" x="300" y="30" width="180" height="70" rx="6"/>
+  <text x="390" y="55" text-anchor="middle" class="mono">ctl  50 Hz</text>
+  <text x="390" y="77" text-anchor="middle" class="lbl">flight.c: control_step()</text>
+  <path class="wire" d="M200 50 H300"/>
+  <polygon points="300,50 292,46 292,54" fill="currentColor"/>
+  <text x="250" y="42" text-anchor="middle" class="lbl">sensors_t</text>
+  <path class="wire" d="M300 82 H200"/>
+  <polygon points="200,82 208,78 208,86" fill="currentColor"/>
+  <text x="250" y="96" text-anchor="middle" class="lbl">actuators_t</text>
+  <rect class="box" x="300" y="160" width="180" height="50" rx="6"/>
+  <text x="390" y="185" text-anchor="middle" class="mono">link (on byte) · tel 5 Hz</text>
+  <path class="wire" d="M390 100 V160"/>
+  <text x="400" y="132" class="lbl">fc_lock</text>
+  <rect class="box" x="580" y="160" width="160" height="50" rx="6"/>
+  <text x="660" y="180" text-anchor="middle" class="mono">mission.py</text>
+  <text x="660" y="198" text-anchor="middle" class="lbl">the PC: plan, send, score</text>
+  <path class="wire" d="M480 178 H580 M580 194 H480"/>
+  <polygon points="580,178 572,174 572,182" fill="currentColor"/>
+  <polygon points="480,194 488,190 488,198" fill="currentColor"/>
+  <text x="530" y="170" text-anchor="middle" class="lbl">$WP $MODE</text>
+  <text x="530" y="212" text-anchor="middle" class="lbl">$POS $EVT</text>
+  <rect class="box" x="20" y="160" width="180" height="70" rx="6"/>
+  <text x="110" y="185" text-anchor="middle" class="mono">ui  50 Hz</text>
+  <text x="110" y="207" text-anchor="middle" class="lbl">pad, knob, OLED 10 Hz, beep</text>
+  <path class="wire" d="M200 185 H300"/>
+  <text x="250" y="177" text-anchor="middle" class="lbl">buttons</text>
+  <path class="dash" d="M110 160 V100"/>
+  <text x="118" y="132" class="lbl">knob = wind</text>
+  <text x="380" y="270" text-anchor="middle" class="lbl">The flight computer sees the world ONLY through sensors_t - exactly what it would see on a real airframe.</text>
+</svg></figure>
+<p>One contract crosses the line between plant and controller — <code>control.h</code>:</p>
+<pre class="lang-c"><code>void control_step(const sensors_t *in, actuators_t *out);</code></pre>
+<p><code>sensors_t</code> carries what a flight controller really gets: acceleration, a<br>compass, a barometer, a GPS fix that is 200 ms old. <code>actuators_t</code> carries what<br>it really commands: tilt, thrust, yaw rate. Lesson 13 implements the same<br>function one level down.</p>
+</section>
+<section class="slide">
+<h2>Slide 3: Why We May Pretend the Attitude Loop Is Instant</h2>
+<p>Lesson 13&#x27;s loops turn &quot;tilt 10° right&quot; into four motor speeds, hundreds of<br>times a second. This lesson <strong>does not simulate them</strong>. It replaces all of<br>lesson 13 with one line per axis:</p>
+<pre class="lang-c"><code>w-&gt;roll += (r_cmd - w-&gt;roll) * dt / w-&gt;tau_att;      /* world.c: a first-order lag, 80 ms */</code></pre>
+<p>That is legitimate when the inner loop is <strong>much faster</strong> than the outer one —<br><em>time-scale separation</em>. Seen from a loop that reacts in seconds, a loop that<br>settles in 80 ms is &quot;already there&quot;. Every cascaded controller you will meet<br>rests on that argument; here it is <strong>measured</strong>, by slowing the inner loop<br>down (<code>TAU</code>) and holding position in an 8 m/s wind:</p>
+<table><thead><tr><th>attitude lag</th><th>inner bandwidth</th><th>× velocity loop</th><th>seen RMS</th><th>true RMS</th></tr></thead><tbody><tr><td>40 ms</td><td>25 rad/s</td><td>12.5 ×</td><td>0.74 m</td><td>0.99 m</td></tr><tr><td><strong>80 ms (this lesson)</strong></td><td><strong>12.5 rad/s</strong></td><td><strong>6.2 ×</strong></td><td><strong>0.76 m</strong></td><td><strong>1.01 m</strong></td></tr><tr><td>200 ms</td><td>5 rad/s</td><td>2.5 ×</td><td>0.83 m</td><td>1.06 m</td></tr><tr><td>400 ms</td><td>2.5 rad/s</td><td>1.2 ×</td><td>1.30 m</td><td>1.50 m</td></tr><tr><td>800 ms</td><td>1.2 rad/s</td><td>0.6 ×</td><td>3.37 m</td><td>3.47 m</td></tr></tbody></table>
+<p><em>Measured on the host.</em> Above about 5× the lag hardly matters; at 1× the<br>abstraction — and the hold — falls apart. The rule of thumb &quot;each loop 5–10×<br>slower than the one inside it&quot; is this table.</p>
+</section>
+<section class="slide">
+<h2>Slide 4: The Model — a Thrust Vector, Tilted</h2>
+<figure class="diagram"><svg viewBox="0 0 640 230" role="img" aria-label="A quadcopter tilted by pitch theta: its thrust T points along the body axis; the horizontal component accelerates it; drag opposes airspeed; gravity pulls down">
+  <g transform="translate(200,130) rotate(18)">
+    <rect class="box" x="-70" y="-6" width="140" height="12" rx="4"/>
+    <rect class="reg" x="-86" y="-14" width="32" height="6"/>
+    <rect class="reg" x="54" y="-14" width="32" height="6"/>
+    <path class="wire" d="M0 -6 V-90"/>
+    <polygon points="0,-96 -5,-86 5,-86" fill="currentColor"/>
+  </g>
+  <text x="250" y="30" class="mono">T (thrust)</text>
+  <path class="dash" d="M200 130 V30"/>
+  <text x="206" y="58" class="lbl">θ</text>
+  <path class="wire" d="M200 130 V200"/>
+  <polygon points="200,206 195,196 205,196" fill="currentColor"/>
+  <text x="208" y="200" class="mono">g</text>
+  <path class="wire" d="M200 130 H110"/>
+  <polygon points="104,130 114,125 114,135" fill="currentColor"/>
+  <text x="60" y="122" class="mono">drag</text>
+  <text x="60" y="148" class="lbl">-k (v - wind)</text>
+  <text x="380" y="70" class="mono">a_fwd   = T sinθ cosφ</text>
+  <text x="380" y="95" class="mono">a_right = T sinφ</text>
+  <text x="380" y="120" class="mono">a_up    = T cosθ cosφ - g</text>
+  <text x="380" y="150" class="mono">a      -= 0.35 (v - wind)</text>
+  <text x="380" y="185" class="lbl">rotated from body to world by the yaw;</text>
+  <text x="380" y="201" class="lbl">integrated at 100 Hz (semi-implicit Euler)</text>
+</svg></figure>
+<p>A multirotor can only push along its own axis. <strong>To move sideways it must<br>tilt</strong>, and the price of tilting is lift: tip 25° and the vertical share of<br>thrust falls by <code>1 - cos 25° = 9%</code>, which the altitude loop must make up.</p>
+<p>Drag is <strong>linear in airspeed</strong> — rotor drag, the dominant term for a small<br>multirotor at these speeds — and it acts on velocity <em>relative to the air</em>.<br>That one choice is where the wind enters the physics: hovering in an 8 m/s<br>wind costs <code>0.35 × 8 = 2.8 m/s²</code> of permanent sideways push.</p>
+</section>
+<section class="slide">
+<h2>Slide 5: Wind You Can Repeat</h2>
+<p>The wind is a steady part (the knob, 0–10 m/s) plus <strong>gusts</strong>: each axis an<br>Ornstein–Uhlenbeck process — decays toward zero over 2 s, kicked by noise,<br>settling at 30% of the steady wind.</p>
+<pre class="lang-c"><code>float kick = sigma * m_sqrt(2.0f * dt / GUST_TAU);
+w-&gt;gust_x += -w-&gt;gust_x * dt / GUST_TAU + kick * gauss(w);</code></pre>
+<p>The noise comes from <strong>xorshift32</strong> — three shifts, three XORs, period<br>2³² − 1 — and Gaussians from summing three uniforms (central limit theorem: no<br><code>logf</code>, no <code>sqrtf</code>, cheap with no FPU):</p>
+<pre class="lang-c"><code>x ^= x &lt;&lt; 13;  x ^= x &gt;&gt; 17;  x ^= x &lt;&lt; 5;</code></pre>
+<p><strong>Deterministic on purpose.</strong> One seed is one exact storm, on the board and on<br>the PC. <em>Measured on the host:</em> the same mission flown twice with seed 1 in<br>8 m/s wind gives a <strong>bit-identical</strong> flight. So when your change moves a<br>number, your change did it — not luck.</p>
+</section>
+<section class="slide">
+<h2>Slide 6: A Battery That Knows How Hard You Fly</h2>
+<p>Momentum theory says rotor power grows as <strong>thrust^1.5</strong>. So:</p>
+<pre class="lang-c"><code>float load = w-&gt;thrust / GRAVITY;                         /* 1.0 = hover */
+w-&gt;battery -= w-&gt;drain * load * m_sqrt(load) * dt;        /* 0.35 %/s at hover */</code></pre>
+<table><thead><tr><th></th><th>value</th></tr></thead><tbody><tr><td>hover, still air</td><td>0.35 %/s → about 4.8 minutes</td></tr><tr><td>default mission, still air</td><td>100 → <strong>79.3 %</strong></td></tr><tr><td>same, 8 m/s wind</td><td>100 → <strong>76.6 %</strong> (fighting the wind costs)</td></tr><tr><td><code>BAT_LOW</code> 25 %</td><td>→ <strong>RTL</strong> (slide 17)</td></tr><tr><td><code>BAT_CRIT</code> 10 %</td><td>→ <strong>LAND where you are</strong></td></tr></tbody></table>
+<p><em>Measured on the host.</em> Climbing and leaning both cost more than hovering, so<br>a fast mission is not a free mission — the race in Lab Part 7 meets this.</p>
+</section>
+<section class="slide">
+<h2>Slide 7: Sensors That Lie a Little</h2>
+<table><thead><tr><th>Sensor</th><th>Rate</th><th>Error modelled</th><th>Why it matters</th></tr></thead><tbody><tr><td>accelerometer (world frame)</td><td>50 Hz</td><td>0.2 m/s² noise, <strong>0.03 m/s² bias</strong></td><td>integrate it and it drifts</td></tr><tr><td>compass (yaw)</td><td>50 Hz</td><td>0.01 rad</td><td>small</td></tr><tr><td>barometer</td><td>50 Hz</td><td>0.2 m noise</td><td>jumpy altitude</td></tr><tr><td><strong>GPS</strong></td><td><strong>10 Hz</strong></td><td><strong>200 ms late</strong>; 0.4 m slow wander + 0.1 m jitter</td><td>the hard one</td></tr></tbody></table>
+<p>The GPS error that matters is the <strong>slow wander</strong>: real receivers drift by<br>metres over seconds as the satellites move. <em>Measured on the host:</em> the<br>modelled GPS is off by <strong>0.65 m RMS</strong> — and no filter on board can remove an<br>error that every measurement shares. Hold that thought until slide 14.</p>
+<p>The accelerometer here is already in the <strong>world frame, gravity removed</strong>:<br>that is what lesson 13&#x27;s attitude estimate buys you. Rotating a body-frame<br>reading by the attitude is lesson 13&#x27;s job; using it is this one&#x27;s.</p>
+</section>
+<section class="slide">
+<h2>Slide 8: Estimation — Predict, Then Correct</h2>
+<p>Neither sensor alone will do: the accelerometer is fast but drifts (a 0.03<br>m/s² bias is <strong>1.5 m off after 10 s</strong>); the GPS does not drift but is slow,<br>late and jumpy. So use both:</p>
+<pre class="lang-c"><code>/* predict - every 20 ms */
+fc.vx += s-&gt;acc_x * dt;
+fc.px += fc.vx * dt;
+/* correct - every 100 ms, when a fix arrives:  r = how wrong we were */
+fc.px += a * rx;                  /* alpha = 0.25 */
+fc.vx += b * rx;                  /* beta  = 0.04 / 0.1 s */</code></pre>
+<p>An <strong>alpha-beta filter</strong> with the accelerometer as its model — the fixed-gain<br>cousin of the Kalman filter real autopilots run. <code>alpha</code> decides how much of<br>each surprise goes into the position, <code>beta</code> how much into the velocity. Both<br>are <code>$PARAM</code>s (<code>EST_A</code>, <code>EST_B</code>): turn them up and the estimate follows the<br>GPS&#x27;s jitter; turn them down and it follows the accelerometer&#x27;s drift.</p>
+</section>
+<section class="slide">
+<h2>Slide 9: The 200 ms Problem</h2>
+<figure class="diagram"><svg viewBox="0 0 680 170" role="img" aria-label="Timeline: the GPS fix arriving now describes where the drone was 200 ms ago; it is compared with the estimate stored 10 steps back, and the correction is applied to the present and to the stored history">
+  <path class="wire" d="M40 90 H640"/>
+  <polygon points="646,90 636,85 636,95" fill="currentColor"/>
+  <text x="640" y="112" text-anchor="end" class="lbl">time</text>
+  <circle cx="200" cy="90" r="6" class="hifill"/>
+  <text x="200" y="60" text-anchor="middle" class="mono">t - 200 ms</text>
+  <text x="200" y="125" text-anchor="middle" class="lbl">the drone WAS here</text>
+  <text x="200" y="141" text-anchor="middle" class="lbl">estimate stored: hx[then]</text>
+  <circle cx="560" cy="90" r="6" class="box"/>
+  <text x="560" y="60" text-anchor="middle" class="mono">now</text>
+  <text x="560" y="125" text-anchor="middle" class="lbl">the fix ARRIVES</text>
+  <path class="dash" d="M560 80 C 470 20, 290 20, 205 80"/>
+  <text x="380" y="22" text-anchor="middle" class="lbl">compare the fix with the estimate from THEN, not now</text>
+  <text x="380" y="160" text-anchor="middle" class="lbl">10 control steps of history = 200 ms; the correction shifts the present AND the stored past</text>
+</svg></figure>
+<pre class="lang-c"><code>uint8_t then = (uint8_t)((now + FC_HIST - GPS_LAG_STEPS) % FC_HIST);
+float rx = s-&gt;gps_x - fc.hx[then];               /* the past against the past */
+...
+for (unsigned k = 0; k &lt; FC_HIST; k++) { fc.hx[k] += a * rx; fc.hy[k] += a * ry; }</code></pre>
+<p>Compare a late fix with <em>now</em> and, at 4 m/s, you blame the GPS for the 0.8 m<br>you flew while it was in the post. <em>Measured on the host</em>, default mission:</p>
+<table><thead><tr><th></th><th>still air</th><th>8 m/s wind</th></tr></thead><tbody><tr><td>estimate error, compared with the past (this code)</td><td><strong>0.69 m</strong> RMS</td><td><strong>0.68 m</strong></td></tr><tr><td>compared with now (<code>GPS_LAG_STEPS 0</code>)</td><td>1.08 m</td><td>0.98 m</td></tr><tr><td>the GPS&#x27;s own slow error, for scale</td><td>0.65 m</td><td>0.64 m</td></tr></tbody></table>
+<p>Real autopilots call this <strong>delayed-state fusion</strong>. It is the reason their<br>estimators keep a ring buffer of the past — like <code>fc.hx[]</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 10: Altitude — a Complementary Filter</h2>
+<p>The barometer has no delay here, so altitude gets the same idea in its simplest<br>form: trust the accelerometer for fast changes and the baro for the average.</p>
+<pre class="lang-c"><code>float r = s-&gt;baro_alt - fc.pz;
+fc.vz += (s-&gt;acc_z + 4.0f * r) * dt;          /* omega^2  = 4    */
+fc.pz += (fc.vz    + 2.8f * r) * dt;          /* 2 zeta w = 2.8  */</code></pre>
+<p>That is a second-order loop pulling the estimate toward the baro with natural<br>frequency 2 rad/s and damping 0.7: baro noise above ~0.3 Hz is filtered out,<br>accelerometer drift below it is corrected.</p>
+<p><em>Measured on the host:</em> touchdowns at <strong>0.41–0.43 m/s</strong> on every normal<br>landing — the landing logic (slide 15) trusts this estimate to know when it is<br>low enough to slow down, and when it has stopped.</p>
+</section>
+<section class="slide">
+<h2>Slide 11: Cascaded Control</h2>
+<figure class="diagram"><svg viewBox="0 0 760 170" role="img" aria-label="Cascade: position error times KP_POS gives a velocity setpoint, limited; velocity error through a PI gives an acceleration, limited by the tilt; acceleration becomes tilt and thrust; lesson 13's attitude loop and the physics close the loop through the estimator">
+  <rect class="box" x="20" y="50" width="110" height="50" rx="5"/>
+  <text x="75" y="70" text-anchor="middle" class="mono">position</text>
+  <text x="75" y="88" text-anchor="middle" class="lbl">KP_POS 1.0</text>
+  <rect class="box" x="180" y="50" width="120" height="50" rx="5"/>
+  <text x="240" y="70" text-anchor="middle" class="mono">velocity PI</text>
+  <text x="240" y="88" text-anchor="middle" class="lbl">KP_VEL 2.0, KI 0.6</text>
+  <rect class="box" x="350" y="50" width="120" height="50" rx="5"/>
+  <text x="410" y="70" text-anchor="middle" class="mono">accel → tilt</text>
+  <text x="410" y="88" text-anchor="middle" class="lbl">atan2, |tilt| ≤ 25°</text>
+  <rect class="hifill" x="520" y="50" width="100" height="50" rx="5"/>
+  <text x="570" y="70" text-anchor="middle" class="mono">lesson 13</text>
+  <text x="570" y="88" text-anchor="middle" class="lbl">tau 80 ms</text>
+  <rect class="hifill" x="650" y="50" width="90" height="50" rx="5"/>
+  <text x="695" y="78" text-anchor="middle" class="mono">physics</text>
+  <path class="wire" d="M130 75 H180 M300 75 H350 M470 75 H520 M620 75 H650"/>
+  <text x="155" y="40" text-anchor="middle" class="lbl">v_sp</text>
+  <text x="325" y="40" text-anchor="middle" class="lbl">a_sp</text>
+  <text x="495" y="40" text-anchor="middle" class="lbl">θ φ T</text>
+  <path class="dash" d="M695 100 V140 H75 V100"/>
+  <text x="380" y="155" text-anchor="middle" class="lbl">estimate (slide 8) - position to the first block, velocity to the second</text>
+</svg></figure>
+<p>Each block has one job and one <strong>limit</strong>: position error becomes a velocity no<br>faster than <code>HOLD_V</code> or <code>CRUISE</code>; velocity error becomes an acceleration no<br>larger than <code>g tan(TILT)</code> = <strong>4.57 m/s²</strong> at 25°. The limits are what make a<br>cascade safe: no position error, however large, can command more than a<br>25° lean.</p>
+<p>The bandwidths fall outward — 12.5, ~2.4, ~1 rad/s — slide 3&#x27;s separation at<br>every step.</p>
+</section>
+<section class="slide">
+<h2>Slide 12: From Acceleration to Tilt</h2>
+<p>Quoted from <code>control_step()</code>:</p>
+<pre class="lang-c"><code>float cy = m_cos(fc.yaw), sy = m_sin(fc.yaw);
+float a_fwd   = ax * cy + ay * sy;               /* world -&gt; the drone&#x27;s own axes */
+float a_right = ax * sy - ay * cy;
+float a_up    = GRAVITY + az;
+o-&gt;thrust   = m_sqrt(a_fwd * a_fwd + a_right * a_right + a_up * a_up);
+o-&gt;pitch    = m_atan2(a_fwd, a_up);
+o-&gt;roll     = m_atan2(a_right, m_sqrt(a_fwd * a_fwd + a_up * a_up));</code></pre>
+<p>This is slide 4 run backwards: &quot;I want this acceleration&quot; → &quot;point the thrust<br>vector <em>there</em>, this hard&quot;. The drone is yawed to face along each leg, so the<br>same world acceleration becomes a different pitch/roll mix as it turns — the<br>rotation by yaw does that bookkeeping.</p>
+<p><code>m_sin</code>, <code>m_atan2</code>, <code>m_sqrt</code> are <code>fmath.h</code>&#x27;s functions compiled once<br>(<code>fm.c</code>) — slide 21 explains the <code>m_</code>.</p>
+</section>
+<section class="slide">
+<h2>Slide 13: The Integral Term Is a Wind Gauge</h2>
+<p>In a steady 8 m/s wind, holding still means a <strong>permanent</strong> lean into it. A<br>proportional controller can only lean if there is an error — so without an<br>integral the drone <em>settles downwind</em>. <em>Measured on the host</em>, 30 s hold:</p>
+<table><thead><tr><th></th><th>mean offset downwind</th><th>true RMS error</th></tr></thead><tbody><tr><td><code>KI_VEL</code> = 0.6 (default)</td><td><strong>0.23 m</strong></td><td>1.01 m</td></tr><tr><td><code>KI_VEL</code> = 0</td><td><strong>1.26 m</strong></td><td>1.59 m</td></tr></tbody></table>
+<p>The prediction for the second row is a line of algebra: the drag to cancel is<br><code>0.35 × 8 = 2.8 m/s²</code>, and two proportional gains in series give<br><code>2.8 / (1.0 × 2.0) = 1.4 m</code>. Measured 1.26 m — gusts and the sampled<br>estimate account for the rest.</p>
+<p>With the integral, <code>KI_VEL × ix</code> <strong>is</strong> the 2.8 m/s² — so dividing by the drag<br>coefficient reads the wind: <em>measured</em> <strong>7.1 m/s</strong> against a true steady<br>8.0 m/s, and the tilt into it <strong>12.9°</strong>. Real autopilots estimate wind exactly<br>this way when they have no airspeed sensor.</p>
+</section>
+<section class="slide">
+<h2>Slide 14: You Cannot Hold Better Than You Can See</h2>
+<p>Position hold, 8 m/s wind with gusts, 30 s — the error split three ways<br>(<em>measured on the host</em>):</p>
+<table><thead><tr><th>error</th><th>RMS</th><th>what it is</th><th>who can fix it</th></tr></thead><tbody><tr><td><strong>seen</strong> (estimate − setpoint)</td><td><strong>0.76 m</strong></td><td>what the controller knows it is missing by</td><td><strong>tuning</strong></td></tr><tr><td><strong>blind</strong> (truth − estimate)</td><td><strong>0.67 m</strong></td><td>what the estimator gets wrong</td><td>better sensors</td></tr><tr><td><strong>true</strong> (truth − setpoint)</td><td><strong>1.01 m</strong></td><td>what a person on the ground would see</td><td>both</td></tr></tbody></table>
+<p>The drone <strong>reports</strong> the seen error and <strong>is judged on</strong> the true one. No<br>gain on board can touch the blind part: it is the GPS&#x27;s own wander (0.65 m,<br>slide 7), shared by every fix. That is why survey drones carry RTK GPS, and why<br>Lab Part 3&#x27;s target is set on the error you <em>can</em> move.</p>
+</section>
+<section class="slide">
+<h2>Slide 15: Flight Modes — One State Machine</h2>
+<figure class="diagram"><svg viewBox="0 0 760 250" role="img" aria-label="Mode state machine: DISARMED to TAKEOFF on arm; TAKEOFF to HOLD or MISSION; MISSION to RTL when done; RTL to LAND at home; LAND to DISARMED when landed; failsafes force RTL or LAND">
+  <rect class="box" x="20" y="100" width="110" height="40" rx="18"/>
+  <text x="75" y="120" text-anchor="middle" class="mono">DISARMED</text>
+  <rect class="box" x="180" y="100" width="110" height="40" rx="18"/>
+  <text x="235" y="120" text-anchor="middle" class="mono">TAKEOFF</text>
+  <rect class="box" x="340" y="30" width="110" height="40" rx="18"/>
+  <text x="395" y="50" text-anchor="middle" class="mono">HOLD</text>
+  <rect class="box" x="340" y="170" width="110" height="40" rx="18"/>
+  <text x="395" y="190" text-anchor="middle" class="mono">MISSION</text>
+  <rect class="hifill" x="500" y="100" width="110" height="40" rx="18"/>
+  <text x="555" y="120" text-anchor="middle" class="mono">RTL</text>
+  <rect class="hifill" x="640" y="100" width="100" height="40" rx="18"/>
+  <text x="690" y="120" text-anchor="middle" class="mono">LAND</text>
+  <path class="wire" d="M130 120 H180 M290 112 L340 55 M290 128 L340 185 M395 70 V170 M450 185 L500 130 M450 55 L500 110 M610 120 H640"/>
+  <path class="dash" d="M690 140 V235 H75 V140"/>
+  <text x="155" y="94" text-anchor="middle" class="lbl">A / ARM</text>
+  <text x="300" y="78" class="lbl">no mission</text>
+  <text x="300" y="170" class="lbl">mission</text>
+  <text x="402" y="125" class="lbl">A / SEL</text>
+  <text x="478" y="178" class="lbl">done</text>
+  <text x="482" y="70" class="lbl">B</text>
+  <text x="625" y="94" text-anchor="middle" class="lbl">home</text>
+  <text x="380" y="230" text-anchor="middle" class="lbl">landed: low and still for 1.5 s</text>
+  <text x="555" y="160" text-anchor="middle" class="lbl">FENCE, BAT</text>
+  <text x="690" y="160" text-anchor="middle" class="lbl">BATCRIT</text>
+</svg></figure>
+<p>Every change goes through one function, <code>enter()</code>, which <strong>logs it</strong> (an<br><code>$EVT</code> frame, with a reason) and gives the new mode a <strong>defined setpoint</strong> —<br>&quot;stay here&quot; — never whatever the last mode left behind. RTL climbs to at least<br>10 m before it travels (it never descends to go home), then flies home, then<br>lands <em>on</em> home rather than wherever it happened to stop.</p>
+</section>
+<section class="slide">
+<h2>Slide 16: Following a Line, Not Chasing a Point</h2>
+<figure class="diagram"><svg viewBox="0 0 640 170" role="img" aria-label="Two ways to fly from A to B in a crosswind: aiming at B gives a curved path pushed downwind; splitting the error into along-track and cross-track keeps the drone on the line">
+  <circle cx="60" cy="80" r="5" class="box"/><text x="50" y="62" class="mono">A</text>
+  <circle cx="580" cy="80" r="5" class="box"/><text x="590" y="62" class="mono">B</text>
+  <path class="dash" d="M60 80 H580"/>
+  <path class="wire" d="M60 80 C 220 140, 420 130, 580 80"/>
+  <text x="320" y="150" text-anchor="middle" class="lbl">LINE = 0: aim at B - the wind bends the path</text>
+  <path class="hi" d="M60 80 C 200 88, 420 88, 580 80"/>
+  <text x="320" y="104" text-anchor="middle" class="lbl">LINE = 1: along + across</text>
+  <path class="wire" d="M300 20 V55"/><polygon points="300,60 295,50 305,50" fill="currentColor"/>
+  <text x="310" y="30" class="lbl">crosswind</text>
+</svg></figure>
+<pre class="lang-c"><code>float along  = ex * tx + ey * ty;                       /* toward B, along the leg */
+float across = ex * -ty + ey * tx;                      /* off the line            */
+float va = clampf(fc.p.kp_pos * along,  fc.p.cruise);   /* limited to cruise       */
+float vc = clampf(fc.p.kp_pos * across, fc.p.cruise);   /* its own full correction */</code></pre>
+<p>Aiming at B limits the <em>whole</em> velocity vector to the cruise speed, so the<br>correction toward the line is starved while the drone is far from B. Splitting<br>the error gives the cross-track part its own budget. <em>Measured on the host</em>,<br>8 m/s wind: max cross-track <strong>2.07 m</strong> (line) against <strong>2.34 m</strong> (aim), RMS<br>1.00 against 1.13 m, for 0.2 s more flight time.</p>
+</section>
+<section class="slide">
+<h2>Slide 17: Waypoints, and What &quot;Reached&quot; Means</h2>
+<p>A waypoint counts as reached when the <strong>estimate</strong> is within <code>ACCEPT</code> (1 m)<br>horizontally and 0.7 m vertically. The next leg then starts <strong>at the<br>waypoint</strong>, not at wherever the drone was — so the planned path, not the<br>flown one, is what the cross-track error is measured against.</p>
+<p><em>Measured on the host</em>, closest true approach to each of the five waypoints<br>(m):</p>
+<table><thead><tr><th></th><th>wp 0</th><th>wp 1</th><th>wp 2</th><th>wp 3</th><th>wp 4</th></tr></thead><tbody><tr><td>still air</td><td>0.22</td><td>0.19</td><td>0.25</td><td><strong>1.73</strong></td><td>0.24</td></tr><tr><td>8 m/s wind</td><td>0.24</td><td>0.19</td><td>0.34</td><td><strong>1.74</strong></td><td>0.94</td></tr></tbody></table>
+<p>Waypoint 3 is missed by 1.7 m in <strong>both</strong> — so it is not the wind. It is<br>accepted at 1 m by an estimate that is ~0.7 m off at that moment: acceptance<br>radius plus blind error. Shrink <code>ACCEPT</code> and you pass closer, slower — the<br>trade Lab Part 7&#x27;s race is about.</p>
+</section>
+<section class="slide">
+<h2>Slide 18: Failsafes Outrank Every Command</h2>
+<p>Quoted from <code>flight.c</code>, run every 20 ms <strong>before</strong> the mode logic:</p>
+<pre class="lang-c"><code>if (fc.battery &lt; fc.p.bat_crit &amp;&amp; m != M_LAND) {
+    enter(M_LAND, R_BATTERY_CRIT);                       /* no time to get home */
+    return;
+}
+if (m == M_TAKEOFF || m == M_HOLD || m == M_MISSION) {
+    if (fc.battery &lt; fc.p.bat_low) { enter(M_RTL, R_BATTERY); return; }
+    float r2 = fc.px * fc.px + fc.py * fc.py;
+    if (r2 &gt; fc.p.fence_r * fc.p.fence_r || fc.pz &gt; fc.p.fence_alt) {
+        enter(M_RTL, R_FENCE);
+    }
+}</code></pre>
+<p><em>Measured on the host:</em></p>
+<table><thead><tr><th>Test</th><th>Result</th></tr></thead><tbody><tr><td>joystick pushes east at 3 m/s past the 50 m fence</td><td>RTL (<code>FENCE</code>) at 29.9 s; farthest <strong>51.6 m</strong>; landed <strong>0.45 m</strong> from home</td></tr><tr><td>start at 32 %, fly the mission</td><td>RTL (<code>BAT</code>) at 20.1 s, mission abandoned; landed at home (0.19 m) with <strong>17.1 %</strong></td></tr><tr><td>battery drops to 9 % at 25 s, mid-mission</td><td><strong>LAND in place</strong> (<code>BATCRIT</code>), no RTL; touched down 0.6 m from there at 0.39 m/s with <strong>4.5 %</strong> left</td></tr></tbody></table>
+<p>The order matters: critical battery is checked first and returns, because at<br>9% a trip home is the wrong answer even though the fence is fine.</p>
+</section>
+<section class="slide">
+<h2>Slide 19: Checked Before It Flies</h2>
+<p>A mission that would break the fence halfway is refused <strong>on the ground</strong>.<br><code>fc_mission_start()</code> checks every waypoint first, and arming has <strong>pre-arm<br>checks</strong>, as every real autopilot does: one second of GPS (10 fixes) and a<br>battery above <code>BAT_LOW + 5</code>.</p>
+<p><em>Measured on the host:</em></p>
+<table><thead><tr><th>Mission</th><th><code>$MISSION,START</code> answer</th></tr></thead><tbody><tr><td>no waypoints</td><td><code>ERR,EMPTY</code></td></tr><tr><td>waypoints 0 and 2, no 1</td><td><code>ERR,EMPTY</code></td></tr><tr><td>a waypoint 60 m out (fence 50 m)</td><td><code>ERR,FENCE</code></td></tr><tr><td>fixed</td><td><code>OK</code> — and the drone is in <code>TAKEOFF</code></td></tr></tbody></table>
+<p>Press A within a second of reset in Wokwi and the serial monitor should say<br><code>button A (fly): PREARM</code> — the GPS has not locked yet. (Predicted from the<br>code; not watched.)</p>
+</section>
+<section class="slide">
+<h2>Slide 20: MAVLink-lite</h2>
+<p>Real MAVLink is binary with a CRC-16; its mission upload is a handshake in<br>which the <strong>vehicle asks for each item</strong> (<code>MISSION_REQUEST_INT</code>). This lesson<br>keeps lesson 08&#x27;s printable frame and the same <em>ideas</em>:</p>
+<table><thead><tr><th>This lesson</th><th>Real MAVLink (common.xml)</th></tr></thead><tbody><tr><td><code>$MISSION,CLEAR</code></td><td><code>MISSION_CLEAR_ALL</code> (id 45)</td></tr><tr><td><code>$WP,idx,x_dm,y_dm,alt_dm</code></td><td><code>MISSION_ITEM_INT</code> (73) + <code>MAV_CMD_NAV_WAYPOINT</code> (16)</td></tr><tr><td><code>$MISSION,START</code></td><td><code>MAV_CMD_MISSION_START</code> (300)</td></tr><tr><td><code>$MODE,RTL</code> / <code>$MODE,LAND</code></td><td><code>MAV_CMD_NAV_RETURN_TO_LAUNCH</code> (20) / <code>MAV_CMD_NAV_LAND</code> (21)</td></tr><tr><td><code>$ARM</code></td><td><code>MAV_CMD_COMPONENT_ARM_DISARM</code> (400)</td></tr><tr><td><code>$PARAM,NAME,value</code></td><td><code>PARAM_SET</code> (23) / <code>PARAM_VALUE</code> (22)</td></tr><tr><td><code>$ACK,...,OK</code> / <code>ERR,reason</code></td><td><code>MISSION_ACK</code> (47), <code>COMMAND_ACK</code> (77)</td></tr><tr><td><code>$POS,...</code></td><td><code>GLOBAL_POSITION_INT</code> (33)</td></tr><tr><td><code>$EVT,t,WP,idx</code></td><td><code>MISSION_ITEM_REACHED</code> (46)</td></tr></tbody></table>
+<p>Positions are integers in <strong>decimetres</strong> from home — no floats on the wire.<br>MAVLink does the same: <code>MISSION_ITEM_INT</code> sends local positions as<br>metres × 10⁴ in an <code>int32</code>.</p>
+<p>Our upload has <strong>no handshake</strong>: the host waits for each <code>$ACK</code> and resends up<br>to three times (<code>mission.py --port</code>). Simpler, and fine on a wire that rarely<br>drops a line — Lab Part 8 asks what it would cost on a radio that does.</p>
+</section>
+<section class="slide">
+<h2>Slide 21: A Parser That Trusts Nothing</h2>
+<p><code>ml_handle()</code> checks in this order, and refuses at the first failure:</p>
+<ol><li>the checksum (lesson 08&#x27;s <code>proto_check</code>) → <code>ERR,CHECKSUM</code></li><li>the length — a body over 63 bytes is refused, <strong>never truncated</strong></li><li>the field count for that command</li><li>every number, strictly: <code>&quot;12abc&quot;</code> is not 12</li><li>the range: index 0–15, ±1 km, 0–200 m</li><li>then the flight computer — which checks the fence once more at <code>START</code></li></ol>
+<p><em>Measured on the host</em>, feeding <code>mission.py</code>&#x27;s own output through the C parser:</p>
+<table><thead><tr><th>Test</th><th>Result</th></tr></thead><tbody><tr><td>the 9 frames of <code>default.mission</code></td><td><strong>9 / 9</strong> acknowledged <code>OK</code></td></tr><tr><td>each with one bit flipped</td><td><strong>0 / 9</strong> got through</td></tr><tr><td>11 well-checksummed but malformed frames</td><td><strong>11 / 11</strong> refused</td></tr><tr><td><code>$MIS</code> frames back into <code>mission.py</code></td><td>the 5 waypoints <strong>identical</strong> to the file</td></tr></tbody></table>
+<p>The parser that faces the outside world is the most attacked code in any<br>vehicle. A frame with a valid checksum is only <em>undamaged</em> — not <em>sensible</em>.</p>
+</section>
+<section class="slide">
+<h2>Slide 22: <code>mission.py</code> — Plan, Send, Score</h2>
+<pre><code>python host\mission.py host\default.mission             frames to paste into Wokwi
+python host\mission.py --gen lawnmower 40 30 4 8         a survey pattern, as a file
+python host\mission.py my.mission --port rfc2217://localhost:4000 --log flight.log
+python host\mission.py --score capture.txt --race        score any captured flight</code></pre>
+<p>Scoring reads only telemetry, so it works on a Wokwi capture, a live log or<br>the host test&#x27;s log alike. It uses <code>$TRU</code> — <strong>the simulator&#x27;s truth</strong>, a frame<br>no real drone could send — because a flight is judged by where it went, not<br>where it believed it went.</p>
+<p><em>Measured on the host:</em> <code>--score</code> on the SITL&#x27;s windy flight agrees with the C<br>test&#x27;s own measurements — completion <strong>61.00 / 60.96 s</strong>, max cross-track<br><strong>2.07 / 2.06 m</strong>, worst waypoint <strong>1.74 / 1.75 m</strong>, landing <strong>0.45 / 0.44 m</strong><br>(C at 50 Hz / Python at the 5 Hz telemetry rate).</p>
+<p>Standard library only. <code>--port</code> needs pyserial, exactly as lesson 08&#x27;s<br><code>host.py --port</code> does; without it, print and paste.</p>
+</section>
+<section class="slide">
+<h2>Slide 23: Five Tasks, Three Locks</h2>
+<table><thead><tr><th>Task</th><th>Prio</th><th>Period</th><th>Touches</th></tr></thead><tbody><tr><td><code>world</code></td><td>5</td><td>10 ms</td><td>world (<code>world_lock</code>), <code>act</code> (critical section)</td></tr><tr><td><code>ctl</code></td><td>4</td><td>20 ms</td><td>world → <code>sensors_t</code>, flight state (<code>fc_lock</code>)</td></tr><tr><td><code>link</code></td><td>3</td><td>per byte</td><td>flight state; world via <code>$PARAM,WIND</code></td></tr><tr><td><code>tel</code></td><td>2</td><td>200 ms</td><td>flight state, then the truth</td></tr><tr><td><code>ui</code></td><td>1</td><td>20 ms</td><td>flight state, world (knob); OLED, alone</td></tr></tbody></table>
+<ul><li><strong>One lock order.</strong> Only <code>link</code> ever holds two locks, and always <code>fc_lock</code> then <code>world_lock</code>. One order, no deadlock (lesson 07).</li><li><strong>Copy, then work.</strong> <code>ui</code> copies a view under the lock in microseconds and draws from the copy; the ~25 ms I²C flush runs with no lock held.</li><li><strong>The actuators are four words</strong>, so they cross with <code>__disable_irq()</code> — a mutex would cost more than the copy.</li><li><strong>The world is highest</strong>: the physics must never stall because a display is busy. On a real drone the &quot;world&quot; is reality, and it does not wait either.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 24: The Ground Station on the OLED</h2>
+<p>What <code>ui.c</code> draws 40 s into the windy mission — <strong>drawn on the host</strong> by the<br>same <code>ui.c</code> and <code>oled.c</code> the firmware links, and dumped pixel for pixel:</p>
+<figure class="diagram"><svg viewBox="0 0 520 264" role="img" aria-label="The OLED at 40 s into the windy mission, drawn on the host by ui.c and oled.c: map with fence, waypoints, trail and drone; panel with mode, waypoint, altitude, battery, wind and time">
+  <rect class="box" x="0" y="0" width="520" height="264" rx="6"/>
+  <rect x="260" y="4" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="4" width="16" height="4" fill="currentColor"/>
+  <rect x="292" y="4" width="20" height="4" fill="currentColor"/>
+  <rect x="316" y="4" width="4" height="4" fill="currentColor"/>
+  <rect x="132" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="8" width="4" height="4" fill="currentColor"/>
+  <rect x="100" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="116" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="148" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="164" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="12" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="16" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="16" width="16" height="4" fill="currentColor"/>
+  <rect x="300" y="16" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="16" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="176" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="20" width="4" height="4" fill="currentColor"/>
+  <rect x="72" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="192" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="280" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="24" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="28" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="28" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="28" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="28" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="28" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="32" width="4" height="4" fill="currentColor"/>
+  <rect x="56" y="36" width="4" height="4" fill="currentColor"/>
+  <rect x="208" y="36" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="36" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="36" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="40" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="40" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="40" width="4" height="4" fill="currentColor"/>
+  <rect x="44" y="44" width="4" height="4" fill="currentColor"/>
+  <rect x="220" y="44" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="44" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="44" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="44" width="4" height="4" fill="currentColor"/>
+  <rect x="124" y="48" width="4" height="4" fill="currentColor"/>
+  <rect x="140" y="48" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="48" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="48" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="48" width="4" height="4" fill="currentColor"/>
+  <rect x="128" y="52" width="4" height="4" fill="currentColor"/>
+  <rect x="136" y="52" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="52" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="52" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="52" width="4" height="4" fill="currentColor"/>
+  <rect x="36" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="132" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="228" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="56" width="4" height="4" fill="currentColor"/>
+  <rect x="128" y="60" width="12" height="4" fill="currentColor"/>
+  <rect x="144" y="60" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="60" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="60" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="60" width="4" height="4" fill="currentColor"/>
+  <rect x="120" y="64" width="8" height="4" fill="currentColor"/>
+  <rect x="140" y="64" width="4" height="4" fill="currentColor"/>
+  <rect x="148" y="64" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="64" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="64" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="64" width="4" height="4" fill="currentColor"/>
+  <rect x="116" y="68" width="8" height="4" fill="currentColor"/>
+  <rect x="156" y="68" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="68" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="68" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="68" width="4" height="4" fill="currentColor"/>
+  <rect x="24" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="108" y="72" width="8" height="4" fill="currentColor"/>
+  <rect x="168" y="72" width="24" height="4" fill="currentColor"/>
+  <rect x="204" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="240" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="72" width="4" height="4" fill="currentColor"/>
+  <rect x="108" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="184" y="76" width="12" height="4" fill="currentColor"/>
+  <rect x="200" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="272" y="76" width="12" height="4" fill="currentColor"/>
+  <rect x="292" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="76" width="20" height="4" fill="currentColor"/>
+  <rect x="368" y="76" width="12" height="4" fill="currentColor"/>
+  <rect x="416" y="76" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="76" width="4" height="4" fill="currentColor"/>
+  <rect x="96" y="80" width="12" height="4" fill="currentColor"/>
+  <rect x="192" y="80" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="80" width="4" height="4" fill="currentColor"/>
+  <rect x="96" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="192" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="200" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="436" y="84" width="8" height="4" fill="currentColor"/>
+  <rect x="448" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="84" width="4" height="4" fill="currentColor"/>
+  <rect x="20" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="72" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="96" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="188" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="204" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="244" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="88" width="16" height="4" fill="currentColor"/>
+  <rect x="416" y="88" width="12" height="4" fill="currentColor"/>
+  <rect x="436" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="444" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="452" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="88" width="4" height="4" fill="currentColor"/>
+  <rect x="76" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="92" width="12" height="4" fill="currentColor"/>
+  <rect x="192" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="92" width="20" height="4" fill="currentColor"/>
+  <rect x="292" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="436" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="444" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="452" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="92" width="4" height="4" fill="currentColor"/>
+  <rect x="80" y="96" width="8" height="4" fill="currentColor"/>
+  <rect x="188" y="96" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="376" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="392" y="96" width="8" height="4" fill="currentColor"/>
+  <rect x="412" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="436" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="452" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="96" width="4" height="4" fill="currentColor"/>
+  <rect x="12" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="76" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="252" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="100" width="20" height="4" fill="currentColor"/>
+  <rect x="324" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="100" width="8" height="4" fill="currentColor"/>
+  <rect x="392" y="100" width="8" height="4" fill="currentColor"/>
+  <rect x="416" y="100" width="12" height="4" fill="currentColor"/>
+  <rect x="436" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="452" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="100" width="4" height="4" fill="currentColor"/>
+  <rect x="72" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="188" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="104" width="4" height="4" fill="currentColor"/>
+  <rect x="80" y="108" width="8" height="4" fill="currentColor"/>
+  <rect x="188" y="108" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="108" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="108" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="108" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="188" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="112" width="16" height="4" fill="currentColor"/>
+  <rect x="296" y="112" width="12" height="4" fill="currentColor"/>
+  <rect x="316" y="112" width="20" height="4" fill="currentColor"/>
+  <rect x="368" y="112" width="12" height="4" fill="currentColor"/>
+  <rect x="400" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="112" width="8" height="4" fill="currentColor"/>
+  <rect x="496" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="112" width="4" height="4" fill="currentColor"/>
+  <rect x="12" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="252" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="396" y="116" width="8" height="4" fill="currentColor"/>
+  <rect x="412" y="116" width="8" height="4" fill="currentColor"/>
+  <rect x="428" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="116" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="120" width="8" height="4" fill="currentColor"/>
+  <rect x="184" y="120" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="392" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="400" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="424" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="120" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="176" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="188" y="124" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="124" width="16" height="4" fill="currentColor"/>
+  <rect x="292" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="124" width="12" height="4" fill="currentColor"/>
+  <rect x="388" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="400" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="420" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="124" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="128" y="128" width="24" height="4" fill="currentColor"/>
+  <rect x="180" y="128" width="12" height="4" fill="currentColor"/>
+  <rect x="260" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="128" width="20" height="4" fill="currentColor"/>
+  <rect x="324" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="388" y="128" width="20" height="4" fill="currentColor"/>
+  <rect x="416" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="128" width="4" height="4" fill="currentColor"/>
+  <rect x="8" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="128" y="132" width="12" height="4" fill="currentColor"/>
+  <rect x="144" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="152" y="132" width="36" height="4" fill="currentColor"/>
+  <rect x="256" y="132" width="8" height="4" fill="currentColor"/>
+  <rect x="268" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="400" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="424" y="132" width="8" height="4" fill="currentColor"/>
+  <rect x="496" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="132" width="4" height="4" fill="currentColor"/>
+  <rect x="128" y="136" width="12" height="4" fill="currentColor"/>
+  <rect x="180" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="188" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="136" width="16" height="4" fill="currentColor"/>
+  <rect x="292" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="136" width="12" height="4" fill="currentColor"/>
+  <rect x="400" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="424" y="136" width="8" height="4" fill="currentColor"/>
+  <rect x="496" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="136" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="176" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="192" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="140" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="144" width="8" height="4" fill="currentColor"/>
+  <rect x="260" y="144" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="144" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="144" width="4" height="4" fill="currentColor"/>
+  <rect x="12" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="148" width="12" height="4" fill="currentColor"/>
+  <rect x="104" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="252" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="148" width="200" height="4" fill="currentColor"/>
+  <rect x="496" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="148" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="152" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="152" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="152" width="168" height="4" fill="currentColor"/>
+  <rect x="464" y="152" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="152" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="152" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="156" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="156" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="156" width="168" height="4" fill="currentColor"/>
+  <rect x="464" y="156" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="156" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="156" width="4" height="4" fill="currentColor"/>
+  <rect x="84" y="160" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="160" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="160" width="168" height="4" fill="currentColor"/>
+  <rect x="464" y="160" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="160" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="160" width="4" height="4" fill="currentColor"/>
+  <rect x="12" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="88" y="164" width="12" height="4" fill="currentColor"/>
+  <rect x="104" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="252" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="164" width="200" height="4" fill="currentColor"/>
+  <rect x="496" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="164" width="4" height="4" fill="currentColor"/>
+  <rect x="100" y="168" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="168" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="168" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="168" width="4" height="4" fill="currentColor"/>
+  <rect x="100" y="172" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="172" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="172" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="172" width="4" height="4" fill="currentColor"/>
+  <rect x="20" y="176" width="4" height="4" fill="currentColor"/>
+  <rect x="244" y="176" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="176" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="176" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="176" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="180" width="12" height="4" fill="currentColor"/>
+  <rect x="368" y="180" width="12" height="4" fill="currentColor"/>
+  <rect x="416" y="180" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="180" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="328" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="512" y="184" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="188" width="8" height="4" fill="currentColor"/>
+  <rect x="308" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="332" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="188" width="4" height="4" fill="currentColor"/>
+  <rect x="424" y="188" width="8" height="4" fill="currentColor"/>
+  <rect x="496" y="188" width="20" height="4" fill="currentColor"/>
+  <rect x="24" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="240" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="300" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="332" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="192" width="12" height="4" fill="currentColor"/>
+  <rect x="412" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="420" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="192" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="192" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="304" y="196" width="8" height="4" fill="currentColor"/>
+  <rect x="316" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="332" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="412" y="196" width="8" height="4" fill="currentColor"/>
+  <rect x="428" y="196" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="196" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="284" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="328" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="364" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="392" y="200" width="8" height="4" fill="currentColor"/>
+  <rect x="412" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="428" y="200" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="200" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="204" width="4" height="4" fill="currentColor"/>
+  <rect x="272" y="204" width="4" height="4" fill="currentColor"/>
+  <rect x="280" y="204" width="4" height="4" fill="currentColor"/>
+  <rect x="292" y="204" width="4" height="4" fill="currentColor"/>
+  <rect x="308" y="204" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="204" width="12" height="4" fill="currentColor"/>
+  <rect x="368" y="204" width="12" height="4" fill="currentColor"/>
+  <rect x="392" y="204" width="8" height="4" fill="currentColor"/>
+  <rect x="416" y="204" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="204" width="20" height="4" fill="currentColor"/>
+  <rect x="36" y="208" width="4" height="4" fill="currentColor"/>
+  <rect x="228" y="208" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="208" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="208" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="212" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="212" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="216" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="216" width="20" height="4" fill="currentColor"/>
+  <rect x="44" y="220" width="4" height="4" fill="currentColor"/>
+  <rect x="220" y="220" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="220" width="4" height="4" fill="currentColor"/>
+  <rect x="268" y="220" width="20" height="4" fill="currentColor"/>
+  <rect x="316" y="220" width="20" height="4" fill="currentColor"/>
+  <rect x="344" y="220" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="220" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="224" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="224" width="4" height="4" fill="currentColor"/>
+  <rect x="328" y="224" width="4" height="4" fill="currentColor"/>
+  <rect x="340" y="224" width="4" height="4" fill="currentColor"/>
+  <rect x="356" y="224" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="224" width="20" height="4" fill="currentColor"/>
+  <rect x="56" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="208" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="324" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="340" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="356" y="228" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="228" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="228" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="232" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="232" width="4" height="4" fill="currentColor"/>
+  <rect x="328" y="232" width="4" height="4" fill="currentColor"/>
+  <rect x="344" y="232" width="16" height="4" fill="currentColor"/>
+  <rect x="364" y="232" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="232" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="236" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="236" width="4" height="4" fill="currentColor"/>
+  <rect x="332" y="236" width="4" height="4" fill="currentColor"/>
+  <rect x="356" y="236" width="4" height="4" fill="currentColor"/>
+  <rect x="368" y="236" width="12" height="4" fill="currentColor"/>
+  <rect x="496" y="236" width="20" height="4" fill="currentColor"/>
+  <rect x="72" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="192" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="316" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="332" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="352" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="380" y="240" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="240" width="20" height="4" fill="currentColor"/>
+  <rect x="88" y="244" width="4" height="4" fill="currentColor"/>
+  <rect x="176" y="244" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="244" width="4" height="4" fill="currentColor"/>
+  <rect x="276" y="244" width="4" height="4" fill="currentColor"/>
+  <rect x="320" y="244" width="12" height="4" fill="currentColor"/>
+  <rect x="344" y="244" width="8" height="4" fill="currentColor"/>
+  <rect x="364" y="244" width="16" height="4" fill="currentColor"/>
+  <rect x="496" y="244" width="20" height="4" fill="currentColor"/>
+  <rect x="260" y="248" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="248" width="20" height="4" fill="currentColor"/>
+  <rect x="100" y="252" width="4" height="4" fill="currentColor"/>
+  <rect x="116" y="252" width="4" height="4" fill="currentColor"/>
+  <rect x="148" y="252" width="4" height="4" fill="currentColor"/>
+  <rect x="164" y="252" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="252" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="252" width="20" height="4" fill="currentColor"/>
+  <rect x="132" y="256" width="4" height="4" fill="currentColor"/>
+  <rect x="260" y="256" width="4" height="4" fill="currentColor"/>
+  <rect x="496" y="256" width="20" height="4" fill="currentColor"/>
+</svg></figure>
+<p>Map at 1.6 m per pixel with the dotted 50 m fence; waypoints as crosses, the<br>current one boxed, the legs dotted; breadcrumbs every 0.5 s; the drone a dot<br>with a heading tick. Panel: mode, progress (or the failsafe, prefixed <code>!</code>),<br>altitude, battery and its bar, wind, time since arming; the altitude bar&#x27;s<br>full scale is the 30 m ceiling.</p>
+</section>
+<section class="slide">
+<h2>Slide 25: What It Costs — Flash and RAM</h2>
+<p>The first build of this lesson <strong>did not link</strong>: FLASH 30 736 B, RAM<br>12 576 B — <strong>102 %</strong> of the chip&#x27;s RAM. Three changes brought it home:</p>
+<table><thead><tr><th>Change</th><th>Saved</th><th>Why</th></tr></thead><tbody><tr><td>task stacks 384 → 160–320 words, sized per task</td><td>~2 KB RAM</td><td>a 384-word stack for a task that needs 100 is RAM nobody uses</td></tr><tr><td><code>fm.c</code>: sin, cos, atan2, sqrt compiled <strong>once</strong></td><td><strong>720 B</strong> flash</td><td><code>static inline</code> gave each of four files its own copies</td></tr><tr><td><code>say()</code> = <code>vsnprintf</code> + <code>_write</code>, no stdio stream</td><td><strong>1860 B</strong> flash</td><td><code>printf</code>/<code>fputs</code> to <code>stdout</code> drag in buffering, flushing, <code>malloc</code></td></tr></tbody></table>
+<p><em>Measured</em> with this tree&#x27;s <code>arm-none-eabi-gcc</code> by building each variant.<br>Final: <strong>FLASH 27 428 B (83.7 %), RAM 10 520 B (85.6 %)</strong>, zero warnings.</p>
+<p>The stack sizes come from <code>-fstack-usage</code> plus the C library&#x27;s prologues (the<br><code>link</code> task&#x27;s deepest path, <code>ml_handle</code> → <code>vframe</code> → <code>vsnprintf</code>, is about<br>0.9 KB of its 1.25 KB).<br>They are <strong>estimates until the board runs</strong> — the <code>stats</code> command prints each<br>task&#x27;s high-water mark, and Lab Part 1 reads it.</p>
+</section>
+<section class="slide">
+<h2>Slide 26: What a Step Costs on the Chip</h2>
+<p>The M0+ has no FPU: every float <code>+</code> and <code>*</code> is a library call. How long is one<br>50 Hz control step? Time it with the kernel&#x27;s own SysTick:</p>
+<figure class="diagram"><svg width="907" viewBox="0 0 907 165" role="img" aria-label="SysTick-&gt;LOAD, 32 bits; SysTick-&gt;VAL, 32 bits">
+<text x="16" y="35" class="mono">SysTick-&gt;LOAD</text>
+<text x="16" y="50" class="lbl">47 999: one tick per ms at 48 MHz</text>
+<text x="16" y="65" class="mono lbl">= 0x0000BB7F</text>
+<text x="252.2" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="251.2" y="28" width="160.0" height="26"/>
+<rect class="hifill" x="411.2" y="28" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M871.2 28 V32 M871.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M851.2 28 V32 M851.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M831.2 28 V32 M831.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M811.2 28 V32 M811.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M791.2 28 V32 M791.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M771.2 28 V32 M771.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M751.2 28 V32 M751.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M731.2 28 V32 M731.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M711.2 28 V32 M711.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M691.2 28 V32 M691.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M671.2 28 V32 M671.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M651.2 28 V32 M651.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M631.2 28 V32 M631.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M611.2 28 V32 M611.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M591.2 28 V32 M591.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M571.2 28 V32 M571.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M551.2 28 V32 M551.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M531.2 28 V32 M531.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M511.2 28 V32 M511.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M491.2 28 V32 M491.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M471.2 28 V32 M471.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M451.2 28 V32 M451.2 50 V54"/>
+<path class="reg" stroke-width="0.6" d="M431.2 28 V32 M431.2 50 V54"/>
+<text x="412.2" y="20" text-anchor="start" class="mono lbl">23</text>
+<text x="881.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="861.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="841.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="821.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="801.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="781.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="761.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="741.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="721.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="701.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="681.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="661.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="641.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="621.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="601.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="581.2" y="41" text-anchor="middle" class="mono">1</text>
+<text x="561.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="541.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="521.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="501.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="481.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="461.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="441.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="421.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="401.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="381.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="361.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="341.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="321.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="301.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="281.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="261.2" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="651.2" y="67" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="121" class="mono">SysTick-&gt;VAL</text>
+<text x="16" y="136" class="lbl">counts DOWN from LOAD to 0</text>
+<text x="252.2" y="106" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="106" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="251.2" y="114" width="160.0" height="26"/>
+<text x="331.2" y="127" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="411.2" y="114" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M871.2 114 V118 M871.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M851.2 114 V118 M851.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M831.2 114 V118 M831.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M811.2 114 V118 M811.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M791.2 114 V118 M791.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M771.2 114 V118 M771.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M751.2 114 V118 M751.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M731.2 114 V118 M731.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M711.2 114 V118 M711.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M691.2 114 V118 M691.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M671.2 114 V118 M671.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M651.2 114 V118 M651.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M631.2 114 V118 M631.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M611.2 114 V118 M611.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M591.2 114 V118 M591.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M571.2 114 V118 M571.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M551.2 114 V118 M551.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M531.2 114 V118 M531.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M511.2 114 V118 M511.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M491.2 114 V118 M491.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M471.2 114 V118 M471.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M451.2 114 V118 M451.2 136 V140"/>
+<path class="reg" stroke-width="0.6" d="M431.2 114 V118 M431.2 136 V140"/>
+<text x="412.2" y="106" text-anchor="start" class="mono lbl">23</text>
+<text x="651.2" y="127" text-anchor="middle" class="mono">CURRENT</text>
+</svg></figure>
+<pre class="lang-c"><code>static stamp_t stamp(void)                     /* (milliseconds, counter) */
+{
+    stamp_t s;
+    do { s.ms = os_ticks();  s.val = SysTick-&gt;VAL; } while (s.ms != os_ticks());
+    return s;
+}
+static uint32_t cycles(stamp_t a, stamp_t b)
+{
+    return (b.ms - a.ms) * (SysTick-&gt;LOAD + 1u) + a.val - b.val;
+}</code></pre>
+<p><code>stats</code> prints the last, worst and mean cost of <code>world_step()</code> and<br><code>control_step()</code> in µs, plus every task&#x27;s CPU share. <strong>Not yet measured</strong> —<br>this needs the board or Wokwi running. What the code predicts:<br><code>control_step()</code> contains 114 calls into the soft-float library (count the<br><code>bl __aeabi_f...</code> in its disassembly), at very roughly 50–100 cycles each, so<br>expect a few hundred µs of its 20 ms budget. Lab Part 1 checks the prediction.</p>
+</section>
+<section class="slide">
+<h2>Slide 27: What Was Measured — and What Could Not Be</h2>
+<p><strong>Measured on the host</strong> (<code>host/run.sh</code>: 27 flight checks, the parser and<br>scoring checks — all pass), with the lesson&#x27;s own C:</p>
+<table><thead><tr><th></th><th>still air</th><th>8 m/s wind</th></tr></thead><tbody><tr><td>default mission, START → landed</td><td>57.7 s</td><td>61.0 s</td></tr><tr><td>max / RMS cross-track</td><td>1.75 / 0.56 m</td><td>2.07 / 1.00 m</td></tr><tr><td>worst waypoint miss</td><td>1.73 m</td><td>1.74 m</td></tr><tr><td>landing error</td><td>0.64 m</td><td>0.45 m</td></tr><tr><td>hold, true RMS</td><td>—</td><td>1.01 m (0.76 seen, 0.67 blind)</td></tr></tbody></table>
+<p>Plus every failsafe (slide 18), mission validation (19), the parser round trip<br>(21), Python&#x27;s score against C&#x27;s (22), determinism, and the time-scale sweep<br>(3). The firmware builds with zero warnings.</p>
+<p><strong>Not measured:</strong> anything on the chip. Not yet watched in Wokwi: the OLED<br>over real I²C, the buttons and knob, the beeps, the per-step cycle counts and<br>stack high-water marks, and whether Wokwi&#x27;s serial monitor accepts the frames<br>pasted line by line. The physics is a model — linear drag, a lag for lesson<br>13 — chosen to be honest about what it leaves out.</p>
+</section>
+<section class="slide">
+<h2>Slide 28: What Carries Forward</h2>
+<ul><li><strong>The cascade and its limits</strong> return in every robot: lesson 15&#x27;s line follower is a cross-track loop; lesson 17&#x27;s balancer is a cascade whose inner loop is <em>not</em> fast enough to ignore — slide 3&#x27;s table, at the bottom.</li><li><strong>The two tiers</strong> carry on: lesson 16&#x27;s Python path planner sends waypoints exactly as <code>mission.py</code> does, and the robot&#x27;s C follows them.</li><li><strong>Seen, blind, true.</strong> Every autonomous system reports what it believes and is judged on what happened. Log both, as <code>$POS</code> and <code>$TRU</code> do.</li><li><strong>Failsafes first.</strong> Checked every cycle, before anything a human asked for.</li><li><strong>Measure the budget.</strong> 27.4 KB of 32 came from a lesson that did not link at first; the three fixes on slide 25 are tools you will use again.</li></ul>
+</section>
+</div>
+
+<div class="bar">
+  <span><a href="index.html">&larr; all decks</a></span>
+  <span class="spacer"></span>
+  <button onclick="go(-1)">&larr;</button>
+  <span id="pos"></span>
+  <button onclick="go(1)">&rarr;</button>
+  <span class="spacer"></span>
+  <button onclick="toggleGrid()">overview (o)</button>
+  <button onclick="window.print()">print (p)</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var at = 0;
+
+  function show(n) {
+    at = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === at); });
+    document.getElementById('pos').textContent = (at + 1) + ' / ' + slides.length;
+    try { localStorage.setItem('slide:14_Drone_Missions', at); } catch (e) {}
+    if (!document.body.classList.contains('grid')) window.scrollTo(0, 0);
+  }
+  function go(d) { show(at + d); }
+
+  function toggleGrid() {
+    document.body.classList.toggle('grid');
+    if (!document.body.classList.contains('grid')) show(at);
+  }
+
+  slides.forEach(function (s, i) {
+    s.addEventListener('click', function () {
+      if (document.body.classList.contains('grid')) { toggleGrid(); show(i); }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'o') toggleGrid();
+    else if (e.key === 'p') window.print();
+  });
+
+  var saved = 0;
+  try { saved = parseInt(localStorage.getItem('slide:14_Drone_Missions') || '0', 10) || 0; } catch (e) {}
+  show(saved);
+</script>

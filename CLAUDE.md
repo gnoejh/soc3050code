@@ -18,7 +18,7 @@ Self-contained: the AVR toolchain and the SimulIDE simulator are vendored under
 ```
 projects/             53 legacy lesson folders (previous edition, SimulIDE 1.1.0-SR1)
 projects2026_avr/     intro + 24 curated lessons, SimulIDE 1.1.0-SR2  <-- frozen, complete
-projects2026_arm/     STM32 edition, Part 0 + Part 1 (04-09)  <-- live; owns the website
+projects2026_arm/     STM32 edition, lessons 00-19 (Parts 0-3)  <-- live; owns the website
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _game, _eeprom, _pwm ...
 tools/avr-toolchain/  avr-gcc 15.1.0, avr-objcopy, avr-size, avrdude
 tools/arm-toolchain/  arm-none-eabi-gcc 15.2.1 + gdb  <-- ARM edition, see below
@@ -232,6 +232,7 @@ intent instead of leaving noise that trains people to ignore warnings.
 | 2026-09-30 | ARM decks gained 62 to-scale register diagrams, written as ```` ```regs ```` blocks and drawn by the new `projects2026_arm/_build/regdiag.py`; every bit position checked against the CMSIS headers. Three factual slips in ARM slide text fixed on the way. Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "Register diagrams". |
 | 2026-09-30 | VS Code moved to the ARM edition: F5 debugs an ARM lesson in Wokwi through its GDB server (`gdbServerPort` in each `wokwi.toml`, vendored `arm-none-eabi-gdb`, `cppdbg`); the old AVR `launch.json` stub is gone. `tools/cli/` dispatchers now recognise `projects2026_arm/`, the ARM IntelliSense config is the default, and AVR-only tasks are labelled `AVR:`. See `projects2026_arm/README.md`, "Debugging a lesson in VS Code". |
 | 2026-10-02 | ARM lesson 05 gained Lab Part 8 and slide 33b: reaching the debounce accept and the EXTI handler under GDB by latching a Wokwi button (Ctrl-click) and by raising the interrupt from the debugger through `EXTI->SWIER1` and NVIC `ISPR`. Unwatched in Wokwi, and says so. Decks re-rendered. Nothing in the AVR tree touched. |
+| 2026-10-03 | ARM edition completed: lessons 10-19 written (Part 2: fixed point and DMA, faults and watchdogs; Part 3: arcade game, two drone lessons, four robot lessons, final project), all zero warnings, every host test passing, none yet watched in Wokwi. New shared `_lib/` modules (`oled`, `pad`, `beep`, `fmath.h`, and lesson 09's `i2c`/`adc` promoted) and one app board, `_targets/app-board-diagram.json`. Re-scoped from the syllabus: 10-11 run on the C031C6 rather than an F446RE in Renode, and 13-18 simulate the physics inside the firmware rather than in Webots, because neither tool is on this machine. Wokwi implements no DMA, IWDG, PWR or RTC on this board; the lessons say so. The ARM build engine now links `-lm` (no existing lesson changes by a byte). Nothing in the AVR tree touched. See `projects2026_arm/README.md`, "Parts 2 and 3". |
 
 ## 9. The system pass (2026-09-05)
 
