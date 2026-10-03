@@ -6,13 +6,16 @@ repository and it works, with nothing to install.
 
 Two editions live here. **`projects2026_avr/` (ATmega128) is finished and
 frozen; `projects2026_arm/` (STM32) is the live one**, and it is what
-<https://gnoejh.github.io/soc3050code/> publishes. The ARM edition has its
-syllabus (20 lessons, ending in games, drones and robots) and Part 1 written:
-four theory lessons, then lessons 04–09 — startup code, GPIO and interrupts,
-timers, a from-scratch RTOS, an interrupt UART with a Python host, and the
-ADC, I²C and SPI buses. They build with the vendored `tools/arm-toolchain/`
-and run in the browser on Wokwi's Nucleo-C031C6; 05–09 are not yet watched
-there. The AVR tree is still the larger body of verified lessons.
+<https://gnoejh.github.io/soc3050code/> publishes. All 20 ARM lessons are
+written: four theory lessons; lessons 04–09 on startup code, GPIO and
+interrupts, timers, a from-scratch RTOS, an interrupt UART with a Python host,
+and the ADC, I²C and SPI buses; lessons 10–11 on fixed point, DMA, faults and
+watchdogs; and lessons 12–19, which turn the same C into an arcade game, two
+simulated drones, four simulated robots and a final project. They build with
+the vendored `tools/arm-toolchain/` and run in the browser on Wokwi's
+Nucleo-C031C6. Lessons 10–19 are verified by host tests of their pure-C logic;
+05–19 are not yet watched running in Wokwi. The AVR tree is still the larger
+body of lessons watched running in a simulator.
 
 ---
 
@@ -54,11 +57,11 @@ There are three. They are independent; none imports from another.
 | | `projects2026_arm/` | `projects2026_avr/` | `projects/` |
 |---|---|---|---|
 | Chip | STM32C031 (Cortex-M0+) | ATmega128 | ATmega128 |
-| Status | **live, being written** | finished, frozen | archived |
-| Lessons | 10 of 20 (Part 0 theory + Part 1, 04–09) | an introduction plus 24 | 53, with overlaps |
+| Status | **live, all lessons written** | finished, frozen | archived |
+| Lessons | 20: Part 0 theory, Part 1 peripherals (04–09), Part 2 systems (10–11), Part 3 applications (12–19) | an introduction plus 24 | 53, with overlaps |
 | Build | one shared engine, vendored gcc | one shared engine | per-project scripts |
 | Run it | Wokwi in the browser | SimulIDE **1.1.0-SR2** | SimulIDE 1.1.0-SR1 |
-| Slides | all 10, **published online** | all 25, offline only | 34 of 53 |
+| Slides | all 20, **published online** | all 25, offline only | 34 of 53 |
 
 **To teach or study a topic today, start in `projects2026_avr/`** — see
 [its README](projects2026_avr/README.md) for the lesson list and the board map.
@@ -66,9 +69,13 @@ It is frozen, not abandoned: everything in it builds, simulates and is verified.
 
 **`projects2026_arm/`** is where new work goes. Part 0 is four theory decks on
 the programmer's model, the instruction set, the toolchain and concurrency;
-Part 1 (04–09) builds and runs, each lesson with a `Slide.md` and a `Lab.md`.
-The syllabus and each lesson's verification status are in
-[its README](projects2026_arm/README.md).
+Part 1 (04–09) covers the peripherals and Part 2 (10–11) the system concerns.
+Part 3 (12–19) is the application track: an arcade on an OLED, a quadcopter
+and its missions, a line follower, a mapping robot, a balancing robot, a sumo
+tournament and the final project, all on one shared app board, with the
+drones and robots simulated inside the firmware. Every lesson from 04 has a
+`Slide.md` and a `Lab.md`. The syllabus and each lesson's verification status
+are in [its README](projects2026_arm/README.md).
 
 `projects/` is left in place because a lot of supporting material still points
 at it, but it is not being maintained — see
@@ -134,7 +141,7 @@ a clone, because the compiler and SimulIDE are vendored under `tools/`.
 ## What is included
 
 ```
-projects2026_arm/     the live STM32 edition - Part 0 + Part 1 (04-09), owns the website
+projects2026_arm/     the live STM32 edition - lessons 00-19, owns the website
 projects2026_avr/     the finished AVR edition: 25 lessons + the shared board
 projects/             the archived 53-project edition
 shared_libs/          _port, _adc, _uart, _timer, _glcd, _eeprom, _pwm, _interrupt
