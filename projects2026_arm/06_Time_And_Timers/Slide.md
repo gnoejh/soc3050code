@@ -780,6 +780,43 @@ it is the stopwatch for the 10 µs.
 
 ---
 
+## Slide 13b: What Wokwi Showed — No Capture, So EXTI
+
+The first time this lesson was watched running in Wokwi (2026-10-04), every
+report line read `echo 0 us = 0 cm`. **Wokwi does not implement timer input
+capture:** its board page lists the STM32 timers as "used by analogWrite()",
+which is PWM output only. `CC1IF` never set, so no capture ever completed.
+
+The firmware now listens on PA7 twice. EXTI line 7 (lesson 05) interrupts on
+both edges, and its handler reads `TIM14->CNT` itself:
+
+```c
+void EXTI4_15_IRQHandler(void)
+{
+    uint16_t t = (uint16_t)TIM14->CNT;               /* "now" - already late    */
+    if (EXTI->RPR1 & mask) { EXTI->RPR1 = mask; exti_rise = t; ... }
+    if (EXTI->FPR1 & mask) { EXTI->FPR1 = mask; exti_us = (uint16_t)(t - exti_rise); ... }
+```
+
+Capture is used whenever it has produced a pulse; EXTI otherwise. Every report
+line names its source and counts what each path saw. **Measured in Wokwi:**
+
+```
+t=  9000 ms  TIM3 50/s  echo  5882 us = 101 cm (EXTI)  servo 1495 us  edges cap 0 exti 161
+```
+
+- `cap 0`, `exti` +20 a second: two edges per ping, ten pings a second.
+- 5882 us for 100 cm on the slider: 58.8 us per cm, sound at 340 m/s.
+- 101 cm gives a servo pulse of 2000 − 101 × 1000 / 200 = **1495 us**, and
+  (200 − 101) × 8 / 200 = **3 LEDs**. Both match what was seen.
+
+The EXTI timestamp is late by the interrupt latency, and both edges are late
+by about the same amount, so the width is still right to within a
+microsecond or two. That only holds while nothing else delays one of the two
+interrupts: slide 12's argument for capture still stands on silicon.
+
+---
+
 ## Slide 14: Two Variables From One Interrupt — Tearing
 
 The capture ISR writes two things together: the width and a count. `main()`

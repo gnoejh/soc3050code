@@ -32,8 +32,8 @@ simulate.bat
 Zero warnings:
 
 ```
-           FLASH:        6788 B        32 KB     20.72%
-             RAM:        2024 B        12 KB     16.47%
+           FLASH:        7340 B        32 KB     22.40%
+             RAM:        2040 B        12 KB     16.60%
 ```
 
 Paste `diagram.json` into the Wokwi tab (a servo, an HC-SR04 and the LED bar),
@@ -205,22 +205,53 @@ At the top of `Main.c`:
 
 ---
 
-## Part 6 — Capture one edge (10 min)
+## Part 6 — Which path measured it, and lose one edge (15 min)
 
-In `ranger_init()`, capture rising edges only:
+### Step 1. Read the source
 
-```c
-    TIM14->CCER |= TIM_CCER_CC1E;           /* was CC1P | CC1NP | CC1E */
+Run the unchanged program and read the end of a report line:
+
+```
+echo  5882 us = 101 cm (EXTI)  servo 1495 us  edges cap 0 exti 141
 ```
 
-> `echo     0 us =   0 cm`, forever. The bar stays dark and the servo stays
-> centred: they are updated only when a new measurement completes, and none
-> ever does.
+**Guess first:** the lesson is about input capture. Why does the line say
+`(EXTI)`, and why is `cap` 0?
+
+> **Wokwi does not implement timer input capture.** This is what it printed
+> when this lesson was first watched, on 2026-10-04: `cap` stayed at 0 for
+> the whole run while `exti` climbed by 20 a second, two edges for each of
+> the 10 pings. Wokwi's board page lists the STM32 timers as "used by
+> analogWrite()": PWM out, nothing in. PA7 also feeds EXTI line 7, whose
+> handler stamps each edge from `TIM14->CNT` (slide 13b), so the measurement
+> still works. It is just late by the interrupt latency, which is exactly what
+> input capture exists to remove (slide 12). On a real Nucleo, `cap` counts
+> too and the source reads `(capture)`.
 >
-> Every capture is now a rising edge. The handler sees the pin high each time
-> and stores `echo_rise`; the falling-edge branch never runs, so no width is
-> ever completed. Measuring a pulse needs both edges — or two channels,
-> one per edge, which ST calls *PWM input mode* and TIM3 supports.
+> 5882 us for the slider's 100 cm is 58.8 us per cm. That is the speed of
+> sound, 340 m/s, there and back; the program's `/ 58` rounds it to 101 cm.
+
+### Step 2. Lose one edge
+
+In `echo_exti_init()`, delete the falling-edge line:
+
+```c
+    EXTI->FTSR1 |= 1u << line;                       /* falling: echo ends      */
+```
+
+**Guess first:** what does `exti` count now, and what does the echo read?
+
+> `exti` climbs half as fast, 10 a second, and the line reads
+> `echo 0 us = 0 cm (none)` for ever. The bar stays dark and the servo stays
+> at 1500 us: they change only when a measurement completes, and none does.
+>
+> Every edge is now a rising edge. The handler stores `exti_rise` each time;
+> the falling branch never runs, so no width is ever finished. Measuring a
+> pulse needs both edges. Input capture has the same rule: on a real board,
+> capturing on `CC1E` alone, without `CC1P | CC1NP`, fails the same way. Two
+> channels, one per edge, is what ST calls *PWM input mode*.
+
+Put the line back.
 
 ---
 

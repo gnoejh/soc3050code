@@ -1531,6 +1531,20 @@ else { echo_us = (uint16_t)(t - echo_rise); ... }       /* falling */</code></pr
 <p>The trigger pulse uses TIM14 too: <code>CNT</code> is already counting microseconds, so<br>it is the stopwatch for the 10 µs.</p>
 </section>
 <section class="slide">
+<h2>Slide 13b: What Wokwi Showed — No Capture, So EXTI</h2>
+<p>The first time this lesson was watched running in Wokwi (2026-10-04), every<br>report line read <code>echo 0 us = 0 cm</code>. <strong>Wokwi does not implement timer input<br>capture:</strong> its board page lists the STM32 timers as &quot;used by analogWrite()&quot;,<br>which is PWM output only. <code>CC1IF</code> never set, so no capture ever completed.</p>
+<p>The firmware now listens on PA7 twice. EXTI line 7 (lesson 05) interrupts on<br>both edges, and its handler reads <code>TIM14-&gt;CNT</code> itself:</p>
+<pre class="lang-c"><code>void EXTI4_15_IRQHandler(void)
+{
+    uint16_t t = (uint16_t)TIM14-&gt;CNT;               /* &quot;now&quot; - already late    */
+    if (EXTI-&gt;RPR1 &amp; mask) { EXTI-&gt;RPR1 = mask; exti_rise = t; ... }
+    if (EXTI-&gt;FPR1 &amp; mask) { EXTI-&gt;FPR1 = mask; exti_us = (uint16_t)(t - exti_rise); ... }</code></pre>
+<p>Capture is used whenever it has produced a pulse; EXTI otherwise. Every report<br>line names its source and counts what each path saw. <strong>Measured in Wokwi:</strong></p>
+<pre><code>t=  9000 ms  TIM3 50/s  echo  5882 us = 101 cm (EXTI)  servo 1495 us  edges cap 0 exti 161</code></pre>
+<ul><li><code>cap 0</code>, <code>exti</code> +20 a second: two edges per ping, ten pings a second.</li><li>5882 us for 100 cm on the slider: 58.8 us per cm, sound at 340 m/s.</li><li>101 cm gives a servo pulse of 2000 − 101 × 1000 / 200 = <strong>1495 us</strong>, and (200 − 101) × 8 / 200 = <strong>3 LEDs</strong>. Both match what was seen.</li></ul>
+<p>The EXTI timestamp is late by the interrupt latency, and both edges are late<br>by about the same amount, so the width is still right to within a<br>microsecond or two. That only holds while nothing else delays one of the two<br>interrupts: slide 12&#x27;s argument for capture still stands on silicon.</p>
+</section>
+<section class="slide">
 <h2>Slide 14: Two Variables From One Interrupt — Tearing</h2>
 <p>The capture ISR writes two things together: the width and a count. <code>main()</code><br>wants a consistent pair:</p>
 <pre class="lang-c"><code>__disable_irq();

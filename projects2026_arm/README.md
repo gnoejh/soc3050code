@@ -258,7 +258,7 @@ on both. The course stands alone; it does not depend on SOC4180GH.
 | 0 Models | 00–03 | Architecture, Instruction Set, Development, Execution & Concurrency ✅ | none |
 | 1 Instances | 04 | Startup_And_LinkerScript ✅ | C031C6 / Wokwi |
 | | 05 | GPIO_And_Interrupts — GPIO, EXTI, NVIC, handler names ◐ | |
-| | 06 | Time_And_Timers — SysTick IRQ, TIM3, PWM (servo), input capture ◐ | |
+| | 06 | Time_And_Timers — SysTick IRQ, TIM3, PWM (servo), input capture ✅ watched in Wokwi 2026-10-04; echo measured via EXTI, since Wokwi has no input capture | |
 | | 07 | RTOS — PendSV switch, MSP/PSP, mutex, queue, HardFault ◐ | |
 | | 08 | UART_And_Python_Host — ring buffer, framed protocol, `host.py` ◐ | |
 | | 09 | Sensors_And_Buses — ADC, I²C (MPU6050), SPI (MAX7219) ◐ | |
@@ -383,6 +383,10 @@ every host test passes:
 
 **Wokwi does not implement DMA, IWDG, PWR or RTC** on this board, and WWDG is
 "implemented, not tested" ([Wokwi's board page](https://docs.wokwi.com/parts/board-st-nucleo-c031c6)).
+**Nor does it implement timer input capture**, which its page does not say:
+lesson 06, watched on 2026-10-04, counted 0 capture edges while EXTI on the
+same pin caught every echo. Its timers are "used by analogWrite()" - PWM out.
+Lesson 06 now measures the echo through EXTI as well, and says which path ran.
 Lesson 10 detects a DMA channel that never moves and falls back to polled
 reads, saying which path ran. Lessons 11 and 19 keep the real IWDG code for
 silicon and add a software watchdog the simulator can show.

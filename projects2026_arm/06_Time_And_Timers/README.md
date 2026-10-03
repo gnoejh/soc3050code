@@ -14,7 +14,7 @@ so the two dividers check each other.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture - 22 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
+| `Slide.md` | the lecture - 23 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: eight parts, ~2 hours, guided, **nothing handed in** |
 | `Main.c` | SysTick, TIM3 PWM + update IRQ, TIM14 capture IRQ, a non-blocking scheduler loop, and a banner that reads every clock's configuration back |
 | `build.bat` | `LIBS=retarget`; `gpio.h` is header-only |
@@ -31,7 +31,7 @@ own copies on purpose: writing them is that lesson.
 ## Build and run
 
 ```
-build.bat        # FLASH 6788 B / 32 KB, RAM 2024 B / 12 KB, zero warnings
+build.bat        # FLASH 7340 B / 32 KB, RAM 2040 B / 12 KB, zero warnings
 simulate.bat
 ```
 
@@ -106,6 +106,21 @@ is instantaneous, so `took` reads 0 ms.
 ## Status
 
 - Builds clean, zero warnings.
-- **Not yet watched running in Wokwi.** Still unobserved anywhere: TIM14 input
-  capture from the HC-SR04 on PA7, the servo's response and its pulse range
-  (Lab Part 4, deliberately left for students), and the real `printf` time.
+- **First watched in Wokwi on 2026-10-04, and the echo failed.** SysTick ran,
+  TIM3 reported 50 updates a second and the banner printed, but every line read
+  `echo 0 us = 0 cm` and the servo stayed at its 1500 us start value. No capture
+  ever completed, so the servo target and the LED bar were never updated. The
+  likely cause is that Wokwi does not implement timer input capture: its board
+  page lists the STM32 timers as "used by analogWrite()", which is PWM output.
+- **The fix, watched working in Wokwi the same day.** PA7 now also drives
+  EXTI line 7, whose handler timestamps both edges from `TIM14->CNT`. The main
+  loop uses capture when it has produced a pulse and EXTI otherwise, and every
+  report line names the source and counts the edges each path saw. Wokwi
+  printed `echo 5882 us = 101 cm (EXTI)  servo 1495 us  edges cap 0 exti 161`
+  for the slider at 100 cm: capture never fired, EXTI caught both edges of
+  every ping, and the servo pulse (1495 us) and the bar (3 LEDs, PB0-PB2)
+  matched the formulas. **Wokwi does not implement timer input capture** -
+  slide 13b and Lab Part 6 now teach that. If neither path sees an edge in 10
+  pings, PA7 is switched to plain input for EXTI and the firmware says so.
+- Still unobserved: the servo's pulse range (Lab Part 4, deliberately left for
+  students) and the real `printf` time.

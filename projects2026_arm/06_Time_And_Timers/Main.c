@@ -142,6 +142,7 @@ void TIM3_IRQHandler(void)
 static volatile uint16_t echo_rise;
 static volatile uint32_t echo_us;        /* width of the last complete pulse  */
 static volatile uint32_t echo_count;     /* complete pulses measured          */
+static volatile uint32_t cap_edges;      /* every capture, either edge        */
 
 static void ranger_init(void)
 {
@@ -168,6 +169,7 @@ void TIM14_IRQHandler(void)
 {
     if (TIM14->SR & TIM_SR_CC1IF) {
         uint16_t t = (uint16_t)TIM14->CCR1;          /* reading CCR1 clears CC1IF */
+        cap_edges++;
 
         /* Which edge was it?  The pin says, as long as the pulse is longer
          * than this handler's latency - the shortest echo, 2 cm, is 116 us. */
@@ -188,6 +190,58 @@ static void ranger_ping(void)
     pin_high(GPIOA, TRIG_PIN);
     while ((uint16_t)((uint16_t)TIM14->CNT - t0) < 12u) { }
     pin_low(GPIOA, TRIG_PIN);
+}
+
+/* ============================================================================
+ *  A second witness on PA7: EXTI line 7, timestamped from TIM14->CNT
+ * ============================================================================
+ * Input capture is the right tool - the hardware takes the timestamp.  But
+ * the first time this lesson was watched in Wokwi (2026-10-04) the echo read
+ * 0 us: no capture ever completed.  Wokwi lists its STM32 timers as "used by
+ * analogWrite()" - PWM out - and says nothing about capture.
+ *
+ * So PA7 also feeds EXTI line 7 (lesson 05).  Its handler reads TIM14->CNT
+ * itself, so its timestamp is late by the interrupt latency - slide 12's
+ * whole point - but it works wherever EXTI does.  EXTI also says WHICH edge
+ * it saw (RPR1 = rising, FPR1 = falling), so it needs no pin read.  The
+ * report line prints how many edges each path saw: that tells you which
+ * layer is missing - the pin, the capture, or neither.
+ */
+static volatile uint16_t exti_rise;
+static volatile uint32_t exti_us, exti_count, exti_edges;
+
+static void echo_exti_init(void)
+{
+    const uint32_t line  = ECHO_PIN;                 /* line number = pin number */
+    const uint32_t shift = (line % 4u) * 8u;
+
+    EXTI->EXTICR[line / 4u] &= ~(0xFFu << shift);    /* port A is code 0        */
+    EXTI->RTSR1 |= 1u << line;                       /* rising: echo starts     */
+    EXTI->FTSR1 |= 1u << line;                       /* falling: echo ends      */
+    EXTI->RPR1   = 1u << line;                       /* nothing stale           */
+    EXTI->FPR1   = 1u << line;
+    EXTI->IMR1  |= 1u << line;
+
+    NVIC_SetPriority(EXTI4_15_IRQn, 1);
+    NVIC_EnableIRQ(EXTI4_15_IRQn);
+}
+
+void EXTI4_15_IRQHandler(void)
+{
+    const uint32_t mask = 1u << ECHO_PIN;
+    uint16_t t = (uint16_t)TIM14->CNT;               /* "now" - already late    */
+
+    if (EXTI->RPR1 & mask) {                         /* write 1 to clear        */
+        EXTI->RPR1 = mask;
+        exti_rise = t;
+        exti_edges++;
+    }
+    if (EXTI->FPR1 & mask) {
+        EXTI->FPR1 = mask;
+        exti_us = (uint16_t)(t - exti_rise);
+        exti_count++;
+        exti_edges++;
+    }
 }
 
 /* ============================================================================
@@ -266,12 +320,15 @@ int main(void)
     SysTick_Config(SystemCoreClock / 1000u);         /* 1 ms, interrupt driven */
     servo_init();
     ranger_init();
+    echo_exti_init();
 
     report_config();
 
     uint32_t ping_at = 0, report_at = 0, beat_at = 0;
-    uint32_t seen = 0, last_updates = 0, cm = 0, pulse = 0, print_ms = 0;
-    uint8_t  beat_on = 0;
+    uint32_t seen = 0, xseen = 0, last_updates = 0, cm = 0, pulse = 0, print_ms = 0;
+    uint32_t pings = 0;
+    uint8_t  beat_on = 0, pa7_plain = 0;
+    const char *source = "none";
 
     for (;;) {
         uint32_t now = millis();
@@ -282,6 +339,19 @@ int main(void)
         if (now - ping_at >= PING_MS) {
             ping_at += PING_MS;
             ranger_ping();
+            pings++;
+
+            /* Ten pings and neither path has seen one edge: perhaps EXTI
+             * cannot see a pin the timer owns.  Give PA7 back to plain input
+             * - EXTI only - and say so.  On silicon this never happens. */
+            if (pings == 10u && cap_edges == 0u && exti_edges == 0u && !pa7_plain) {
+                pa7_plain = 1;
+                pin_mode(GPIOA, ECHO_PIN, MODE_INPUT);
+                printf("No edge on PA7 after 10 pings: PA7 -> plain input, EXTI only.\n");
+            }
+            if (pings == 20u && exti_edges == 0u) {
+                printf("Still no edge on PA7: check the ECHO and TRIG wires (PA7, PA8).\n");
+            }
         }
 
         /* ---- a new echo? --------------------------------------------------
@@ -289,14 +359,24 @@ int main(void)
          * other could pair a new count with an old width - lesson 03 slide
          * 7's "tearing".  So: a critical section, two loads long. */
         __disable_irq();
-        uint32_t n  = echo_count;
-        uint32_t us = echo_us;
+        uint32_t n   = echo_count;
+        uint32_t us  = echo_us;
+        uint32_t xn  = exti_count;
+        uint32_t xus = exti_us;
         __enable_irq();
 
+        /* Capture is preferred: its timestamp has no latency in it.  EXTI's
+         * is used only while capture has never produced a pulse. */
+        int fresh = 0;
         if (n != seen) {
-            seen  = n;
-            pulse = us;
-            cm    = us / 58u;                        /* HC-SR04: 58 us per cm */
+            seen = n;  pulse = us;  source = "capture";  fresh = 1;
+        }
+        if (xn != xseen) {
+            xseen = xn;
+            if (n == 0u) { pulse = xus;  source = "EXTI";  fresh = 1; }
+        }
+        if (fresh) {
+            cm = pulse / 58u;                        /* HC-SR04: 58 us per cm */
             servo_target_us = gauge_us(cm);
             bar_write(proximity_bar(cm));
         }
@@ -306,11 +386,12 @@ int main(void)
             report_at += REPORT_MS;
             uint32_t updates = tim3_updates;
             uint32_t t0 = millis();
-            printf("t=%6lu ms  TIM3 %2lu/s  echo %5lu us = %3lu cm  servo %4lu us"
-                   "  (last line took %lu ms)\n",
+            printf("t=%6lu ms  TIM3 %2lu/s  echo %5lu us = %3lu cm (%s)  servo %4lu us"
+                   "  edges cap %lu exti %lu  (last line %lu ms)\n",
                    (unsigned long)now, (unsigned long)(updates - last_updates),
-                   (unsigned long)pulse, (unsigned long)cm,
-                   (unsigned long)TIM3->CCR1, (unsigned long)print_ms);
+                   (unsigned long)pulse, (unsigned long)cm, source,
+                   (unsigned long)TIM3->CCR1, (unsigned long)cap_edges,
+                   (unsigned long)exti_edges, (unsigned long)print_ms);
             print_ms = millis() - t0;
             last_updates = updates;
         }
