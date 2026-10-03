@@ -113,7 +113,7 @@ time from a linker symbol** — none of it is hardcoded.
 >   SRAM.
 >
 > Nothing printed is outside those two regions. The peripheral addresses from
-> slide 4 exist, but this program never prints them.
+> slides 4a–4c exist, but this program never prints them.
 
 ### Step 4. Check a peripheral address yourself
 

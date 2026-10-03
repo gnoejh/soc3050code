@@ -13,7 +13,7 @@ potentiometer on the **ADC** sets its brightness. `$IMU` frames go to lesson
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 18 slides |
+| `Slide.md` | the lecture - 24 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: eight parts, ~2 hours, **nothing handed in** |
 | `adc.c`, `adc.h` | **subject.** Start-up sequence (regulator, calibration, enable), `CCRDY`, VREFINT; every wait bounded |
 | `i2c.c`, `i2c.h` | **subject.** I²C1 master on PB8/PB9: open drain, ST's `TIMINGR`, write + repeated START + read, NACK vs timeout, probe |

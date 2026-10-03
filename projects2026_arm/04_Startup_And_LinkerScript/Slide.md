@@ -472,39 +472,143 @@ while the raw-address version needs a fresh literal for every one.
 ```
 
 CMSIS declares `GPIOA` as a pointer to a struct pinned at a fixed address, so
-`->` is nothing but **base + offset**, computed at compile time. Every register
-this week's program touches, with the address the compiler actually emits:
+`->` is nothing but **base + offset**, computed at compile time.
 
-| In `Main.c` / `retarget.c` | Base | Offset | Address |
+This week's program touches five blocks that way. Three of them carry the
+lesson, and each gets the next three slides, **one block, every register, one
+page**, before any single register is explained:
+
+| Block | Base | Its job here | Slide |
 |---|---|---|---|
-| `RCC->CR` (clock, `HSIDIV`) | `0x40021000` | `0x00` | `0x40021000` |
-| `RCC->IOPENR` (GPIOA clock gate) | `0x40021000` | `0x34` | `0x40021034` |
-| `RCC->APBENR1` (USART2 clock gate) | `0x40021000` | `0x3C` | `0x4002103C` |
-| `GPIOA->MODER` (pin direction) | `0x50000000` | `0x00` | `0x50000000` |
-| `GPIOA->ODR` (LED on PA5) | `0x50000000` | `0x14` | `0x50000014` |
-| `GPIOA->AFR[0]` (PA2/PA3 to USART2) | `0x50000000` | `0x20` | `0x50000020` |
-| `USART2->BRR` (baud rate) | `0x40004400` | `0x0C` | `0x4000440C` |
-| `USART2->ISR` (transmit ready?) | `0x40004400` | `0x1C` | `0x4000441C` |
-| `USART2->TDR` (the byte out) | `0x40004400` | `0x28` | `0x40004428` |
-
-> Every row was verified by compiling `_Static_assert((uintptr_t)&GPIOA->ODR
-> == 0x50000014UL, ...)` and friends against ST's header. If a number here were
-> wrong, this lesson would not compile.
+| `RCC` | `0x40021000` | clock gates, and the 48 MHz switch | 4a |
+| `GPIOA`, `GPIOB` | `0x50000000`, `0x50000400` | the LEDs, and PA2/PA3 handed to the UART | 4b |
+| `USART2` | `0x40004400` | where `printf` ends up | 4c |
+| `FLASH` | `0x40022000` | one register, `ACR`: the wait state | 16 |
+| `SysTick` | `0xE000E010` | the frame delay in `Main.c` | lesson 06 |
 
 **Two habits this should start.** First, when a peripheral does not respond,
 ask *which address did that actually write to* — it is always answerable.
-Second, notice that `RCC->IOPENR` appears in this table at all: a peripheral
-with no clock reads back zero and ignores writes, silently. `led_init()` sets
-that gate first, and every peripheral lesson after this one will too.
+Second, a peripheral with no clock reads back zero and ignores writes,
+silently. Slide 4a is where that clock comes from.
 
-The two clock-gate registers, drawn to scale — one bit per peripheral, and the
-three this lesson sets shaded:
+---
+
+## Slide 4a: RCC — Every Register on One Page
+
+The **Reset and Clock Control** block (`RCC_TypeDef`, at **0x40021000**) is
+the first thing any peripheral code touches. Its whole map, from ST's header:
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR`** | turn oscillators on, divide HSI, ready flags | `HSIDIV` = 1, poll `HSIRDY` | 16 |
+| 0x04 | `ICSCR` | HSI trimming (factory calibration) | — | |
+| 0x08 | `CFGR` | clock source switch, bus prescalers, MCO | — | |
+| 0x18–0x20 | `CIER`, `CIFR`, `CICR` | clock interrupts: enable, flag, clear | — | |
+| 0x24–0x30 | `IOPRSTR`, `AHBRSTR`, `APBRSTR1`, `APBRSTR2` | hold a peripheral in reset | — | |
+| 0x34 | **`IOPENR`** | clock gate: one bit per GPIO port | `GPIOAEN`, `GPIOBEN` | 4a |
+| 0x38 | `AHBENR` | clock gate: DMA, flash, CRC | — | |
+| 0x3C | **`APBENR1`** | clock gate: TIM3, USART2, I2C1, PWR … | `USART2EN` | 4a |
+| 0x40 | `APBENR2` | clock gate: TIM1, SPI1, USART1, ADC … | — | |
+| 0x44–0x50 | `IOPSMENR` … `APBSMENR2` | the same gates, but in sleep mode | — | |
+| 0x54 | `CCIPR` | kernel clock choice per peripheral | — | |
+| 0x5C, 0x60 | `CSR1`, `CSR2` | LSE/LSI, and *why did we reset?* flags | — | |
 
 ```regs
+# The three RCC registers this lesson uses.  Shaded = a field it writes or polls
 # IOPENR bits are GPIOxEN, one per port: A B C D F
+RCC->CR ; 0x40021000 | 32 | 19 CSSON, 18 HSEBYP, 17 HSERDY, 16 HSEON, !13:11 HSIDIV, !10 HSIRDY, 9 HSIKERON, 8 HSION, 7:5 HSIKERDIV
 RCC->IOPENR ; 0x40021034 | 32 | 5 F, 3 D, 2 C, !1 B, !0 A
 RCC->APBENR1 ; 0x4002103C | 32 | 28 PWREN, 27 DBGEN, 21 I2C1EN, !17 USART2EN, 11 WWDGEN, 10 RTCAPBEN, 1 TIM3EN
 ```
+
+- **Gates** — `IOPENR`, `AHBENR`, `APBENR1`, `APBENR2`: one bit per
+  peripheral; 0 means the peripheral is unclocked and silently deaf. This
+  lesson sets three bits: GPIOA (the user LED and the UART pins), GPIOB (the
+  LED bar), USART2 (`printf`). `led_init()` sets its gate before anything else,
+  and every peripheral lesson after this one will too.
+- **Sources** — `CR`, `CFGR`: what the whole chip runs at (slide 16).
+- **Resets, interrupts, sleep, status** — the rest; not needed until later.
+
+> Every address on slides 4a–4c was verified by compiling
+> `_Static_assert((uintptr_t)&RCC->IOPENR == 0x40021034UL, ...)` and friends
+> against ST's header. If a number here were wrong, this lesson would not
+> compile.
+
+---
+
+## Slide 4b: GPIO — Every Register on One Page
+
+Every port is the same eleven words (`GPIO_TypeDef`), at **0x50000000** for
+GPIOA and **0x50000400** for GPIOB — 0x400 apart, so one struct serves them
+all. Lesson 05 explains each register; this week uses three.
+
+| Offset | Register | Its job | GPIOA here | GPIOB here | Slide |
+|---|---|---|---|---|---|
+| 0x00 | **`MODER`** | 2 bits per pin: in / out / alternate / analog | PA5 out, PA2–PA3 AF | PB0–PB7 out | 4b, 18 |
+| 0x04 | `OTYPER` | push-pull or open-drain | — | — | |
+| 0x08 | `OSPEEDR` | edge speed | — | — | |
+| 0x0C | `PUPDR` | pull-up / pull-down | — | — | |
+| 0x10 | `IDR` | read the pins | — | — | |
+| 0x14 | **`ODR`** | drive the pins | toggle PA5 | the LED pattern, one byte | 4, 18 |
+| 0x18 | `BSRR` | set or reset bits atomically | — | — | |
+| 0x1C | `LCKR` | freeze a pin's configuration | — | — | |
+| 0x20 | **`AFR[0]`** | 4 bits per pin 0–7: which alternate function | PA2, PA3 → AF1 | — | 4b |
+| 0x24 | `AFR[1]` | the same for pins 8–15 | — | — | |
+| 0x28 | `BRR` | reset bits only | — | — | |
+
+```regs
+# GPIOA's three registers in this lesson.  Shaded = PA2/PA3 (UART) and PA5 (LED)
+GPIOA->MODER ; 0x50000000, 2 bits per pin | 32 | each 2 pins mark 2 3 5
+GPIOA->ODR ; 0x50000014, 1 bit per pin | 32 | each 1 used 16 pins mark 5
+GPIOA->AFR[0] ; 0x50000020, 4 bits per pin 0-7 | 32 | each 4 pins mark 2 3
+```
+
+- **Configuration** — `MODER`, `OTYPER`, `OSPEEDR`, `PUPDR`, `AFR[]`, `LCKR`:
+  what each pin *is*. Written once, at start-up.
+- **Data** — `IDR`, `ODR`, `BSRR`, `BRR`: what each pin *does*, read and
+  written in the main loop.
+
+The UART's pins are the one subtle line: `MODER` = `10` says *a peripheral
+drives this pin*, and `AFR[0]` = 1 says *which* peripheral — on PA2 and PA3,
+AF1 is USART2. Neither alone is enough. GPIOB's two registers are drawn on
+slide 18.
+
+---
+
+## Slide 4c: USART2 — Every Register on One Page
+
+`retarget.c` drives the serial port with four registers out of twelve
+(`USART_TypeDef`, at **0x40004400**). The UART lesson explains the rest; this
+is the whole map, so you know what is *not* being used:
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR1`** | enable, word length, parity, interrupts | `UE`, `TE`, `RE` | 4c |
+| 0x04 | `CR2` | stop bits, pin swap, inversion | — | |
+| 0x08 | `CR3` | flow control, DMA, error interrupts | — | |
+| 0x0C | **`BRR`** | baud divisor: clock ÷ baud | 417 | 4c |
+| 0x10 | `GTPR` | smartcard guard time / IrDA prescaler | — | |
+| 0x14 | `RTOR` | receiver timeout | — | |
+| 0x18 | `RQR` | requests: flush, send break | — | |
+| 0x1C | **`ISR`** | status flags | poll `TXE_TXFNF` | 4c, 17 |
+| 0x20 | `ICR` | write 1 to clear a flag | — | |
+| 0x24 | `RDR` | the byte received | — | |
+| 0x28 | **`TDR`** | the byte to send | each character | 4c, 17 |
+| 0x2C | `PRESC` | divides the kernel clock first | — | |
+
+```regs
+# The four.  Shaded = what retarget.c writes or polls
+CR1 ; +0x00, set once | 32 | 29 FIFOEN, 28 M1, 15 OVER8, 12 M0, 10 PCE, 7 TXEIE, 5 RXNEIE, !3 TE, !2 RE, !0 UE
+BRR ; +0x0C, 48 MHz / 115200 | 16 = 0x01A1 | !15:0 BRR
+ISR ; +0x1C, read-only | 32 | 21 TEACK, 16 BUSY, !7 TXE_TXFNF, 6 TC, 5 RXNE_RXFNE, 3 ORE, 1 FE
+TDR ; +0x28 | 16 | !8:0 TDR
+```
+
+The whole transmit path is two lines of `uart2_putc()`: wait while `ISR`'s
+`TXE_TXFNF` says the transmit register is still full, then store the byte in
+`TDR`. `BRR` = (48 000 000 + 57 600) / 115 200 = **417**, rounded to nearest. It is
+computed from `SystemCoreClock`, so it is only right if the chip really runs
+at 48 MHz — slide 16's job. Slide 17 is the C library's side of the same wire.
 
 ---
 
@@ -943,7 +1047,8 @@ void SystemInit(void)
 }
 ```
 
-The two registers it touches, with the fields it writes or polls shaded:
+The two registers it touches, with the fields it writes or polls shaded (RCC's
+whole map is slide 4a):
 
 ```regs
 FLASH->ACR ; 0x40022000 | 32 | 18 DBG_SWEN, 16 PROGEMPTY, 11 ICRST, 9 ICEN, 8 PRFTEN, !2:0 LATENCY

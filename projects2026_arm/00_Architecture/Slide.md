@@ -128,12 +128,45 @@ and stores back.
 program owns is in memory. That is a remarkably small amount of state, and it
 is why an interrupt can save and restore it in a handful of cycles.
 
-`xPSR` drawn to scale — flags at the top, the running exception's number at the
-bottom, and almost nothing in between:
+---
+
+## Slide 3b: Every Core Register on One Page
+
+The sixteen above, plus the **special registers** that sit beside them. Those
+have no number and no address: only `mrs` and `msr` reach them. This is the
+whole list for this core (ARMv6-M; the bit layouts are `APSR_Type`,
+`IPSR_Type`, `xPSR_Type` and `CONTROL_Type` in `core_cm0plus.h`):
+
+| Register | Its job | Explained |
+|---|---|---|
+| **`R0`–`R3`** | arguments in, result out, scratch | lesson 01, slide 18 |
+| **`R4`–`R12`** | locals the compiler keeps out of memory | lesson 01, slide 18 |
+| **`R13` / `SP`** | stack pointer: one name, two registers, `MSP` and `PSP` | slide 8 |
+| **`R14` / `LR`** | return address | lesson 01, slide 20 |
+| **`R15` / `PC`** | the next instruction; write it and you have branched | slide 3 |
+| **`xPSR`** | one word read three ways: `APSR` flags, `EPSR` Thumb bit, `IPSR` exception number | this slide; slide 9; lesson 01, slide 7 |
+| **`PRIMASK`** | bit 0 set = every configurable interrupt masked | lesson 03, slide 5 |
+| **`CONTROL`** | which stack Thread mode uses, and whether it is privileged | slide 8 |
+
+That is all of it. A Cortex-M3 or M4 adds `BASEPRI` and `FAULTMASK`; this core
+has neither.
+
+The special registers, drawn to scale. `xPSR` is one register; the three
+rows under it are the views of it, each showing only its own bits:
 
 ```regs
-xPSR ; APSR · EPSR · IPSR | 32 | !31 N, !30 Z, !29 C, !28 V, 24 T, 5:0 ISR
+# The core's special registers.  Shaded = the bits Part 0 explains
+xPSR ; APSR · EPSR · IPSR | 32 | !31 N, !30 Z, !29 C, !28 V, !24 T, !5:0 ISR
+APSR ; flags view | 32 | 31 N, 30 Z, 29 C, 28 V
+EPSR ; execution state view | 32 | 24 T
+IPSR ; exception-number view | 32 | 5:0 ISR
+PRIMASK ; interrupt mask | 32 | !0 PM
+CONTROL ; stack and privilege | 32 | !1 SPSEL, !0 nPRIV
 ```
+
+Flags at the top of `xPSR`, the running exception's number at the bottom, and
+almost nothing in between. `T` is always 1 here (lesson 01, slide 19 says why);
+`ISR` is 0 in `main()` and the exception's number inside a handler (slide 9).
 
 You will rarely name these in C — the compiler does — but the debugger shows
 them, a crash report is mostly their contents, and lesson 01 lives here.
@@ -369,7 +402,7 @@ asked.
 ```
 
 Which stack Thread mode uses, and whether it is privileged, is two bits in the
-special register `CONTROL`; the other thirty are reserved:
+special register `CONTROL` (on slide 3b's map); the other thirty are reserved:
 
 ```regs
 CONTROL ; both 0 at reset | 32 | !1 SPSEL, !0 nPRIV

@@ -20,7 +20,7 @@ template for every project's host tests.
 
 | | |
 |---|---|
-| `Slide.md` | the project briefing, a title and 28 slides |
+| `Slide.md` | the project briefing - 31 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | **the handbook**: a guided first session (8 parts), then the milestone checklist, proposal template, design-review checklist, report template, demo checklist and rubric |
 | `app.h` | **the plug-in interface**: `app_init`, `app_step(dt, const pad_t*)`, `app_draw`, `app_telemetry`; `app_sound` provided by the platform |
 | `app.c` | the demo app, *steer* — **replace this with your project**. Pure C |

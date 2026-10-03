@@ -19,7 +19,7 @@ PC to measure everything this README quotes.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: title, two pin-map slides, 28 slides |
+| `Slide.md` | the lecture - 31 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: nine parts, ~2 hours, a leaderboard, **nothing handed in** |
 | `control.h` | **the contract**: `sensors_t`, `actuators_t`, `control_step()`, the tunable gains |
 | `control.c` | **the student's file**: weighted-average line position, PID, corner slow-down, gap / overshoot / crossing handling |

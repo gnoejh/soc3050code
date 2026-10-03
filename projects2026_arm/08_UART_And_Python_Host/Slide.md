@@ -307,7 +307,55 @@ this lesson configures it.
 | **event** | `USART2_IRQn` = 28, one vector for everything |
 | **rate** | `BRR` = 48 000 000 / 115 200 = 416.67 → **417** |
 
-Three of those slots, drawn to scale (this lesson's bits shaded):
+Every row is a slot you already know. That is the whole point of Part 0's
+model: the fourth peripheral is not a fourth new thing.
+
+**Every USART register, on one page.** USART1 and USART2 share one register
+set (`USART_TypeDef` in `stm32c031xx.h`); USART2 sits at **0x40004400**.
+
+| Offset | Register | Its job | USART2 here | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR1`** | control: enable, directions, interrupt enables, frame format | `UE`, `RE`, `TE`, `RXNEIE`; `TXEIE` on and off | 1b, 6 |
+| 0x04 | `CR2` | stop bits, address match, pin swap, inversion | reset value: 1 stop bit | |
+| 0x08 | `CR3` | DMA, flow control, error interrupt, FIFO thresholds | — | |
+| 0x0C | **`BRR`** | baud rate: clocks per bit | 417 | 1b |
+| 0x10 | `GTPR` | smartcard guard time, IrDA prescaler | — | |
+| 0x14 | `RTOR` | receiver timeout | — | |
+| 0x18 | `RQR` | requests by software: flush, send break | — | |
+| 0x1C | **`ISR`** | status flags, read only | `RXNE`, `TXE`, `ORE` | 4, 6 |
+| 0x20 | **`ICR`** | write 1 to clear a flag of `ISR` | `ORECF` | 4 |
+| 0x24 | **`RDR`** | the received byte; reading clears `RXNE` | read in the ISR | 3, 4 |
+| 0x28 | **`TDR`** | the byte to send; writing clears `TXE` | written in the ISR | 6 |
+| 0x2C | `PRESC` | kernel clock prescaler | reset value: ÷1 | |
+
+**Six registers out of twelve** do all of this lesson's work:
+
+```regs
+# The six, drawn to scale.  Shaded = a field this lesson writes or reads.
+# (The header names RXNEIE, TXEIE, RXNE and TXE as *_RXFNEIE, *_TXFNFIE, *_RXFNE and *_TXFNF: their FIFO-mode meanings.)
+CR1 ; control | 32 | 31 RXFFIE, 30 TXFEIE, 29 FIFOEN, 28 M1, 27, 26, 25:21 DEAT, 20:16 DEDT, 15 OVER8, 14, 13, 12 M0, 11, 10 PCE, 9 PS, 8, !7 TXEIE, 6 TCIE, !5 RXNEIE, 4 IDLEIE, !3 TE, !2 RE, 1 UESM, !0 UE
+BRR ; clocks per bit | 32 | !15:0 BRR
+ISR ; status, read | 32 | 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16 BUSY, 15, 14, 13, 12, 11, 10, 9, 8, !7 TXE, 6 TC, !5 RXNE, 4 IDLE, !3 ORE, 2 NE, 1 FE, 0 PE
+ICR ; write 1 to clear | 32 | 20, 17, 13, 12, 11, 9, 8, 7, 6 TCCF, 5, 4 IDLECF, !3 ORECF, 2 NECF, 1 FECF, 0 PECF
+RDR ; byte in | 32 | !8:0 RDR
+TDR ; byte out | 32 | !8:0 TDR
+```
+
+- **Set up once** — `BRR`, `CR1`: how fast, which directions, which
+  interrupts (slide 1b).
+- **Status** — `ISR`, `ICR`: what happened, and how each flag is cleared
+  (slide 4).
+- **Data** — `RDR`, `TDR`: one byte each way. `RDR` and `TDR` are 9 bits wide
+  for 9-bit frames; this lesson uses 8 (slides 3–6).
+- **The rest** — `CR2`, `CR3`, `PRESC` keep their reset values (8 data bits,
+  1 stop bit, no parity, no flow control, no prescaler); `GTPR`, `RTOR`, `RQR`
+  are never touched.
+
+---
+
+## Slide 1b: Clock Gate, Pins, Baud Rate
+
+Three of slide 1's slots, drawn to scale (this lesson's bits shaded):
 
 ```regs
 RCC->APBENR1 ; clock gate | 32 | 1, 10, 11, !17 USART2EN, 21, 27, 28
@@ -318,9 +366,6 @@ USART2->BRR ; 417 | 32 = 0x000001A1 | !15:0 BRR
 `BRR = 417` gives 115 108 baud, 0.08% slow — far inside the few percent a
 UART tolerates, because the receiver resynchronises on every start bit. The
 banner prints `BRR = 417` read back from the register (**measured**).
-
-Every row is a slot you already know. That is the whole point of Part 0's
-model: the fourth peripheral is not a fourth new thing.
 
 ---
 

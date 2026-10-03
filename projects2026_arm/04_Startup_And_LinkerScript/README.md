@@ -11,7 +11,7 @@ initialisation and the clock setup — and then takes them apart.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, 20 slides — rendered to `_slides/04_Startup_And_LinkerScript.html` |
+| `Slide.md` | the lecture - 27 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: seven parts, ~2 hours, **hands-on with the explanation inline** — not assessed, nothing handed in |
 | `Main.c` | the lab program — prints a memory report measured from linker symbols, then drives an eight-LED bar on PB0–PB7 from pattern tables **students edit** |
 | `startup.c` | **the subject of the lesson.** Vector table, `Reset_Handler`, `SystemInit()` |
@@ -60,10 +60,11 @@ hang them on.
 Slide 3 is the memory map (FLASH 32 KB at `0x08000000`, SRAM 12 KB at
 `0x20000000`, peripherals, SCS) and makes the point that `link.ld`'s `MEMORY`
 block is two rows of it. Slide 4 is the I/O map: `GPIOA->ODR` resolving to
-`0x50000014` as base + offset, with a table of every register this program
-touches.
+`0x50000014` as base + offset, and the five blocks this program touches.
+Slides 4a–4c then give RCC, GPIO and USART2 each their whole register map on
+one page, with the registers this lesson uses drawn to scale.
 
-**Every address on both slides is compiler-verified.** They were checked with
+**Every address on slides 3, 4 and 4a–4c is compiler-verified.** They were checked with
 `_Static_assert((uintptr_t)&GPIOA->ODR == 0x50000014UL, ...)` and 19 similar
 assertions against ST's CMSIS header; the file compiles, so the numbers hold.
 Re-run that check if the target ever changes — the script is trivial to

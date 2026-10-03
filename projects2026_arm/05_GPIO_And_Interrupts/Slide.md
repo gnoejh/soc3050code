@@ -354,22 +354,47 @@ Three bit operations do all the work in this lesson:
 
 ---
 
-## Slide 3: Base Address + Offset
+## Slide 3: Base Address + Offset — the Whole Port on One Page
 
 GPIOA's registers start at the **base address** `0x50000000`. Each register
-sits a fixed distance — its **offset** — from that base:
+sits a fixed distance — its **offset** — from that base. This is **every**
+register in a GPIO port (`GPIO_TypeDef` in `stm32c031xx.h`):
 
-| Register | Offset | Address in GPIOA | Reset value (GPIOA) |
-|---|---|---|---|
-| `MODER` | `0x00` | `0x50000000` | `0xEBFFFFFF` |
-| `OTYPER` | `0x04` | `0x50000004` | `0x00000000` |
-| `OSPEEDR` | `0x08` | `0x50000008` | `0x0C000000` |
-| `PUPDR` | `0x0C` | `0x5000000C` | `0x24000000` |
-| `IDR` | `0x10` | `0x50000010` | depends on the pins |
-| `ODR` | `0x14` | `0x50000014` | `0x00000000` |
-| `BSRR` | `0x18` | `0x50000018` | write only |
-| `AFR[0]`, `AFR[1]` | `0x20`, `0x24` | `0x50000020`, `…24` | `0x00000000` |
-| `BRR` | `0x28` | `0x50000028` | write only |
+| Register | Offset | Address in GPIOA | Reset value (GPIOA) | Its job | Slide |
+|---|---|---|---|---|---|
+| **`MODER`** | `0x00` | `0x50000000` | `0xEBFFFFFF` | what the pin is: in, out, alternate, analog | 5, 6, 15, 16 |
+| `OTYPER` | `0x04` | `0x50000004` | `0x00000000` | how an output drives: push-pull, open-drain | 7 |
+| `OSPEEDR` | `0x08` | `0x50000008` | `0x0C000000` | how fast its edges change | 8 |
+| **`PUPDR`** | `0x0C` | `0x5000000C` | `0x24000000` | pull-up, pull-down or neither | 9, 17 |
+| **`IDR`** | `0x10` | `0x50000010` | depends on the pins | read: what the pin is now | 10 |
+| `ODR` | `0x14` | `0x50000014` | `0x00000000` | what the pin should be | 11 |
+| **`BSRR`** | `0x18` | `0x50000018` | write only | set or reset pins, no read | 12, 13 |
+| `LCKR` | `0x1C` | `0x5000001C` | `0x00000000` | freeze a pin's configuration until reset | — not used |
+| **`AFR[0]`**, `AFR[1]` | `0x20`, `0x24` | `0x50000020`, `…24` | `0x00000000` | which peripheral owns the pin | 14 |
+| `BRR` | `0x28` | `0x50000028` | write only | reset pins only | 12 |
+
+Bold: written or read by this lesson's code (`AFR[0]` by `uart2_init()`).
+The same ten, drawn to one scale:
+
+```regs
+# GPIOA, every register (0x50000000 + offset). Shaded: port A's fields this lesson writes or reads.
+MODER ; 0x00 PA5 out, PA3:2 af, PA1:0 in | 32 | each 2 pins mark 0 1 2 3 5
+OTYPER ; 0x04 1 = open-drain | 32 | each 1 used 16 pins
+OSPEEDR ; 0x08 edge speed | 32 | each 2 pins
+PUPDR ; 0x0C PA1, PA0 pull-up | 32 | each 2 pins mark 0 1
+IDR ; 0x10 read only | 32 | each 1 used 16 pins mark 0 1
+ODR ; 0x14 read-modify-write | 32 | each 1 used 16 pins
+BSRR ; 0x18 write only: LD4 on/off | 32 | 31:22, !21 BR5, 20:16, 15:6, !5 BS5, 4:0
+LCKR ; 0x1C not used | 32 | 16 LCKK, 15:0 LCK15-LCK0
+AFR[0] ; 0x20 pins 7-0: PA3, PA2 = AF1 | 32 | each 4 pins mark 2 3
+AFR[1] ; 0x24 pins 15-8 | 32 | 31:28 15, 27:24 14, 23:20 13, 19:16 12, 15:12 11, 11:8 10, 7:4 9, 3:0 8
+BRR ; 0x28 write only | 32 | 15:0 BR15-BR0
+```
+
+They fall into the model of slide 1: **control** `MODER` `OTYPER` `OSPEEDR`
+`PUPDR` `AFR` (and `LCKR`, which freezes them), **data in** `IDR`, **data out**
+`ODR` `BSRR` `BRR`. Port B uses the same map; there the lesson writes `MODER`
+for PB7–PB0 and drives the LED bar through `BSRR`.
 
 In C you never type these addresses. ST's header describes the layout as a
 struct and places it at the base:
@@ -1309,6 +1334,33 @@ event controller), watches pins and raises interrupts:
 </svg>
 ```
 
+Two register blocks carry that path. Before any one register, both of them
+whole — **every** register in `EXTI_TypeDef` (`stm32c031xx.h`, base
+`0x40021800`) and in the core's `NVIC_Type` (`core_cm0plus.h`, base
+`0xE000E100`):
+
+| Block | Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|---|
+| EXTI | 0x00 | **`RTSR1`** | rising-edge trigger enable, bit *n* = line *n* | bit 1 set | 25 |
+| EXTI | 0x04 | **`FTSR1`** | falling-edge trigger enable | bit 1 set | 25 |
+| EXTI | 0x08 | `SWIER1` | software trigger: write 1 = an edge on that line | debugger only | 33b |
+| EXTI | 0x0C | **`RPR1`** | rising edge latched; write 1 to clear | read, cleared | 25, 29 |
+| EXTI | 0x10 | **`FPR1`** | falling edge latched; write 1 to clear | read, cleared | 25, 29 |
+| EXTI | 0x14–0x5C | — | reserved | | |
+| EXTI | 0x60–0x6C | **`EXTICR[0]`**–`[3]` | which port feeds each line, four lines per register | `EXTICR[0]` line 1 = port A | 24 |
+| EXTI | 0x70–0x7C | — | reserved | | |
+| EXTI | 0x80 | **`IMR1`** | interrupt mask: 1 = on to the NVIC | bit 1 set | 25 |
+| EXTI | 0x84 | `EMR1` | event mask: wake-up without an interrupt | — | |
+| NVIC | 0x000 | **`ISER`** | set-enable, bit *n* = IRQ *n*; writing 0 does nothing | bit 5 | 26 |
+| NVIC | 0x080 | `ICER` | clear-enable, the same layout | — | 26 |
+| NVIC | 0x100 | `ISPR` | set-pending: raise an IRQ by software | debugger only | 26, 33b |
+| NVIC | 0x180 | `ICPR` | clear-pending | — | 26 |
+| NVIC | 0x300–0x31C | **`IPR[0]`**–`[7]` | priority, one byte per IRQ, top 2 bits used | `IPR[1]` byte 1 | 26 |
+
+`NVIC_EnableIRQ()` and `NVIC_SetPriority()` write the NVIC for you; every
+EXTI register is written by hand. One more switch sits in neither block:
+`PRIMASK`, a core register, which turns off every interrupt at once.
+
 Every one of those switches is a bit in a register. Here they all are, in the
 order an edge from PA1 crosses them, with the value each holds after
 `button_b_irq_init()` — shaded is the bit button B needs:
@@ -1318,16 +1370,21 @@ order an edge from PA1 crosses them, with the value each holds after
 EXTICR[0] ; hop 1: line 1 <- port A | 32 = 0x00000000 | 26:24 EXTI3, 18:16 EXTI2, !10:8 EXTI1, 2:0 EXTI0
 RTSR1 ; hop 2: rising edge (release) | 32 = 0x00000002 | each 1 used 16 mark 1
 FTSR1 ; hop 2: falling edge (press) | 32 = 0x00000002 | each 1 used 16 mark 1
+SWIER1 ; hop 2 by software: write 1 = fake an edge | 32 | each 1 used 16 mark 1
 RPR1 ; hop 2: rising latched, write 1 to clear | 32 | each 1 used 16 mark 1
 FPR1 ; hop 2: falling latched, write 1 to clear | 32 | each 1 used 16 mark 1
 IMR1 ; hop 2: 1 = unmasked, on to the NVIC | 32 | 31, 25, 23, 19, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, !1 IM1, 0
+EMR1 ; not used: event mask, same lines + 16-18 | 32 | 31, 25, 23, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 NVIC ISER ; hop 3: IRQ 5 enabled | 32 = 0x00000020 | each 1 mark 5
+NVIC ISPR ; hop 3 by software: 1 = pend IRQ 5 | 32 | each 1 mark 5
 NVIC IPR[1] ; hop 3: IRQ 5 at priority 2 | 32 = 0x00008000 | 31:30 IRQ7, 23:22 IRQ6, !15:14 IRQ5, 7:6 IRQ4
 PRIMASK ; the global switch: 0 = interrupts on | 32 = 0x00000000 | 0 PM
 ```
 
 `RPR1` and `FPR1` have no fixed value: hardware sets bit 1 on each edge, and
-the handler clears it by writing a 1 (slide 25). `IMR1`'s bits 19, 23, 25 and
+the handler clears it by writing a 1 (slide 25). `SWIER1` and `ISPR` are not in
+the program at all — they are how slide 33b raises the same interrupt from the
+debugger, one hop in and two hops in. `IMR1`'s bits 19, 23, 25 and
 31 are direct lines from other peripherals, not this lesson's business. `PRIMASK` is the one switch that starts **on**.
 
 The next four slides take the hops one at a time, with the exact value each

@@ -896,6 +896,8 @@ TIM14->CR1 = TIM_CR1_CEN;
 ```regs
 RCC->APBENR2 | 32 | 0, 11, 12, 14, !15 TIM14EN, 17, 18, 20
 TIM14->PSC ; 48 MHz / (47 + 1) = 1 MHz | 16 = 0x002F | !15:0 PSC
+TIM14->ARR ; full 16-bit range: wraps every 65.536 ms | 16 = 0xFFFF | !15:0 ARR
+TIM14->CNT ; read before and after each task, in µs | 16 | !15:0 CNT
 TIM14->EGR ; UG: copy PSC into the counter now | 16 = 0x0001 | !0 UG
 TIM14->CR1 | 16 = 0x0001 | 7 ARPE, !0 CEN
 ```

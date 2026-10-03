@@ -55,7 +55,7 @@ upload `Main.elf`.
 Every number was read back from a register. **Check one by hand**: 48 MHz ÷
 (47 + 1) ÷ (19999 + 1) = ?
 
-> 50 Hz. Both registers hold *N − 1* (slide 5), which is why the arithmetic
+> 50 Hz. Both registers hold *N − 1* (slide 5b), which is why the arithmetic
 > needs the `+ 1`s.
 
 ### Read the report

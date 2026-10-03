@@ -22,7 +22,7 @@ robin — on a PC.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: title, two pin-map slides, 27 slides |
+| `Slide.md` | the lecture - 30 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: nine parts, ~2 h, then the class tournament — **`student.c` and one `$RESULT` line handed in** |
 | `strategy.h` | **the contract**: `robot_view_t`, `robot_cmd_t`, `strategy_mem_t`, the `STRATEGY_PREFIX` renaming macro |
 | `student.c` | **yours**: the starter strategy, with the class rules in its header |

@@ -188,39 +188,109 @@
   <text x="280" y="176" text-anchor="middle" class="lbl">Write to PC and you have branched. It is an ordinary register.</text>
 </svg></figure>
 <p><strong>This is the entire working state of the processor.</strong> Everything else your<br>program owns is in memory. That is a remarkably small amount of state, and it<br>is why an interrupt can save and restore it in a handful of cycles.</p>
-<p><code>xPSR</code> drawn to scale — flags at the top, the running exception&#x27;s number at the<br>bottom, and almost nothing in between:</p>
-<figure class="diagram"><svg width="811" viewBox="0 0 811 79" role="img" aria-label="xPSR, 32 bits">
-<text x="16" y="35" class="mono">xPSR</text>
-<text x="16" y="50" class="lbl">APSR · EPSR · IPSR</text>
-<text x="156.2" y="20" text-anchor="start" class="mono lbl">31</text>
-<text x="794.2" y="20" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="315.2" y="28" width="360.0" height="26"/>
-<text x="495.2" y="41" text-anchor="middle" class="lbl">reserved</text>
-<rect class="dash" x="235.2" y="28" width="60.0" height="26"/>
-<text x="265.2" y="41" text-anchor="middle" class="lbl">reserved</text>
-<rect class="hifill" x="155.2" y="28" width="20.0" height="26"/>
-<text x="165.2" y="41" text-anchor="middle" class="mono">N</text>
-<rect class="hifill" x="175.2" y="28" width="20.0" height="26"/>
-<text x="185.2" y="20" text-anchor="middle" class="mono lbl">30</text>
-<text x="185.2" y="41" text-anchor="middle" class="mono">Z</text>
-<rect class="hifill" x="195.2" y="28" width="20.0" height="26"/>
-<text x="205.2" y="20" text-anchor="middle" class="mono lbl">29</text>
-<text x="205.2" y="41" text-anchor="middle" class="mono">C</text>
-<rect class="hifill" x="215.2" y="28" width="20.0" height="26"/>
-<text x="225.2" y="20" text-anchor="middle" class="mono lbl">28</text>
-<text x="225.2" y="41" text-anchor="middle" class="mono">V</text>
-<rect class="reg" x="295.2" y="28" width="20.0" height="26"/>
-<text x="305.2" y="20" text-anchor="middle" class="mono lbl">24</text>
-<text x="305.2" y="41" text-anchor="middle" class="mono">T</text>
-<rect class="reg" x="675.2" y="28" width="120.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M775.2 28 V32 M775.2 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M755.2 28 V32 M755.2 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M735.2 28 V32 M735.2 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M715.2 28 V32 M715.2 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M695.2 28 V32 M695.2 50 V54"/>
-<text x="676.2" y="20" text-anchor="start" class="mono lbl">5</text>
-<text x="735.2" y="41" text-anchor="middle" class="mono">ISR</text>
+</section>
+<section class="slide">
+<h2>Slide 3b: Every Core Register on One Page</h2>
+<p>The sixteen above, plus the <strong>special registers</strong> that sit beside them. Those<br>have no number and no address: only <code>mrs</code> and <code>msr</code> reach them. This is the<br>whole list for this core (ARMv6-M; the bit layouts are <code>APSR_Type</code>,<br><code>IPSR_Type</code>, <code>xPSR_Type</code> and <code>CONTROL_Type</code> in <code>core_cm0plus.h</code>):</p>
+<table><thead><tr><th>Register</th><th>Its job</th><th>Explained</th></tr></thead><tbody><tr><td><strong><code>R0</code>–<code>R3</code></strong></td><td>arguments in, result out, scratch</td><td>lesson 01, slide 18</td></tr><tr><td><strong><code>R4</code>–<code>R12</code></strong></td><td>locals the compiler keeps out of memory</td><td>lesson 01, slide 18</td></tr><tr><td><strong><code>R13</code> / <code>SP</code></strong></td><td>stack pointer: one name, two registers, <code>MSP</code> and <code>PSP</code></td><td>slide 8</td></tr><tr><td><strong><code>R14</code> / <code>LR</code></strong></td><td>return address</td><td>lesson 01, slide 20</td></tr><tr><td><strong><code>R15</code> / <code>PC</code></strong></td><td>the next instruction; write it and you have branched</td><td>slide 3</td></tr><tr><td><strong><code>xPSR</code></strong></td><td>one word read three ways: <code>APSR</code> flags, <code>EPSR</code> Thumb bit, <code>IPSR</code> exception number</td><td>this slide; slide 9; lesson 01, slide 7</td></tr><tr><td><strong><code>PRIMASK</code></strong></td><td>bit 0 set = every configurable interrupt masked</td><td>lesson 03, slide 5</td></tr><tr><td><strong><code>CONTROL</code></strong></td><td>which stack Thread mode uses, and whether it is privileged</td><td>slide 8</td></tr></tbody></table>
+<p>That is all of it. A Cortex-M3 or M4 adds <code>BASEPRI</code> and <code>FAULTMASK</code>; this core<br>has neither.</p>
+<p>The special registers, drawn to scale. <code>xPSR</code> is one register; the three<br>rows under it are the views of it, each showing only its own bits:</p>
+<figure class="diagram"><svg width="830" viewBox="0 0 830 498" role="img" aria-label="The core&#x27;s special registers.  Shaded = the bits Part 0 explains; xPSR, 32 bits; APSR, 32 bits; EPSR, 32 bits; IPSR, 32 bits; PRIMASK, 32 bits; CONTROL, 32 bits">
+<text x="415" y="16" text-anchor="middle" class="lbl">The core&#x27;s special registers.  Shaded = the bits Part 0 explains</text>
+<text x="16" y="59" class="mono">xPSR</text>
+<text x="16" y="74" class="lbl">APSR · EPSR · IPSR</text>
+<text x="175.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="334.4" y="52" width="360.0" height="26"/>
+<text x="514.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="254.4" y="52" width="60.0" height="26"/>
+<text x="284.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="174.4" y="52" width="20.0" height="26"/>
+<text x="184.4" y="65" text-anchor="middle" class="mono">N</text>
+<rect class="hifill" x="194.4" y="52" width="20.0" height="26"/>
+<text x="204.4" y="44" text-anchor="middle" class="mono lbl">30</text>
+<text x="204.4" y="65" text-anchor="middle" class="mono">Z</text>
+<rect class="hifill" x="214.4" y="52" width="20.0" height="26"/>
+<text x="224.4" y="44" text-anchor="middle" class="mono lbl">29</text>
+<text x="224.4" y="65" text-anchor="middle" class="mono">C</text>
+<rect class="hifill" x="234.4" y="52" width="20.0" height="26"/>
+<text x="244.4" y="44" text-anchor="middle" class="mono lbl">28</text>
+<text x="244.4" y="65" text-anchor="middle" class="mono">V</text>
+<rect class="hifill" x="314.4" y="52" width="20.0" height="26"/>
+<text x="324.4" y="44" text-anchor="middle" class="mono lbl">24</text>
+<text x="324.4" y="65" text-anchor="middle" class="mono">T</text>
+<rect class="hifill" x="694.4" y="52" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 52 V56 M794.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M774.4 52 V56 M774.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M754.4 52 V56 M754.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M734.4 52 V56 M734.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M714.4 52 V56 M714.4 74 V78"/>
+<text x="695.4" y="44" text-anchor="start" class="mono lbl">5</text>
+<text x="754.4" y="65" text-anchor="middle" class="mono">ISR</text>
+<text x="16" y="128" class="mono">APSR</text>
+<text x="16" y="143" class="lbl">flags view</text>
+<text x="175.4" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="254.4" y="121" width="560.0" height="26"/>
+<text x="534.4" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="174.4" y="121" width="20.0" height="26"/>
+<text x="184.4" y="134" text-anchor="middle" class="mono">N</text>
+<rect class="reg" x="194.4" y="121" width="20.0" height="26"/>
+<text x="204.4" y="113" text-anchor="middle" class="mono lbl">30</text>
+<text x="204.4" y="134" text-anchor="middle" class="mono">Z</text>
+<rect class="reg" x="214.4" y="121" width="20.0" height="26"/>
+<text x="224.4" y="113" text-anchor="middle" class="mono lbl">29</text>
+<text x="224.4" y="134" text-anchor="middle" class="mono">C</text>
+<rect class="reg" x="234.4" y="121" width="20.0" height="26"/>
+<text x="244.4" y="113" text-anchor="middle" class="mono lbl">28</text>
+<text x="244.4" y="134" text-anchor="middle" class="mono">V</text>
+<text x="16" y="197" class="mono">EPSR</text>
+<text x="16" y="212" class="lbl">execution state view</text>
+<text x="175.4" y="182" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="182" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="334.4" y="190" width="480.0" height="26"/>
+<text x="574.4" y="203" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="174.4" y="190" width="140.0" height="26"/>
+<text x="244.4" y="203" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="314.4" y="190" width="20.0" height="26"/>
+<text x="324.4" y="182" text-anchor="middle" class="mono lbl">24</text>
+<text x="324.4" y="203" text-anchor="middle" class="mono">T</text>
+<text x="16" y="266" class="mono">IPSR</text>
+<text x="16" y="281" class="lbl">exception-number view</text>
+<text x="175.4" y="251" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="251" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="259" width="520.0" height="26"/>
+<text x="434.4" y="272" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="694.4" y="259" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 259 V263 M794.4 281 V285"/>
+<path class="reg" stroke-width="0.6" d="M774.4 259 V263 M774.4 281 V285"/>
+<path class="reg" stroke-width="0.6" d="M754.4 259 V263 M754.4 281 V285"/>
+<path class="reg" stroke-width="0.6" d="M734.4 259 V263 M734.4 281 V285"/>
+<path class="reg" stroke-width="0.6" d="M714.4 259 V263 M714.4 281 V285"/>
+<text x="695.4" y="251" text-anchor="start" class="mono lbl">5</text>
+<text x="754.4" y="272" text-anchor="middle" class="mono">ISR</text>
+<text x="16" y="335" class="mono">PRIMASK</text>
+<text x="16" y="350" class="lbl">interrupt mask</text>
+<text x="175.4" y="320" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="320" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="328" width="620.0" height="26"/>
+<text x="484.4" y="341" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="794.4" y="328" width="20.0" height="26"/>
+<text x="804.4" y="367" text-anchor="middle" class="mono halo">PM</text>
+<text x="16" y="421" class="mono">CONTROL</text>
+<text x="16" y="436" class="lbl">stack and privilege</text>
+<text x="175.4" y="406" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="406" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="414" width="600.0" height="26"/>
+<text x="474.4" y="427" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="774.4" y="414" width="20.0" height="26"/>
+<text x="784.4" y="406" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="794.4" y="414" width="20.0" height="26"/>
+<path class="dash" d="M804.4 440 L804.4 462"/>
+<text x="784.4" y="453" text-anchor="middle" class="mono halo">SPSEL</text>
+<text x="804.4" y="469" text-anchor="middle" class="mono halo">nPRIV</text>
 </svg></figure>
+<p>Flags at the top of <code>xPSR</code>, the running exception&#x27;s number at the bottom, and<br>almost nothing in between. <code>T</code> is always 1 here (lesson 01, slide 19 says why);<br><code>ISR</code> is 0 in <code>main()</code> and the exception&#x27;s number inside a handler (slide 9).</p>
 <p>You will rarely name these in C — the compiler does — but the debugger shows<br>them, a crash report is mostly their contents, and lesson 01 lives here.</p>
 </section>
 <section class="slide">
@@ -359,7 +429,7 @@
   <text x="280" y="154" text-anchor="middle" class="lbl">Handler mode is always privileged. Thread mode need not be —</text>
   <text x="280" y="172" text-anchor="middle" class="lbl">which is how an RTOS keeps one task from corrupting another.</text>
 </svg></figure>
-<p>Which stack Thread mode uses, and whether it is privileged, is two bits in the<br>special register <code>CONTROL</code>; the other thirty are reserved:</p>
+<p>Which stack Thread mode uses, and whether it is privileged, is two bits in the<br>special register <code>CONTROL</code> (on slide 3b&#x27;s map); the other thirty are reserved:</p>
 <figure class="diagram"><svg width="792" viewBox="0 0 792 112" role="img" aria-label="CONTROL, 32 bits">
 <text x="16" y="35" class="mono">CONTROL</text>
 <text x="16" y="50" class="lbl">both 0 at reset</text>

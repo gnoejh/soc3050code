@@ -327,6 +327,57 @@ sets the MAX7219's brightness, `code >> 8`, 0..15.
 
 ---
 
+## Slide 2b: The ADC — Every Register on One Page
+
+Before any single register, the whole block. `ADC_TypeDef` in
+`stm32c031xx.h`, at **0x40012400** (`ADC1`), plus one register the header
+keeps in a separate struct, `ADC_Common_TypeDef`, at **0x40012708**
+(`ADC1_COMMON`, ADC base + 0x308).
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | **`ISR`** | status flags: write 1 to clear | `ADRDY`, `CCRDY`, `EOC` | 3, 4 |
+| 0x04 | `IER` | which flags raise an interrupt | — (polled) | |
+| 0x08 | **`CR`** | control: regulator, calibrate, enable, start | `ADVREGEN`, `ADCAL`, `ADEN`, `ADSTART` | 3, 4 |
+| 0x0C | `CFGR1` | resolution, alignment, trigger, continuous, `CHSELR` layout | reset value kept: 12-bit, right-aligned, software start, single | |
+| 0x10 | **`CFGR2`** | ADC clock source | `CKMODE` = PCLK/2 | 3 |
+| 0x14 | **`SMPR`** | sampling time | `SMP1` = 160.5 cycles | 4 |
+| 0x28 | **`CHSELR`** | which channel(s) to convert | bit 4 (PA4), bit 10 (VREFINT) | 4, 5 |
+| 0x40 | **`DR`** | the result | read: the 12-bit code | 4 |
+| 0xB4 | `CALFACT` | where `ADCAL`'s correction lands | written by hardware | 3 |
+| +0x308 | **`CCR`** (`ADC1_COMMON`) | prescaler, internal channels on | `VREFEN` | 5 |
+| 0x20–0x2C, 0xA0–0xA4 | `AWD1TR`, `AWD2TR`, `AWD3TR`, `AWD2CR`, `AWD3CR` | analog watchdogs: flag a reading out of range | — | |
+
+**Seven registers** do the work, the eighth (`CFGR1`) is relied on at its
+reset value:
+
+```regs
+# ADC1 and ADC1_COMMON, to scale.  Shaded = a field this lesson writes or reads.
+CR ; control | 32 | !31 ADCAL, !28 ADVREGEN, 4 ADSTP, !2 ADSTART, 1 ADDIS, !0 ADEN
+ISR ; flags | 32 | !13 CCRDY, 11 EOCAL, 9 AWD3, 8 AWD2, 7 AWD1, 4 OVR, 3 EOS, !2 EOC, 1 EOSMP, !0 ADRDY
+CFGR1 ; config: all zero here | 32 | 30:26 AWD1CH, 23 AWD1EN, 22 AWD1SGL, 21 CHSELRMOD, 16 DISCEN, 15 AUTOFF, 14 WAIT, 13 CONT, 12 OVRMOD, 11:10 EXTEN, 8:6 EXTSEL, 5 ALIGN, 4:3 RES, 2 SCANDIR, 1 DMACFG, 0 DMAEN
+CFGR2 ; ADC clock | 32 | !31:30 CKMODE, 29 LFTRIG, 9 TOVS, 8:5 OVSS, 4:2 OVSR, 0 OVSE
+SMPR ; sampling time | 32 | 26:8 SMPSEL, 6:4 SMP2, !2:0 SMP1
+CHSELR ; one bit per channel | 32 | each 1 used 23 mark 4 10
+DR ; result | 32 | !15:0 DATA
+CCR ; ADC1_COMMON | 32 | 25 LFMEN, 23 TSEN, !22 VREFEN, 21:18 PRESC
+```
+
+- **Life cycle** — `CR`, and `ISR.ADRDY`: regulator, calibrate, enable
+  (slide 3).
+- **Clock and timing** — `CFGR2`, `SMPR`: how fast it runs and how long it
+  samples. Every `SMPSEL` bit is 0, so every channel uses `SMP1`.
+- **One conversion** — `CHSELR`, `ISR.CCRDY`/`EOC`, `DR`: choose, wait, start,
+  read (slide 4).
+- **Internal channels** — `CCR.VREFEN` connects VREFINT to channel 10
+  (slide 5).
+
+`CHSELR` is another register with **two layouts**: with `CFGR1.CHSELRMOD`
+= 0, as here, it is one bit per channel; set it and the same 32 bits become
+eight 4-bit sequence slots.
+
+---
+
 ## Slide 3: A Start-Up Sequence You Must Follow
 
 The ADC will not simply turn on:
@@ -474,6 +525,45 @@ pointer, so one transaction reads accelerometer X, Y, Z and temperature.
 
 ---
 
+## Slide 7b: The I²C Block — Every Register on One Page
+
+`I2C_TypeDef` in `stm32c031xx.h`, at **0x40005400** (`I2C1`). Eleven
+registers; this lesson, a controller that never acts as a target, uses seven.
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR1`** | enable, interrupts, filters | `PE` — cleared while `TIMINGR` is written, then set | 7b |
+| 0x04 | **`CR2`** | one transfer: address, count, direction, START/STOP | `SADD`, `NBYTES`, `RD_WRN`, `START`, `AUTOEND`, `STOP` | 8, 9 |
+| 0x08 | `OAR1` | own address 1, when the STM32 is a *target* | — | |
+| 0x0C | `OAR2` | own address 2 | — | |
+| 0x10 | **`TIMINGR`** | the bus clock: prescaler, SCL high/low, setup/hold | `0x0090273D` | 8 |
+| 0x14 | `TIMEOUTR` | SMBus clock-low timeouts | — | |
+| 0x18 | **`ISR`** | status flags | `TXIS`, `RXNE`, `TC`, `STOPF`, `NACKF` | 8, 9 |
+| 0x1C | **`ICR`** | write 1 to clear an `ISR` flag | `STOPCF`, `NACKCF` | 8, 9 |
+| 0x20 | `PECR` | SMBus packet error check | — | |
+| 0x24 | **`RXDR`** | the received byte | read | 8 |
+| 0x28 | **`TXDR`** | the byte to send | written | 8 |
+
+```regs
+# I2C1, to scale.  Shaded = a field this lesson writes or reads.
+CR1 ; control | 32 | 23:16, 15 RXDMAEN, 14 TXDMAEN, 13 SWRST, 12 ANFOFF, 11:8 DNF, 7 ERRIE, 6 TCIE, 5 STOPIE, 4 NACKIE, 3 ADDRIE, 2 RXIE, 1 TXIE, !0 PE
+CR2 ; one transfer | 32 | 26 PECBYTE, !25 AUTOEND, 24 RELOAD, !23:16 NBYTES, 15 NACK, !14 STOP, !13 START, 12 HEAD10R, 11 ADD10, !10 RD_WRN, 9:8, !7:1 SADD, 0
+TIMINGR ; bus timing | 32 | !31:28 PRESC, !23:20 SCLDEL, !19:16 SDADEL, !15:8 SCLH, !7:0 SCLL
+ISR ; flags | 32 | 23:17 ADDCODE, 16 DIR, 15 BUSY, 13 ALERT, 12 TIMEOUT, 11 PECERR, 10 OVR, 9 ARLO, 8 BERR, 7 TCR, !6 TC, !5 STOPF, !4 NACKF, 3 ADDR, !2 RXNE, !1 TXIS, 0 TXE
+ICR ; clear flags | 32 | 13 ALERTCF, 12 TIMOUTCF, 11 PECCF, 10 OVRCF, 9 ARLOCF, 8 BERRCF, !5 STOPCF, !4 NACKCF, 3 ADDRCF
+RXDR ; received byte | 32 | !7:0 RXDATA
+TXDR ; byte to send | 32 | !7:0 TXDATA
+```
+
+- **Setup, once** — `CR1`, `TIMINGR`. `TIMINGR` may only change while
+  `PE` = 0, so `i2c_init()` clears `CR1`, writes the timing, then sets `PE`.
+- **One transfer** — `CR2`: everything about it in one write (slides 8–9).
+- **Flags** — `ISR` says what the hardware wants next; `ICR` clears the
+  sticky ones (slide 8's table).
+- **Data** — `TXDR`, `RXDR`: one byte each, 8 bits of a 32-bit register.
+
+---
+
 ## Slide 8: The C0's I²C Block Does the Bit-Banging
 
 Software never toggles SCL. It loads `CR2` with *what* to do, and then feeds or
@@ -591,6 +681,35 @@ Big-endian means the **high** byte comes first: `(raw[0] << 8) | raw[1]`, cast t
 
 No acknowledgement means **no way to know the MAX7219 is even there**. The
 banner says so honestly: *it sends nothing back to check*.
+
+---
+
+## Slide 11b: The SPI Block — Every Register on One Page
+
+`SPI_TypeDef` in `stm32c031xx.h`, at **0x40013000** (`SPI1`). Nine
+registers; four of them are the whole driver.
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR1`** | role, clock speed and phase, software CS, enable | `MSTR`, `BR` = 2, `SSM`, `SSI`, `SPE` | 12 |
+| 0x04 | **`CR2`** | frame size, FIFO threshold, interrupts, DMA | `DS` = 1111: 16 bits | 12 |
+| 0x08 | **`SR`** | status: FIFOs, busy, errors | `TXE`, `RXNE`, `BSY` | 12 |
+| 0x0C | **`DR`** | the data, in and out | a 16-bit access per frame | 12 |
+| 0x10–0x18 | `CRCPR`, `RXCRCR`, `TXCRCR` | hardware CRC | — | |
+| 0x1C–0x20 | `I2SCFGR`, `I2SPR` | the same block as an I²S audio port | — | |
+
+```regs
+# SPI1, to scale.  Shaded = a field this lesson writes or reads.
+CR1 ; control | 32 | 15 BIDIMODE, 14 BIDIOE, 13 CRCEN, 12 CRCNEXT, 11 CRCL, 10 RXONLY, !9 SSM, !8 SSI, 7 LSBFIRST, !6 SPE, !5:3 BR, !2 MSTR, 1 CPOL, 0 CPHA
+CR2 ; frame and FIFO | 32 | 14 LDMATX, 13 LDMARX, 12 FRXTH, !11:8 DS, 7 TXEIE, 6 RXNEIE, 5 ERRIE, 4 FRF, 3 NSSP, 2 SSOE, 1 TXDMAEN, 0 RXDMAEN
+SR ; status | 32 | 12:11 FTLVL, 10:9 FRLVL, 8 FRE, !7 BSY, 6 OVR, 5 MODF, 4 CRCERR, 3 UDR, 2 CHSIDE, !1 TXE, !0 RXNE
+DR ; data, 16-bit access | 32 | !15:0 DR
+```
+
+- **Setup, once** — `CR1`, `CR2`. `CPOL` = `CPHA` = 0 is SPI mode 0, what the
+  MAX7219 wants, so they stay at their reset value.
+- **Every frame** — `SR`, `DR`: wait for room (`TXE`), write, wait for the
+  byte back (`RXNE`), read, wait for the wire to go idle (`BSY`) — slide 12.
 
 ---
 

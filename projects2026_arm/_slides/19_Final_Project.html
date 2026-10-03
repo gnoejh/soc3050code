@@ -571,7 +571,7 @@ void app_sound(uint32_t hz, uint32_t ms);     /* provided by the platform */</co
 <section class="slide">
 <h2>Slide 15: The Independent Watchdog</h2>
 <p>The IWDG counts down on its own ~32 kHz <strong>LSI</strong> oscillator, not the 48 MHz<br>system clock; reach zero and it resets the chip. Once started, only a reset<br>stops it. ST&#x27;s <code>HAL_IWDG_Init()</code> sequence, which <code>wdog.c</code> follows:</p>
-<figure class="diagram"><svg width="971" viewBox="0 0 971 377" role="img" aria-label="IWDG at 0x40003000, as wdog.c programs it for 1.000 s; KR, 32 bits; PR, 32 bits; RLR, 32 bits; SR, 32 bits">
+<figure class="diagram"><svg width="971" viewBox="0 0 971 446" role="img" aria-label="IWDG at 0x40003000, as wdog.c programs it for 1.000 s; KR, 32 bits; PR, 32 bits; RLR, 32 bits; SR, 32 bits; WINR, 32 bits">
 <text x="486" y="16" text-anchor="middle" class="lbl">IWDG at 0x40003000, as wdog.c programs it for 1.000 s</text>
 <text x="16" y="59" class="mono">KR</text>
 <text x="16" y="74" class="lbl">0xCCCC start, 0x5555 unlock, 0xAAAA refresh</text>
@@ -693,20 +693,40 @@ void app_sound(uint32_t hz, uint32_t ms);     /* provided by the platform */</co
 <text x="325.2" y="220" text-anchor="middle" class="mono lbl">0</text>
 <text x="835.2" y="246" text-anchor="middle" class="mono halo">RL</text>
 <text x="16" y="300" class="mono">SR</text>
-<text x="16" y="315" class="lbl">update in progress</text>
+<text x="16" y="315" class="lbl">update in progress, polled to 0</text>
 <text x="316.2" y="285" text-anchor="start" class="mono lbl">31</text>
 <text x="954.2" y="285" text-anchor="end" class="mono lbl">0</text>
 <rect class="dash" x="315.2" y="293" width="580.0" height="26"/>
 <text x="605.2" y="306" text-anchor="middle" class="lbl">reserved</text>
-<rect class="reg" x="895.2" y="293" width="20.0" height="26"/>
+<rect class="hifill" x="895.2" y="293" width="20.0" height="26"/>
 <text x="905.2" y="285" text-anchor="middle" class="mono lbl">2</text>
-<rect class="reg" x="915.2" y="293" width="20.0" height="26"/>
+<rect class="hifill" x="915.2" y="293" width="20.0" height="26"/>
 <text x="925.2" y="285" text-anchor="middle" class="mono lbl">1</text>
-<rect class="reg" x="935.2" y="293" width="20.0" height="26"/>
+<rect class="hifill" x="935.2" y="293" width="20.0" height="26"/>
 <path class="dash" d="M925.2 319 L925.2 341"/>
-<text x="905.2" y="332" text-anchor="middle" class="mono halo lbl">WVU</text>
-<text x="925.2" y="348" text-anchor="middle" class="mono halo lbl">RVU</text>
-<text x="945.2" y="332" text-anchor="middle" class="mono halo lbl">PVU</text>
+<text x="905.2" y="332" text-anchor="middle" class="mono halo">WVU</text>
+<text x="925.2" y="348" text-anchor="middle" class="mono halo">RVU</text>
+<text x="945.2" y="332" text-anchor="middle" class="mono halo">PVU</text>
+<text x="16" y="402" class="mono">WINR</text>
+<text x="16" y="417" class="lbl">window: never written by wdog.c</text>
+<text x="316.2" y="387" text-anchor="start" class="mono lbl">31</text>
+<text x="954.2" y="387" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="395" width="400.0" height="26"/>
+<text x="515.2" y="408" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="715.2" y="395" width="240.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M935.2 395 V399 M935.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M915.2 395 V399 M915.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M895.2 395 V399 M895.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M875.2 395 V399 M875.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M855.2 395 V399 M855.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M835.2 395 V399 M835.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M815.2 395 V399 M815.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M795.2 395 V399 M795.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M775.2 395 V399 M775.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M755.2 395 V399 M755.2 417 V421"/>
+<path class="reg" stroke-width="0.6" d="M735.2 395 V399 M735.2 417 V421"/>
+<text x="716.2" y="387" text-anchor="start" class="mono lbl">11</text>
+<text x="835.2" y="408" text-anchor="middle" class="mono">WIN</text>
 </svg></figure>
 <table><thead><tr><th>Step</th><th>Write</th><th>Effect</th></tr></thead><tbody><tr><td>1</td><td><code>KR = 0xCCCC</code></td><td>start (also switches the LSI on)</td></tr><tr><td>2</td><td><code>KR = 0x5555</code></td><td>unlock <code>PR</code> and <code>RLR</code></td></tr><tr><td>3</td><td><code>PR = 3</code>, <code>RLR = 999</code></td><td>32 000 / 32 = 1000 counts/s; 1000 counts</td></tr><tr><td>4</td><td>wait <code>SR == 0</code>, <strong>bounded</strong></td><td>values cross into the LSI clock domain</td></tr><tr><td>5</td><td><code>KR = 0xAAAA</code></td><td>refresh — and every 250 ms after</td></tr></tbody></table>
 <p>The 32 000 Hz is ST&#x27;s <strong>typical</strong> value (<code>LSI_VALUE</code>, with ST&#x27;s own note<br>that it varies with voltage and temperature) — hence refreshing 4× per<br>timeout, not 1.1×. <code>wdog.c</code> also sets <code>DBG-&gt;APBFZ1.DBG_IWDG_STOP</code>, so a<br>breakpoint under GDB does not reset the board.</p>

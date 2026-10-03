@@ -27,7 +27,7 @@ and Slide 22 measures what it costs.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: title, two pin-map placeholders, 27 slides |
+| `Slide.md` | the lecture - 30 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: Parts 0–8, ~2 hours, a tuning contest with a score, **nothing handed in** |
 | `control.h` | **the contract**: `sensors_t`, `actuators_t`, `control_step()`, tuning struct, failsafe codes, frames and signs |
 | `control.c` | **subject — the student's file.** Complementary filter, angle and rate loops, D on measurement, anti-windup, X mixer, saturation, arming and failsafes. Pure C |

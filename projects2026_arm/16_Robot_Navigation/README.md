@@ -21,7 +21,7 @@ cell.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 26 slides |
+| `Slide.md` | the lecture - 29 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: Parts 0–9, ~2 hours, **nothing handed in** |
 | `sim.h` | **the contract**: `sensors_t`, `actuators_t`, `control_step()`, the robot's nominal datasheet |
 | `world.c`, `world.h` | the world: true map, motor lag, wrong wheel sizes, gyro bias, ray-marched noisy beams, collisions, the door |

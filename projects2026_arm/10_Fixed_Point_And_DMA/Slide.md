@@ -622,13 +622,22 @@ int32_t  y = y0 + (((y1 - y0) * frac + 128) >> 8);
 ## Slide 13: Measuring Cycles — SysTick as a Stopwatch
 
 This lesson does not link the RTOS, so it owns SysTick — not as a 1 ms tick,
-but as a free-running **24-bit cycle counter**:
+but as a free-running **24-bit cycle counter**. SysTick is four registers at
+**0xE000E010** (`SysTick_Type` in `core_cm0plus.h`), all of them here:
+
+| Offset | Register | Its job | This lesson |
+|---|---|---|---|
+| 0x00 | **`CTRL`** (SYST_CSR) | on, interrupt on, clock source, `COUNTFLAG` | `CLKSOURCE`, `ENABLE`; no `TICKINT` |
+| 0x04 | **`LOAD`** (SYST_RVR) | the count to restart from | `0xFFFFFF`: the full range |
+| 0x08 | **`VAL`** (SYST_CVR) | the live count, **down** to 0 | read before and after every workload |
+| 0x0C | `CALIB` (SYST_CALIB) | read-only: what the chip says 10 ms is | — |
 
 ```regs
-# SysTick configured by cycles_init(): CPU clock, no interrupt, counting
-SysTick->CTRL ; SYST_CSR | 32 = 0x00000005 | 16 COUNTFLAG, !2 CLKSOURCE, 1 TICKINT, !0 ENABLE
-SysTick->LOAD ; SYST_RVR: the full range | 32 = 0x00FFFFFF | !23:0 RELOAD
-SysTick->VAL ; SYST_CVR: counts DOWN | 32 | !23:0 CURRENT
+# The whole of SysTick, as cycles_init() leaves it: CPU clock, no interrupt, counting
+SysTick->CTRL ; SYST_CSR, +0x00 | 32 = 0x00000005 | 16 COUNTFLAG, !2 CLKSOURCE, 1 TICKINT, !0 ENABLE
+SysTick->LOAD ; SYST_RVR, +0x04: the full range | 32 = 0x00FFFFFF | !23:0 RELOAD
+SysTick->VAL ; SYST_CVR, +0x08: counts DOWN | 32 | !23:0 CURRENT
+SysTick->CALIB ; SYST_CALIB, +0x0C, read-only, unused | 32 | 31 NOREF, 30 SKEW, 23:0 TENMS
 ```
 
 One count per CPU cycle, 20.8 ns. It counts **down**, and wraps every
@@ -835,6 +844,46 @@ front of it.
 
 ---
 
+## Slide 20b: DMA and DMAMUX — Every Register on One Page
+
+Before any single register, both blocks whole. **DMA1** is at **0x40020000**
+(`DMA_TypeDef` + three `DMA_Channel_TypeDef`), the **DMAMUX** at
+**0x40020800** (`DMAMUX_*_TypeDef`), all in `stm32c031xx.h`. One clock bit,
+`RCC->AHBENR` `DMA1EN`, gates both.
+
+| Offset | Register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| DMA1 +0x00 | **`ISR`** | per channel: global, complete, half, error flags | `TCIF2`, `TEIF2`: did the copy finish? | 25 |
+| DMA1 +0x04 | **`IFCR`** | write 1 to clear those flags | `CGIF1`, `CGIF2` | 25 |
+| +0x08 / +0x1C / +0x30 | **`CCR`** (channel 1/2/3) | size, increment, circular, priority, direction, on | ch 1: ADC scan; ch 2: memory copy | 22, 25 |
+| +0x0C / +0x20 / +0x34 | **`CNDTR`** | transfers left; counts **down** | 3 (scan), words (copy) | 22 |
+| +0x10 / +0x24 / +0x38 | **`CPAR`** | the "peripheral" address | `&ADC1->DR`; the copy's source | 22 |
+| +0x14 / +0x28 / +0x3C | **`CMAR`** | the memory address | `scan_buf`; the copy's destination | 22 |
+| DMAMUX +0x00 / +0x04 / +0x08 | **`C0CR`–`C2CR`** (`DMAMUX1_ChannelN->CCR`) | which request feeds DMA channel N+1 | C0: 5 = ADC1; C1: 0 = none | 21 |
+| DMAMUX +0x80, +0x84 | `CSR`, `CFR` | synchronisation-overrun flags, and their clear | — | |
+| DMAMUX +0x100–+0x10C, +0x140, +0x144 | `RG0CR`–`RG3CR`, `RGSR`, `RGCFR` | request generators: make requests from a trigger | — | |
+
+```regs
+# Every register the lesson uses.  Shaded = a field this lesson writes or reads.
+DMA1->ISR ; common: flags, 4 per channel | 32 | 11 TEIF3, 10 HTIF3, 9 TCIF3, 8 GIF3, !7 TEIF2, 6 HTIF2, !5 TCIF2, 4 GIF2, 3 TEIF1, 2 HTIF1, 1 TCIF1, 0 GIF1
+DMA1->IFCR ; common: write 1 to clear | 32 | 11 CTEIF3, 10 CHTIF3, 9 CTCIF3, 8 CGIF3, 7 CTEIF2, 6 CHTIF2, 5 CTCIF2, !4 CGIF2, 3 CTEIF1, 2 CHTIF1, 1 CTCIF1, !0 CGIF1
+DMA1_ChannelN->CCR ; channel: how | 32 | !14 MEM2MEM, !13:12 PL, !11:10 MSIZE, !9:8 PSIZE, !7 MINC, !6 PINC, !5 CIRC, 4 DIR, 3 TEIE, 2 HTIE, 1 TCIE, !0 EN
+DMA1_ChannelN->CNDTR ; channel: how many | 32 | !15:0 NDT
+DMA1_ChannelN->CPAR ; channel: from | 32 | !31:0 PA
+DMA1_ChannelN->CMAR ; channel: to | 32 | !31:0 MA
+DMAMUX1_ChannelN->CCR ; DMAMUX: which request | 32 | 28:24 SYNC_ID, 23:19 NBREQ, 18:17 SPOL, 16 SE, 9 EGE, 8 SOIE, !7:0 DMAREQ_ID
+```
+
+- **Per channel** — `CCR`, `CNDTR`, `CPAR`, `CMAR`: *how*, *how many*, *from*,
+  *to*. Each channel has its own four, 0x14 apart (slide 22).
+- **Shared** — `ISR`, `IFCR`: one register of flags for all three channels,
+  four bits each, and one to clear them (slide 25).
+- **In front** — the DMAMUX channel's `CCR`: which of the chip's requests
+  reaches the channel at all (slide 21). The rest of the DMAMUX is
+  synchronisation and request generation, unused here.
+
+---
+
 ## Slide 21: The DMAMUX — Which Request, Which Channel
 
 Two facts the CMSIS header does not contain, both from ST's C0 LL driver:
@@ -884,7 +933,49 @@ round. Watching it move is the cheapest proof the DMA is alive (slide 24).
 
 ---
 
-## Slide 23: The ADC Side — Scan, Continuous, DMA
+## Slide 23: The ADC — Every Register on One Page
+
+The other end of the DMA's request line, whole. ADC1 is at **0x40012400**
+(`ADC_TypeDef` in `stm32c031xx.h`), plus one common register at
+**0x40012708**, ADC1 + 0x308 (`ADC_Common_TypeDef`). The polled path is
+lesson 09's `_lib/adc.c`, unchanged; the scan is this lesson's `dma.c`.
+
+| Offset | Register | Its job | Polled (`adc.c`) | DMA scan (`dma.c`) | Slide |
+|---|---|---|---|---|---|
+| 0x00 | **`ISR`** | status flags: write 1 to clear | `ADRDY`, `CCRDY`, `EOC` | clears `EOC` `EOS` `OVR`; watches `OVR`, `CCRDY` | lesson 09 |
+| 0x04 | `IER` | which flags interrupt | — | — | |
+| 0x08 | **`CR`** | regulator, calibrate, enable, start, stop | `ADVREGEN`, `ADCAL`, `ADEN`, `ADSTART` | `ADSTART`; `ADSTP` to stop | lesson 09 |
+| 0x0C | **`CFGR1`** | DMA, continuous, scan order, channel-select mode | — | `DMAEN`, `DMACFG`, `CONT`; clears `SCANDIR`, `CHSELRMOD` | 23b |
+| 0x10 | **`CFGR2`** | ADC clock source, oversampling | `CKMODE` = PCLK/2 | — | 23b |
+| 0x14 | **`SMPR`** | sampling time | `SMP1` = 160.5 cycles | — | 23b |
+| 0x28 | **`CHSELR`** | which channels to convert | one bit | IN0, IN1, IN4 | 23b |
+| 0x40 | **`DR`** | the result | read it | the DMA reads it | 22, 23b |
+| +0x308 | **`CCR`** (`ADC1_COMMON`) | internal reference, temperature sensor, prescaler | `VREFEN`, only for VREFINT | — | |
+| 0x20, 0x24, 0x2C, 0xA0, 0xA4 | `AWD1TR`, `AWD2TR`, `AWD3TR`, `AWD2CR`, `AWD3CR` | analog watchdogs | — | — | |
+| 0xB4 | `CALFACT` | the calibration result | — | — | |
+
+```regs
+# Every ADC register the lesson uses.  Shaded = a field it writes or reads.
+ADC1->ISR ; status | 32 | !13 CCRDY, 11 EOCAL, 9 AWD3, 8 AWD2, 7 AWD1, !4 OVR, !3 EOS, !2 EOC, 1 EOSMP, !0 ADRDY
+ADC1->CR ; control | 32 | !31 ADCAL, !28 ADVREGEN, !4 ADSTP, !2 ADSTART, 1 ADDIS, !0 ADEN
+ADC1->CFGR1 ; configuration | 32 | 30:26 AWD1CH, 23 AWD1EN, 22 AWD1SGL, !21 CHSELRMOD, 16 DISCEN, 15 AUTOFF, 14 WAIT, !13 CONT, 12 OVRMOD, 11:10 EXTEN, 8:6 EXTSEL, 5 ALIGN, 4:3 RES, !2 SCANDIR, !1 DMACFG, !0 DMAEN
+ADC1->CFGR2 ; clock, oversampling | 32 | !31:30 CKMODE, 29 LFTRIG, 9 TOVS, 8:5 OVSS, 4:2 OVSR, 0 OVSE
+ADC1->SMPR ; sampling time | 32 | 26:8 SMPSEL, 6:4 SMP2, !2:0 SMP1
+ADC1->CHSELR ; channel bitmask (CHSELRMOD = 0) | 32 | each 1 used 23 mark 0 1 4
+ADC1->DR ; the result | 32 | !15:0 DATA
+ADC1_COMMON->CCR ; common | 32 | 25 LFMEN, 23 TSEN, !22 VREFEN, 21:18 PRESC
+```
+
+- **Bring-up** — `CR`, `CFGR2`, `SMPR`: clock, regulator, calibrate, enable,
+  sampling time. Lesson 09's job, done once by `adc_init()`.
+- **What to convert** — `CHSELR`, `CFGR1`: which channels, in what order,
+  once or forever, and whether to ask the DMA (slide 23b).
+- **Results** — `ISR`, `DR`: the flags that say a result is ready, and the
+  result. With DMA, nobody but the DMA reads `DR`.
+
+---
+
+## Slide 23b: The ADC Side — Scan, Continuous, DMA
 
 ```regs
 # ADC1 after scan_start()
@@ -914,7 +1005,7 @@ loads from RAM. The firmware times both (Lab Part 6).
 
 Wokwi's page for this board lists what it simulates. **DMA is listed as not
 implemented** (also IWDG, PWR, RTC, SYSCFG, DBG). So in Wokwi the DMA cannot
-run, and everything on slides 20–23 is **predicted from RM0490 and ST's
+run, and everything on slides 20–23b is **predicted from RM0490 and ST's
 drivers — it cannot be observed in the simulator**.
 
 The firmware is written for exactly this. It never *assumes* the DMA ran:

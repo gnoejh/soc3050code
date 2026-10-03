@@ -49,7 +49,7 @@ FLASH has grown by about 3 KB since lesson 07. **Guess first:** what for?
 > where it is written down.
 
 Paste `diagram.json`, upload `Main.elf`. The banner reads back
-`BRR = 417` (slide 1), then a telemetry frame arrives every second:
+`BRR = 417` (slide 1b), then a telemetry frame arrives every second:
 
 ```
 $TEL,1000,0,500,0,0*75

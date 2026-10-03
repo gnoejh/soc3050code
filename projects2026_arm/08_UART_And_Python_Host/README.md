@@ -14,7 +14,7 @@ and sends those frames.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 15 slides |
+| `Slide.md` | the lecture - 19 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: seven parts, ~2 hours, **nothing handed in** |
 | `uart.c`, `uart.h` | **the subject of the lesson.** ISR with ORE/RXNE/TXE, RX kernel queue, TX SPSC ring, strong `_write()` |
 | `proto.c`, `proto.h` | the frame format: XOR checksum and frame check. Pure C — no hardware |

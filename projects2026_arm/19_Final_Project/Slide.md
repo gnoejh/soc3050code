@@ -663,7 +663,8 @@ stops it. ST's `HAL_IWDG_Init()` sequence, which `wdog.c` follows:
 KR ; 0xCCCC start, 0x5555 unlock, 0xAAAA refresh | 32 | !15:0 KEY
 PR ; /32: 32 kHz -> 1 kHz | 32 = 0x00000003 | !2:0 PR
 RLR ; 999 + 1 counts = 1.000 s | 32 = 0x000003E7 | !11:0 RL
-SR ; update in progress | 32 | 2 WVU, 1 RVU, 0 PVU
+SR ; update in progress, polled to 0 | 32 | !2 WVU, !1 RVU, !0 PVU
+WINR ; window: never written by wdog.c | 32 | 11:0 WIN
 ```
 
 | Step | Write | Effect |

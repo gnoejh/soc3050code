@@ -410,30 +410,136 @@
 <pre class="lang-c"><code>while (!(SysTick-&gt;CTRL &amp; SysTick_CTRL_COUNTFLAG_Msk)) { }
 ms_now++;</code></pre>
 <p><code>COUNTFLAG</code> remembers <strong>one</strong> wrap. A <code>printf</code> of 90 characters at 115200 baud<br>holds the loop for about 8 ms; seven wraps happen while nobody is asking, and<br>seven milliseconds vanish. Time that depends on the loop coming back is only as<br>good as the loop.</p>
-<figure class="diagram"><svg width="788" viewBox="0 0 788 152" role="img" aria-label="SysTick-&gt;CTRL (SYST_CSR, 0xE000E010): COUNTFLAG is one bit - one wrap; CTRL, 32 bits">
-<text x="393" y="16" text-anchor="middle" class="lbl">SysTick-&gt;CTRL (SYST_CSR, 0xE000E010): COUNTFLAG is one bit - one wrap</text>
+<p>SysTick is four registers at <strong>0xE000E010</strong>, all of it on one page — the same<br>four on every Cortex-M (<code>SysTick_Type</code> in <code>core_cm0plus.h</code>):</p>
+<table><thead><tr><th>Offset</th><th>Register</th><th>Its job</th><th>Slide</th></tr></thead><tbody><tr><td>0x00</td><td><strong><code>CTRL</code></strong> (SYST_CSR)</td><td>on, interrupt on, clock source, and <code>COUNTFLAG</code></td><td>1, 2</td></tr><tr><td>0x04</td><td><strong><code>LOAD</code></strong> (SYST_RVR)</td><td>the count to restart from: period − 1</td><td>2</td></tr><tr><td>0x08</td><td><strong><code>VAL</code></strong> (SYST_CVR)</td><td>the live count, <strong>down</strong> to 0; any write clears it</td><td>2</td></tr><tr><td>0x0C</td><td><code>CALIB</code> (SYST_CALIB)</td><td>read-only: what the chip says 10 ms is</td><td>—</td></tr></tbody></table>
+<figure class="diagram"><svg width="877" viewBox="0 0 877 392" role="img" aria-label="The whole of SysTick.  Shaded = what this slide is about: one bit, one wrap; CTRL, 32 bits; LOAD, 32 bits; VAL, 32 bits; CALIB, 32 bits">
+<text x="438" y="16" text-anchor="middle" class="lbl">The whole of SysTick.  Shaded = what this slide is about: one bit, one wrap</text>
 <text x="16" y="59" class="mono">CTRL</text>
-<text x="16" y="74" class="lbl">SYST_CSR</text>
-<text x="131.0" y="44" text-anchor="start" class="mono lbl">31</text>
-<text x="769.0" y="44" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="450.0" y="52" width="260.0" height="26"/>
-<text x="580.0" y="65" text-anchor="middle" class="lbl">reserved</text>
-<rect class="dash" x="130.0" y="52" width="300.0" height="26"/>
-<text x="280.0" y="65" text-anchor="middle" class="lbl">reserved</text>
-<rect class="hifill" x="430.0" y="52" width="20.0" height="26"/>
-<text x="440.0" y="44" text-anchor="middle" class="mono lbl">16</text>
-<rect class="reg" x="710.0" y="52" width="20.0" height="26"/>
-<text x="720.0" y="44" text-anchor="middle" class="mono lbl">2</text>
-<rect class="reg" x="730.0" y="52" width="20.0" height="26"/>
-<text x="740.0" y="44" text-anchor="middle" class="mono lbl">1</text>
-<rect class="reg" x="750.0" y="52" width="20.0" height="26"/>
-<path class="dash" d="M740.0 78 L740.0 100"/>
-<path class="dash" d="M760.0 78 L760.0 116"/>
-<text x="440.0" y="91" text-anchor="middle" class="mono halo">COUNTFLAG</text>
-<text x="720.0" y="91" text-anchor="middle" class="mono halo lbl">CLKSOURCE</text>
-<text x="740.0" y="107" text-anchor="middle" class="mono halo lbl">TICKINT</text>
-<text x="760.0" y="123" text-anchor="middle" class="mono halo lbl">ENABLE</text>
+<text x="16" y="74" class="lbl">SYST_CSR, +0x00</text>
+<text x="220.2" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="858.2" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="539.2" y="52" width="260.0" height="26"/>
+<text x="669.2" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="219.2" y="52" width="300.0" height="26"/>
+<text x="369.2" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="519.2" y="52" width="20.0" height="26"/>
+<text x="529.2" y="44" text-anchor="middle" class="mono lbl">16</text>
+<rect class="reg" x="799.2" y="52" width="20.0" height="26"/>
+<text x="809.2" y="44" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="819.2" y="52" width="20.0" height="26"/>
+<text x="829.2" y="44" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="839.2" y="52" width="20.0" height="26"/>
+<path class="dash" d="M829.2 78 L829.2 100"/>
+<path class="dash" d="M849.2 78 L849.2 116"/>
+<text x="529.2" y="91" text-anchor="middle" class="mono halo">COUNTFLAG</text>
+<text x="809.2" y="91" text-anchor="middle" class="mono halo lbl">CLKSOURCE</text>
+<text x="829.2" y="107" text-anchor="middle" class="mono halo lbl">TICKINT</text>
+<text x="849.2" y="123" text-anchor="middle" class="mono halo lbl">ENABLE</text>
+<text x="16" y="177" class="mono">LOAD</text>
+<text x="16" y="192" class="lbl">SYST_RVR, +0x04</text>
+<text x="220.2" y="162" text-anchor="start" class="mono lbl">31</text>
+<text x="858.2" y="162" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="219.2" y="170" width="160.0" height="26"/>
+<text x="299.2" y="183" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="379.2" y="170" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M839.2 170 V174 M839.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M819.2 170 V174 M819.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M799.2 170 V174 M799.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M779.2 170 V174 M779.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M759.2 170 V174 M759.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M739.2 170 V174 M739.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M719.2 170 V174 M719.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M699.2 170 V174 M699.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M679.2 170 V174 M679.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M659.2 170 V174 M659.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M639.2 170 V174 M639.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M619.2 170 V174 M619.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M599.2 170 V174 M599.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M579.2 170 V174 M579.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M559.2 170 V174 M559.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M539.2 170 V174 M539.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M519.2 170 V174 M519.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M499.2 170 V174 M499.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M479.2 170 V174 M479.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M459.2 170 V174 M459.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M439.2 170 V174 M439.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M419.2 170 V174 M419.2 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M399.2 170 V174 M399.2 192 V196"/>
+<text x="380.2" y="162" text-anchor="start" class="mono lbl">23</text>
+<text x="619.2" y="183" text-anchor="middle" class="mono">RELOAD</text>
+<text x="16" y="246" class="mono">VAL</text>
+<text x="16" y="261" class="lbl">SYST_CVR, +0x08</text>
+<text x="220.2" y="231" text-anchor="start" class="mono lbl">31</text>
+<text x="858.2" y="231" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="219.2" y="239" width="160.0" height="26"/>
+<text x="299.2" y="252" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="379.2" y="239" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M839.2 239 V243 M839.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M819.2 239 V243 M819.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M799.2 239 V243 M799.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M779.2 239 V243 M779.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M759.2 239 V243 M759.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M739.2 239 V243 M739.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M719.2 239 V243 M719.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M699.2 239 V243 M699.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M679.2 239 V243 M679.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M659.2 239 V243 M659.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M639.2 239 V243 M639.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M619.2 239 V243 M619.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M599.2 239 V243 M599.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M579.2 239 V243 M579.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M559.2 239 V243 M559.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M539.2 239 V243 M539.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M519.2 239 V243 M519.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M499.2 239 V243 M499.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M479.2 239 V243 M479.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M459.2 239 V243 M459.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M439.2 239 V243 M439.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M419.2 239 V243 M419.2 261 V265"/>
+<path class="reg" stroke-width="0.6" d="M399.2 239 V243 M399.2 261 V265"/>
+<text x="380.2" y="231" text-anchor="start" class="mono lbl">23</text>
+<text x="619.2" y="252" text-anchor="middle" class="mono">CURRENT</text>
+<text x="16" y="315" class="mono">CALIB</text>
+<text x="16" y="330" class="lbl">SYST_CALIB, +0x0C, read-only</text>
+<text x="220.2" y="300" text-anchor="start" class="mono lbl">31</text>
+<text x="858.2" y="300" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="259.2" y="308" width="120.0" height="26"/>
+<text x="319.2" y="321" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="219.2" y="308" width="20.0" height="26"/>
+<rect class="reg" x="239.2" y="308" width="20.0" height="26"/>
+<text x="249.2" y="300" text-anchor="middle" class="mono lbl">30</text>
+<rect class="reg" x="379.2" y="308" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M839.2 308 V312 M839.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M819.2 308 V312 M819.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M799.2 308 V312 M799.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M779.2 308 V312 M779.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M759.2 308 V312 M759.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M739.2 308 V312 M739.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M719.2 308 V312 M719.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M699.2 308 V312 M699.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M679.2 308 V312 M679.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M659.2 308 V312 M659.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M639.2 308 V312 M639.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M619.2 308 V312 M619.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M599.2 308 V312 M599.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M579.2 308 V312 M579.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M559.2 308 V312 M559.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M539.2 308 V312 M539.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M519.2 308 V312 M519.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M499.2 308 V312 M499.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M479.2 308 V312 M479.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M459.2 308 V312 M459.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M439.2 308 V312 M439.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M419.2 308 V312 M419.2 330 V334"/>
+<path class="reg" stroke-width="0.6" d="M399.2 308 V312 M399.2 330 V334"/>
+<text x="380.2" y="300" text-anchor="start" class="mono lbl">23</text>
+<text x="619.2" y="321" text-anchor="middle" class="mono">TENMS</text>
+<path class="dash" d="M229.2 334 L239.0 340"/>
+<path class="dash" d="M249.2 334 L249.2 356"/>
+<text x="239.0" y="347" text-anchor="middle" class="mono halo lbl">NOREF</text>
+<text x="249.2" y="363" text-anchor="middle" class="mono halo lbl">SKEW</text>
 </svg></figure>
+<p>It is a 24-bit counter: <code>LOAD</code> and <code>VAL</code> use bits 23:0 only, so the longest<br>period is 2^24 clocks — 350 ms at 48 MHz.</p>
 <p>The fix is lesson 03&#x27;s second rendezvous — <strong>interrupt</strong> instead of poll:</p>
 <pre class="lang-c"><code>static volatile uint32_t ms_ticks;
 
@@ -595,7 +701,264 @@ if (millis() - start &gt;= period) ...    /* right, always     */</code></pre>
 <p>&gt; The weakness: every job must be quick. One job that takes 50 ms delays all<br>&gt; the others by 50 ms. Lesson 07 removes that limit.</p>
 </section>
 <section class="slide">
-<h2>Slide 5: A Timer Is a Counter With Three Registers</h2>
+<h2>Slide 5: The Timer — Every Register on One Page</h2>
+<p>Before any single register, the whole block. TIM3 and TIM14 are built from the<br>same register set (<code>TIM_TypeDef</code> in <code>stm32c031xx.h</code>), at <strong>0x40000400</strong> and<br><strong>0x40002000</strong>. The offsets are the same for every timer on the chip; a simple<br>timer like TIM14 just leaves most of them unimplemented.</p>
+<table><thead><tr><th>Offset</th><th>Register</th><th>Its job</th><th>TIM3 here: servo PWM</th><th>TIM14 here: echo capture</th><th>Slide</th></tr></thead><tbody><tr><td>0x00</td><td><strong><code>CR1</code></strong></td><td>control: run, preload, direction</td><td><code>CEN</code>, <code>ARPE</code></td><td><code>CEN</code></td><td>5b, 8</td></tr><tr><td>0x04</td><td><code>CR2</code></td><td>master mode, trigger output</td><td>—</td><td>—</td><td></td></tr><tr><td>0x08</td><td><code>SMCR</code></td><td>slave mode: count from another timer</td><td>—</td><td>—</td><td></td></tr><tr><td>0x0C</td><td><strong><code>DIER</code></strong></td><td>which events raise an interrupt</td><td><code>UIE</code></td><td><code>CC1IE</code></td><td>6, 13</td></tr><tr><td>0x10</td><td><strong><code>SR</code></strong></td><td>event flags: write 0 to clear</td><td><code>UIF</code></td><td><code>CC1IF</code></td><td>7, 13</td></tr><tr><td>0x14</td><td><strong><code>EGR</code></strong></td><td>make an event happen now, by software</td><td><code>UG</code></td><td><code>UG</code></td><td>6</td></tr><tr><td>0x18</td><td><strong><code>CCMR1</code></strong></td><td>channels 1–2: output mode <em>or</em> input mode</td><td><code>OC1M</code>, <code>OC1PE</code></td><td><code>CC1S</code></td><td>8, 13</td></tr><tr><td>0x1C</td><td><code>CCMR2</code></td><td>the same for channels 3–4</td><td>—</td><td>—</td><td></td></tr><tr><td>0x20</td><td><strong><code>CCER</code></strong></td><td>connect a channel to its pin, pick polarity</td><td><code>CC1E</code></td><td><code>CC1E</code>, <code>CC1P</code>, <code>CC1NP</code></td><td>8, 13</td></tr><tr><td>0x24</td><td><strong><code>CNT</code></strong></td><td>the counter itself</td><td>counts; never read</td><td>read: the 10 µs trigger&#x27;s stopwatch</td><td>5b, 13</td></tr><tr><td>0x28</td><td><strong><code>PSC</code></strong></td><td>prescaler: count every PSC+1 clocks</td><td>47</td><td>47</td><td>5b</td></tr><tr><td>0x2C</td><td><strong><code>ARR</code></strong></td><td>auto-reload: count 0 … ARR, then update</td><td>19999</td><td>0xFFFF</td><td>5b</td></tr><tr><td>0x34</td><td><strong><code>CCR1</code></strong></td><td>channel 1 compare value / captured time</td><td>pulse width, µs</td><td>edge time, µs</td><td>8, 13</td></tr><tr><td>0x38–0x40</td><td><code>CCR2</code>–<code>CCR4</code></td><td>channels 2–4</td><td>—</td><td>—</td><td></td></tr><tr><td>0x30, 0x44–0x68</td><td><code>RCR</code>, <code>BDTR</code>, <code>DCR</code>, <code>DMAR</code>, <code>CCMR3</code>, <code>CCR5</code>, <code>CCR6</code>, <code>AF1</code>, <code>AF2</code>, <code>TISEL</code></td><td>advanced-timer extras (TIM1), DMA bursts, input selection</td><td>—</td><td>—</td><td></td></tr></tbody></table>
+<p><strong>Nine registers out of twenty-five</strong> do all of this lesson&#x27;s work, and they<br>fall into four groups — the same four in every timer you will meet:</p>
+<figure class="diagram"><svg width="862" viewBox="0 0 862 1025" role="img" aria-label="The nine, drawn to scale.  Shaded = a field this lesson writes or reads.; CR1, 16 bits; PSC, 16 bits; ARR, 16 bits; CNT, 32 bits; EGR, 16 bits; DIER, 16 bits; SR, 16 bits; CCMR1, 32 bits; CCMR1, 32 bits; CCER, 16 bits; CCR1, 16 bits">
+<text x="431" y="16" text-anchor="middle" class="lbl">The nine, drawn to scale.  Shaded = a field this lesson writes or reads.</text>
+<text x="16" y="59" class="mono">CR1</text>
+<text x="16" y="74" class="lbl">control</text>
+<text x="527.4" y="44" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="626.4" y="52" width="20.0" height="26"/>
+<rect class="dash" x="526.4" y="52" width="80.0" height="26"/>
+<text x="566.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="606.4" y="52" width="20.0" height="26"/>
+<rect class="reg" x="646.4" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M666.4 52 V56 M666.4 74 V78"/>
+<text x="666.4" y="65" text-anchor="middle" class="mono">CKD</text>
+<rect class="hifill" x="686.4" y="52" width="20.0" height="26"/>
+<text x="696.4" y="44" text-anchor="middle" class="mono lbl">7</text>
+<rect class="reg" x="706.4" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M726.4 52 V56 M726.4 74 V78"/>
+<text x="726.4" y="65" text-anchor="middle" class="mono">CMS</text>
+<rect class="reg" x="746.4" y="52" width="20.0" height="26"/>
+<rect class="reg" x="766.4" y="52" width="20.0" height="26"/>
+<rect class="reg" x="786.4" y="52" width="20.0" height="26"/>
+<rect class="reg" x="806.4" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="826.4" y="52" width="20.0" height="26"/>
+<path class="dash" d="M776.4 78 L776.4 100"/>
+<path class="dash" d="M816.4 78 L816.4 100"/>
+<text x="616.4" y="91" text-anchor="middle" class="mono halo lbl">UIFREMAP</text>
+<text x="696.4" y="91" text-anchor="middle" class="mono halo">ARPE</text>
+<text x="756.4" y="91" text-anchor="middle" class="mono halo lbl">DIR</text>
+<text x="776.4" y="107" text-anchor="middle" class="mono halo lbl">OPM</text>
+<text x="796.4" y="91" text-anchor="middle" class="mono halo lbl">URS</text>
+<text x="816.4" y="107" text-anchor="middle" class="mono halo lbl">UDIS</text>
+<text x="836.4" y="91" text-anchor="middle" class="mono halo">CEN</text>
+<text x="16" y="161" class="mono">PSC</text>
+<text x="16" y="176" class="lbl">time base: divider</text>
+<text x="527.4" y="146" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="146" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="526.4" y="154" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 154 V158 M826.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M806.4 154 V158 M806.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M786.4 154 V158 M786.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M766.4 154 V158 M766.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M746.4 154 V158 M746.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M726.4 154 V158 M726.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M706.4 154 V158 M706.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M686.4 154 V158 M686.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M666.4 154 V158 M666.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M646.4 154 V158 M646.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M626.4 154 V158 M626.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M606.4 154 V158 M606.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M586.4 154 V158 M586.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M566.4 154 V158 M566.4 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M546.4 154 V158 M546.4 176 V180"/>
+<text x="686.4" y="167" text-anchor="middle" class="mono">PSC</text>
+<text x="16" y="230" class="mono">ARR</text>
+<text x="16" y="245" class="lbl">time base: period</text>
+<text x="527.4" y="215" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="215" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="526.4" y="223" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 223 V227 M826.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M806.4 223 V227 M806.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M786.4 223 V227 M786.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M766.4 223 V227 M766.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M746.4 223 V227 M746.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M726.4 223 V227 M726.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M706.4 223 V227 M706.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M686.4 223 V227 M686.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M666.4 223 V227 M666.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M646.4 223 V227 M646.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M626.4 223 V227 M626.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M606.4 223 V227 M606.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M586.4 223 V227 M586.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M566.4 223 V227 M566.4 245 V249"/>
+<path class="reg" stroke-width="0.6" d="M546.4 223 V227 M546.4 245 V249"/>
+<text x="686.4" y="236" text-anchor="middle" class="mono">ARR</text>
+<text x="16" y="299" class="mono">CNT</text>
+<text x="16" y="314" class="lbl">time base: the count</text>
+<text x="207.4" y="284" text-anchor="start" class="mono lbl">31</text>
+<text x="845.4" y="284" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="226.4" y="292" width="300.0" height="26"/>
+<text x="376.4" y="305" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="206.4" y="292" width="20.0" height="26"/>
+<rect class="hifill" x="526.4" y="292" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 292 V296 M826.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M806.4 292 V296 M806.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M786.4 292 V296 M786.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M766.4 292 V296 M766.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M746.4 292 V296 M746.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M726.4 292 V296 M726.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M706.4 292 V296 M706.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M686.4 292 V296 M686.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M666.4 292 V296 M666.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M646.4 292 V296 M646.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M626.4 292 V296 M626.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M606.4 292 V296 M606.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M586.4 292 V296 M586.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M566.4 292 V296 M566.4 314 V318"/>
+<path class="reg" stroke-width="0.6" d="M546.4 292 V296 M546.4 314 V318"/>
+<text x="527.4" y="284" text-anchor="start" class="mono lbl">15</text>
+<text x="686.4" y="305" text-anchor="middle" class="mono">CNT</text>
+<path class="dash" d="M216.4 318 L230.1 324"/>
+<text x="230.1" y="331" text-anchor="middle" class="mono halo lbl">UIFCPY</text>
+<text x="16" y="385" class="mono">EGR</text>
+<text x="16" y="400" class="lbl">events: force one</text>
+<text x="527.4" y="370" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="370" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="726.4" y="378" width="80.0" height="26"/>
+<text x="766.4" y="391" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="526.4" y="378" width="180.0" height="26"/>
+<text x="616.4" y="391" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="706.4" y="378" width="20.0" height="26"/>
+<text x="716.4" y="370" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="806.4" y="378" width="20.0" height="26"/>
+<text x="816.4" y="370" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="826.4" y="378" width="20.0" height="26"/>
+<path class="dash" d="M836.4 404 L836.4 426"/>
+<text x="716.4" y="417" text-anchor="middle" class="mono halo lbl">TG</text>
+<text x="816.4" y="417" text-anchor="middle" class="mono halo lbl">CC1G</text>
+<text x="836.4" y="433" text-anchor="middle" class="mono halo">UG</text>
+<text x="16" y="487" class="mono">DIER</text>
+<text x="16" y="502" class="lbl">events: interrupt enables</text>
+<text x="527.4" y="472" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="472" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="726.4" y="480" width="80.0" height="26"/>
+<text x="766.4" y="493" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="686.4" y="480" width="20.0" height="26"/>
+<rect class="dash" x="526.4" y="480" width="140.0" height="26"/>
+<text x="596.4" y="493" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="666.4" y="480" width="20.0" height="26"/>
+<text x="676.4" y="472" text-anchor="middle" class="mono lbl">8</text>
+<rect class="reg" x="706.4" y="480" width="20.0" height="26"/>
+<text x="716.4" y="472" text-anchor="middle" class="mono lbl">6</text>
+<rect class="hifill" x="806.4" y="480" width="20.0" height="26"/>
+<text x="816.4" y="472" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="826.4" y="480" width="20.0" height="26"/>
+<path class="dash" d="M836.4 506 L836.4 528"/>
+<text x="676.4" y="519" text-anchor="middle" class="mono halo lbl">UDE</text>
+<text x="716.4" y="519" text-anchor="middle" class="mono halo lbl">TIE</text>
+<text x="816.4" y="519" text-anchor="middle" class="mono halo">CC1IE</text>
+<text x="836.4" y="535" text-anchor="middle" class="mono halo">UIE</text>
+<text x="16" y="589" class="mono">SR</text>
+<text x="16" y="604" class="lbl">events: flags</text>
+<text x="527.4" y="574" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="574" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="726.4" y="582" width="80.0" height="26"/>
+<text x="766.4" y="595" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="666.4" y="582" width="40.0" height="26"/>
+<rect class="dash" x="526.4" y="582" width="120.0" height="26"/>
+<text x="586.4" y="595" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="646.4" y="582" width="20.0" height="26"/>
+<text x="656.4" y="574" text-anchor="middle" class="mono lbl">9</text>
+<rect class="reg" x="706.4" y="582" width="20.0" height="26"/>
+<text x="716.4" y="574" text-anchor="middle" class="mono lbl">6</text>
+<rect class="hifill" x="806.4" y="582" width="20.0" height="26"/>
+<text x="816.4" y="574" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="826.4" y="582" width="20.0" height="26"/>
+<path class="dash" d="M836.4 608 L836.4 630"/>
+<text x="656.4" y="621" text-anchor="middle" class="mono halo lbl">CC1OF</text>
+<text x="716.4" y="621" text-anchor="middle" class="mono halo lbl">TIF</text>
+<text x="816.4" y="621" text-anchor="middle" class="mono halo">CC1IF</text>
+<text x="836.4" y="637" text-anchor="middle" class="mono halo">UIF</text>
+<text x="16" y="691" class="mono">CCMR1</text>
+<text x="16" y="706" class="lbl">channel 1 as OUTPUT (TIM3)</text>
+<text x="207.4" y="676" text-anchor="start" class="mono lbl">31</text>
+<text x="845.4" y="676" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="526.4" y="684" width="180.0" height="26"/>
+<text x="616.4" y="697" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="206.4" y="684" width="300.0" height="26"/>
+<text x="356.4" y="697" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="506.4" y="684" width="20.0" height="26"/>
+<text x="516.4" y="676" text-anchor="middle" class="mono lbl">16</text>
+<rect class="hifill" x="706.4" y="684" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M746.4 684 V688 M746.4 706 V710"/>
+<path class="reg" stroke-width="0.6" d="M726.4 684 V688 M726.4 706 V710"/>
+<text x="707.4" y="676" text-anchor="start" class="mono lbl">6</text>
+<text x="765.4" y="676" text-anchor="end" class="mono lbl">4</text>
+<text x="736.4" y="697" text-anchor="middle" class="mono">OC1M</text>
+<rect class="hifill" x="766.4" y="684" width="20.0" height="26"/>
+<text x="776.4" y="676" text-anchor="middle" class="mono lbl">3</text>
+<rect class="reg" x="786.4" y="684" width="20.0" height="26"/>
+<text x="796.4" y="676" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="806.4" y="684" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 684 V688 M826.4 706 V710"/>
+<text x="807.4" y="676" text-anchor="start" class="mono lbl">1</text>
+<text x="826.4" y="697" text-anchor="middle" class="mono">CC1S</text>
+<path class="dash" d="M796.4 710 L796.4 732"/>
+<text x="516.4" y="723" text-anchor="middle" class="mono halo lbl">OC1M_3</text>
+<text x="776.4" y="723" text-anchor="middle" class="mono halo">OC1PE</text>
+<text x="796.4" y="739" text-anchor="middle" class="mono halo lbl">OC1FE</text>
+<text x="16" y="793" class="mono">CCMR1</text>
+<text x="16" y="808" class="lbl">channel 1 as INPUT (TIM14)</text>
+<text x="207.4" y="778" text-anchor="start" class="mono lbl">31</text>
+<text x="845.4" y="778" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="206.4" y="786" width="480.0" height="26"/>
+<text x="446.4" y="799" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="686.4" y="786" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M746.4 786 V790 M746.4 808 V812"/>
+<path class="reg" stroke-width="0.6" d="M726.4 786 V790 M726.4 808 V812"/>
+<path class="reg" stroke-width="0.6" d="M706.4 786 V790 M706.4 808 V812"/>
+<text x="687.4" y="778" text-anchor="start" class="mono lbl">7</text>
+<text x="765.4" y="778" text-anchor="end" class="mono lbl">4</text>
+<text x="726.4" y="799" text-anchor="middle" class="mono">IC1F</text>
+<rect class="reg" x="766.4" y="786" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M786.4 786 V790 M786.4 808 V812"/>
+<text x="805.4" y="778" text-anchor="end" class="mono lbl">2</text>
+<rect class="hifill" x="806.4" y="786" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 786 V790 M826.4 808 V812"/>
+<text x="826.4" y="799" text-anchor="middle" class="mono">CC1S</text>
+<text x="786.4" y="825" text-anchor="middle" class="mono halo lbl">IC1PSC</text>
+<text x="16" y="879" class="mono">CCER</text>
+<text x="16" y="894" class="lbl">channel 1 to the pin</text>
+<text x="527.4" y="864" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="864" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="526.4" y="872" width="240.0" height="26"/>
+<text x="646.4" y="885" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="766.4" y="872" width="20.0" height="26"/>
+<text x="776.4" y="864" text-anchor="middle" class="mono lbl">3</text>
+<rect class="reg" x="786.4" y="872" width="20.0" height="26"/>
+<text x="796.4" y="864" text-anchor="middle" class="mono lbl">2</text>
+<rect class="hifill" x="806.4" y="872" width="20.0" height="26"/>
+<text x="816.4" y="864" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="826.4" y="872" width="20.0" height="26"/>
+<path class="dash" d="M796.4 898 L796.4 920"/>
+<path class="dash" d="M836.4 898 L836.4 920"/>
+<text x="776.4" y="911" text-anchor="middle" class="mono halo">CC1NP</text>
+<text x="796.4" y="927" text-anchor="middle" class="mono halo lbl">CC1NE</text>
+<text x="816.4" y="911" text-anchor="middle" class="mono halo">CC1P</text>
+<text x="836.4" y="927" text-anchor="middle" class="mono halo">CC1E</text>
+<text x="16" y="981" class="mono">CCR1</text>
+<text x="16" y="996" class="lbl">channel 1 value</text>
+<text x="527.4" y="966" text-anchor="start" class="mono lbl">15</text>
+<text x="845.4" y="966" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="526.4" y="974" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M826.4 974 V978 M826.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M806.4 974 V978 M806.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M786.4 974 V978 M786.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M766.4 974 V978 M766.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M746.4 974 V978 M746.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M726.4 974 V978 M726.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M706.4 974 V978 M706.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M686.4 974 V978 M686.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M666.4 974 V978 M666.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M646.4 974 V978 M646.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M626.4 974 V978 M626.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M606.4 974 V978 M606.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M586.4 974 V978 M586.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M566.4 974 V978 M566.4 996 V1000"/>
+<path class="reg" stroke-width="0.6" d="M546.4 974 V978 M546.4 996 V1000"/>
+<text x="686.4" y="987" text-anchor="middle" class="mono">CCR1</text>
+</svg></figure>
+<ul><li><strong>Time base</strong> — <code>PSC</code>, <code>ARR</code>, <code>CNT</code>: how fast it counts and how far (slide 5b).</li><li><strong>Events</strong> — <code>EGR</code>, <code>DIER</code>, <code>SR</code>: what happens when it gets there, and who is told (slides 6–7).</li><li><strong>Channel</strong> — <code>CCMR1</code>, <code>CCER</code>, <code>CCR1</code>: compare to make a waveform (slide 8), or capture to take a timestamp (slides 12–13). <code>CCMR1</code> is one register with <strong>two layouts</strong>: bits 1:0 (<code>CC1S</code>) decide which one the rest of it means.</li><li><strong>Control</strong> — <code>CR1</code>: preload on, then run.</li></ul>
+<p>TIM3 and TIM14 are <strong>16-bit</strong> timers, so <code>ARR</code> and <code>CCR1</code> are drawn 16 bits<br>wide, and only bits 15:0 of <code>CNT</code> count. The header&#x27;s masks for all three are<br>32 bits wide because they also serve the 32-bit TIM2 of other STM32s. <code>CNT</code>&#x27;s<br>bit 31, <code>UIFCPY</code>, is real here: a copy of <code>UIF</code>, readable in the same load as<br>the count when <code>UIFREMAP</code> is set.</p>
+</section>
+<section class="slide">
+<h2>Slide 5b: A Timer Is a Counter With Three Registers</h2>
 <p>Every STM32 timer, from the 16-bit TIM14 to the advanced TIM1, is built on the<br>same core:</p>
 <figure class="diagram"><svg viewBox="0 0 580 230" role="img" aria-label="Timer time base: clock through prescaler into counter, compared with auto-reload, producing update events">
   <defs><marker id="t5" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">

@@ -20,7 +20,7 @@ a PC with scripted joysticks.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: title, two pin-map slides, 30 slides |
+| `Slide.md` | the lecture - 35 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: nine parts, ~2 hours, **nothing handed in**; ends in a class high-score challenge and a game of your own |
 | `Main.c` | **the platform** — the only file that includes `stm32c031xx.h`: SysTick ms + µs stopwatch, the fixed-timestep loop, the sound sequencer, `$SCORE` and `$PERF` frames |
 | `engine.h`, `engine.c` | **subject.** The `game_t` contract, `sfx()` hook, xorshift32, `aabb()`, HUD and message box. Pure C |

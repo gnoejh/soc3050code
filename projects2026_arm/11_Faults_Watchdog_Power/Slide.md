@@ -757,6 +757,26 @@ Once started, neither can be stopped except by a reset.
 
 ## Slide 17: The IWDG — Four Keys
 
+The whole IWDG is five registers at **0x40003000** (`IWDG_TypeDef` in
+`stm32c031xx.h`), all of it on one page:
+
+| Offset | Register | Its job | This lesson |
+|---|---|---|---|
+| 0x00 | **`KR`** | write-only keys: start, unlock, feed | all three keys |
+| 0x04 | **`PR`** | prescaler: LSI ÷ (4 << PR) | 1 for 1000 ms |
+| 0x08 | **`RLR`** | reload: the count to restart from, 12 bits | 3999 for 1000 ms |
+| 0x0C | **`SR`** | "an update to PR / RLR / WINR has not landed yet" | polled until 0 |
+| 0x10 | `WINR` | window: a feed while the count is above it resets | — (left at reset value: off) |
+
+```regs
+# The whole IWDG, at 1000 ms: PR = 1 (/8), RLR = 3999.  Shaded = what wdog.c writes or reads
+IWDG->KR ; +0x00, write-only | 32 | !15:0 KEY
+IWDG->PR ; +0x04, LSI / (4 << PR) | 32 = 0x00000001 | !2:0 PR
+IWDG->RLR ; +0x08, counts RLR..0 | 32 = 0x00000F9F | !11:0 RL
+IWDG->SR ; +0x0C, update in progress | 32 | !2 WVU, !1 RVU, !0 PVU
+IWDG->WINR ; +0x10, not used here | 32 | 11:0 WIN
+```
+
 No enable bit. Everything goes through `KR`, with 16-bit keys a runaway
 program is unlikely to write by accident (`stm32c0xx_hal_iwdg.h`):
 
@@ -772,13 +792,6 @@ IWDG->KR  = 0xAAAA;     /* feed                                       */
 That order is ST's own `HAL_IWDG_Init()`. The wait is because `PR` and `RLR`
 live in the slow LSI clock domain: `SR` says the values have crossed.
 
-```regs
-# 1000 ms: PR = 1 (/8), RLR = 3999
-IWDG->PR ; LSI / (4 << PR) | 32 = 0x00000001 | !2:0 PR
-IWDG->RLR ; counts RLR..0 | 32 = 0x00000F9F | !11:0 RL
-IWDG->SR ; update in progress | 32 | 2 WVU, !1 RVU, !0 PVU
-```
-
 `timeout = (RLR + 1) × (4 << PR) / LSI` — 125 µs to 32.768 s, exactly the
 HAL's "~125us / ~32.7s". **Measured on the host:** `iwdg_pick()` checked for
 every whole millisecond from 1 to 32 768 — never early, at most one tick
@@ -788,10 +801,19 @@ late, always the finest prescaler that fits.
 
 ## Slide 18: The WWDG — a Window, and a Shorter Reach
 
+The whole WWDG is three registers at **0x40002C00** (`WWDG_TypeDef`):
+
+| Offset | Register | Its job | This lesson |
+|---|---|---|---|
+| 0x00 | **`CR`** | on (`WDGA`), and the 7-bit down-counter `T` | written to arm, rewritten to feed |
+| 0x04 | **`CFR`** | prescaler `WDGTB`, window `W`, early-warning enable `EWI` | `WDGTB`, `W = 0x7F` |
+| 0x08 | `SR` | `EWIF`: the early warning fired | — (`EWI` stays off) |
+
 ```regs
-# 699 ms, the longest at 48 MHz: WDGTB = 7 (/128), T = 0x7F, window off (W = 0x7F)
-WWDG->CR ; WDGA can be set, never cleared | 32 = 0x000000FF | !7 WDGA, !6:0 T
-WWDG->CFR | 32 = 0x0000387F | !13:11 WDGTB, 9 EWI, 6:0 W
+# The whole WWDG, at 699 ms (the longest at 48 MHz): WDGTB = 7 (/128), T = 0x7F, window off (W = 0x7F)
+WWDG->CR ; +0x00, WDGA can be set, never cleared | 32 = 0x000000FF | !7 WDGA, !6:0 T
+WWDG->CFR ; +0x04 | 32 = 0x0000387F | !13:11 WDGTB, 9 EWI, !6:0 W
+WWDG->SR ; +0x08, not used here | 32 | 0 EWIF
 ```
 
 From ST's `stm32c0xx_hal_wwdg.c`: the counter `T` resets the chip when it
@@ -948,7 +970,57 @@ loop itself stopped: **hung**. One job far behind: **starved**.
 
 ---
 
-## Slide 24: Power — WFI, and What Sleep Means on the C0
+## Slide 24: Power — the Registers on One Page
+
+Sleep is decided in two places. `WFI` and `SCB->SCR` belong to the **core**:
+the System Control Block at **0xE000ED00** (`SCB_Type` in `core_cm0plus.h`),
+the same on every Cortex-M0+. The deeper modes belong to ST's **`PWR`** block
+at **0x40007000** (`PWR_TypeDef` in `stm32c031xx.h`). Both, whole, before
+slide 24b takes the sleep bits one at a time.
+
+| Offset | SCB register | Its job | This lesson | Slide |
+|---|---|---|---|---|
+| 0x00 | `CPUID` | read-only: which core, which revision | — | |
+| 0x04 | **`ICSR`** | pend / clear system exceptions; which is active, which pending | reads `PENDSTSET` in the `SLEEP_WITH_PRIMASK 0` idle loop (`Main.c`) | |
+| 0x08 | `VTOR` | where the vector table is | — (reset value) | |
+| 0x0C | **`AIRCR`** | key-protected system reset request | `NVIC_SystemReset()` writes `0x05FA0004` | 13, 14 |
+| 0x10 | **`SCR`** | how deep `WFI` sleeps | 0: plain Sleep | 24b, 25 |
+| 0x14 | `CCR` | Armv6-M: fixed — unaligned always traps, stack always 8-byte aligned | — | 9, 5 |
+| 0x1C | `SHPR2` | SVCall's priority | — | |
+| 0x20 | **`SHPR3`** | SysTick's and PendSV's priority | SysTick at 3, by `SysTick_Config()` | |
+| 0x24 | `SHCSR` | SVCall pending | — | |
+
+| Offset | PWR register | Its job | This lesson |
+|---|---|---|---|
+| 0x00 | **`CR1`** | which deep mode (`LPMS`); flash powered down in Stop / Sleep | — read only by slide 24b |
+| 0x08, 0x0C | `CR3`, `CR4` | wake-up pins: enable, polarity; pull configuration on | — |
+| 0x10, 0x14, 0x18 | `SR1`, `SR2`, `SCR` | wake-up and Standby flags; flash ready; clear them | — |
+| 0x20–0x4C | `PUCRx`, `PDCRx` | pull-ups / pull-downs held while in Standby | — |
+| 0x70–0x7C | `BKP0R`–`BKP3R` | four backup registers | — |
+
+```regs
+# The SCB of the Cortex-M0+, whole, plus PWR->CR1.  Shaded = what this lesson writes or reads
+CPUID ; SCB +0x00, read-only | 32 | 31:24 IMPLEMENTER, 23:20 VARIANT, 19:16 ARCHITECTURE, 15:4 PARTNO, 3:0 REVISION
+ICSR ; SCB +0x04 | 32 | 31 NMIPENDSET, 28 PENDSVSET, 27 PENDSVCLR, !26 PENDSTSET, 25 PENDSTCLR, 23 ISRPREEMPT, 22 ISRPENDING, 17:12 VECTPENDING, 5:0 VECTACTIVE
+VTOR ; SCB +0x08 | 32 | 31:8 TBLOFF
+AIRCR ; SCB +0x0C, NVIC_SystemReset() | 32 = 0x05FA0004 | !31:16 VECTKEY, 15 ENDIANNESS, !2 SYSRESETREQ, 1 VECTCLRACTIVE
+SCR ; SCB +0x10, 0 here: plain Sleep | 32 = 0x00000000 | 4 SEVONPEND, !2 SLEEPDEEP, 1 SLEEPONEXIT
+CCR ; SCB +0x14, fixed on Armv6-M | 32 | 9 STKALIGN, 3 UNALIGN_TRP
+SHPR2 ; SCB +0x1C | 32 | 31:30 SVCall
+SHPR3 ; SCB +0x20, SysTick at 3 | 32 = 0xC0000000 | !31:30 SysTick, 23:22 PendSV
+SHCSR ; SCB +0x24 | 32 | 15 SVCALLPENDED
+PWR->CR1 ; +0x00, only when SLEEPDEEP = 1 | 32 | 5 FPD_SLP, 3 FPD_STOP, 2:0 LPMS
+```
+
+Three roles: **identity** (`CPUID`, `VTOR`), **exceptions** (`ICSR`,
+`SHPR2`/`SHPR3`, `SHCSR`, `AIRCR`'s reset request — this lesson's every
+software reset), and **sleep** (`SCR` here, `PWR->CR1` in ST's block). Only
+the last is this slide's subject; the rest are the exception machinery of
+lessons 05–07, now all in one place.
+
+---
+
+## Slide 24b: WFI, and What Sleep Means on the C0
 
 The idle loop does not spin. It executes **`WFI`** — Wait For Interrupt — and
 the core stops its clock until the next interrupt.

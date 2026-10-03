@@ -323,10 +323,26 @@ holds the loop for about 8 ms; seven wraps happen while nobody is asking, and
 seven milliseconds vanish. Time that depends on the loop coming back is only as
 good as the loop.
 
+SysTick is four registers at **0xE000E010**, all of it on one page — the same
+four on every Cortex-M (`SysTick_Type` in `core_cm0plus.h`):
+
+| Offset | Register | Its job | Slide |
+|---|---|---|---|
+| 0x00 | **`CTRL`** (SYST_CSR) | on, interrupt on, clock source, and `COUNTFLAG` | 1, 2 |
+| 0x04 | **`LOAD`** (SYST_RVR) | the count to restart from: period − 1 | 2 |
+| 0x08 | **`VAL`** (SYST_CVR) | the live count, **down** to 0; any write clears it | 2 |
+| 0x0C | `CALIB` (SYST_CALIB) | read-only: what the chip says 10 ms is | — |
+
 ```regs
-# SysTick->CTRL (SYST_CSR, 0xE000E010): COUNTFLAG is one bit - one wrap
-CTRL ; SYST_CSR | 32 | !16 COUNTFLAG, 2 CLKSOURCE, 1 TICKINT, 0 ENABLE
+# The whole of SysTick.  Shaded = what this slide is about: one bit, one wrap
+CTRL ; SYST_CSR, +0x00 | 32 | !16 COUNTFLAG, 2 CLKSOURCE, 1 TICKINT, 0 ENABLE
+LOAD ; SYST_RVR, +0x04 | 32 | 23:0 RELOAD
+VAL ; SYST_CVR, +0x08 | 32 | 23:0 CURRENT
+CALIB ; SYST_CALIB, +0x0C, read-only | 32 | 31 NOREF, 30 SKEW, 23:0 TENMS
 ```
+
+It is a 24-bit counter: `LOAD` and `VAL` use bits 23:0 only, so the longest
+period is 2^24 clocks — 350 ms at 48 MHz.
 
 The fix is lesson 03's second rendezvous — **interrupt** instead of poll:
 
@@ -422,7 +438,66 @@ schedule on a 100 ms grid and absorbs the lateness.
 
 ---
 
-## Slide 5: A Timer Is a Counter With Three Registers
+## Slide 5: The Timer — Every Register on One Page
+
+Before any single register, the whole block. TIM3 and TIM14 are built from the
+same register set (`TIM_TypeDef` in `stm32c031xx.h`), at **0x40000400** and
+**0x40002000**. The offsets are the same for every timer on the chip; a simple
+timer like TIM14 just leaves most of them unimplemented.
+
+| Offset | Register | Its job | TIM3 here: servo PWM | TIM14 here: echo capture | Slide |
+|---|---|---|---|---|---|
+| 0x00 | **`CR1`** | control: run, preload, direction | `CEN`, `ARPE` | `CEN` | 5b, 8 |
+| 0x04 | `CR2` | master mode, trigger output | — | — | |
+| 0x08 | `SMCR` | slave mode: count from another timer | — | — | |
+| 0x0C | **`DIER`** | which events raise an interrupt | `UIE` | `CC1IE` | 6, 13 |
+| 0x10 | **`SR`** | event flags: write 0 to clear | `UIF` | `CC1IF` | 7, 13 |
+| 0x14 | **`EGR`** | make an event happen now, by software | `UG` | `UG` | 6 |
+| 0x18 | **`CCMR1`** | channels 1–2: output mode *or* input mode | `OC1M`, `OC1PE` | `CC1S` | 8, 13 |
+| 0x1C | `CCMR2` | the same for channels 3–4 | — | — | |
+| 0x20 | **`CCER`** | connect a channel to its pin, pick polarity | `CC1E` | `CC1E`, `CC1P`, `CC1NP` | 8, 13 |
+| 0x24 | **`CNT`** | the counter itself | counts; never read | read: the 10 µs trigger's stopwatch | 5b, 13 |
+| 0x28 | **`PSC`** | prescaler: count every PSC+1 clocks | 47 | 47 | 5b |
+| 0x2C | **`ARR`** | auto-reload: count 0 … ARR, then update | 19999 | 0xFFFF | 5b |
+| 0x34 | **`CCR1`** | channel 1 compare value / captured time | pulse width, µs | edge time, µs | 8, 13 |
+| 0x38–0x40 | `CCR2`–`CCR4` | channels 2–4 | — | — | |
+| 0x30, 0x44–0x68 | `RCR`, `BDTR`, `DCR`, `DMAR`, `CCMR3`, `CCR5`, `CCR6`, `AF1`, `AF2`, `TISEL` | advanced-timer extras (TIM1), DMA bursts, input selection | — | — | |
+
+**Nine registers out of twenty-five** do all of this lesson's work, and they
+fall into four groups — the same four in every timer you will meet:
+
+```regs
+# The nine, drawn to scale.  Shaded = a field this lesson writes or reads.
+CR1 ; control | 16 | 11 UIFREMAP, 9:8 CKD, !7 ARPE, 6:5 CMS, 4 DIR, 3 OPM, 2 URS, 1 UDIS, !0 CEN
+PSC ; time base: divider | 16 | !15:0 PSC
+ARR ; time base: period | 16 | !15:0 ARR
+CNT ; time base: the count | 32 | 31 UIFCPY, !15:0 CNT
+EGR ; events: force one | 16 | 6 TG, 1 CC1G, !0 UG
+DIER ; events: interrupt enables | 16 | 8 UDE, 6 TIE, !1 CC1IE, !0 UIE
+SR ; events: flags | 16 | 9 CC1OF, 6 TIF, !1 CC1IF, !0 UIF
+CCMR1 ; channel 1 as OUTPUT (TIM3) | 32 | 16 OC1M_3, !6:4 OC1M, !3 OC1PE, 2 OC1FE, 1:0 CC1S
+CCMR1 ; channel 1 as INPUT (TIM14) | 32 | 7:4 IC1F, 3:2 IC1PSC, !1:0 CC1S
+CCER ; channel 1 to the pin | 16 | !3 CC1NP, 2 CC1NE, !1 CC1P, !0 CC1E
+CCR1 ; channel 1 value | 16 | !15:0 CCR1
+```
+
+- **Time base** — `PSC`, `ARR`, `CNT`: how fast it counts and how far (slide 5b).
+- **Events** — `EGR`, `DIER`, `SR`: what happens when it gets there, and who
+  is told (slides 6–7).
+- **Channel** — `CCMR1`, `CCER`, `CCR1`: compare to make a waveform (slide 8),
+  or capture to take a timestamp (slides 12–13). `CCMR1` is one register with
+  **two layouts**: bits 1:0 (`CC1S`) decide which one the rest of it means.
+- **Control** — `CR1`: preload on, then run.
+
+TIM3 and TIM14 are **16-bit** timers, so `ARR` and `CCR1` are drawn 16 bits
+wide, and only bits 15:0 of `CNT` count. The header's masks for all three are
+32 bits wide because they also serve the 32-bit TIM2 of other STM32s. `CNT`'s
+bit 31, `UIFCPY`, is real here: a copy of `UIF`, readable in the same load as
+the count when `UIFREMAP` is set.
+
+---
+
+## Slide 5b: A Timer Is a Counter With Three Registers
 
 Every STM32 timer, from the 16-bit TIM14 to the advanced TIM1, is built on the
 same core:

@@ -414,9 +414,486 @@ bits:   31..28   27..24  ...                3..0</code></pre>
 <table><thead><tr><th>C</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><code>1u &lt;&lt; n</code></td><td>a number with only bit <em>n</em> set</td><td><code>1u &lt;&lt; 5</code> = <code>0x20</code> = <code>...0010 0000</code></td></tr><tr><td><code>x &amp; ~mask</code></td><td>clear the bits that are 1 in <code>mask</code></td><td>clear bits 11:10</td></tr><tr><td><code>x | value</code></td><td>set the bits that are 1 in <code>value</code></td><td>set bit 10</td></tr></tbody></table>
 </section>
 <section class="slide">
-<h2>Slide 3: Base Address + Offset</h2>
-<p>GPIOA&#x27;s registers start at the <strong>base address</strong> <code>0x50000000</code>. Each register<br>sits a fixed distance — its <strong>offset</strong> — from that base:</p>
-<table><thead><tr><th>Register</th><th>Offset</th><th>Address in GPIOA</th><th>Reset value (GPIOA)</th></tr></thead><tbody><tr><td><code>MODER</code></td><td><code>0x00</code></td><td><code>0x50000000</code></td><td><code>0xEBFFFFFF</code></td></tr><tr><td><code>OTYPER</code></td><td><code>0x04</code></td><td><code>0x50000004</code></td><td><code>0x00000000</code></td></tr><tr><td><code>OSPEEDR</code></td><td><code>0x08</code></td><td><code>0x50000008</code></td><td><code>0x0C000000</code></td></tr><tr><td><code>PUPDR</code></td><td><code>0x0C</code></td><td><code>0x5000000C</code></td><td><code>0x24000000</code></td></tr><tr><td><code>IDR</code></td><td><code>0x10</code></td><td><code>0x50000010</code></td><td>depends on the pins</td></tr><tr><td><code>ODR</code></td><td><code>0x14</code></td><td><code>0x50000014</code></td><td><code>0x00000000</code></td></tr><tr><td><code>BSRR</code></td><td><code>0x18</code></td><td><code>0x50000018</code></td><td>write only</td></tr><tr><td><code>AFR[0]</code>, <code>AFR[1]</code></td><td><code>0x20</code>, <code>0x24</code></td><td><code>0x50000020</code>, <code>…24</code></td><td><code>0x00000000</code></td></tr><tr><td><code>BRR</code></td><td><code>0x28</code></td><td><code>0x50000028</code></td><td>write only</td></tr></tbody></table>
+<h2>Slide 3: Base Address + Offset — the Whole Port on One Page</h2>
+<p>GPIOA&#x27;s registers start at the <strong>base address</strong> <code>0x50000000</code>. Each register<br>sits a fixed distance — its <strong>offset</strong> — from that base. This is <strong>every</strong><br>register in a GPIO port (<code>GPIO_TypeDef</code> in <code>stm32c031xx.h</code>):</p>
+<table><thead><tr><th>Register</th><th>Offset</th><th>Address in GPIOA</th><th>Reset value (GPIOA)</th><th>Its job</th><th>Slide</th></tr></thead><tbody><tr><td><strong><code>MODER</code></strong></td><td><code>0x00</code></td><td><code>0x50000000</code></td><td><code>0xEBFFFFFF</code></td><td>what the pin is: in, out, alternate, analog</td><td>5, 6, 15, 16</td></tr><tr><td><code>OTYPER</code></td><td><code>0x04</code></td><td><code>0x50000004</code></td><td><code>0x00000000</code></td><td>how an output drives: push-pull, open-drain</td><td>7</td></tr><tr><td><code>OSPEEDR</code></td><td><code>0x08</code></td><td><code>0x50000008</code></td><td><code>0x0C000000</code></td><td>how fast its edges change</td><td>8</td></tr><tr><td><strong><code>PUPDR</code></strong></td><td><code>0x0C</code></td><td><code>0x5000000C</code></td><td><code>0x24000000</code></td><td>pull-up, pull-down or neither</td><td>9, 17</td></tr><tr><td><strong><code>IDR</code></strong></td><td><code>0x10</code></td><td><code>0x50000010</code></td><td>depends on the pins</td><td>read: what the pin is now</td><td>10</td></tr><tr><td><code>ODR</code></td><td><code>0x14</code></td><td><code>0x50000014</code></td><td><code>0x00000000</code></td><td>what the pin should be</td><td>11</td></tr><tr><td><strong><code>BSRR</code></strong></td><td><code>0x18</code></td><td><code>0x50000018</code></td><td>write only</td><td>set or reset pins, no read</td><td>12, 13</td></tr><tr><td><code>LCKR</code></td><td><code>0x1C</code></td><td><code>0x5000001C</code></td><td><code>0x00000000</code></td><td>freeze a pin&#x27;s configuration until reset</td><td>— not used</td></tr><tr><td><strong><code>AFR[0]</code></strong>, <code>AFR[1]</code></td><td><code>0x20</code>, <code>0x24</code></td><td><code>0x50000020</code>, <code>…24</code></td><td><code>0x00000000</code></td><td>which peripheral owns the pin</td><td>14</td></tr><tr><td><code>BRR</code></td><td><code>0x28</code></td><td><code>0x50000028</code></td><td>write only</td><td>reset pins only</td><td>12</td></tr></tbody></table>
+<p>Bold: written or read by this lesson&#x27;s code (<code>AFR[0]</code> by <code>uart2_init()</code>).<br>The same ten, drawn to one scale:</p>
+<figure class="diagram"><svg width="901" viewBox="0 0 901 929" role="img" aria-label="GPIOA, every register (0x50000000 + offset). Shaded: port A&#x27;s fields this lesson writes or reads.; MODER, 32 bits; OTYPER, 32 bits; OSPEEDR, 32 bits; PUPDR, 32 bits; IDR, 32 bits; ODR, 32 bits; BSRR, 32 bits; LCKR, 32 bits; AFR[0], 32 bits; AFR[1], 32 bits; BRR, 32 bits">
+<text x="450" y="16" text-anchor="middle" class="lbl">GPIOA, every register (0x50000000 + offset). Shaded: port A&#x27;s fields this lesson writes or reads.</text>
+<text x="16" y="59" class="mono">MODER</text>
+<text x="16" y="74" class="lbl">0x00 PA5 out, PA3:2 af, PA1:0 in</text>
+<text x="245.8" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="844.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 52 V56 M864.8 74 V78"/>
+<text x="864.8" y="65" text-anchor="middle" class="mono">0</text>
+<rect class="hifill" x="804.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M824.8 52 V56 M824.8 74 V78"/>
+<text x="824.8" y="65" text-anchor="middle" class="mono">1</text>
+<rect class="hifill" x="764.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M784.8 52 V56 M784.8 74 V78"/>
+<text x="784.8" y="65" text-anchor="middle" class="mono">2</text>
+<rect class="hifill" x="724.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M744.8 52 V56 M744.8 74 V78"/>
+<text x="744.8" y="65" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="684.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 52 V56 M704.8 74 V78"/>
+<text x="704.8" y="65" text-anchor="middle" class="mono">4</text>
+<rect class="hifill" x="644.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M664.8 52 V56 M664.8 74 V78"/>
+<text x="664.8" y="65" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="604.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 52 V56 M624.8 74 V78"/>
+<text x="624.8" y="65" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="564.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M584.8 52 V56 M584.8 74 V78"/>
+<text x="584.8" y="65" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="524.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 52 V56 M544.8 74 V78"/>
+<text x="544.8" y="65" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="484.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M504.8 52 V56 M504.8 74 V78"/>
+<text x="504.8" y="65" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="444.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M464.8 52 V56 M464.8 74 V78"/>
+<text x="464.8" y="65" text-anchor="middle" class="mono">10</text>
+<rect class="reg" x="404.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M424.8 52 V56 M424.8 74 V78"/>
+<text x="424.8" y="65" text-anchor="middle" class="mono">11</text>
+<rect class="reg" x="364.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M384.8 52 V56 M384.8 74 V78"/>
+<text x="384.8" y="65" text-anchor="middle" class="mono">12</text>
+<rect class="reg" x="324.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M344.8 52 V56 M344.8 74 V78"/>
+<text x="344.8" y="65" text-anchor="middle" class="mono">13</text>
+<rect class="reg" x="284.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M304.8 52 V56 M304.8 74 V78"/>
+<text x="304.8" y="65" text-anchor="middle" class="mono">14</text>
+<rect class="reg" x="244.8" y="52" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M264.8 52 V56 M264.8 74 V78"/>
+<text x="264.8" y="65" text-anchor="middle" class="mono">15</text>
+<text x="864.8" y="91" text-anchor="middle" class="mono halo">1:0</text>
+<text x="824.8" y="91" text-anchor="middle" class="mono halo">3:2</text>
+<text x="784.8" y="91" text-anchor="middle" class="mono halo">5:4</text>
+<text x="744.8" y="91" text-anchor="middle" class="mono halo">7:6</text>
+<text x="664.8" y="91" text-anchor="middle" class="mono halo">11:10</text>
+<text x="16" y="145" class="mono">OTYPER</text>
+<text x="16" y="160" class="lbl">0x04 1 = open-drain</text>
+<text x="245.8" y="130" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="138" width="320.0" height="26"/>
+<text x="404.8" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="864.8" y="138" width="20.0" height="26"/>
+<text x="874.8" y="151" text-anchor="middle" class="mono">0</text>
+<rect class="reg" x="844.8" y="138" width="20.0" height="26"/>
+<text x="854.8" y="151" text-anchor="middle" class="mono">1</text>
+<rect class="reg" x="824.8" y="138" width="20.0" height="26"/>
+<text x="834.8" y="151" text-anchor="middle" class="mono">2</text>
+<rect class="reg" x="804.8" y="138" width="20.0" height="26"/>
+<text x="814.8" y="151" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="784.8" y="138" width="20.0" height="26"/>
+<text x="794.8" y="151" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="764.8" y="138" width="20.0" height="26"/>
+<text x="774.8" y="151" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="744.8" y="138" width="20.0" height="26"/>
+<text x="754.8" y="151" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="724.8" y="138" width="20.0" height="26"/>
+<text x="734.8" y="151" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="704.8" y="138" width="20.0" height="26"/>
+<text x="714.8" y="151" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="684.8" y="138" width="20.0" height="26"/>
+<text x="694.8" y="151" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="664.8" y="138" width="20.0" height="26"/>
+<rect class="reg" x="644.8" y="138" width="20.0" height="26"/>
+<rect class="reg" x="624.8" y="138" width="20.0" height="26"/>
+<rect class="reg" x="604.8" y="138" width="20.0" height="26"/>
+<rect class="reg" x="584.8" y="138" width="20.0" height="26"/>
+<rect class="reg" x="564.8" y="138" width="20.0" height="26"/>
+<text x="674.8" y="177" text-anchor="middle" class="mono halo lbl">10</text>
+<text x="654.8" y="177" text-anchor="middle" class="mono halo lbl">11</text>
+<text x="634.8" y="177" text-anchor="middle" class="mono halo lbl">12</text>
+<text x="614.8" y="177" text-anchor="middle" class="mono halo lbl">13</text>
+<text x="594.8" y="177" text-anchor="middle" class="mono halo lbl">14</text>
+<text x="574.8" y="177" text-anchor="middle" class="mono halo lbl">15</text>
+<text x="16" y="231" class="mono">OSPEEDR</text>
+<text x="16" y="246" class="lbl">0x08 edge speed</text>
+<text x="245.8" y="216" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="216" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="844.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 224 V228 M864.8 246 V250"/>
+<text x="864.8" y="237" text-anchor="middle" class="mono">0</text>
+<rect class="reg" x="804.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M824.8 224 V228 M824.8 246 V250"/>
+<text x="824.8" y="237" text-anchor="middle" class="mono">1</text>
+<rect class="reg" x="764.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M784.8 224 V228 M784.8 246 V250"/>
+<text x="784.8" y="237" text-anchor="middle" class="mono">2</text>
+<rect class="reg" x="724.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M744.8 224 V228 M744.8 246 V250"/>
+<text x="744.8" y="237" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="684.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 224 V228 M704.8 246 V250"/>
+<text x="704.8" y="237" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="644.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M664.8 224 V228 M664.8 246 V250"/>
+<text x="664.8" y="237" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="604.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 224 V228 M624.8 246 V250"/>
+<text x="624.8" y="237" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="564.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M584.8 224 V228 M584.8 246 V250"/>
+<text x="584.8" y="237" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="524.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 224 V228 M544.8 246 V250"/>
+<text x="544.8" y="237" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="484.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M504.8 224 V228 M504.8 246 V250"/>
+<text x="504.8" y="237" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="444.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M464.8 224 V228 M464.8 246 V250"/>
+<text x="464.8" y="237" text-anchor="middle" class="mono">10</text>
+<rect class="reg" x="404.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M424.8 224 V228 M424.8 246 V250"/>
+<text x="424.8" y="237" text-anchor="middle" class="mono">11</text>
+<rect class="reg" x="364.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M384.8 224 V228 M384.8 246 V250"/>
+<text x="384.8" y="237" text-anchor="middle" class="mono">12</text>
+<rect class="reg" x="324.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M344.8 224 V228 M344.8 246 V250"/>
+<text x="344.8" y="237" text-anchor="middle" class="mono">13</text>
+<rect class="reg" x="284.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M304.8 224 V228 M304.8 246 V250"/>
+<text x="304.8" y="237" text-anchor="middle" class="mono">14</text>
+<rect class="reg" x="244.8" y="224" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M264.8 224 V228 M264.8 246 V250"/>
+<text x="264.8" y="237" text-anchor="middle" class="mono">15</text>
+<text x="16" y="300" class="mono">PUPDR</text>
+<text x="16" y="315" class="lbl">0x0C PA1, PA0 pull-up</text>
+<text x="245.8" y="285" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="285" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="844.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 293 V297 M864.8 315 V319"/>
+<text x="864.8" y="306" text-anchor="middle" class="mono">0</text>
+<rect class="hifill" x="804.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M824.8 293 V297 M824.8 315 V319"/>
+<text x="824.8" y="306" text-anchor="middle" class="mono">1</text>
+<rect class="reg" x="764.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M784.8 293 V297 M784.8 315 V319"/>
+<text x="784.8" y="306" text-anchor="middle" class="mono">2</text>
+<rect class="reg" x="724.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M744.8 293 V297 M744.8 315 V319"/>
+<text x="744.8" y="306" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="684.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 293 V297 M704.8 315 V319"/>
+<text x="704.8" y="306" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="644.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M664.8 293 V297 M664.8 315 V319"/>
+<text x="664.8" y="306" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="604.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 293 V297 M624.8 315 V319"/>
+<text x="624.8" y="306" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="564.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M584.8 293 V297 M584.8 315 V319"/>
+<text x="584.8" y="306" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="524.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 293 V297 M544.8 315 V319"/>
+<text x="544.8" y="306" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="484.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M504.8 293 V297 M504.8 315 V319"/>
+<text x="504.8" y="306" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="444.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M464.8 293 V297 M464.8 315 V319"/>
+<text x="464.8" y="306" text-anchor="middle" class="mono">10</text>
+<rect class="reg" x="404.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M424.8 293 V297 M424.8 315 V319"/>
+<text x="424.8" y="306" text-anchor="middle" class="mono">11</text>
+<rect class="reg" x="364.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M384.8 293 V297 M384.8 315 V319"/>
+<text x="384.8" y="306" text-anchor="middle" class="mono">12</text>
+<rect class="reg" x="324.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M344.8 293 V297 M344.8 315 V319"/>
+<text x="344.8" y="306" text-anchor="middle" class="mono">13</text>
+<rect class="reg" x="284.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M304.8 293 V297 M304.8 315 V319"/>
+<text x="304.8" y="306" text-anchor="middle" class="mono">14</text>
+<rect class="reg" x="244.8" y="293" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M264.8 293 V297 M264.8 315 V319"/>
+<text x="264.8" y="306" text-anchor="middle" class="mono">15</text>
+<text x="864.8" y="332" text-anchor="middle" class="mono halo">1:0</text>
+<text x="824.8" y="332" text-anchor="middle" class="mono halo">3:2</text>
+<text x="16" y="386" class="mono">IDR</text>
+<text x="16" y="401" class="lbl">0x10 read only</text>
+<text x="245.8" y="371" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="371" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="379" width="320.0" height="26"/>
+<text x="404.8" y="392" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="864.8" y="379" width="20.0" height="26"/>
+<text x="874.8" y="392" text-anchor="middle" class="mono">0</text>
+<rect class="hifill" x="844.8" y="379" width="20.0" height="26"/>
+<text x="854.8" y="392" text-anchor="middle" class="mono">1</text>
+<rect class="reg" x="824.8" y="379" width="20.0" height="26"/>
+<text x="834.8" y="392" text-anchor="middle" class="mono">2</text>
+<rect class="reg" x="804.8" y="379" width="20.0" height="26"/>
+<text x="814.8" y="392" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="784.8" y="379" width="20.0" height="26"/>
+<text x="794.8" y="392" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="764.8" y="379" width="20.0" height="26"/>
+<text x="774.8" y="392" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="744.8" y="379" width="20.0" height="26"/>
+<text x="754.8" y="392" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="724.8" y="379" width="20.0" height="26"/>
+<text x="734.8" y="392" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="704.8" y="379" width="20.0" height="26"/>
+<text x="714.8" y="392" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="684.8" y="379" width="20.0" height="26"/>
+<text x="694.8" y="392" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="664.8" y="379" width="20.0" height="26"/>
+<rect class="reg" x="644.8" y="379" width="20.0" height="26"/>
+<rect class="reg" x="624.8" y="379" width="20.0" height="26"/>
+<rect class="reg" x="604.8" y="379" width="20.0" height="26"/>
+<rect class="reg" x="584.8" y="379" width="20.0" height="26"/>
+<rect class="reg" x="564.8" y="379" width="20.0" height="26"/>
+<text x="874.8" y="418" text-anchor="middle" class="mono halo">0</text>
+<text x="854.8" y="418" text-anchor="middle" class="mono halo">1</text>
+<text x="674.8" y="418" text-anchor="middle" class="mono halo lbl">10</text>
+<text x="654.8" y="418" text-anchor="middle" class="mono halo lbl">11</text>
+<text x="634.8" y="418" text-anchor="middle" class="mono halo lbl">12</text>
+<text x="614.8" y="418" text-anchor="middle" class="mono halo lbl">13</text>
+<text x="594.8" y="418" text-anchor="middle" class="mono halo lbl">14</text>
+<text x="574.8" y="418" text-anchor="middle" class="mono halo lbl">15</text>
+<text x="16" y="472" class="mono">ODR</text>
+<text x="16" y="487" class="lbl">0x14 read-modify-write</text>
+<text x="245.8" y="457" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="457" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="465" width="320.0" height="26"/>
+<text x="404.8" y="478" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="864.8" y="465" width="20.0" height="26"/>
+<text x="874.8" y="478" text-anchor="middle" class="mono">0</text>
+<rect class="reg" x="844.8" y="465" width="20.0" height="26"/>
+<text x="854.8" y="478" text-anchor="middle" class="mono">1</text>
+<rect class="reg" x="824.8" y="465" width="20.0" height="26"/>
+<text x="834.8" y="478" text-anchor="middle" class="mono">2</text>
+<rect class="reg" x="804.8" y="465" width="20.0" height="26"/>
+<text x="814.8" y="478" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="784.8" y="465" width="20.0" height="26"/>
+<text x="794.8" y="478" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="764.8" y="465" width="20.0" height="26"/>
+<text x="774.8" y="478" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="744.8" y="465" width="20.0" height="26"/>
+<text x="754.8" y="478" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="724.8" y="465" width="20.0" height="26"/>
+<text x="734.8" y="478" text-anchor="middle" class="mono">7</text>
+<rect class="reg" x="704.8" y="465" width="20.0" height="26"/>
+<text x="714.8" y="478" text-anchor="middle" class="mono">8</text>
+<rect class="reg" x="684.8" y="465" width="20.0" height="26"/>
+<text x="694.8" y="478" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="664.8" y="465" width="20.0" height="26"/>
+<rect class="reg" x="644.8" y="465" width="20.0" height="26"/>
+<rect class="reg" x="624.8" y="465" width="20.0" height="26"/>
+<rect class="reg" x="604.8" y="465" width="20.0" height="26"/>
+<rect class="reg" x="584.8" y="465" width="20.0" height="26"/>
+<rect class="reg" x="564.8" y="465" width="20.0" height="26"/>
+<text x="674.8" y="504" text-anchor="middle" class="mono halo lbl">10</text>
+<text x="654.8" y="504" text-anchor="middle" class="mono halo lbl">11</text>
+<text x="634.8" y="504" text-anchor="middle" class="mono halo lbl">12</text>
+<text x="614.8" y="504" text-anchor="middle" class="mono halo lbl">13</text>
+<text x="594.8" y="504" text-anchor="middle" class="mono halo lbl">14</text>
+<text x="574.8" y="504" text-anchor="middle" class="mono halo lbl">15</text>
+<text x="16" y="558" class="mono">BSRR</text>
+<text x="16" y="573" class="lbl">0x18 write only: LD4 on/off</text>
+<text x="245.8" y="543" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="543" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="244.8" y="551" width="200.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M424.8 551 V555 M424.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M404.8 551 V555 M404.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M384.8 551 V555 M384.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M364.8 551 V555 M364.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M344.8 551 V555 M344.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M324.8 551 V555 M324.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M304.8 551 V555 M304.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M284.8 551 V555 M284.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M264.8 551 V555 M264.8 573 V577"/>
+<text x="443.8" y="543" text-anchor="end" class="mono lbl">22</text>
+<rect class="hifill" x="444.8" y="551" width="20.0" height="26"/>
+<text x="454.8" y="543" text-anchor="middle" class="mono lbl">21</text>
+<rect class="reg" x="464.8" y="551" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 551 V555 M544.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M524.8 551 V555 M524.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M504.8 551 V555 M504.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M484.8 551 V555 M484.8 573 V577"/>
+<text x="465.8" y="543" text-anchor="start" class="mono lbl">20</text>
+<text x="563.8" y="543" text-anchor="end" class="mono lbl">16</text>
+<rect class="reg" x="564.8" y="551" width="200.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M744.8 551 V555 M744.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M724.8 551 V555 M724.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M704.8 551 V555 M704.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M684.8 551 V555 M684.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M664.8 551 V555 M664.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M644.8 551 V555 M644.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M624.8 551 V555 M624.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M604.8 551 V555 M604.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M584.8 551 V555 M584.8 573 V577"/>
+<text x="763.8" y="543" text-anchor="end" class="mono lbl">6</text>
+<rect class="hifill" x="764.8" y="551" width="20.0" height="26"/>
+<text x="774.8" y="543" text-anchor="middle" class="mono lbl">5</text>
+<rect class="reg" x="784.8" y="551" width="100.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 551 V555 M864.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M844.8 551 V555 M844.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M824.8 551 V555 M824.8 573 V577"/>
+<path class="reg" stroke-width="0.6" d="M804.8 551 V555 M804.8 573 V577"/>
+<text x="785.8" y="543" text-anchor="start" class="mono lbl">4</text>
+<text x="454.8" y="590" text-anchor="middle" class="mono halo">BR5</text>
+<text x="774.8" y="590" text-anchor="middle" class="mono halo">BS5</text>
+<text x="16" y="644" class="mono">LCKR</text>
+<text x="16" y="659" class="lbl">0x1C not used</text>
+<text x="245.8" y="629" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="629" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="637" width="300.0" height="26"/>
+<text x="394.8" y="650" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="544.8" y="637" width="20.0" height="26"/>
+<text x="554.8" y="629" text-anchor="middle" class="mono lbl">16</text>
+<rect class="reg" x="564.8" y="637" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 637 V641 M864.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M844.8 637 V641 M844.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M824.8 637 V641 M824.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M804.8 637 V641 M804.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M784.8 637 V641 M784.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M764.8 637 V641 M764.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M744.8 637 V641 M744.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M724.8 637 V641 M724.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M704.8 637 V641 M704.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M684.8 637 V641 M684.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M664.8 637 V641 M664.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M644.8 637 V641 M644.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M624.8 637 V641 M624.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M604.8 637 V641 M604.8 659 V663"/>
+<path class="reg" stroke-width="0.6" d="M584.8 637 V641 M584.8 659 V663"/>
+<text x="565.8" y="629" text-anchor="start" class="mono lbl">15</text>
+<text x="724.8" y="650" text-anchor="middle" class="mono">LCK15-LCK0</text>
+<text x="554.8" y="676" text-anchor="middle" class="mono halo lbl">LCKK</text>
+<text x="16" y="730" class="mono">AFR[0]</text>
+<text x="16" y="745" class="lbl">0x20 pins 7-0: PA3, PA2 = AF1</text>
+<text x="245.8" y="715" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="715" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="804.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 723 V727 M864.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M844.8 723 V727 M844.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M824.8 723 V727 M824.8 745 V749"/>
+<text x="844.8" y="736" text-anchor="middle" class="mono">0</text>
+<rect class="reg" x="724.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M784.8 723 V727 M784.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M764.8 723 V727 M764.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M744.8 723 V727 M744.8 745 V749"/>
+<text x="764.8" y="736" text-anchor="middle" class="mono">1</text>
+<rect class="hifill" x="644.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 723 V727 M704.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M684.8 723 V727 M684.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M664.8 723 V727 M664.8 745 V749"/>
+<text x="684.8" y="736" text-anchor="middle" class="mono">2</text>
+<rect class="hifill" x="564.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 723 V727 M624.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M604.8 723 V727 M604.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M584.8 723 V727 M584.8 745 V749"/>
+<text x="604.8" y="736" text-anchor="middle" class="mono">3</text>
+<rect class="reg" x="484.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 723 V727 M544.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M524.8 723 V727 M524.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M504.8 723 V727 M504.8 745 V749"/>
+<text x="524.8" y="736" text-anchor="middle" class="mono">4</text>
+<rect class="reg" x="404.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M464.8 723 V727 M464.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M444.8 723 V727 M444.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M424.8 723 V727 M424.8 745 V749"/>
+<text x="444.8" y="736" text-anchor="middle" class="mono">5</text>
+<rect class="reg" x="324.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M384.8 723 V727 M384.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M364.8 723 V727 M364.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M344.8 723 V727 M344.8 745 V749"/>
+<text x="364.8" y="736" text-anchor="middle" class="mono">6</text>
+<rect class="reg" x="244.8" y="723" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M304.8 723 V727 M304.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M284.8 723 V727 M284.8 745 V749"/>
+<path class="reg" stroke-width="0.6" d="M264.8 723 V727 M264.8 745 V749"/>
+<text x="284.8" y="736" text-anchor="middle" class="mono">7</text>
+<text x="684.8" y="762" text-anchor="middle" class="mono halo">11:8</text>
+<text x="604.8" y="762" text-anchor="middle" class="mono halo">15:12</text>
+<text x="16" y="816" class="mono">AFR[1]</text>
+<text x="16" y="831" class="lbl">0x24 pins 15-8</text>
+<text x="245.8" y="801" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="801" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="244.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M304.8 809 V813 M304.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M284.8 809 V813 M284.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M264.8 809 V813 M264.8 831 V835"/>
+<text x="323.8" y="801" text-anchor="end" class="mono lbl">28</text>
+<text x="284.8" y="822" text-anchor="middle" class="mono">15</text>
+<rect class="reg" x="324.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M384.8 809 V813 M384.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M364.8 809 V813 M364.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M344.8 809 V813 M344.8 831 V835"/>
+<text x="403.8" y="801" text-anchor="end" class="mono lbl">24</text>
+<text x="364.8" y="822" text-anchor="middle" class="mono">14</text>
+<rect class="reg" x="404.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M464.8 809 V813 M464.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M444.8 809 V813 M444.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M424.8 809 V813 M424.8 831 V835"/>
+<text x="483.8" y="801" text-anchor="end" class="mono lbl">20</text>
+<text x="444.8" y="822" text-anchor="middle" class="mono">13</text>
+<rect class="reg" x="484.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M544.8 809 V813 M544.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M524.8 809 V813 M524.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M504.8 809 V813 M504.8 831 V835"/>
+<text x="563.8" y="801" text-anchor="end" class="mono lbl">16</text>
+<text x="524.8" y="822" text-anchor="middle" class="mono">12</text>
+<rect class="reg" x="564.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M624.8 809 V813 M624.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M604.8 809 V813 M604.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M584.8 809 V813 M584.8 831 V835"/>
+<text x="643.8" y="801" text-anchor="end" class="mono lbl">12</text>
+<text x="604.8" y="822" text-anchor="middle" class="mono">11</text>
+<rect class="reg" x="644.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M704.8 809 V813 M704.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M684.8 809 V813 M684.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M664.8 809 V813 M664.8 831 V835"/>
+<text x="723.8" y="801" text-anchor="end" class="mono lbl">8</text>
+<text x="684.8" y="822" text-anchor="middle" class="mono">10</text>
+<rect class="reg" x="724.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M784.8 809 V813 M784.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M764.8 809 V813 M764.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M744.8 809 V813 M744.8 831 V835"/>
+<text x="803.8" y="801" text-anchor="end" class="mono lbl">4</text>
+<text x="764.8" y="822" text-anchor="middle" class="mono">9</text>
+<rect class="reg" x="804.8" y="809" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 809 V813 M864.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M844.8 809 V813 M844.8 831 V835"/>
+<path class="reg" stroke-width="0.6" d="M824.8 809 V813 M824.8 831 V835"/>
+<text x="844.8" y="822" text-anchor="middle" class="mono">8</text>
+<text x="16" y="885" class="mono">BRR</text>
+<text x="16" y="900" class="lbl">0x28 write only</text>
+<text x="245.8" y="870" text-anchor="start" class="mono lbl">31</text>
+<text x="883.8" y="870" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="244.8" y="878" width="320.0" height="26"/>
+<text x="404.8" y="891" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="564.8" y="878" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M864.8 878 V882 M864.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M844.8 878 V882 M844.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M824.8 878 V882 M824.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M804.8 878 V882 M804.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M784.8 878 V882 M784.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M764.8 878 V882 M764.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M744.8 878 V882 M744.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M724.8 878 V882 M724.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M704.8 878 V882 M704.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M684.8 878 V882 M684.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M664.8 878 V882 M664.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M644.8 878 V882 M644.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M624.8 878 V882 M624.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M604.8 878 V882 M604.8 900 V904"/>
+<path class="reg" stroke-width="0.6" d="M584.8 878 V882 M584.8 900 V904"/>
+<text x="565.8" y="870" text-anchor="start" class="mono lbl">15</text>
+<text x="724.8" y="891" text-anchor="middle" class="mono">BR15-BR0</text>
+</svg></figure>
+<p>They fall into the model of slide 1: <strong>control</strong> <code>MODER</code> <code>OTYPER</code> <code>OSPEEDR</code><br><code>PUPDR</code> <code>AFR</code> (and <code>LCKR</code>, which freezes them), <strong>data in</strong> <code>IDR</code>, <strong>data out</strong><br><code>ODR</code> <code>BSRR</code> <code>BRR</code>. Port B uses the same map; there the lesson writes <code>MODER</code><br>for PB7–PB0 and drives the LED bar through <code>BSRR</code>.</p>
 <p>In C you never type these addresses. ST&#x27;s header describes the layout as a<br>struct and places it at the base:</p>
 <pre class="lang-c"><code>GPIOA-&gt;MODER      /* the struct member at 0x00  -&gt;  0x50000000 */
 GPIOA-&gt;IDR        /* the struct member at 0x10  -&gt;  0x50000010 */
@@ -2611,434 +3088,529 @@ int ev = debounce_step(&amp;a, (uint8_t)button_down(BTN_A_PIN));   /* every 1 ms
   <text x="290" y="200" text-anchor="middle" class="hi">Every arrow has its own switch, and every switch defaults to OFF.</text>
   <text x="290" y="222" text-anchor="middle" class="lbl">Miss one and nothing happens — no error, no fault, no warning.</text>
 </svg></figure>
+<p>Two register blocks carry that path. Before any one register, both of them<br>whole — <strong>every</strong> register in <code>EXTI_TypeDef</code> (<code>stm32c031xx.h</code>, base<br><code>0x40021800</code>) and in the core&#x27;s <code>NVIC_Type</code> (<code>core_cm0plus.h</code>, base<br><code>0xE000E100</code>):</p>
+<table><thead><tr><th>Block</th><th>Offset</th><th>Register</th><th>Its job</th><th>This lesson</th><th>Slide</th></tr></thead><tbody><tr><td>EXTI</td><td>0x00</td><td><strong><code>RTSR1</code></strong></td><td>rising-edge trigger enable, bit <em>n</em> = line <em>n</em></td><td>bit 1 set</td><td>25</td></tr><tr><td>EXTI</td><td>0x04</td><td><strong><code>FTSR1</code></strong></td><td>falling-edge trigger enable</td><td>bit 1 set</td><td>25</td></tr><tr><td>EXTI</td><td>0x08</td><td><code>SWIER1</code></td><td>software trigger: write 1 = an edge on that line</td><td>debugger only</td><td>33b</td></tr><tr><td>EXTI</td><td>0x0C</td><td><strong><code>RPR1</code></strong></td><td>rising edge latched; write 1 to clear</td><td>read, cleared</td><td>25, 29</td></tr><tr><td>EXTI</td><td>0x10</td><td><strong><code>FPR1</code></strong></td><td>falling edge latched; write 1 to clear</td><td>read, cleared</td><td>25, 29</td></tr><tr><td>EXTI</td><td>0x14–0x5C</td><td>—</td><td>reserved</td><td></td><td></td></tr><tr><td>EXTI</td><td>0x60–0x6C</td><td><strong><code>EXTICR[0]</code></strong>–<code>[3]</code></td><td>which port feeds each line, four lines per register</td><td><code>EXTICR[0]</code> line 1 = port A</td><td>24</td></tr><tr><td>EXTI</td><td>0x70–0x7C</td><td>—</td><td>reserved</td><td></td><td></td></tr><tr><td>EXTI</td><td>0x80</td><td><strong><code>IMR1</code></strong></td><td>interrupt mask: 1 = on to the NVIC</td><td>bit 1 set</td><td>25</td></tr><tr><td>EXTI</td><td>0x84</td><td><code>EMR1</code></td><td>event mask: wake-up without an interrupt</td><td>—</td><td></td></tr><tr><td>NVIC</td><td>0x000</td><td><strong><code>ISER</code></strong></td><td>set-enable, bit <em>n</em> = IRQ <em>n</em>; writing 0 does nothing</td><td>bit 5</td><td>26</td></tr><tr><td>NVIC</td><td>0x080</td><td><code>ICER</code></td><td>clear-enable, the same layout</td><td>—</td><td>26</td></tr><tr><td>NVIC</td><td>0x100</td><td><code>ISPR</code></td><td>set-pending: raise an IRQ by software</td><td>debugger only</td><td>26, 33b</td></tr><tr><td>NVIC</td><td>0x180</td><td><code>ICPR</code></td><td>clear-pending</td><td>—</td><td>26</td></tr><tr><td>NVIC</td><td>0x300–0x31C</td><td><strong><code>IPR[0]</code></strong>–<code>[7]</code></td><td>priority, one byte per IRQ, top 2 bits used</td><td><code>IPR[1]</code> byte 1</td><td>26</td></tr></tbody></table>
+<p><code>NVIC_EnableIRQ()</code> and <code>NVIC_SetPriority()</code> write the NVIC for you; every<br>EXTI register is written by hand. One more switch sits in neither block:<br><code>PRIMASK</code>, a core register, which turns off every interrupt at once.</p>
 <p>Every one of those switches is a bit in a register. Here they all are, in the<br>order an edge from PA1 crosses them, with the value each holds after<br><code>button_b_irq_init()</code> — shaded is the bit button B needs:</p>
-<figure class="diagram"><svg width="952" viewBox="0 0 952 808" role="img" aria-label="Button B&#x27;s whole path, one register per switch, in the order an edge crosses them; EXTICR[0], 32 bits; RTSR1, 32 bits; FTSR1, 32 bits; RPR1, 32 bits; FPR1, 32 bits; IMR1, 32 bits; NVIC ISER, 32 bits; NVIC IPR[1], 32 bits; PRIMASK, 32 bits">
-<text x="476" y="16" text-anchor="middle" class="lbl">Button B&#x27;s whole path, one register per switch, in the order an edge crosses them</text>
+<figure class="diagram"><svg width="958" viewBox="0 0 958 1049" role="img" aria-label="Button B&#x27;s whole path, one register per switch, in the order an edge crosses them; EXTICR[0], 32 bits; RTSR1, 32 bits; FTSR1, 32 bits; SWIER1, 32 bits; RPR1, 32 bits; FPR1, 32 bits; IMR1, 32 bits; EMR1, 32 bits; NVIC ISER, 32 bits; NVIC ISPR, 32 bits; NVIC IPR[1], 32 bits; PRIMASK, 32 bits">
+<text x="479" y="16" text-anchor="middle" class="lbl">Button B&#x27;s whole path, one register per switch, in the order an edge crosses them</text>
 <text x="16" y="59" class="mono">EXTICR[0]</text>
 <text x="16" y="74" class="lbl">hop 1: line 1 &lt;- port A</text>
 <text x="16" y="89" class="mono lbl">= 0x00000000</text>
-<text x="297.0" y="44" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="44" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="776.0" y="52" width="100.0" height="26"/>
-<rect class="dash" x="616.0" y="52" width="100.0" height="26"/>
-<rect class="dash" x="456.0" y="52" width="100.0" height="26"/>
-<rect class="dash" x="296.0" y="52" width="100.0" height="26"/>
-<rect class="reg" x="396.0" y="52" width="60.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M436.0 52 V56 M436.0 74 V78"/>
-<path class="reg" stroke-width="0.6" d="M416.0 52 V56 M416.0 74 V78"/>
-<text x="397.0" y="44" text-anchor="start" class="mono lbl">26</text>
-<text x="455.0" y="44" text-anchor="end" class="mono lbl">24</text>
-<rect class="reg" x="556.0" y="52" width="60.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M596.0 52 V56 M596.0 74 V78"/>
-<path class="reg" stroke-width="0.6" d="M576.0 52 V56 M576.0 74 V78"/>
-<text x="557.0" y="44" text-anchor="start" class="mono lbl">18</text>
-<text x="615.0" y="44" text-anchor="end" class="mono lbl">16</text>
-<rect class="hifill" x="716.0" y="52" width="60.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M756.0 52 V56 M756.0 74 V78"/>
-<path class="reg" stroke-width="0.6" d="M736.0 52 V56 M736.0 74 V78"/>
-<text x="717.0" y="44" text-anchor="start" class="mono lbl">10</text>
-<text x="775.0" y="44" text-anchor="end" class="mono lbl">8</text>
-<rect class="reg" x="876.0" y="52" width="60.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M916.0 52 V56 M916.0 74 V78"/>
-<path class="reg" stroke-width="0.6" d="M896.0 52 V56 M896.0 74 V78"/>
-<text x="877.0" y="44" text-anchor="start" class="mono lbl">2</text>
-<text x="926.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="886.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="65" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="91" text-anchor="middle" class="mono halo lbl">EXTI3</text>
-<text x="586.0" y="91" text-anchor="middle" class="mono halo lbl">EXTI2</text>
-<text x="746.0" y="91" text-anchor="middle" class="mono halo">EXTI1</text>
-<text x="906.0" y="91" text-anchor="middle" class="mono halo lbl">EXTI0</text>
+<text x="303.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="782.4" y="52" width="100.0" height="26"/>
+<rect class="dash" x="622.4" y="52" width="100.0" height="26"/>
+<rect class="dash" x="462.4" y="52" width="100.0" height="26"/>
+<rect class="dash" x="302.4" y="52" width="100.0" height="26"/>
+<rect class="reg" x="402.4" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M442.4 52 V56 M442.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M422.4 52 V56 M422.4 74 V78"/>
+<text x="403.4" y="44" text-anchor="start" class="mono lbl">26</text>
+<text x="461.4" y="44" text-anchor="end" class="mono lbl">24</text>
+<rect class="reg" x="562.4" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M602.4 52 V56 M602.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M582.4 52 V56 M582.4 74 V78"/>
+<text x="563.4" y="44" text-anchor="start" class="mono lbl">18</text>
+<text x="621.4" y="44" text-anchor="end" class="mono lbl">16</text>
+<rect class="hifill" x="722.4" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M762.4 52 V56 M762.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M742.4 52 V56 M742.4 74 V78"/>
+<text x="723.4" y="44" text-anchor="start" class="mono lbl">10</text>
+<text x="781.4" y="44" text-anchor="end" class="mono lbl">8</text>
+<rect class="reg" x="882.4" y="52" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M922.4 52 V56 M922.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M902.4 52 V56 M902.4 74 V78"/>
+<text x="883.4" y="44" text-anchor="start" class="mono lbl">2</text>
+<text x="932.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="892.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="812.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="91" text-anchor="middle" class="mono halo lbl">EXTI3</text>
+<text x="592.4" y="91" text-anchor="middle" class="mono halo lbl">EXTI2</text>
+<text x="752.4" y="91" text-anchor="middle" class="mono halo">EXTI1</text>
+<text x="912.4" y="91" text-anchor="middle" class="mono halo lbl">EXTI0</text>
 <text x="16" y="145" class="mono">RTSR1</text>
 <text x="16" y="160" class="lbl">hop 2: rising edge (release)</text>
 <text x="16" y="175" class="mono lbl">= 0x00000002</text>
-<text x="297.0" y="130" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="130" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="296.0" y="138" width="320.0" height="26"/>
-<rect class="reg" x="916.0" y="138" width="20.0" height="26"/>
-<rect class="hifill" x="896.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="816.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="138" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="138" width="20.0" height="26"/>
-<text x="926.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="151" text-anchor="middle" class="mono">1</text>
-<text x="886.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="151" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="177" text-anchor="middle" class="mono halo">1</text>
+<text x="303.4" y="130" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="138" width="320.0" height="26"/>
+<rect class="reg" x="922.4" y="138" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="138" width="20.0" height="26"/>
+<text x="932.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="151" text-anchor="middle" class="mono">1</text>
+<text x="892.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="812.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="151" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="177" text-anchor="middle" class="mono halo">1</text>
 <text x="16" y="231" class="mono">FTSR1</text>
 <text x="16" y="246" class="lbl">hop 2: falling edge (press)</text>
 <text x="16" y="261" class="mono lbl">= 0x00000002</text>
-<text x="297.0" y="216" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="216" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="296.0" y="224" width="320.0" height="26"/>
-<rect class="reg" x="916.0" y="224" width="20.0" height="26"/>
-<rect class="hifill" x="896.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="816.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="224" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="224" width="20.0" height="26"/>
-<text x="926.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="237" text-anchor="middle" class="mono">1</text>
-<text x="886.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="237" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="263" text-anchor="middle" class="mono halo">1</text>
-<text x="16" y="317" class="mono">RPR1</text>
-<text x="16" y="332" class="lbl">hop 2: rising latched, write 1 to clear</text>
-<text x="297.0" y="302" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="302" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="296.0" y="310" width="320.0" height="26"/>
-<text x="456.0" y="323" text-anchor="middle" class="lbl">reserved</text>
-<rect class="reg" x="916.0" y="310" width="20.0" height="26"/>
-<rect class="hifill" x="896.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="816.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="310" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="310" width="20.0" height="26"/>
-<text x="906.0" y="349" text-anchor="middle" class="mono halo">1</text>
-<text x="16" y="403" class="mono">FPR1</text>
-<text x="16" y="418" class="lbl">hop 2: falling latched, write 1 to clear</text>
-<text x="297.0" y="388" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="388" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="296.0" y="396" width="320.0" height="26"/>
-<text x="456.0" y="409" text-anchor="middle" class="lbl">reserved</text>
-<rect class="reg" x="916.0" y="396" width="20.0" height="26"/>
-<rect class="hifill" x="896.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="816.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="396" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="396" width="20.0" height="26"/>
-<text x="906.0" y="435" text-anchor="middle" class="mono halo">1</text>
-<text x="16" y="489" class="mono">IMR1</text>
-<text x="16" y="504" class="lbl">hop 2: 1 = unmasked, on to the NVIC</text>
-<text x="297.0" y="474" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="474" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="556.0" y="482" width="60.0" height="26"/>
-<text x="586.0" y="495" text-anchor="middle" class="lbl">reserved</text>
-<rect class="dash" x="476.0" y="482" width="60.0" height="26"/>
-<text x="506.0" y="495" text-anchor="middle" class="lbl">reserved</text>
-<rect class="dash" x="436.0" y="482" width="20.0" height="26"/>
-<rect class="dash" x="316.0" y="482" width="100.0" height="26"/>
-<text x="366.0" y="495" text-anchor="middle" class="lbl">reserved</text>
-<rect class="reg" x="296.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="416.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="456.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="536.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="816.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="482" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="482" width="20.0" height="26"/>
-<rect class="hifill" x="896.0" y="482" width="20.0" height="26"/>
-<text x="906.0" y="474" text-anchor="middle" class="mono lbl">1</text>
-<rect class="reg" x="916.0" y="482" width="20.0" height="26"/>
-<text x="906.0" y="521" text-anchor="middle" class="mono halo">IM1</text>
-<text x="16" y="575" class="mono">NVIC ISER</text>
-<text x="16" y="590" class="lbl">hop 3: IRQ 5 enabled</text>
-<text x="16" y="605" class="mono lbl">= 0x00000020</text>
-<text x="297.0" y="560" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="560" text-anchor="end" class="mono lbl">0</text>
-<rect class="reg" x="916.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="896.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="876.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="856.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="836.0" y="568" width="20.0" height="26"/>
-<rect class="hifill" x="816.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="796.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="776.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="756.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="736.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="716.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="696.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="676.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="656.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="636.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="616.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="596.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="576.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="556.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="536.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="516.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="496.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="476.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="456.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="436.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="416.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="396.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="376.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="356.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="336.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="316.0" y="568" width="20.0" height="26"/>
-<rect class="reg" x="296.0" y="568" width="20.0" height="26"/>
-<text x="926.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="886.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="581" text-anchor="middle" class="mono">1</text>
-<text x="806.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="581" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="607" text-anchor="middle" class="mono halo">5</text>
-<text x="16" y="661" class="mono">NVIC IPR[1]</text>
-<text x="16" y="676" class="lbl">hop 3: IRQ 5 at priority 2</text>
-<text x="16" y="691" class="mono lbl">= 0x00008000</text>
-<text x="297.0" y="646" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="646" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="816.0" y="654" width="120.0" height="26"/>
-<rect class="dash" x="656.0" y="654" width="120.0" height="26"/>
-<rect class="dash" x="496.0" y="654" width="120.0" height="26"/>
-<rect class="dash" x="336.0" y="654" width="120.0" height="26"/>
-<rect class="reg" x="296.0" y="654" width="40.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M316.0 654 V658 M316.0 676 V680"/>
-<text x="335.0" y="646" text-anchor="end" class="mono lbl">30</text>
-<rect class="reg" x="456.0" y="654" width="40.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M476.0 654 V658 M476.0 676 V680"/>
-<text x="457.0" y="646" text-anchor="start" class="mono lbl">23</text>
-<text x="495.0" y="646" text-anchor="end" class="mono lbl">22</text>
-<rect class="hifill" x="616.0" y="654" width="40.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M636.0 654 V658 M636.0 676 V680"/>
-<text x="617.0" y="646" text-anchor="start" class="mono lbl">15</text>
-<text x="655.0" y="646" text-anchor="end" class="mono lbl">14</text>
-<rect class="reg" x="776.0" y="654" width="40.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M796.0 654 V658 M796.0 676 V680"/>
-<text x="777.0" y="646" text-anchor="start" class="mono lbl">7</text>
-<text x="815.0" y="646" text-anchor="end" class="mono lbl">6</text>
-<text x="926.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="886.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="667" text-anchor="middle" class="mono">1</text>
-<text x="606.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="667" text-anchor="middle" class="mono lbl">0</text>
-<text x="316.0" y="693" text-anchor="middle" class="mono halo lbl">IRQ7</text>
-<text x="476.0" y="693" text-anchor="middle" class="mono halo lbl">IRQ6</text>
-<text x="636.0" y="693" text-anchor="middle" class="mono halo">IRQ5</text>
-<text x="796.0" y="693" text-anchor="middle" class="mono halo lbl">IRQ4</text>
-<text x="16" y="747" class="mono">PRIMASK</text>
-<text x="16" y="762" class="lbl">the global switch: 0 = interrupts on</text>
-<text x="16" y="777" class="mono lbl">= 0x00000000</text>
-<text x="297.0" y="732" text-anchor="start" class="mono lbl">31</text>
-<text x="935.0" y="732" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="296.0" y="740" width="620.0" height="26"/>
-<rect class="reg" x="916.0" y="740" width="20.0" height="26"/>
-<text x="926.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="906.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="886.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="866.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="846.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.0" y="753" text-anchor="middle" class="mono lbl">0</text>
-<text x="926.0" y="779" text-anchor="middle" class="mono halo lbl">PM</text>
+<text x="303.4" y="216" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="216" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="224" width="320.0" height="26"/>
+<rect class="reg" x="922.4" y="224" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="224" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="224" width="20.0" height="26"/>
+<text x="932.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="237" text-anchor="middle" class="mono">1</text>
+<text x="892.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="812.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="237" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="263" text-anchor="middle" class="mono halo">1</text>
+<text x="16" y="317" class="mono">SWIER1</text>
+<text x="16" y="332" class="lbl">hop 2 by software: write 1 = fake an edge</text>
+<text x="303.4" y="302" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="302" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="310" width="320.0" height="26"/>
+<text x="462.4" y="323" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="922.4" y="310" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="310" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="310" width="20.0" height="26"/>
+<text x="912.4" y="349" text-anchor="middle" class="mono halo">1</text>
+<text x="16" y="403" class="mono">RPR1</text>
+<text x="16" y="418" class="lbl">hop 2: rising latched, write 1 to clear</text>
+<text x="303.4" y="388" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="388" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="396" width="320.0" height="26"/>
+<text x="462.4" y="409" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="922.4" y="396" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="396" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="396" width="20.0" height="26"/>
+<text x="912.4" y="435" text-anchor="middle" class="mono halo">1</text>
+<text x="16" y="489" class="mono">FPR1</text>
+<text x="16" y="504" class="lbl">hop 2: falling latched, write 1 to clear</text>
+<text x="303.4" y="474" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="474" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="482" width="320.0" height="26"/>
+<text x="462.4" y="495" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="922.4" y="482" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="482" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="482" width="20.0" height="26"/>
+<text x="912.4" y="521" text-anchor="middle" class="mono halo">1</text>
+<text x="16" y="575" class="mono">IMR1</text>
+<text x="16" y="590" class="lbl">hop 2: 1 = unmasked, on to the NVIC</text>
+<text x="303.4" y="560" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="560" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="562.4" y="568" width="60.0" height="26"/>
+<text x="592.4" y="581" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="482.4" y="568" width="60.0" height="26"/>
+<text x="512.4" y="581" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="442.4" y="568" width="20.0" height="26"/>
+<rect class="dash" x="322.4" y="568" width="100.0" height="26"/>
+<text x="372.4" y="581" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="302.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="422.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="462.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="542.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="568" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="568" width="20.0" height="26"/>
+<rect class="hifill" x="902.4" y="568" width="20.0" height="26"/>
+<text x="912.4" y="560" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="922.4" y="568" width="20.0" height="26"/>
+<text x="912.4" y="607" text-anchor="middle" class="mono halo">IM1</text>
+<text x="16" y="661" class="mono">EMR1</text>
+<text x="16" y="676" class="lbl">not used: event mask, same lines + 16-18</text>
+<text x="303.4" y="646" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="646" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="482.4" y="654" width="60.0" height="26"/>
+<text x="512.4" y="667" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="442.4" y="654" width="20.0" height="26"/>
+<rect class="dash" x="322.4" y="654" width="100.0" height="26"/>
+<text x="372.4" y="667" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="302.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="422.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="462.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="542.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="562.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="582.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="602.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="822.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="902.4" y="654" width="20.0" height="26"/>
+<rect class="reg" x="922.4" y="654" width="20.0" height="26"/>
+<text x="16" y="730" class="mono">NVIC ISER</text>
+<text x="16" y="745" class="lbl">hop 3: IRQ 5 enabled</text>
+<text x="16" y="760" class="mono lbl">= 0x00000020</text>
+<text x="303.4" y="715" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="715" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="922.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="902.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="723" width="20.0" height="26"/>
+<rect class="hifill" x="822.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="602.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="582.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="562.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="542.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="522.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="502.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="482.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="462.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="442.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="422.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="402.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="382.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="362.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="342.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="322.4" y="723" width="20.0" height="26"/>
+<rect class="reg" x="302.4" y="723" width="20.0" height="26"/>
+<text x="932.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="892.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="736" text-anchor="middle" class="mono">1</text>
+<text x="812.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="736" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="762" text-anchor="middle" class="mono halo">5</text>
+<text x="16" y="816" class="mono">NVIC ISPR</text>
+<text x="16" y="831" class="lbl">hop 3 by software: 1 = pend IRQ 5</text>
+<text x="303.4" y="801" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="801" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="922.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="902.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="882.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="862.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="842.4" y="809" width="20.0" height="26"/>
+<rect class="hifill" x="822.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="802.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="782.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="762.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="742.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="722.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="702.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="682.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="662.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="642.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="622.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="602.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="582.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="562.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="542.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="522.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="502.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="482.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="462.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="442.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="422.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="402.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="382.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="362.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="342.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="322.4" y="809" width="20.0" height="26"/>
+<rect class="reg" x="302.4" y="809" width="20.0" height="26"/>
+<text x="832.4" y="848" text-anchor="middle" class="mono halo">5</text>
+<text x="16" y="902" class="mono">NVIC IPR[1]</text>
+<text x="16" y="917" class="lbl">hop 3: IRQ 5 at priority 2</text>
+<text x="16" y="932" class="mono lbl">= 0x00008000</text>
+<text x="303.4" y="887" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="887" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="822.4" y="895" width="120.0" height="26"/>
+<rect class="dash" x="662.4" y="895" width="120.0" height="26"/>
+<rect class="dash" x="502.4" y="895" width="120.0" height="26"/>
+<rect class="dash" x="342.4" y="895" width="120.0" height="26"/>
+<rect class="reg" x="302.4" y="895" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M322.4 895 V899 M322.4 917 V921"/>
+<text x="341.4" y="887" text-anchor="end" class="mono lbl">30</text>
+<rect class="reg" x="462.4" y="895" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M482.4 895 V899 M482.4 917 V921"/>
+<text x="463.4" y="887" text-anchor="start" class="mono lbl">23</text>
+<text x="501.4" y="887" text-anchor="end" class="mono lbl">22</text>
+<rect class="hifill" x="622.4" y="895" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M642.4 895 V899 M642.4 917 V921"/>
+<text x="623.4" y="887" text-anchor="start" class="mono lbl">15</text>
+<text x="661.4" y="887" text-anchor="end" class="mono lbl">14</text>
+<rect class="reg" x="782.4" y="895" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M802.4 895 V899 M802.4 917 V921"/>
+<text x="783.4" y="887" text-anchor="start" class="mono lbl">7</text>
+<text x="821.4" y="887" text-anchor="end" class="mono lbl">6</text>
+<text x="932.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="892.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="812.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="908" text-anchor="middle" class="mono">1</text>
+<text x="612.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="908" text-anchor="middle" class="mono lbl">0</text>
+<text x="322.4" y="934" text-anchor="middle" class="mono halo lbl">IRQ7</text>
+<text x="482.4" y="934" text-anchor="middle" class="mono halo lbl">IRQ6</text>
+<text x="642.4" y="934" text-anchor="middle" class="mono halo">IRQ5</text>
+<text x="802.4" y="934" text-anchor="middle" class="mono halo lbl">IRQ4</text>
+<text x="16" y="988" class="mono">PRIMASK</text>
+<text x="16" y="1003" class="lbl">the global switch: 0 = interrupts on</text>
+<text x="16" y="1018" class="mono lbl">= 0x00000000</text>
+<text x="303.4" y="973" text-anchor="start" class="mono lbl">31</text>
+<text x="941.4" y="973" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="302.4" y="981" width="620.0" height="26"/>
+<rect class="reg" x="922.4" y="981" width="20.0" height="26"/>
+<text x="932.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="912.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="892.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="872.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="852.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="832.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="812.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="792.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="772.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="752.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="732.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="712.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="692.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="672.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="652.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="632.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="612.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="592.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="572.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="552.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="532.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="512.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="492.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="472.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="452.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="432.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="412.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="392.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="372.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="352.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="332.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="312.4" y="994" text-anchor="middle" class="mono lbl">0</text>
+<text x="932.4" y="1020" text-anchor="middle" class="mono halo lbl">PM</text>
 </svg></figure>
-<p><code>RPR1</code> and <code>FPR1</code> have no fixed value: hardware sets bit 1 on each edge, and<br>the handler clears it by writing a 1 (slide 25). <code>IMR1</code>&#x27;s bits 19, 23, 25 and<br>31 are direct lines from other peripherals, not this lesson&#x27;s business. <code>PRIMASK</code> is the one switch that starts <strong>on</strong>.</p>
+<p><code>RPR1</code> and <code>FPR1</code> have no fixed value: hardware sets bit 1 on each edge, and<br>the handler clears it by writing a 1 (slide 25). <code>SWIER1</code> and <code>ISPR</code> are not in<br>the program at all — they are how slide 33b raises the same interrupt from the<br>debugger, one hop in and two hops in. <code>IMR1</code>&#x27;s bits 19, 23, 25 and<br>31 are direct lines from other peripherals, not this lesson&#x27;s business. <code>PRIMASK</code> is the one switch that starts <strong>on</strong>.</p>
 <p>The next four slides take the hops one at a time, with the exact value each<br>register ends up holding.</p>
 </section>
 <section class="slide">

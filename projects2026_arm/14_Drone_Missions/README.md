@@ -23,7 +23,7 @@ waypoints, altitude, battery, wind.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: a title, 2 pin-map slides and 28 slides |
+| `Slide.md` | the lecture - 31 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: Parts 0–8, ~2 hours, three contests, **nothing handed in** |
 | `Main.c` | five RTOS tasks (world, ctl, link, tel, ui), three locks, the shell (`stats params mission tel`), SysTick cycle stamps |
 | `control.h` | the plant/controller contract: `sensors_t`, `actuators_t`, `control_step()` |

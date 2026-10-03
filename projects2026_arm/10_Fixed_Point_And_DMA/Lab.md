@@ -297,7 +297,7 @@ implemented**. What will the program print?
 `RUNNING`, show `scan_buf` values that follow the joystick, read
 `CNDTR` as 1, 2 or 3 on the live line, and report a DMA read cost of a few
 dozen cycles against the polled thousand. Pressing **B** then toggles between
-the two, and the live line's `read ... cyc` shows the difference. Slide 23
+the two, and the live line's `read ... cyc` shows the difference. Slide 23b
 predicts the numbers; nobody has measured them yet.
 
 **Think:** the stuck-DMA test fills the buffer with `0xFFFF` because a 12-bit

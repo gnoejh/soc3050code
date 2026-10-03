@@ -417,7 +417,141 @@
 <p>That struct is the <strong>task control block</strong>. Each task also gets its own<br>stack — a plain array. The registers live <em>on</em> that stack while the task is<br>switched out, so the TCB only needs to remember one number: where the stack<br>pointer was.</p>
 </section>
 <section class="slide">
-<h2>Slide 3: Two Stack Pointers</h2>
+<h2>Slide 3: The Core&#x27;s Own Registers — All on One Page</h2>
+<p>A context switch is made of registers that have <strong>no address</strong>. They are not<br>in the memory map at all: they live inside the core, and only two instructions<br>reach them — <code>MRS</code> (special register to <code>rN</code>) and <code>MSR</code> (<code>rN</code> to special<br>register). CMSIS wraps each one in an inline function (<code>cmsis_gcc.h</code>, which<br>pulls in <code>m-profile/cmsis_gcc_m.h</code>):</p>
+<table><thead><tr><th>Register</th><th>What it holds</th><th>Read</th><th>Write</th><th>This kernel</th><th>Slide</th></tr></thead><tbody><tr><td><strong><code>xPSR</code></strong> = APSR + IPSR + EPSR</td><td>flags <code>N Z C V</code>; the active exception&#x27;s number; the Thumb bit <code>T</code></td><td><code>MRS r, xpsr</code> · <code>__get_xPSR()</code> (also <code>__get_APSR()</code>, <code>__get_IPSR()</code>)</td><td>—</td><td>forged into every new task&#x27;s frame; decoded after a fault</td><td>8, 18</td></tr><tr><td><strong><code>MSP</code></strong></td><td>main stack pointer</td><td><code>MRS r, msp</code> · <code>__get_MSP()</code></td><td><code>MSR msp, r</code> · <code>__set_MSP()</code></td><td>handlers, and <code>main()</code> before the first switch; read by <code>HardFault_Handler</code> when a handler faulted</td><td>3b, 18</td></tr><tr><td><strong><code>PSP</code></strong></td><td>process stack pointer</td><td><code>MRS r, psp</code> · <code>__get_PSP()</code></td><td><code>MSR psp, r</code> · <code>__set_PSP()</code></td><td>every task; saved and loaded by <code>PendSV_Handler</code>, read by <code>HardFault_Handler</code></td><td>3b, 5, 6, 18</td></tr><tr><td><strong><code>PRIMASK</code></strong></td><td>1 = interrupts masked</td><td><code>MRS r, primask</code> · <code>__get_PRIMASK()</code></td><td><code>MSR primask, r</code> · <code>__set_PRIMASK()</code>; <code>cpsid i</code> / <code>cpsie i</code> · <code>__disable_irq()</code> / <code>__enable_irq()</code></td><td><code>enter()</code> / <code>leave()</code> around all kernel bookkeeping; <code>PendSV_Handler</code></td><td>6, 12</td></tr><tr><td><strong><code>CONTROL</code></strong></td><td>which stack Thread mode uses; privilege</td><td><code>MRS r, control</code> · <code>__get_CONTROL()</code></td><td><code>MSR control, r</code> · <code>__set_CONTROL()</code> (adds an <code>ISB</code>)</td><td>never written: <code>EXC_RETURN</code> sets <code>SPSEL</code></td><td>3b</td></tr><tr><td><code>BASEPRI</code>, <code>FAULTMASK</code></td><td>priority-threshold masks</td><td>—</td><td>—</td><td><strong>not on this core</strong>: CMSIS compiles them only for Thumb-2</td><td></td></tr></tbody></table>
+<p>And one value that is not a register but steers all of them: <strong><code>EXC_RETURN</code></strong>,<br>the number in <code>lr</code> while a handler runs (slides 3b, 18).</p>
+<figure class="diagram"><svg width="907" viewBox="0 0 907 429" role="img" aria-label="The five, drawn to scale.  Shaded = a field this kernel depends on.; xPSR, 32 bits; MSP, 32 bits; PSP, 32 bits; PRIMASK, 32 bits; CONTROL, 32 bits">
+<text x="454" y="16" text-anchor="middle" class="lbl">The five, drawn to scale.  Shaded = a field this kernel depends on.</text>
+<text x="16" y="59" class="mono">xPSR</text>
+<text x="16" y="74" class="lbl">APSR, IPSR and EPSR in one word</text>
+<text x="252.2" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="411.2" y="52" width="360.0" height="26"/>
+<text x="591.2" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="331.2" y="52" width="60.0" height="26"/>
+<text x="361.2" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="251.2" y="52" width="20.0" height="26"/>
+<text x="261.2" y="65" text-anchor="middle" class="mono">N</text>
+<rect class="reg" x="271.2" y="52" width="20.0" height="26"/>
+<text x="281.2" y="44" text-anchor="middle" class="mono lbl">30</text>
+<text x="281.2" y="65" text-anchor="middle" class="mono">Z</text>
+<rect class="reg" x="291.2" y="52" width="20.0" height="26"/>
+<text x="301.2" y="44" text-anchor="middle" class="mono lbl">29</text>
+<text x="301.2" y="65" text-anchor="middle" class="mono">C</text>
+<rect class="reg" x="311.2" y="52" width="20.0" height="26"/>
+<text x="321.2" y="44" text-anchor="middle" class="mono lbl">28</text>
+<text x="321.2" y="65" text-anchor="middle" class="mono">V</text>
+<rect class="hifill" x="391.2" y="52" width="20.0" height="26"/>
+<text x="401.2" y="44" text-anchor="middle" class="mono lbl">24</text>
+<text x="401.2" y="65" text-anchor="middle" class="mono">T</text>
+<rect class="reg" x="771.2" y="52" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M871.2 52 V56 M871.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M851.2 52 V56 M851.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M831.2 52 V56 M831.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M811.2 52 V56 M811.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M791.2 52 V56 M791.2 74 V78"/>
+<text x="772.2" y="44" text-anchor="start" class="mono lbl">5</text>
+<text x="831.2" y="65" text-anchor="middle" class="mono">ISR</text>
+<text x="16" y="128" class="mono">MSP</text>
+<text x="16" y="143" class="lbl">main stack: handlers</text>
+<text x="252.2" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="251.2" y="121" width="640.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M871.2 121 V125 M871.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M851.2 121 V125 M851.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M831.2 121 V125 M831.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M811.2 121 V125 M811.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M791.2 121 V125 M791.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M771.2 121 V125 M771.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M751.2 121 V125 M751.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M731.2 121 V125 M731.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M711.2 121 V125 M711.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M691.2 121 V125 M691.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M671.2 121 V125 M671.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M651.2 121 V125 M651.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M631.2 121 V125 M631.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M611.2 121 V125 M611.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M591.2 121 V125 M591.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M571.2 121 V125 M571.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M551.2 121 V125 M551.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M531.2 121 V125 M531.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M511.2 121 V125 M511.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M491.2 121 V125 M491.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M471.2 121 V125 M471.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M451.2 121 V125 M451.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M431.2 121 V125 M431.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M411.2 121 V125 M411.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M391.2 121 V125 M391.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M371.2 121 V125 M371.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M351.2 121 V125 M351.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M331.2 121 V125 M331.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M311.2 121 V125 M311.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M291.2 121 V125 M291.2 143 V147"/>
+<path class="reg" stroke-width="0.6" d="M271.2 121 V125 M271.2 143 V147"/>
+<text x="571.2" y="134" text-anchor="middle" class="mono">stack address</text>
+<text x="16" y="197" class="mono">PSP</text>
+<text x="16" y="212" class="lbl">process stack: tasks</text>
+<text x="252.2" y="182" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="182" text-anchor="end" class="mono lbl">0</text>
+<rect class="hifill" x="251.2" y="190" width="640.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M871.2 190 V194 M871.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M851.2 190 V194 M851.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M831.2 190 V194 M831.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M811.2 190 V194 M811.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M791.2 190 V194 M791.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M771.2 190 V194 M771.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M751.2 190 V194 M751.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M731.2 190 V194 M731.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M711.2 190 V194 M711.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M691.2 190 V194 M691.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M671.2 190 V194 M671.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M651.2 190 V194 M651.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M631.2 190 V194 M631.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M611.2 190 V194 M611.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M591.2 190 V194 M591.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M571.2 190 V194 M571.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M551.2 190 V194 M551.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M531.2 190 V194 M531.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M511.2 190 V194 M511.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M491.2 190 V194 M491.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M471.2 190 V194 M471.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M451.2 190 V194 M451.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M431.2 190 V194 M431.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M411.2 190 V194 M411.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M391.2 190 V194 M391.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M371.2 190 V194 M371.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M351.2 190 V194 M351.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M331.2 190 V194 M331.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M311.2 190 V194 M311.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M291.2 190 V194 M291.2 212 V216"/>
+<path class="reg" stroke-width="0.6" d="M271.2 190 V194 M271.2 212 V216"/>
+<text x="571.2" y="203" text-anchor="middle" class="mono">stack address</text>
+<text x="16" y="266" class="mono">PRIMASK</text>
+<text x="16" y="281" class="lbl">interrupt mask</text>
+<text x="252.2" y="251" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="251" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="251.2" y="259" width="620.0" height="26"/>
+<text x="561.2" y="272" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="871.2" y="259" width="20.0" height="26"/>
+<text x="881.2" y="298" text-anchor="middle" class="mono halo">PM</text>
+<text x="16" y="352" class="mono">CONTROL</text>
+<text x="16" y="367" class="lbl">Thread mode&#x27;s stack and privilege</text>
+<text x="252.2" y="337" text-anchor="start" class="mono lbl">31</text>
+<text x="890.2" y="337" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="251.2" y="345" width="600.0" height="26"/>
+<text x="551.2" y="358" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="851.2" y="345" width="20.0" height="26"/>
+<text x="861.2" y="337" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="871.2" y="345" width="20.0" height="26"/>
+<path class="dash" d="M881.2 371 L881.2 393"/>
+<text x="861.2" y="384" text-anchor="middle" class="mono halo">SPSEL</text>
+<text x="881.2" y="400" text-anchor="middle" class="mono halo lbl">nPRIV</text>
+</svg></figure>
+<ul><li><strong><code>xPSR</code></strong> is three registers read as one word: <code>APSR</code> holds the flags (bits 31:28), <code>IPSR</code> the exception number (5:0, zero in Thread mode), <code>EPSR</code> the <code>T</code> bit (24).</li><li><strong><code>MSP</code> and <code>PSP</code></strong> are the two stack pointers; <code>sp</code> is whichever one is selected. Slide 3b says who uses which.</li><li><strong><code>PRIMASK</code></strong> is one bit. Lesson 03&#x27;s critical section was exactly this register; slide 12 shows the kernel saving it rather than just setting it.</li><li><strong><code>CONTROL</code></strong> decides what <code>sp</code> means in Thread mode. This kernel never writes it — the exception return does.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 3b: Two Stack Pointers</h2>
 <p>The Cortex-M has <strong>two</strong> stack pointers, and you have been using one of them<br>without noticing:</p>
 <table><thead><tr><th></th><th>Used by</th><th>In this kernel</th></tr></thead><tbody><tr><td><strong>MSP</strong> — main stack pointer</td><td>every exception handler; <code>main()</code> after reset</td><td>handlers only</td></tr><tr><td><strong>PSP</strong> — process stack pointer</td><td>Thread mode, if <code>CONTROL.SPSEL = 1</code></td><td>every task, each on its own stack</td></tr></tbody></table>
 <p>The split is what makes the design clean. Interrupt handlers always run on<br>MSP, a stack no task owns, so a handler never needs space on a task&#x27;s stack<br>beyond the eight words the hardware pushes on entry. Each task&#x27;s stack only has<br>to hold <em>that task</em>.</p>
@@ -550,7 +684,250 @@
 <p>Every switch in this kernel returns with exactly that value.</p>
 </section>
 <section class="slide">
-<h2>Slide 4: PendSV — an Exception You Pend Yourself</h2>
+<h2>Slide 4: The System Control Block — Every Register on One Page</h2>
+<p>The registers that <em>are</em> memory-mapped come next. The kernel&#x27;s other half — pending<br>a switch, and putting it at the right priority — is done through the<br><strong>System Control Block</strong>, <code>SCB_Type</code> in <code>core_cm0plus.h</code>, at <strong>0xE000ED00</strong><br>(<code>SCS_BASE</code> 0xE000E000 + 0xD00). Like SysTick, it is part of the core: the<br>same registers on every Cortex-M0+.</p>
+<table><thead><tr><th>Offset</th><th>Register</th><th>Its job</th><th>This kernel</th><th>Slide</th></tr></thead><tbody><tr><td>0x00</td><td><code>CPUID</code></td><td>read-only: which core this is</td><td>—</td><td></td></tr><tr><td>0x04</td><td><strong><code>ICSR</code></strong></td><td>pend or un-pend PendSV, SysTick, NMI; which exception is active and which is pending</td><td>writes <code>PENDSVSET</code>, <code>PENDSVCLR</code></td><td>4b</td></tr><tr><td>0x08</td><td><code>VTOR</code></td><td>where the vector table is</td><td>— (never written)</td><td></td></tr><tr><td>0x0C</td><td><code>AIRCR</code></td><td>software reset; key-protected</td><td>—</td><td></td></tr><tr><td>0x10</td><td><code>SCR</code></td><td>sleep behaviour</td><td>—</td><td></td></tr><tr><td>0x14</td><td><code>CCR</code></td><td>stack alignment, unaligned-access trap</td><td>—</td><td>20</td></tr><tr><td>0x18</td><td>—</td><td>reserved</td><td></td><td></td></tr><tr><td>0x1C</td><td><code>SHPR2</code> (<code>SHPR[0]</code>)</td><td>priority of SVCall</td><td>—</td><td></td></tr><tr><td>0x20</td><td><strong><code>SHPR3</code></strong> (<code>SHPR[1]</code>)</td><td>priority of PendSV and SysTick</td><td>both set to 3</td><td>4b</td></tr><tr><td>0x24</td><td><code>SHCSR</code></td><td>is SVCall pending</td><td>—</td><td></td></tr></tbody></table>
+<p><strong>Two registers out of nine</strong> carry the whole scheduler&#x27;s hardware side:</p>
+<figure class="diagram"><svg width="808" viewBox="0 0 808 887" role="img" aria-label="The whole SCB, drawn to scale.  Shaded = a field this kernel writes.; CPUID, 32 bits; ICSR, 32 bits; VTOR, 32 bits; AIRCR, 32 bits; SCR, 32 bits; CCR, 32 bits; SHPR2, 32 bits; SHPR3, 32 bits; SHCSR, 32 bits">
+<text x="399" y="16" text-anchor="middle" class="lbl">The whole SCB, drawn to scale.  Shaded = a field this kernel writes.</text>
+<text x="16" y="59" class="mono">CPUID</text>
+<text x="16" y="74" class="lbl">+0x00, read-only</text>
+<text x="143.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="142.4" y="52" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M282.4 52 V56 M282.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M262.4 52 V56 M262.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M242.4 52 V56 M242.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M222.4 52 V56 M222.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M202.4 52 V56 M202.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M182.4 52 V56 M182.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M162.4 52 V56 M162.4 74 V78"/>
+<text x="301.4" y="44" text-anchor="end" class="mono lbl">24</text>
+<text x="222.4" y="65" text-anchor="middle" class="mono">IMPLEMENTER</text>
+<rect class="reg" x="302.4" y="52" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M362.4 52 V56 M362.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M342.4 52 V56 M342.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M322.4 52 V56 M322.4 74 V78"/>
+<text x="381.4" y="44" text-anchor="end" class="mono lbl">20</text>
+<text x="342.4" y="65" text-anchor="middle" class="mono">VARIANT</text>
+<rect class="reg" x="382.4" y="52" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M442.4 52 V56 M442.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M422.4 52 V56 M422.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M402.4 52 V56 M402.4 74 V78"/>
+<text x="461.4" y="44" text-anchor="end" class="mono lbl">16</text>
+<rect class="reg" x="462.4" y="52" width="240.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M682.4 52 V56 M682.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M662.4 52 V56 M662.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M642.4 52 V56 M642.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M622.4 52 V56 M622.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M602.4 52 V56 M602.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M582.4 52 V56 M582.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M562.4 52 V56 M562.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M542.4 52 V56 M542.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M522.4 52 V56 M522.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M502.4 52 V56 M502.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M482.4 52 V56 M482.4 74 V78"/>
+<text x="701.4" y="44" text-anchor="end" class="mono lbl">4</text>
+<text x="582.4" y="65" text-anchor="middle" class="mono">PARTNO</text>
+<rect class="reg" x="702.4" y="52" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M762.4 52 V56 M762.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M742.4 52 V56 M742.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M722.4 52 V56 M722.4 74 V78"/>
+<text x="742.4" y="65" text-anchor="middle" class="mono">REVISION</text>
+<text x="422.4" y="91" text-anchor="middle" class="mono halo lbl">ARCHITECTURE</text>
+<text x="16" y="145" class="mono">ICSR</text>
+<text x="16" y="160" class="lbl">+0x04</text>
+<text x="143.4" y="130" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="130" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="542.4" y="138" width="120.0" height="26"/>
+<text x="602.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="342.4" y="138" width="80.0" height="26"/>
+<text x="382.4" y="151" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="282.4" y="138" width="20.0" height="26"/>
+<rect class="dash" x="162.4" y="138" width="40.0" height="26"/>
+<rect class="reg" x="142.4" y="138" width="20.0" height="26"/>
+<rect class="hifill" x="202.4" y="138" width="20.0" height="26"/>
+<text x="212.4" y="130" text-anchor="middle" class="mono lbl">28</text>
+<rect class="hifill" x="222.4" y="138" width="20.0" height="26"/>
+<text x="232.4" y="130" text-anchor="middle" class="mono lbl">27</text>
+<rect class="reg" x="242.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="262.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="302.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="322.4" y="138" width="20.0" height="26"/>
+<rect class="reg" x="422.4" y="138" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M522.4 138 V142 M522.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M502.4 138 V142 M502.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M482.4 138 V142 M482.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M462.4 138 V142 M462.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M442.4 138 V142 M442.4 160 V164"/>
+<text x="482.4" y="151" text-anchor="middle" class="mono">VECTPENDING</text>
+<rect class="reg" x="662.4" y="138" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M762.4 138 V142 M762.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M742.4 138 V142 M742.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M722.4 138 V142 M722.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M702.4 138 V142 M702.4 160 V164"/>
+<path class="reg" stroke-width="0.6" d="M682.4 138 V142 M682.4 160 V164"/>
+<text x="722.4" y="151" text-anchor="middle" class="mono">VECTACTIVE</text>
+<path class="dash" d="M152.4 164 L181.9 170"/>
+<path class="dash" d="M212.4 164 L212.4 186"/>
+<path class="dash" d="M232.4 164 L232.4 202"/>
+<path class="dash" d="M252.4 164 L252.4 218"/>
+<path class="dash" d="M312.4 164 L312.4 186"/>
+<path class="dash" d="M332.4 164 L332.4 202"/>
+<text x="181.9" y="177" text-anchor="middle" class="mono halo lbl">NMIPENDSET</text>
+<text x="212.4" y="193" text-anchor="middle" class="mono halo">PENDSVSET</text>
+<text x="232.4" y="209" text-anchor="middle" class="mono halo">PENDSVCLR</text>
+<text x="252.4" y="225" text-anchor="middle" class="mono halo lbl">PENDSTSET</text>
+<text x="272.4" y="177" text-anchor="middle" class="mono halo lbl">PENDSTCLR</text>
+<text x="312.4" y="193" text-anchor="middle" class="mono halo lbl">ISRPREEMPT</text>
+<text x="332.4" y="209" text-anchor="middle" class="mono halo lbl">ISRPENDING</text>
+<text x="16" y="279" class="mono">VTOR</text>
+<text x="16" y="294" class="lbl">+0x08</text>
+<text x="143.4" y="264" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="264" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="622.4" y="272" width="160.0" height="26"/>
+<text x="702.4" y="285" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="142.4" y="272" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M602.4 272 V276 M602.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M582.4 272 V276 M582.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M562.4 272 V276 M562.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M542.4 272 V276 M542.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M522.4 272 V276 M522.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M502.4 272 V276 M502.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M482.4 272 V276 M482.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M462.4 272 V276 M462.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M442.4 272 V276 M442.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M422.4 272 V276 M422.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M402.4 272 V276 M402.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M382.4 272 V276 M382.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M362.4 272 V276 M362.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M342.4 272 V276 M342.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M322.4 272 V276 M322.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M302.4 272 V276 M302.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M282.4 272 V276 M282.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M262.4 272 V276 M262.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M242.4 272 V276 M242.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M222.4 272 V276 M222.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M202.4 272 V276 M202.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M182.4 272 V276 M182.4 294 V298"/>
+<path class="reg" stroke-width="0.6" d="M162.4 272 V276 M162.4 294 V298"/>
+<text x="621.4" y="264" text-anchor="end" class="mono lbl">8</text>
+<text x="382.4" y="285" text-anchor="middle" class="mono">TBLOFF</text>
+<text x="16" y="348" class="mono">AIRCR</text>
+<text x="16" y="363" class="lbl">+0x0C</text>
+<text x="143.4" y="333" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="333" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="762.4" y="341" width="20.0" height="26"/>
+<rect class="dash" x="482.4" y="341" width="240.0" height="26"/>
+<text x="602.4" y="354" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="142.4" y="341" width="320.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M442.4 341 V345 M442.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M422.4 341 V345 M422.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M402.4 341 V345 M402.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M382.4 341 V345 M382.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M362.4 341 V345 M362.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M342.4 341 V345 M342.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M322.4 341 V345 M322.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M302.4 341 V345 M302.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M282.4 341 V345 M282.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M262.4 341 V345 M262.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M242.4 341 V345 M242.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M222.4 341 V345 M222.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M202.4 341 V345 M202.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M182.4 341 V345 M182.4 363 V367"/>
+<path class="reg" stroke-width="0.6" d="M162.4 341 V345 M162.4 363 V367"/>
+<text x="461.4" y="333" text-anchor="end" class="mono lbl">16</text>
+<text x="302.4" y="354" text-anchor="middle" class="mono">VECTKEY</text>
+<rect class="reg" x="462.4" y="341" width="20.0" height="26"/>
+<text x="472.4" y="333" text-anchor="middle" class="mono lbl">15</text>
+<rect class="reg" x="722.4" y="341" width="20.0" height="26"/>
+<text x="732.4" y="333" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="742.4" y="341" width="20.0" height="26"/>
+<text x="752.4" y="333" text-anchor="middle" class="mono lbl">1</text>
+<path class="dash" d="M752.4 367 L752.4 389"/>
+<text x="472.4" y="380" text-anchor="middle" class="mono halo lbl">ENDIANNESS</text>
+<text x="732.4" y="380" text-anchor="middle" class="mono halo lbl">SYSRESETREQ</text>
+<text x="752.4" y="396" text-anchor="middle" class="mono halo lbl">VECTCLRACTIVE</text>
+<text x="16" y="450" class="mono">SCR</text>
+<text x="16" y="465" class="lbl">+0x10</text>
+<text x="143.4" y="435" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="435" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="762.4" y="443" width="20.0" height="26"/>
+<rect class="dash" x="702.4" y="443" width="20.0" height="26"/>
+<rect class="dash" x="142.4" y="443" width="540.0" height="26"/>
+<text x="412.4" y="456" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="682.4" y="443" width="20.0" height="26"/>
+<text x="692.4" y="435" text-anchor="middle" class="mono lbl">4</text>
+<rect class="reg" x="722.4" y="443" width="20.0" height="26"/>
+<text x="732.4" y="435" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="742.4" y="443" width="20.0" height="26"/>
+<text x="752.4" y="435" text-anchor="middle" class="mono lbl">1</text>
+<path class="dash" d="M732.4 469 L732.4 491"/>
+<path class="dash" d="M752.4 469 L752.4 507"/>
+<text x="692.4" y="482" text-anchor="middle" class="mono halo lbl">SEVONPEND</text>
+<text x="732.4" y="498" text-anchor="middle" class="mono halo lbl">SLEEPDEEP</text>
+<text x="752.4" y="514" text-anchor="middle" class="mono halo lbl">SLEEPONEXIT</text>
+<text x="16" y="568" class="mono">CCR</text>
+<text x="16" y="583" class="lbl">+0x14</text>
+<text x="143.4" y="553" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="553" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="722.4" y="561" width="60.0" height="26"/>
+<text x="752.4" y="574" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="602.4" y="561" width="100.0" height="26"/>
+<text x="652.4" y="574" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="142.4" y="561" width="440.0" height="26"/>
+<text x="362.4" y="574" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="582.4" y="561" width="20.0" height="26"/>
+<text x="592.4" y="553" text-anchor="middle" class="mono lbl">9</text>
+<rect class="reg" x="702.4" y="561" width="20.0" height="26"/>
+<text x="712.4" y="553" text-anchor="middle" class="mono lbl">3</text>
+<text x="592.4" y="600" text-anchor="middle" class="mono halo lbl">STKALIGN</text>
+<text x="712.4" y="600" text-anchor="middle" class="mono halo lbl">UNALIGN_TRP</text>
+<text x="16" y="654" class="mono">SHPR2</text>
+<text x="16" y="669" class="lbl">+0x1C</text>
+<text x="143.4" y="639" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="639" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="182.4" y="647" width="600.0" height="26"/>
+<text x="482.4" y="660" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="142.4" y="647" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M162.4 647 V651 M162.4 669 V673"/>
+<text x="181.4" y="639" text-anchor="end" class="mono lbl">30</text>
+<path class="dash" d="M162.4 673 L166.1 679"/>
+<text x="166.1" y="686" text-anchor="middle" class="mono halo lbl">SVCall</text>
+<text x="16" y="740" class="mono">SHPR3</text>
+<text x="16" y="755" class="lbl">+0x20</text>
+<text x="143.4" y="725" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="725" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="342.4" y="733" width="440.0" height="26"/>
+<text x="562.4" y="746" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="182.4" y="733" width="120.0" height="26"/>
+<text x="242.4" y="746" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="142.4" y="733" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M162.4 733 V737 M162.4 755 V759"/>
+<text x="181.4" y="725" text-anchor="end" class="mono lbl">30</text>
+<rect class="hifill" x="302.4" y="733" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M322.4 733 V737 M322.4 755 V759"/>
+<text x="303.4" y="725" text-anchor="start" class="mono lbl">23</text>
+<text x="341.4" y="725" text-anchor="end" class="mono lbl">22</text>
+<path class="dash" d="M162.4 759 L170.1 765"/>
+<text x="170.1" y="772" text-anchor="middle" class="mono halo">SysTick</text>
+<text x="322.4" y="772" text-anchor="middle" class="mono halo">PendSV</text>
+<text x="16" y="826" class="mono">SHCSR</text>
+<text x="16" y="841" class="lbl">+0x24</text>
+<text x="143.4" y="811" text-anchor="start" class="mono lbl">31</text>
+<text x="781.4" y="811" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="482.4" y="819" width="300.0" height="26"/>
+<text x="632.4" y="832" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="142.4" y="819" width="320.0" height="26"/>
+<text x="302.4" y="832" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="462.4" y="819" width="20.0" height="26"/>
+<text x="472.4" y="811" text-anchor="middle" class="mono lbl">15</text>
+<text x="472.4" y="858" text-anchor="middle" class="mono halo lbl">SVCALLPENDED</text>
+</svg></figure>
+<ul><li><strong><code>ICSR</code> is write-1-to-act.</strong> Writing <code>PENDSVSET</code> pends PendSV; writing <code>PENDSVCLR</code> cancels a pending one; zeros do nothing. So the kernel writes the bit alone with <code>=</code>, never <code>|=</code>.</li><li><strong><code>SHPR2</code>/<code>SHPR3</code> hold one byte per system exception</strong>, and this chip implements only the top two bits of each (<code>__NVIC_PRIO_BITS</code> = 2 in <code>stm32c031xx.h</code>): four levels, 0–3. CMSIS calls the pair <code>SHPR[0]</code> and <code>SHPR[1]</code>; <code>NVIC_SetPriority()</code> picks the word and byte from the exception number (<code>_SHP_IDX</code>, <code>_BIT_SHIFT</code>), so <code>NVIC_SetPriority(PendSV_IRQn, 3)</code> writes SCB, not the NVIC.</li><li><strong>SysTick</strong> (0xE000E010) is the kernel&#x27;s third core block, used exactly as lesson 06 set it up — <code>SysTick_Config()</code>, mapped on lesson 06&#x27;s slide 1.</li></ul>
+</section>
+<section class="slide">
+<h2>Slide 4b: PendSV — an Exception You Pend Yourself</h2>
 <p>A switch must never happen <em>inside</em> another interrupt handler: that handler&#x27;s<br>frame is on MSP, half-finished, and swapping the task beneath it would return<br>it into the wrong world. So switches happen in one place only — <strong>PendSV</strong>, a<br>system exception with two properties:</p>
 <ul><li><strong>It is triggered by software.</strong> <code>SCB-&gt;ICSR = SCB_ICSR_PENDSVSET_Msk</code> sets its pending bit. Nothing else ever raises it.</li><li><strong>This kernel gives it the lowest priority</strong>, 3. So it runs only when <em>no other handler is active</em> — after every other interrupt has finished, on the way back to a task.</li></ul>
 <figure class="diagram"><svg width="818" viewBox="0 0 818 222" role="img" aria-label="The write that pends it, and both system handlers at priority 3; ICSR, 32 bits; SHPR3, 32 bits">

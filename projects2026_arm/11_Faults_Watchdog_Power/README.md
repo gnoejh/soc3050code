@@ -24,7 +24,7 @@ store.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title, two pin-map slides and 29 slides |
+| `Slide.md` | the lecture - 33 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: ten parts, ~2 hours, **nothing handed in** |
 | `Main.c` | the superloop (blink, input, screen jobs), heartbeat feeding, `WFI` idle + load, shell, OLED menu, boot report, the detective game |
 | `crash.c`, `crash.h` | **subject.** Naked `HardFault_Handler`, the `.noinit` record (magic + checksum), printf-free fault output, stack paint + canary, the experiments |

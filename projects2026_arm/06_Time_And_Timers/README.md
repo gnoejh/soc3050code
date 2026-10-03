@@ -14,7 +14,7 @@ so the two dividers check each other.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 18 slides |
+| `Slide.md` | the lecture - 22 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: eight parts, ~2 hours, guided, **nothing handed in** |
 | `Main.c` | SysTick, TIM3 PWM + update IRQ, TIM14 capture IRQ, a non-blocking scheduler loop, and a banner that reads every clock's configuration back |
 | `build.bat` | `LIBS=retarget`; `gpio.h` is header-only |

@@ -475,7 +475,62 @@ Three details worth stealing:
 
 ---
 
-## Slide 5: Every Write Starts With a Control Byte
+## Slide 5: The SSD1306 — Everything It Understands, on One Page
+
+Before any single command, the whole interface. The panel has no registers at
+addresses, as the MCU's peripherals do: it has a **control byte**, a **picture
+RAM**, and a set of **one-byte commands**, some followed by parameter bytes.
+This lesson's `oled.c` uses these:
+
+| Byte(s) | What it is | This lesson | Slide |
+|---|---|---|---|
+| `00` / `40` | **control byte**: commands follow / pixels follow | first byte of every transfer | 5b |
+| RAM | **8 pages × 128 bytes**, a byte is a column of 8 pixels | written one page at a time | 3, 4 |
+| `AE` / `AF` | display off / on | off to configure, on last | 6 |
+| `D5` *x* | clock divide, oscillator | `80`, the default | 6 |
+| `A8` *x* | multiplex ratio = rows − 1 | `3F`: 64 rows | 6 |
+| `D3` *x* | vertical display offset | `00` | 6 |
+| `40`–`7F` | display start line (low 6 bits) | `40`: line 0 | 6 |
+| **`8D`** *x* | **charge pump** | **`14`: on** | 6 |
+| **`20`** *x* | **memory addressing mode** | `00`: horizontal | 6, 7b |
+| **`21`** *a b* | **column window**, start and end | `0`, `127` | 7b |
+| **`22`** *a b* | **page window**, start and end | `p`, `p` | 7b |
+| `A0` / `A1` | segment remap | `A1`: x left → right | 6 |
+| `C0` / `C8` | COM scan direction | `C8`: y top → bottom | 6 |
+| `DA` *x* | COM pin layout | `12`, for 64 rows | 6 |
+| `81` *x* | contrast | `CF`; `oled_contrast()` | 6 |
+| `D9` *x* · `DB` *x* | pre-charge period · VCOMH level | `F1` · `40` | 6 |
+| `A4` / `A5` | show RAM / all pixels on | `A4` | 6 |
+| `A6` / `A7` | normal / inverted | `A6`; `oled_invert()` | 6 |
+| — | scrolling (`26`–`2F`, `A3`), page-mode addressing (`00`–`1F`, `B0`–`B7`), NOP (`E3`) | not used | |
+
+Three groups: **the stream** (control byte, RAM), **where pixels land**
+(`20`, `21`, `22`), and **how the glass is driven** (everything else, sent
+once by `oled_init()`). Several commands carry their meaning in a bit of the
+opcode itself, which is why they come in pairs:
+
+```regs
+# The SSD1306's bytes this lesson sends, drawn to scale.  Shaded = what the lesson sets.
+control ; 0x40: pixel data follows | 8 = 0x40 | 7 Co, !6 D/C#, 5:0
+AE / AF ; display off / on | 8 = 0xAF | 7:1, !0 ON
+A6 / A7 ; normal / inverted | 8 = 0xA6 | 7:1, !0 INVERT
+A0 / A1 ; segment remap | 8 = 0xA1 | 7:1, !0 REMAP
+C0 / C8 ; COM scan direction | 8 = 0xC8 | 7:4, !3 DOWN, 2:0
+40 ; display start line | 8 = 0x40 | 7:6, !5:0 LINE
+8D, then ; charge pump parameter | 8 = 0x14 | 4, !2 ENABLE
+20, then ; addressing mode: 00 horiz, 01 vert, 10 page | 8 = 0x00 | !1:0 MODE
+21, then a ; first column | 8 = 0x00 | !6:0 START
+21, then b ; last column | 8 = 0x7F | !6:0 END
+22, then a ; first page | 8 | !2:0 START
+22, then b ; last page | 8 | !2:0 END
+```
+
+The **pairs** and the **parameters** are taken from the SSD1306 datasheet's
+command table; the values are `oled.c`'s, unchanged from slide 6.
+
+---
+
+## Slide 5b: Every Write Starts With a Control Byte
 
 Over I²C the SSD1306 receives one stream of bytes. The byte after the address
 says what the rest are:
@@ -514,7 +569,7 @@ static uint8_t fb[OLED_PAGES][1 + OLED_W];  /* [0] = 0x40, then 128 */
 | `A8 3F` | multiplex 64 | this panel has 64 rows |
 | `D3 00` · `40` | offset 0, start line 0 | |
 | **`8D 14`** | **charge pump on** | **without it the panel stays dark** |
-| `20 00` | horizontal addressing | column, then page — slide 7 |
+| `20 00` | horizontal addressing | column, then page — slide 7b |
 | `A1` · `C8` | segment remap, COM scan down | x left→right, y top→bottom |
 | `DA 12` | COM pin layout | for 64 rows |
 | `81 CF` · `D9 F1` · `DB 40` | contrast, pre-charge, VCOMH | |
@@ -533,7 +588,43 @@ voltage. It is lesson 09's MPU6050 sleep bit, in a display.
 
 ---
 
-## Slide 7: Sending One Page
+## Slide 7: I2C1 — the MCU's Side of the Wire, on One Page
+
+Every byte above leaves through **I2C1** at **0x40005400** (`I2C_TypeDef` in
+`stm32c031xx.h`), driven by `_lib/i2c.c` exactly as in lesson 09:
+
+| Offset | Register | Its job | `i2c.c` here | Slide |
+|---|---|---|---|---|
+| 0x00 | **`CR1`** | enable, interrupts, filters | `PE` = 0, then 1 around `TIMINGR` | lesson 09 |
+| 0x04 | **`CR2`** | one transfer: address, direction, count, start / stop | `SADD`, `RD_WRN`, `NBYTES`, `AUTOEND`, `START`, `STOP` | 7b |
+| 0x08, 0x0C | `OAR1`, `OAR2` | the MCU's own address, as a target | — | |
+| 0x10 | **`TIMINGR`** | SCL high / low times: the bus speed | `0x0090273D` once | 8 |
+| 0x14 | `TIMEOUTR` | SMBus timeouts | — | |
+| 0x18 | **`ISR`** | status flags, polled | `TXIS`, `RXNE`, `TC`, `STOPF`, `NACKF` | 8 |
+| 0x1C | **`ICR`** | write 1 to clear a flag | `STOPCF`, `NACKCF` | lesson 09 |
+| 0x20 | `PECR` | SMBus packet error check | — | |
+| 0x24 | **`RXDR`** | the byte received | read (MPU6050, not the panel) | lesson 09 |
+| 0x28 | **`TXDR`** | the next byte to send | each of the 7 + 129 bytes | 7b, 8 |
+
+```regs
+# The seven i2c.c touches, drawn to scale.  Shaded = a field it writes or reads.
+CR1 ; control | 32 | 7 ERRIE, 6 TCIE, 5 STOPIE, 4 NACKIE, 2 RXIE, 1 TXIE, !0 PE
+CR2 ; one transfer, 7-bit address in 7:1 | 32 | 26 PECBYTE, !25 AUTOEND, 24 RELOAD, !23:16 NBYTES, 15 NACK, !14 STOP, !13 START, 12 HEAD10R, 11 ADD10, !10 RD_WRN, 9:8, !7:1 SADD, 0
+TIMINGR ; bus speed | 32 = 0x0090273D | !31:28 PRESC, !23:20 SCLDEL, !19:16 SDADEL, !15:8 SCLH, !7:0 SCLL
+ISR ; status | 32 | 15 BUSY, 7 TCR, !6 TC, !5 STOPF, !4 NACKF, 3 ADDR, !2 RXNE, !1 TXIS, 0 TXE
+ICR ; clear flags | 32 | !5 STOPCF, !4 NACKCF, 3 ADDRCF
+RXDR ; received byte | 32 | !7:0 RXDATA
+TXDR ; byte to send | 32 | !7:0 TXDATA
+```
+
+Three roles: **set-up** (`CR1`, `TIMINGR`, once), **one transfer** (`CR2`
+starts it; `ISR` says when the next byte is wanted; `TXDR` / `RXDR` carry
+it), **clean-up** (`ICR`). The panel never answers with data, so `RXDR` sits
+idle in this lesson.
+
+---
+
+## Slide 7b: Sending One Page
 
 `oled_flush()` sets a window, then pours bytes into it:
 
@@ -781,6 +872,7 @@ This lesson owns SysTick itself — one interrupt a millisecond:
 ```regs
 SysTick->CTRL ; SysTick_Config(): core clock, IRQ, on | 32 = 0x00000007 | 16 COUNTFLAG, !2 CLKSOURCE, !1 TICKINT, !0 ENABLE
 SysTick->LOAD ; 48 000 - 1: one wrap per ms | 32 = 0x0000BB7F | 31:24, !23:0 RELOAD
+SysTick->VAL ; counts down 47 999 → 0, read by now_us() | 32 | 31:24, !23:0 CURRENT
 ```
 
 Between interrupts `VAL` counts down from 47 999 at 48 MHz, so

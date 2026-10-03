@@ -551,7 +551,267 @@
 <ul><li><code>(unsigned)x &gt;= OLED_W</code> clips both ends in one compare: a negative <code>x</code> becomes a huge unsigned number. Off-screen is never an error, so a sprite can slide off the edge.</li><li><code>y &gt;&gt; 3</code> and <code>y &amp; 7</code> are <code>/ 8</code> and <code>% 8</code> without the division the M0+ does not have.</li><li><strong>The last line</strong>: a page becomes dirty only if a byte <em>really changed</em>. Drawing a pixel that is already lit costs a few cycles and no bus at all.</li></ul>
 </section>
 <section class="slide">
-<h2>Slide 5: Every Write Starts With a Control Byte</h2>
+<h2>Slide 5: The SSD1306 — Everything It Understands, on One Page</h2>
+<p>Before any single command, the whole interface. The panel has no registers at<br>addresses, as the MCU&#x27;s peripherals do: it has a <strong>control byte</strong>, a <strong>picture<br>RAM</strong>, and a set of <strong>one-byte commands</strong>, some followed by parameter bytes.<br>This lesson&#x27;s <code>oled.c</code> uses these:</p>
+<table><thead><tr><th>Byte(s)</th><th>What it is</th><th>This lesson</th><th>Slide</th></tr></thead><tbody><tr><td><code>00</code> / <code>40</code></td><td><strong>control byte</strong>: commands follow / pixels follow</td><td>first byte of every transfer</td><td>5b</td></tr><tr><td>RAM</td><td><strong>8 pages × 128 bytes</strong>, a byte is a column of 8 pixels</td><td>written one page at a time</td><td>3, 4</td></tr><tr><td><code>AE</code> / <code>AF</code></td><td>display off / on</td><td>off to configure, on last</td><td>6</td></tr><tr><td><code>D5</code> <em>x</em></td><td>clock divide, oscillator</td><td><code>80</code>, the default</td><td>6</td></tr><tr><td><code>A8</code> <em>x</em></td><td>multiplex ratio = rows − 1</td><td><code>3F</code>: 64 rows</td><td>6</td></tr><tr><td><code>D3</code> <em>x</em></td><td>vertical display offset</td><td><code>00</code></td><td>6</td></tr><tr><td><code>40</code>–<code>7F</code></td><td>display start line (low 6 bits)</td><td><code>40</code>: line 0</td><td>6</td></tr><tr><td><strong><code>8D</code></strong> <em>x</em></td><td><strong>charge pump</strong></td><td><strong><code>14</code>: on</strong></td><td>6</td></tr><tr><td><strong><code>20</code></strong> <em>x</em></td><td><strong>memory addressing mode</strong></td><td><code>00</code>: horizontal</td><td>6, 7b</td></tr><tr><td><strong><code>21</code></strong> <em>a b</em></td><td><strong>column window</strong>, start and end</td><td><code>0</code>, <code>127</code></td><td>7b</td></tr><tr><td><strong><code>22</code></strong> <em>a b</em></td><td><strong>page window</strong>, start and end</td><td><code>p</code>, <code>p</code></td><td>7b</td></tr><tr><td><code>A0</code> / <code>A1</code></td><td>segment remap</td><td><code>A1</code>: x left → right</td><td>6</td></tr><tr><td><code>C0</code> / <code>C8</code></td><td>COM scan direction</td><td><code>C8</code>: y top → bottom</td><td>6</td></tr><tr><td><code>DA</code> <em>x</em></td><td>COM pin layout</td><td><code>12</code>, for 64 rows</td><td>6</td></tr><tr><td><code>81</code> <em>x</em></td><td>contrast</td><td><code>CF</code>; <code>oled_contrast()</code></td><td>6</td></tr><tr><td><code>D9</code> <em>x</em> · <code>DB</code> <em>x</em></td><td>pre-charge period · VCOMH level</td><td><code>F1</code> · <code>40</code></td><td>6</td></tr><tr><td><code>A4</code> / <code>A5</code></td><td>show RAM / all pixels on</td><td><code>A4</code></td><td>6</td></tr><tr><td><code>A6</code> / <code>A7</code></td><td>normal / inverted</td><td><code>A6</code>; <code>oled_invert()</code></td><td>6</td></tr><tr><td>—</td><td>scrolling (<code>26</code>–<code>2F</code>, <code>A3</code>), page-mode addressing (<code>00</code>–<code>1F</code>, <code>B0</code>–<code>B7</code>), NOP (<code>E3</code>)</td><td>not used</td><td></td></tr></tbody></table>
+<p>Three groups: <strong>the stream</strong> (control byte, RAM), <strong>where pixels land</strong><br>(<code>20</code>, <code>21</code>, <code>22</code>), and <strong>how the glass is driven</strong> (everything else, sent<br>once by <code>oled_init()</code>). Several commands carry their meaning in a bit of the<br>opcode itself, which is why they come in pairs:</p>
+<figure class="diagram"><svg width="493" viewBox="0 0 493 1048" role="img" aria-label="The SSD1306&#x27;s bytes this lesson sends, drawn to scale.  Shaded = what the lesson sets.; control, 8 bits; AE / AF, 8 bits; A6 / A7, 8 bits; A0 / A1, 8 bits; C0 / C8, 8 bits; 40, 8 bits; 8D, then, 8 bits; 20, then, 8 bits; 21, then a, 8 bits; 21, then b, 8 bits; 22, then a, 8 bits; 22, then b, 8 bits">
+<text x="246" y="16" text-anchor="middle" class="lbl">The SSD1306&#x27;s bytes this lesson sends, drawn to scale.  Shaded = what the lesson sets.</text>
+<text x="16" y="59" class="mono">control</text>
+<text x="16" y="74" class="lbl">0x40: pixel data follows</text>
+<text x="16" y="89" class="mono lbl">= 0x40</text>
+<text x="316.2" y="44" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="52" width="20.0" height="26"/>
+<rect class="hifill" x="335.2" y="52" width="20.0" height="26"/>
+<text x="345.2" y="44" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="355.2" y="52" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 52 V56 M455.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M435.2 52 V56 M435.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M415.2 52 V56 M415.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M395.2 52 V56 M395.2 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M375.2 52 V56 M375.2 74 V78"/>
+<text x="356.2" y="44" text-anchor="start" class="mono lbl">5</text>
+<text x="465.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="65" text-anchor="middle" class="mono">1</text>
+<text x="325.2" y="65" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M345.2 78 L345.2 100"/>
+<text x="325.2" y="91" text-anchor="middle" class="mono halo lbl">Co</text>
+<text x="345.2" y="107" text-anchor="middle" class="mono halo">D/C#</text>
+<text x="16" y="161" class="mono">AE / AF</text>
+<text x="16" y="176" class="lbl">display off / on</text>
+<text x="16" y="191" class="mono lbl">= 0xAF</text>
+<text x="316.2" y="146" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="146" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="154" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M435.2 154 V158 M435.2 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M415.2 154 V158 M415.2 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M395.2 154 V158 M395.2 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M375.2 154 V158 M375.2 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M355.2 154 V158 M355.2 176 V180"/>
+<path class="reg" stroke-width="0.6" d="M335.2 154 V158 M335.2 176 V180"/>
+<text x="454.2" y="146" text-anchor="end" class="mono lbl">1</text>
+<rect class="hifill" x="455.2" y="154" width="20.0" height="26"/>
+<text x="465.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="445.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="425.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="405.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="385.2" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="345.2" y="167" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="167" text-anchor="middle" class="mono">1</text>
+<text x="465.2" y="193" text-anchor="middle" class="mono halo">ON</text>
+<text x="16" y="247" class="mono">A6 / A7</text>
+<text x="16" y="262" class="lbl">normal / inverted</text>
+<text x="16" y="277" class="mono lbl">= 0xA6</text>
+<text x="316.2" y="232" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="232" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="240" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M435.2 240 V244 M435.2 262 V266"/>
+<path class="reg" stroke-width="0.6" d="M415.2 240 V244 M415.2 262 V266"/>
+<path class="reg" stroke-width="0.6" d="M395.2 240 V244 M395.2 262 V266"/>
+<path class="reg" stroke-width="0.6" d="M375.2 240 V244 M375.2 262 V266"/>
+<path class="reg" stroke-width="0.6" d="M355.2 240 V244 M355.2 262 V266"/>
+<path class="reg" stroke-width="0.6" d="M335.2 240 V244 M335.2 262 V266"/>
+<text x="454.2" y="232" text-anchor="end" class="mono lbl">1</text>
+<rect class="hifill" x="455.2" y="240" width="20.0" height="26"/>
+<text x="465.2" y="253" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="253" text-anchor="middle" class="mono">1</text>
+<text x="425.2" y="253" text-anchor="middle" class="mono">1</text>
+<text x="405.2" y="253" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="253" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="253" text-anchor="middle" class="mono">1</text>
+<text x="345.2" y="253" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="253" text-anchor="middle" class="mono">1</text>
+<text x="465.2" y="279" text-anchor="middle" class="mono halo">INVERT</text>
+<text x="16" y="333" class="mono">A0 / A1</text>
+<text x="16" y="348" class="lbl">segment remap</text>
+<text x="16" y="363" class="mono lbl">= 0xA1</text>
+<text x="316.2" y="318" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="318" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="326" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M435.2 326 V330 M435.2 348 V352"/>
+<path class="reg" stroke-width="0.6" d="M415.2 326 V330 M415.2 348 V352"/>
+<path class="reg" stroke-width="0.6" d="M395.2 326 V330 M395.2 348 V352"/>
+<path class="reg" stroke-width="0.6" d="M375.2 326 V330 M375.2 348 V352"/>
+<path class="reg" stroke-width="0.6" d="M355.2 326 V330 M355.2 348 V352"/>
+<path class="reg" stroke-width="0.6" d="M335.2 326 V330 M335.2 348 V352"/>
+<text x="454.2" y="318" text-anchor="end" class="mono lbl">1</text>
+<rect class="hifill" x="455.2" y="326" width="20.0" height="26"/>
+<text x="465.2" y="339" text-anchor="middle" class="mono">1</text>
+<text x="445.2" y="339" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="339" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="339" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="339" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="339" text-anchor="middle" class="mono">1</text>
+<text x="345.2" y="339" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="339" text-anchor="middle" class="mono">1</text>
+<text x="465.2" y="365" text-anchor="middle" class="mono halo">REMAP</text>
+<text x="16" y="419" class="mono">C0 / C8</text>
+<text x="16" y="434" class="lbl">COM scan direction</text>
+<text x="16" y="449" class="mono lbl">= 0xC8</text>
+<text x="316.2" y="404" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="404" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="412" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M375.2 412 V416 M375.2 434 V438"/>
+<path class="reg" stroke-width="0.6" d="M355.2 412 V416 M355.2 434 V438"/>
+<path class="reg" stroke-width="0.6" d="M335.2 412 V416 M335.2 434 V438"/>
+<text x="394.2" y="404" text-anchor="end" class="mono lbl">4</text>
+<rect class="hifill" x="395.2" y="412" width="20.0" height="26"/>
+<text x="405.2" y="404" text-anchor="middle" class="mono lbl">3</text>
+<rect class="reg" x="415.2" y="412" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 412 V416 M455.2 434 V438"/>
+<path class="reg" stroke-width="0.6" d="M435.2 412 V416 M435.2 434 V438"/>
+<text x="416.2" y="404" text-anchor="start" class="mono lbl">2</text>
+<text x="465.2" y="425" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="425" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="425" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="425" text-anchor="middle" class="mono">1</text>
+<text x="385.2" y="425" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="425" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="425" text-anchor="middle" class="mono">1</text>
+<text x="325.2" y="425" text-anchor="middle" class="mono">1</text>
+<text x="405.2" y="451" text-anchor="middle" class="mono halo">DOWN</text>
+<text x="16" y="505" class="mono">40</text>
+<text x="16" y="520" class="lbl">display start line</text>
+<text x="16" y="535" class="mono lbl">= 0x40</text>
+<text x="316.2" y="490" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="490" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="315.2" y="498" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M335.2 498 V502 M335.2 520 V524"/>
+<text x="354.2" y="490" text-anchor="end" class="mono lbl">6</text>
+<rect class="hifill" x="355.2" y="498" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 498 V502 M455.2 520 V524"/>
+<path class="reg" stroke-width="0.6" d="M435.2 498 V502 M435.2 520 V524"/>
+<path class="reg" stroke-width="0.6" d="M415.2 498 V502 M415.2 520 V524"/>
+<path class="reg" stroke-width="0.6" d="M395.2 498 V502 M395.2 520 V524"/>
+<path class="reg" stroke-width="0.6" d="M375.2 498 V502 M375.2 520 V524"/>
+<text x="465.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="511" text-anchor="middle" class="mono">1</text>
+<text x="325.2" y="511" text-anchor="middle" class="mono lbl">0</text>
+<text x="415.2" y="537" text-anchor="middle" class="mono halo">LINE</text>
+<text x="16" y="591" class="mono">8D, then</text>
+<text x="16" y="606" class="lbl">charge pump parameter</text>
+<text x="16" y="621" class="mono lbl">= 0x14</text>
+<text x="316.2" y="576" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="576" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="435.2" y="584" width="40.0" height="26"/>
+<rect class="dash" x="395.2" y="584" width="20.0" height="26"/>
+<rect class="dash" x="315.2" y="584" width="60.0" height="26"/>
+<rect class="reg" x="375.2" y="584" width="20.0" height="26"/>
+<text x="385.2" y="576" text-anchor="middle" class="mono lbl">4</text>
+<rect class="hifill" x="415.2" y="584" width="20.0" height="26"/>
+<text x="425.2" y="576" text-anchor="middle" class="mono lbl">2</text>
+<text x="465.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="597" text-anchor="middle" class="mono">1</text>
+<text x="405.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="597" text-anchor="middle" class="mono">1</text>
+<text x="365.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="597" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="623" text-anchor="middle" class="mono halo">ENABLE</text>
+<text x="16" y="677" class="mono">20, then</text>
+<text x="16" y="692" class="lbl">addressing mode: 00 horiz, 01 vert, 10 page</text>
+<text x="16" y="707" class="mono lbl">= 0x00</text>
+<text x="316.2" y="662" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="662" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="670" width="120.0" height="26"/>
+<rect class="hifill" x="435.2" y="670" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 670 V674 M455.2 692 V696"/>
+<text x="436.2" y="662" text-anchor="start" class="mono lbl">1</text>
+<text x="465.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="683" text-anchor="middle" class="mono lbl">0</text>
+<text x="455.2" y="709" text-anchor="middle" class="mono halo">MODE</text>
+<text x="16" y="763" class="mono">21, then a</text>
+<text x="16" y="778" class="lbl">first column</text>
+<text x="16" y="793" class="mono lbl">= 0x00</text>
+<text x="316.2" y="748" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="748" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="756" width="20.0" height="26"/>
+<rect class="hifill" x="335.2" y="756" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 756 V760 M455.2 778 V782"/>
+<path class="reg" stroke-width="0.6" d="M435.2 756 V760 M435.2 778 V782"/>
+<path class="reg" stroke-width="0.6" d="M415.2 756 V760 M415.2 778 V782"/>
+<path class="reg" stroke-width="0.6" d="M395.2 756 V760 M395.2 778 V782"/>
+<path class="reg" stroke-width="0.6" d="M375.2 756 V760 M375.2 778 V782"/>
+<path class="reg" stroke-width="0.6" d="M355.2 756 V760 M355.2 778 V782"/>
+<text x="336.2" y="748" text-anchor="start" class="mono lbl">6</text>
+<text x="465.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="445.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="425.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="385.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="365.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="345.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="325.2" y="769" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="795" text-anchor="middle" class="mono halo">START</text>
+<text x="16" y="849" class="mono">21, then b</text>
+<text x="16" y="864" class="lbl">last column</text>
+<text x="16" y="879" class="mono lbl">= 0x7F</text>
+<text x="316.2" y="834" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="834" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="842" width="20.0" height="26"/>
+<rect class="hifill" x="335.2" y="842" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 842 V846 M455.2 864 V868"/>
+<path class="reg" stroke-width="0.6" d="M435.2 842 V846 M435.2 864 V868"/>
+<path class="reg" stroke-width="0.6" d="M415.2 842 V846 M415.2 864 V868"/>
+<path class="reg" stroke-width="0.6" d="M395.2 842 V846 M395.2 864 V868"/>
+<path class="reg" stroke-width="0.6" d="M375.2 842 V846 M375.2 864 V868"/>
+<path class="reg" stroke-width="0.6" d="M355.2 842 V846 M355.2 864 V868"/>
+<text x="336.2" y="834" text-anchor="start" class="mono lbl">6</text>
+<text x="465.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="445.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="425.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="405.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="385.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="365.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="345.2" y="855" text-anchor="middle" class="mono">1</text>
+<text x="325.2" y="855" text-anchor="middle" class="mono lbl">0</text>
+<text x="405.2" y="881" text-anchor="middle" class="mono halo">END</text>
+<text x="16" y="935" class="mono">22, then a</text>
+<text x="16" y="950" class="lbl">first page</text>
+<text x="316.2" y="920" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="920" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="928" width="100.0" height="26"/>
+<text x="365.2" y="941" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="415.2" y="928" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 928 V932 M455.2 950 V954"/>
+<path class="reg" stroke-width="0.6" d="M435.2 928 V932 M435.2 950 V954"/>
+<text x="416.2" y="920" text-anchor="start" class="mono lbl">2</text>
+<text x="445.2" y="941" text-anchor="middle" class="mono">START</text>
+<text x="16" y="1004" class="mono">22, then b</text>
+<text x="16" y="1019" class="lbl">last page</text>
+<text x="316.2" y="989" text-anchor="start" class="mono lbl">7</text>
+<text x="474.2" y="989" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="315.2" y="997" width="100.0" height="26"/>
+<text x="365.2" y="1010" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="415.2" y="997" width="60.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M455.2 997 V1001 M455.2 1019 V1023"/>
+<path class="reg" stroke-width="0.6" d="M435.2 997 V1001 M435.2 1019 V1023"/>
+<text x="416.2" y="989" text-anchor="start" class="mono lbl">2</text>
+<text x="445.2" y="1010" text-anchor="middle" class="mono">END</text>
+</svg></figure>
+<p>The <strong>pairs</strong> and the <strong>parameters</strong> are taken from the SSD1306 datasheet&#x27;s<br>command table; the values are <code>oled.c</code>&#x27;s, unchanged from slide 6.</p>
+</section>
+<section class="slide">
+<h2>Slide 5b: Every Write Starts With a Control Byte</h2>
 <p>Over I²C the SSD1306 receives one stream of bytes. The byte after the address<br>says what the rest are:</p>
 <figure class="diagram"><svg width="370" viewBox="0 0 370 214" role="img" aria-label="control, 8 bits; control, 8 bits">
 <text x="16" y="35" class="mono">control</text>
@@ -616,13 +876,272 @@ S | 0x3C+W | A | 0x40 | A | px  | A | px  ... | P        128 pixel bytes</code><
 <section class="slide">
 <h2>Slide 6: Bringing the Panel Up — 16 Commands</h2>
 <p><code>oled_init()</code> sends the SSD1306&#x27;s power-up sequence, one command transfer each:</p>
-<table><thead><tr><th>Bytes</th><th>Command</th><th>Why</th></tr></thead><tbody><tr><td><code>AE</code></td><td>display off</td><td>configure in the dark</td></tr><tr><td><code>D5 80</code></td><td>clock divide</td><td>the default</td></tr><tr><td><code>A8 3F</code></td><td>multiplex 64</td><td>this panel has 64 rows</td></tr><tr><td><code>D3 00</code> · <code>40</code></td><td>offset 0, start line 0</td><td></td></tr><tr><td><strong><code>8D 14</code></strong></td><td><strong>charge pump on</strong></td><td><strong>without it the panel stays dark</strong></td></tr><tr><td><code>20 00</code></td><td>horizontal addressing</td><td>column, then page — slide 7</td></tr><tr><td><code>A1</code> · <code>C8</code></td><td>segment remap, COM scan down</td><td>x left→right, y top→bottom</td></tr><tr><td><code>DA 12</code></td><td>COM pin layout</td><td>for 64 rows</td></tr><tr><td><code>81 CF</code> · <code>D9 F1</code> · <code>DB 40</code></td><td>contrast, pre-charge, VCOMH</td><td></td></tr><tr><td><code>A4</code> · <code>A6</code> · <code>AF</code></td><td>show RAM, not inverted, <strong>on</strong></td><td></td></tr></tbody></table>
+<table><thead><tr><th>Bytes</th><th>Command</th><th>Why</th></tr></thead><tbody><tr><td><code>AE</code></td><td>display off</td><td>configure in the dark</td></tr><tr><td><code>D5 80</code></td><td>clock divide</td><td>the default</td></tr><tr><td><code>A8 3F</code></td><td>multiplex 64</td><td>this panel has 64 rows</td></tr><tr><td><code>D3 00</code> · <code>40</code></td><td>offset 0, start line 0</td><td></td></tr><tr><td><strong><code>8D 14</code></strong></td><td><strong>charge pump on</strong></td><td><strong>without it the panel stays dark</strong></td></tr><tr><td><code>20 00</code></td><td>horizontal addressing</td><td>column, then page — slide 7b</td></tr><tr><td><code>A1</code> · <code>C8</code></td><td>segment remap, COM scan down</td><td>x left→right, y top→bottom</td></tr><tr><td><code>DA 12</code></td><td>COM pin layout</td><td>for 64 rows</td></tr><tr><td><code>81 CF</code> · <code>D9 F1</code> · <code>DB 40</code></td><td>contrast, pre-charge, VCOMH</td><td></td></tr><tr><td><code>A4</code> · <code>A6</code> · <code>AF</code></td><td>show RAM, not inverted, <strong>on</strong></td><td></td></tr></tbody></table>
 <p>Checked against Adafruit&#x27;s <code>Adafruit_SSD1306</code> library, which sends the same<br>values for a 128×64 panel with the internal charge pump (plus <code>2E</code>, &quot;stop<br>scrolling&quot;, which is already the state after reset).</p>
 <p><strong>Measured on the host</strong> (the stub counts what <code>oled_init()</code> sends): <strong>32<br>transfers, 1 161 bytes</strong> — 16 commands, then a cleared screen, all 8 pages.</p>
 <p><code>8D 14</code> is the classic silent failure: every command ACKs, the RAM fills<br>perfectly, and the glass stays black because nothing generates its drive<br>voltage. It is lesson 09&#x27;s MPU6050 sleep bit, in a display.</p>
 </section>
 <section class="slide">
-<h2>Slide 7: Sending One Page</h2>
+<h2>Slide 7: I2C1 — the MCU&#x27;s Side of the Wire, on One Page</h2>
+<p>Every byte above leaves through <strong>I2C1</strong> at <strong>0x40005400</strong> (<code>I2C_TypeDef</code> in<br><code>stm32c031xx.h</code>), driven by <code>_lib/i2c.c</code> exactly as in lesson 09:</p>
+<table><thead><tr><th>Offset</th><th>Register</th><th>Its job</th><th><code>i2c.c</code> here</th><th>Slide</th></tr></thead><tbody><tr><td>0x00</td><td><strong><code>CR1</code></strong></td><td>enable, interrupts, filters</td><td><code>PE</code> = 0, then 1 around <code>TIMINGR</code></td><td>lesson 09</td></tr><tr><td>0x04</td><td><strong><code>CR2</code></strong></td><td>one transfer: address, direction, count, start / stop</td><td><code>SADD</code>, <code>RD_WRN</code>, <code>NBYTES</code>, <code>AUTOEND</code>, <code>START</code>, <code>STOP</code></td><td>7b</td></tr><tr><td>0x08, 0x0C</td><td><code>OAR1</code>, <code>OAR2</code></td><td>the MCU&#x27;s own address, as a target</td><td>—</td><td></td></tr><tr><td>0x10</td><td><strong><code>TIMINGR</code></strong></td><td>SCL high / low times: the bus speed</td><td><code>0x0090273D</code> once</td><td>8</td></tr><tr><td>0x14</td><td><code>TIMEOUTR</code></td><td>SMBus timeouts</td><td>—</td><td></td></tr><tr><td>0x18</td><td><strong><code>ISR</code></strong></td><td>status flags, polled</td><td><code>TXIS</code>, <code>RXNE</code>, <code>TC</code>, <code>STOPF</code>, <code>NACKF</code></td><td>8</td></tr><tr><td>0x1C</td><td><strong><code>ICR</code></strong></td><td>write 1 to clear a flag</td><td><code>STOPCF</code>, <code>NACKCF</code></td><td>lesson 09</td></tr><tr><td>0x20</td><td><code>PECR</code></td><td>SMBus packet error check</td><td>—</td><td></td></tr><tr><td>0x24</td><td><strong><code>RXDR</code></strong></td><td>the byte received</td><td>read (MPU6050, not the panel)</td><td>lesson 09</td></tr><tr><td>0x28</td><td><strong><code>TXDR</code></strong></td><td>the next byte to send</td><td>each of the 7 + 129 bytes</td><td>7b, 8</td></tr></tbody></table>
+<figure class="diagram"><svg width="914" viewBox="0 0 914 714" role="img" aria-label="The seven i2c.c touches, drawn to scale.  Shaded = a field it writes or reads.; CR1, 32 bits; CR2, 32 bits; TIMINGR, 32 bits; ISR, 32 bits; ICR, 32 bits; RXDR, 32 bits; TXDR, 32 bits">
+<text x="457" y="16" text-anchor="middle" class="lbl">The seven i2c.c touches, drawn to scale.  Shaded = a field it writes or reads.</text>
+<text x="16" y="59" class="mono">CR1</text>
+<text x="16" y="74" class="lbl">control</text>
+<text x="258.6" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="817.6" y="52" width="20.0" height="26"/>
+<rect class="dash" x="257.6" y="52" width="480.0" height="26"/>
+<text x="497.6" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="737.6" y="52" width="20.0" height="26"/>
+<text x="747.6" y="44" text-anchor="middle" class="mono lbl">7</text>
+<rect class="reg" x="757.6" y="52" width="20.0" height="26"/>
+<text x="767.6" y="44" text-anchor="middle" class="mono lbl">6</text>
+<rect class="reg" x="777.6" y="52" width="20.0" height="26"/>
+<text x="787.6" y="44" text-anchor="middle" class="mono lbl">5</text>
+<rect class="reg" x="797.6" y="52" width="20.0" height="26"/>
+<text x="807.6" y="44" text-anchor="middle" class="mono lbl">4</text>
+<rect class="reg" x="837.6" y="52" width="20.0" height="26"/>
+<text x="847.6" y="44" text-anchor="middle" class="mono lbl">2</text>
+<rect class="reg" x="857.6" y="52" width="20.0" height="26"/>
+<text x="867.6" y="44" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="877.6" y="52" width="20.0" height="26"/>
+<path class="dash" d="M767.6 78 L767.6 100"/>
+<path class="dash" d="M787.6 78 L787.6 116"/>
+<path class="dash" d="M847.6 78 L847.6 100"/>
+<path class="dash" d="M887.6 78 L887.6 100"/>
+<text x="747.6" y="91" text-anchor="middle" class="mono halo lbl">ERRIE</text>
+<text x="767.6" y="107" text-anchor="middle" class="mono halo lbl">TCIE</text>
+<text x="787.6" y="123" text-anchor="middle" class="mono halo lbl">STOPIE</text>
+<text x="807.6" y="91" text-anchor="middle" class="mono halo lbl">NACKIE</text>
+<text x="847.6" y="107" text-anchor="middle" class="mono halo lbl">RXIE</text>
+<text x="867.6" y="91" text-anchor="middle" class="mono halo lbl">TXIE</text>
+<text x="887.6" y="107" text-anchor="middle" class="mono halo">PE</text>
+<text x="16" y="177" class="mono">CR2</text>
+<text x="16" y="192" class="lbl">one transfer, 7-bit address in 7:1</text>
+<text x="258.6" y="162" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="162" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="257.6" y="170" width="100.0" height="26"/>
+<text x="307.6" y="183" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="357.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="377.6" y="170" width="20.0" height="26"/>
+<text x="387.6" y="162" text-anchor="middle" class="mono lbl">25</text>
+<rect class="reg" x="397.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="417.6" y="170" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M557.6 170 V174 M557.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M537.6 170 V174 M537.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M517.6 170 V174 M517.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M497.6 170 V174 M497.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M477.6 170 V174 M477.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M457.6 170 V174 M457.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M437.6 170 V174 M437.6 192 V196"/>
+<text x="418.6" y="162" text-anchor="start" class="mono lbl">23</text>
+<text x="576.6" y="162" text-anchor="end" class="mono lbl">16</text>
+<text x="497.6" y="183" text-anchor="middle" class="mono">NBYTES</text>
+<rect class="reg" x="577.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="597.6" y="170" width="20.0" height="26"/>
+<text x="607.6" y="162" text-anchor="middle" class="mono lbl">14</text>
+<rect class="hifill" x="617.6" y="170" width="20.0" height="26"/>
+<text x="627.6" y="162" text-anchor="middle" class="mono lbl">13</text>
+<rect class="reg" x="637.6" y="170" width="20.0" height="26"/>
+<rect class="reg" x="657.6" y="170" width="20.0" height="26"/>
+<rect class="hifill" x="677.6" y="170" width="20.0" height="26"/>
+<text x="687.6" y="162" text-anchor="middle" class="mono lbl">10</text>
+<rect class="reg" x="697.6" y="170" width="40.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M717.6 170 V174 M717.6 192 V196"/>
+<rect class="hifill" x="737.6" y="170" width="140.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M857.6 170 V174 M857.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M837.6 170 V174 M837.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M817.6 170 V174 M817.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M797.6 170 V174 M797.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M777.6 170 V174 M777.6 192 V196"/>
+<path class="reg" stroke-width="0.6" d="M757.6 170 V174 M757.6 192 V196"/>
+<text x="738.6" y="162" text-anchor="start" class="mono lbl">7</text>
+<text x="876.6" y="162" text-anchor="end" class="mono lbl">1</text>
+<text x="807.6" y="183" text-anchor="middle" class="mono">SADD</text>
+<rect class="reg" x="877.6" y="170" width="20.0" height="26"/>
+<path class="dash" d="M387.6 196 L387.6 218"/>
+<path class="dash" d="M407.6 196 L407.6 234"/>
+<path class="dash" d="M607.6 196 L607.6 218"/>
+<path class="dash" d="M647.6 196 L647.6 234"/>
+<path class="dash" d="M667.6 196 L667.6 218"/>
+<text x="367.6" y="209" text-anchor="middle" class="mono halo lbl">PECBYTE</text>
+<text x="387.6" y="225" text-anchor="middle" class="mono halo">AUTOEND</text>
+<text x="407.6" y="241" text-anchor="middle" class="mono halo lbl">RELOAD</text>
+<text x="587.6" y="209" text-anchor="middle" class="mono halo lbl">NACK</text>
+<text x="607.6" y="225" text-anchor="middle" class="mono halo">STOP</text>
+<text x="627.6" y="209" text-anchor="middle" class="mono halo">START</text>
+<text x="647.6" y="241" text-anchor="middle" class="mono halo lbl">HEAD10R</text>
+<text x="667.6" y="225" text-anchor="middle" class="mono halo lbl">ADD10</text>
+<text x="687.6" y="209" text-anchor="middle" class="mono halo">RD_WRN</text>
+<text x="16" y="295" class="mono">TIMINGR</text>
+<text x="16" y="310" class="lbl">bus speed</text>
+<text x="16" y="325" class="mono lbl">= 0x0090273D</text>
+<text x="258.6" y="280" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="280" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="337.6" y="288" width="80.0" height="26"/>
+<rect class="hifill" x="257.6" y="288" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M317.6 288 V292 M317.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M297.6 288 V292 M297.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M277.6 288 V292 M277.6 310 V314"/>
+<text x="336.6" y="280" text-anchor="end" class="mono lbl">28</text>
+<rect class="hifill" x="417.6" y="288" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M477.6 288 V292 M477.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M457.6 288 V292 M457.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M437.6 288 V292 M437.6 310 V314"/>
+<text x="418.6" y="280" text-anchor="start" class="mono lbl">23</text>
+<text x="496.6" y="280" text-anchor="end" class="mono lbl">20</text>
+<rect class="hifill" x="497.6" y="288" width="80.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M557.6 288 V292 M557.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M537.6 288 V292 M537.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M517.6 288 V292 M517.6 310 V314"/>
+<text x="576.6" y="280" text-anchor="end" class="mono lbl">16</text>
+<rect class="hifill" x="577.6" y="288" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M717.6 288 V292 M717.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M697.6 288 V292 M697.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M677.6 288 V292 M677.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M657.6 288 V292 M657.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M637.6 288 V292 M637.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M617.6 288 V292 M617.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M597.6 288 V292 M597.6 310 V314"/>
+<text x="736.6" y="280" text-anchor="end" class="mono lbl">8</text>
+<rect class="hifill" x="737.6" y="288" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M877.6 288 V292 M877.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M857.6 288 V292 M857.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M837.6 288 V292 M837.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M817.6 288 V292 M817.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M797.6 288 V292 M797.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M777.6 288 V292 M777.6 310 V314"/>
+<path class="reg" stroke-width="0.6" d="M757.6 288 V292 M757.6 310 V314"/>
+<text x="887.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="867.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="847.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="827.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="807.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="787.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="767.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="747.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="727.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="707.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="687.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="667.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="647.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="627.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="607.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="587.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="567.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="547.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="527.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="507.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="487.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="467.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="447.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="427.6" y="301" text-anchor="middle" class="mono">1</text>
+<text x="407.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="387.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="367.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="347.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="327.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="307.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="287.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="267.6" y="301" text-anchor="middle" class="mono lbl">0</text>
+<text x="297.6" y="327" text-anchor="middle" class="mono halo">PRESC</text>
+<text x="457.6" y="327" text-anchor="middle" class="mono halo">SCLDEL</text>
+<text x="537.6" y="327" text-anchor="middle" class="mono halo">SDADEL</text>
+<text x="657.6" y="327" text-anchor="middle" class="mono halo">SCLH</text>
+<text x="817.6" y="327" text-anchor="middle" class="mono halo">SCLL</text>
+<text x="16" y="381" class="mono">ISR</text>
+<text x="16" y="396" class="lbl">status</text>
+<text x="258.6" y="366" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="366" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="597.6" y="374" width="140.0" height="26"/>
+<text x="667.6" y="387" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="257.6" y="374" width="320.0" height="26"/>
+<text x="417.6" y="387" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="577.6" y="374" width="20.0" height="26"/>
+<rect class="reg" x="737.6" y="374" width="20.0" height="26"/>
+<rect class="hifill" x="757.6" y="374" width="20.0" height="26"/>
+<text x="767.6" y="366" text-anchor="middle" class="mono lbl">6</text>
+<rect class="hifill" x="777.6" y="374" width="20.0" height="26"/>
+<text x="787.6" y="366" text-anchor="middle" class="mono lbl">5</text>
+<rect class="hifill" x="797.6" y="374" width="20.0" height="26"/>
+<text x="807.6" y="366" text-anchor="middle" class="mono lbl">4</text>
+<rect class="reg" x="817.6" y="374" width="20.0" height="26"/>
+<rect class="hifill" x="837.6" y="374" width="20.0" height="26"/>
+<text x="847.6" y="366" text-anchor="middle" class="mono lbl">2</text>
+<rect class="hifill" x="857.6" y="374" width="20.0" height="26"/>
+<text x="867.6" y="366" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="877.6" y="374" width="20.0" height="26"/>
+<path class="dash" d="M767.6 400 L767.6 422"/>
+<path class="dash" d="M807.6 400 L807.6 422"/>
+<path class="dash" d="M847.6 400 L847.6 422"/>
+<path class="dash" d="M887.6 400 L887.6 422"/>
+<text x="587.6" y="413" text-anchor="middle" class="mono halo lbl">BUSY</text>
+<text x="747.6" y="413" text-anchor="middle" class="mono halo lbl">TCR</text>
+<text x="767.6" y="429" text-anchor="middle" class="mono halo">TC</text>
+<text x="787.6" y="413" text-anchor="middle" class="mono halo">STOPF</text>
+<text x="807.6" y="429" text-anchor="middle" class="mono halo">NACKF</text>
+<text x="827.6" y="413" text-anchor="middle" class="mono halo lbl">ADDR</text>
+<text x="847.6" y="429" text-anchor="middle" class="mono halo">RXNE</text>
+<text x="867.6" y="413" text-anchor="middle" class="mono halo">TXIS</text>
+<text x="887.6" y="429" text-anchor="middle" class="mono halo lbl">TXE</text>
+<text x="16" y="483" class="mono">ICR</text>
+<text x="16" y="498" class="lbl">clear flags</text>
+<text x="258.6" y="468" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="468" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="837.6" y="476" width="60.0" height="26"/>
+<text x="867.6" y="489" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="257.6" y="476" width="520.0" height="26"/>
+<text x="517.6" y="489" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="777.6" y="476" width="20.0" height="26"/>
+<text x="787.6" y="468" text-anchor="middle" class="mono lbl">5</text>
+<rect class="hifill" x="797.6" y="476" width="20.0" height="26"/>
+<text x="807.6" y="468" text-anchor="middle" class="mono lbl">4</text>
+<rect class="reg" x="817.6" y="476" width="20.0" height="26"/>
+<text x="827.6" y="468" text-anchor="middle" class="mono lbl">3</text>
+<path class="dash" d="M807.6 502 L807.6 524"/>
+<path class="dash" d="M827.6 502 L827.6 540"/>
+<text x="787.6" y="515" text-anchor="middle" class="mono halo">STOPCF</text>
+<text x="807.6" y="531" text-anchor="middle" class="mono halo">NACKCF</text>
+<text x="827.6" y="547" text-anchor="middle" class="mono halo lbl">ADDRCF</text>
+<text x="16" y="601" class="mono">RXDR</text>
+<text x="16" y="616" class="lbl">received byte</text>
+<text x="258.6" y="586" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="586" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="257.6" y="594" width="480.0" height="26"/>
+<text x="497.6" y="607" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="737.6" y="594" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M877.6 594 V598 M877.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M857.6 594 V598 M857.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M837.6 594 V598 M837.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M817.6 594 V598 M817.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M797.6 594 V598 M797.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M777.6 594 V598 M777.6 616 V620"/>
+<path class="reg" stroke-width="0.6" d="M757.6 594 V598 M757.6 616 V620"/>
+<text x="738.6" y="586" text-anchor="start" class="mono lbl">7</text>
+<text x="817.6" y="607" text-anchor="middle" class="mono">RXDATA</text>
+<text x="16" y="670" class="mono">TXDR</text>
+<text x="16" y="685" class="lbl">byte to send</text>
+<text x="258.6" y="655" text-anchor="start" class="mono lbl">31</text>
+<text x="896.6" y="655" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="257.6" y="663" width="480.0" height="26"/>
+<text x="497.6" y="676" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="737.6" y="663" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M877.6 663 V667 M877.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M857.6 663 V667 M857.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M837.6 663 V667 M837.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M817.6 663 V667 M817.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M797.6 663 V667 M797.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M777.6 663 V667 M777.6 685 V689"/>
+<path class="reg" stroke-width="0.6" d="M757.6 663 V667 M757.6 685 V689"/>
+<text x="738.6" y="655" text-anchor="start" class="mono lbl">7</text>
+<text x="817.6" y="676" text-anchor="middle" class="mono">TXDATA</text>
+</svg></figure>
+<p>Three roles: <strong>set-up</strong> (<code>CR1</code>, <code>TIMINGR</code>, once), <strong>one transfer</strong> (<code>CR2</code><br>starts it; <code>ISR</code> says when the next byte is wanted; <code>TXDR</code> / <code>RXDR</code> carry<br>it), <strong>clean-up</strong> (<code>ICR</code>). The panel never answers with data, so <code>RXDR</code> sits<br>idle in this lesson.</p>
+</section>
+<section class="slide">
+<h2>Slide 7b: Sending One Page</h2>
 <p><code>oled_flush()</code> sets a window, then pours bytes into it:</p>
 <pre class="lang-c"><code>const uint8_t win[6] = {0x21, 0, OLED_W - 1, 0x22, (uint8_t)p, (uint8_t)p};
 int rc = command(win, sizeof win);
@@ -898,130 +1417,168 @@ oled_flush();</code></pre>
 <section class="slide">
 <h2>Slide 14: A Microsecond Stopwatch, Free, From SysTick</h2>
 <p>This lesson owns SysTick itself — one interrupt a millisecond:</p>
-<figure class="diagram"><svg width="934" viewBox="0 0 934 214" role="img" aria-label="SysTick-&gt;CTRL, 32 bits; SysTick-&gt;LOAD, 32 bits">
+<figure class="diagram"><svg width="954" viewBox="0 0 954 283" role="img" aria-label="SysTick-&gt;CTRL, 32 bits; SysTick-&gt;LOAD, 32 bits; SysTick-&gt;VAL, 32 bits">
 <text x="16" y="35" class="mono">SysTick-&gt;CTRL</text>
 <text x="16" y="50" class="lbl">SysTick_Config(): core clock, IRQ, on</text>
 <text x="16" y="65" class="mono lbl">= 0x00000007</text>
-<text x="277.8" y="20" text-anchor="start" class="mono lbl">31</text>
-<text x="915.8" y="20" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="596.8" y="28" width="260.0" height="26"/>
-<rect class="dash" x="276.8" y="28" width="300.0" height="26"/>
-<rect class="reg" x="576.8" y="28" width="20.0" height="26"/>
-<text x="586.8" y="20" text-anchor="middle" class="mono lbl">16</text>
-<rect class="hifill" x="856.8" y="28" width="20.0" height="26"/>
-<text x="866.8" y="20" text-anchor="middle" class="mono lbl">2</text>
-<rect class="hifill" x="876.8" y="28" width="20.0" height="26"/>
-<text x="886.8" y="20" text-anchor="middle" class="mono lbl">1</text>
-<rect class="hifill" x="896.8" y="28" width="20.0" height="26"/>
-<text x="906.8" y="41" text-anchor="middle" class="mono">1</text>
-<text x="886.8" y="41" text-anchor="middle" class="mono">1</text>
-<text x="866.8" y="41" text-anchor="middle" class="mono">1</text>
-<text x="846.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="826.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="806.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="786.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="766.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="726.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="706.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="666.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="646.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="626.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="586.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<text x="286.8" y="41" text-anchor="middle" class="mono lbl">0</text>
-<path class="dash" d="M886.8 54 L886.8 76"/>
-<path class="dash" d="M906.8 54 L906.8 92"/>
-<text x="586.8" y="67" text-anchor="middle" class="mono halo lbl">COUNTFLAG</text>
-<text x="866.8" y="67" text-anchor="middle" class="mono halo">CLKSOURCE</text>
-<text x="886.8" y="83" text-anchor="middle" class="mono halo">TICKINT</text>
-<text x="906.8" y="99" text-anchor="middle" class="mono halo">ENABLE</text>
+<text x="297.0" y="20" text-anchor="start" class="mono lbl">31</text>
+<text x="935.0" y="20" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="616.0" y="28" width="260.0" height="26"/>
+<rect class="dash" x="296.0" y="28" width="300.0" height="26"/>
+<rect class="reg" x="596.0" y="28" width="20.0" height="26"/>
+<text x="606.0" y="20" text-anchor="middle" class="mono lbl">16</text>
+<rect class="hifill" x="876.0" y="28" width="20.0" height="26"/>
+<text x="886.0" y="20" text-anchor="middle" class="mono lbl">2</text>
+<rect class="hifill" x="896.0" y="28" width="20.0" height="26"/>
+<text x="906.0" y="20" text-anchor="middle" class="mono lbl">1</text>
+<rect class="hifill" x="916.0" y="28" width="20.0" height="26"/>
+<text x="926.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="906.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="886.0" y="41" text-anchor="middle" class="mono">1</text>
+<text x="866.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="846.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="826.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="806.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="786.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="766.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="746.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="726.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="706.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="686.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="666.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="646.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="626.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="606.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="586.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.0" y="41" text-anchor="middle" class="mono lbl">0</text>
+<path class="dash" d="M906.0 54 L906.0 76"/>
+<path class="dash" d="M926.0 54 L926.0 92"/>
+<text x="606.0" y="67" text-anchor="middle" class="mono halo lbl">COUNTFLAG</text>
+<text x="886.0" y="67" text-anchor="middle" class="mono halo">CLKSOURCE</text>
+<text x="906.0" y="83" text-anchor="middle" class="mono halo">TICKINT</text>
+<text x="926.0" y="99" text-anchor="middle" class="mono halo">ENABLE</text>
 <text x="16" y="153" class="mono">SysTick-&gt;LOAD</text>
 <text x="16" y="168" class="lbl">48 000 - 1: one wrap per ms</text>
 <text x="16" y="183" class="mono lbl">= 0x0000BB7F</text>
-<text x="277.8" y="138" text-anchor="start" class="mono lbl">31</text>
-<text x="915.8" y="138" text-anchor="end" class="mono lbl">0</text>
-<rect class="reg" x="276.8" y="146" width="160.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M416.8 146 V150 M416.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M396.8 146 V150 M396.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M376.8 146 V150 M376.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M356.8 146 V150 M356.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M336.8 146 V150 M336.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M316.8 146 V150 M316.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M296.8 146 V150 M296.8 168 V172"/>
-<text x="435.8" y="138" text-anchor="end" class="mono lbl">24</text>
-<rect class="hifill" x="436.8" y="146" width="480.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M896.8 146 V150 M896.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M876.8 146 V150 M876.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M856.8 146 V150 M856.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M836.8 146 V150 M836.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M816.8 146 V150 M816.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M796.8 146 V150 M796.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M776.8 146 V150 M776.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M756.8 146 V150 M756.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M736.8 146 V150 M736.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M716.8 146 V150 M716.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M696.8 146 V150 M696.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M676.8 146 V150 M676.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M656.8 146 V150 M656.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M636.8 146 V150 M636.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M616.8 146 V150 M616.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M596.8 146 V150 M596.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M576.8 146 V150 M576.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M556.8 146 V150 M556.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M536.8 146 V150 M536.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M516.8 146 V150 M516.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M496.8 146 V150 M496.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M476.8 146 V150 M476.8 168 V172"/>
-<path class="reg" stroke-width="0.6" d="M456.8 146 V150 M456.8 168 V172"/>
-<text x="906.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="886.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="866.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="846.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="826.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="806.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="786.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="766.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="746.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="726.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="706.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="686.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="666.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="646.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="626.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="606.8" y="159" text-anchor="middle" class="mono">1</text>
-<text x="586.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="566.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="546.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="526.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="506.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="486.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="466.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="446.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="426.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="406.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="386.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="366.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="346.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="326.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="306.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="286.8" y="159" text-anchor="middle" class="mono lbl">0</text>
-<text x="676.8" y="185" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="297.0" y="138" text-anchor="start" class="mono lbl">31</text>
+<text x="935.0" y="138" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="296.0" y="146" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M436.0 146 V150 M436.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M416.0 146 V150 M416.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M396.0 146 V150 M396.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M376.0 146 V150 M376.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M356.0 146 V150 M356.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M336.0 146 V150 M336.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M316.0 146 V150 M316.0 168 V172"/>
+<text x="455.0" y="138" text-anchor="end" class="mono lbl">24</text>
+<rect class="hifill" x="456.0" y="146" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M916.0 146 V150 M916.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M896.0 146 V150 M896.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M876.0 146 V150 M876.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M856.0 146 V150 M856.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M836.0 146 V150 M836.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M816.0 146 V150 M816.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M796.0 146 V150 M796.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M776.0 146 V150 M776.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M756.0 146 V150 M756.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M736.0 146 V150 M736.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M716.0 146 V150 M716.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M696.0 146 V150 M696.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M676.0 146 V150 M676.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M656.0 146 V150 M656.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M636.0 146 V150 M636.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M616.0 146 V150 M616.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M596.0 146 V150 M596.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M576.0 146 V150 M576.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M556.0 146 V150 M556.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M536.0 146 V150 M536.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M516.0 146 V150 M516.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M496.0 146 V150 M496.0 168 V172"/>
+<path class="reg" stroke-width="0.6" d="M476.0 146 V150 M476.0 168 V172"/>
+<text x="926.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="906.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="886.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="866.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="846.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="826.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="806.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="786.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="766.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="746.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="726.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="706.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="686.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="666.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="646.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="626.0" y="159" text-anchor="middle" class="mono">1</text>
+<text x="606.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="586.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="566.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="546.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="526.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="506.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="486.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="466.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="446.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="426.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="406.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="386.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="366.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="346.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="326.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="306.0" y="159" text-anchor="middle" class="mono lbl">0</text>
+<text x="696.0" y="185" text-anchor="middle" class="mono halo">RELOAD</text>
+<text x="16" y="239" class="mono">SysTick-&gt;VAL</text>
+<text x="16" y="254" class="lbl">counts down 47 999 → 0, read by now_us()</text>
+<text x="297.0" y="224" text-anchor="start" class="mono lbl">31</text>
+<text x="935.0" y="224" text-anchor="end" class="mono lbl">0</text>
+<rect class="reg" x="296.0" y="232" width="160.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M436.0 232 V236 M436.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M416.0 232 V236 M416.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M396.0 232 V236 M396.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M376.0 232 V236 M376.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M356.0 232 V236 M356.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M336.0 232 V236 M336.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M316.0 232 V236 M316.0 254 V258"/>
+<text x="455.0" y="224" text-anchor="end" class="mono lbl">24</text>
+<rect class="hifill" x="456.0" y="232" width="480.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M916.0 232 V236 M916.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M896.0 232 V236 M896.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M876.0 232 V236 M876.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M856.0 232 V236 M856.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M836.0 232 V236 M836.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M816.0 232 V236 M816.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M796.0 232 V236 M796.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M776.0 232 V236 M776.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M756.0 232 V236 M756.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M736.0 232 V236 M736.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M716.0 232 V236 M716.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M696.0 232 V236 M696.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M676.0 232 V236 M676.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M656.0 232 V236 M656.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M636.0 232 V236 M636.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M616.0 232 V236 M616.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M596.0 232 V236 M596.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M576.0 232 V236 M576.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M556.0 232 V236 M556.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M536.0 232 V236 M536.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M516.0 232 V236 M516.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M496.0 232 V236 M496.0 254 V258"/>
+<path class="reg" stroke-width="0.6" d="M476.0 232 V236 M476.0 254 V258"/>
+<text x="696.0" y="245" text-anchor="middle" class="mono">CURRENT</text>
 </svg></figure>
 <p>Between interrupts <code>VAL</code> counts down from 47 999 at 48 MHz, so<br><code>(LOAD − VAL) / 48</code> is the microseconds since the last tick:</p>
 <pre class="lang-c"><code>static uint32_t now_us(void)

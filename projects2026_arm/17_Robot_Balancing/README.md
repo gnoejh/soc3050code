@@ -21,7 +21,7 @@ frames go to lesson 08's `host.py`.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture: title, the two pin-map placeholders, 27 slides |
+| `Slide.md` | the lecture - 30 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: nine parts (0-8), ~2 hours, a Q/R contest, **nothing handed in** |
 | `params.h` | **every** physical number, timing and LQR weight; read by `world.c`, `control.c` and (parsed) by `host/lqr.py` |
 | `control.h` | the SITL contract: `sensors_t`, `actuators_t`, `control_step()` |

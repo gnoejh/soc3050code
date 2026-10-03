@@ -23,7 +23,7 @@ on the C031C6 in Wokwi like every other lesson.*
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title, 2 generated pin-map slides and 27 slides |
+| `Slide.md` | the lecture - 32 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: nine parts (0–8), ~2 hours, **nothing handed in**; ends in "make the FIR 2× faster" |
 | `fix.h`, `fix.c` | **subject.** Q16.16 and Q15: rounded multiplies, saturating add, 64-bit divide, a quarter-wave sine table. Pure C |
 | `bench.h`, `bench.c` | **subject.** The arena's 22 workloads, `uint32_t fn(uint32_t n)` each, returning checksums. Pure C |

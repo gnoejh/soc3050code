@@ -83,13 +83,26 @@ lets a function clobber, so **an ISR can be an ordinary C function**. No special
 keyword, no `ISR()` macro. You simply define a function with the right name and
 the linker puts it in the vector table.
 
-One of the eight, `xPSR`, is how the hardware knows what is running: entry
-writes the exception number into its low bits, and the flags of the interrupted
-code are saved with it.
+Three **special registers** beside `R0`–`R15` decide how interrupts behave.
+This deck uses two of them; here are all three on one page (bit layouts from
+`core_cm0plus.h`; lesson 00, slide 3b has the whole core):
+
+| Register | Its job when an interrupt arrives | Slide |
+|---|---|---|
+| **`xPSR`** | stacked with the eight; entry writes the exception number into its low bits | 2 |
+| **`PRIMASK`** | bit 0 set = no configurable interrupt is taken at all | 5 |
+| `CONTROL` | which stack Thread mode was on; a handler always uses `MSP` | lesson 00, slide 8 |
 
 ```regs
+# The special registers.  Shaded = what this deck uses
 xPSR ; stacked on entry | 32 | 31 N, 30 Z, 29 C, 28 V, 24 T, !5:0 exception no.
+PRIMASK ; 1 = interrupts masked | 32 | !0 PM
+CONTROL ; stack and privilege | 32 | 1 SPSEL, 0 nPRIV
 ```
+
+`xPSR` is how the hardware knows what is running: entry writes the exception
+number into its low bits, and the flags of the interrupted code are saved with
+it.
 
 > Spell the name wrong and you have written an unused function. It compiles, it
 > links, it runs, and the interrupt does nothing. No warning, anywhere.

@@ -352,7 +352,48 @@ pointer was.
 
 ---
 
-## Slide 3: Two Stack Pointers
+## Slide 3: The Core's Own Registers — All on One Page
+
+A context switch is made of registers that have **no address**. They are not
+in the memory map at all: they live inside the core, and only two instructions
+reach them — `MRS` (special register to `rN`) and `MSR` (`rN` to special
+register). CMSIS wraps each one in an inline function (`cmsis_gcc.h`, which
+pulls in `m-profile/cmsis_gcc_m.h`):
+
+| Register | What it holds | Read | Write | This kernel | Slide |
+|---|---|---|---|---|---|
+| **`xPSR`** = APSR + IPSR + EPSR | flags `N Z C V`; the active exception's number; the Thumb bit `T` | `MRS r, xpsr` · `__get_xPSR()` (also `__get_APSR()`, `__get_IPSR()`) | — | forged into every new task's frame; decoded after a fault | 8, 18 |
+| **`MSP`** | main stack pointer | `MRS r, msp` · `__get_MSP()` | `MSR msp, r` · `__set_MSP()` | handlers, and `main()` before the first switch; read by `HardFault_Handler` when a handler faulted | 3b, 18 |
+| **`PSP`** | process stack pointer | `MRS r, psp` · `__get_PSP()` | `MSR psp, r` · `__set_PSP()` | every task; saved and loaded by `PendSV_Handler`, read by `HardFault_Handler` | 3b, 5, 6, 18 |
+| **`PRIMASK`** | 1 = interrupts masked | `MRS r, primask` · `__get_PRIMASK()` | `MSR primask, r` · `__set_PRIMASK()`; `cpsid i` / `cpsie i` · `__disable_irq()` / `__enable_irq()` | `enter()` / `leave()` around all kernel bookkeeping; `PendSV_Handler` | 6, 12 |
+| **`CONTROL`** | which stack Thread mode uses; privilege | `MRS r, control` · `__get_CONTROL()` | `MSR control, r` · `__set_CONTROL()` (adds an `ISB`) | never written: `EXC_RETURN` sets `SPSEL` | 3b |
+| `BASEPRI`, `FAULTMASK` | priority-threshold masks | — | — | **not on this core**: CMSIS compiles them only for Thumb-2 | |
+
+And one value that is not a register but steers all of them: **`EXC_RETURN`**,
+the number in `lr` while a handler runs (slides 3b, 18).
+
+```regs
+# The five, drawn to scale.  Shaded = a field this kernel depends on.
+xPSR ; APSR, IPSR and EPSR in one word | 32 | 31 N, 30 Z, 29 C, 28 V, !24 T, 5:0 ISR
+MSP ; main stack: handlers | 32 | !31:0 stack address
+PSP ; process stack: tasks | 32 | !31:0 stack address
+PRIMASK ; interrupt mask | 32 | !0 PM
+CONTROL ; Thread mode's stack and privilege | 32 | !1 SPSEL, 0 nPRIV
+```
+
+- **`xPSR`** is three registers read as one word: `APSR` holds the flags
+  (bits 31:28), `IPSR` the exception number (5:0, zero in Thread mode), `EPSR`
+  the `T` bit (24).
+- **`MSP` and `PSP`** are the two stack pointers; `sp` is whichever one is
+  selected. Slide 3b says who uses which.
+- **`PRIMASK`** is one bit. Lesson 03's critical section was exactly this
+  register; slide 12 shows the kernel saving it rather than just setting it.
+- **`CONTROL`** decides what `sp` means in Thread mode. This kernel never
+  writes it — the exception return does.
+
+---
+
+## Slide 3b: Two Stack Pointers
 
 The Cortex-M has **two** stack pointers, and you have been using one of them
 without noticing:
@@ -385,7 +426,57 @@ Every switch in this kernel returns with exactly that value.
 
 ---
 
-## Slide 4: PendSV — an Exception You Pend Yourself
+## Slide 4: The System Control Block — Every Register on One Page
+
+The registers that *are* memory-mapped come next. The kernel's other half — pending
+a switch, and putting it at the right priority — is done through the
+**System Control Block**, `SCB_Type` in `core_cm0plus.h`, at **0xE000ED00**
+(`SCS_BASE` 0xE000E000 + 0xD00). Like SysTick, it is part of the core: the
+same registers on every Cortex-M0+.
+
+| Offset | Register | Its job | This kernel | Slide |
+|---|---|---|---|---|
+| 0x00 | `CPUID` | read-only: which core this is | — | |
+| 0x04 | **`ICSR`** | pend or un-pend PendSV, SysTick, NMI; which exception is active and which is pending | writes `PENDSVSET`, `PENDSVCLR` | 4b |
+| 0x08 | `VTOR` | where the vector table is | — (never written) | |
+| 0x0C | `AIRCR` | software reset; key-protected | — | |
+| 0x10 | `SCR` | sleep behaviour | — | |
+| 0x14 | `CCR` | stack alignment, unaligned-access trap | — | 20 |
+| 0x18 | — | reserved | | |
+| 0x1C | `SHPR2` (`SHPR[0]`) | priority of SVCall | — | |
+| 0x20 | **`SHPR3`** (`SHPR[1]`) | priority of PendSV and SysTick | both set to 3 | 4b |
+| 0x24 | `SHCSR` | is SVCall pending | — | |
+
+**Two registers out of nine** carry the whole scheduler's hardware side:
+
+```regs
+# The whole SCB, drawn to scale.  Shaded = a field this kernel writes.
+CPUID ; +0x00, read-only | 32 | 31:24 IMPLEMENTER, 23:20 VARIANT, 19:16 ARCHITECTURE, 15:4 PARTNO, 3:0 REVISION
+ICSR ; +0x04 | 32 | 31 NMIPENDSET, !28 PENDSVSET, !27 PENDSVCLR, 26 PENDSTSET, 25 PENDSTCLR, 23 ISRPREEMPT, 22 ISRPENDING, 17:12 VECTPENDING, 5:0 VECTACTIVE
+VTOR ; +0x08 | 32 | 31:8 TBLOFF
+AIRCR ; +0x0C | 32 | 31:16 VECTKEY, 15 ENDIANNESS, 2 SYSRESETREQ, 1 VECTCLRACTIVE
+SCR ; +0x10 | 32 | 4 SEVONPEND, 2 SLEEPDEEP, 1 SLEEPONEXIT
+CCR ; +0x14 | 32 | 9 STKALIGN, 3 UNALIGN_TRP
+SHPR2 ; +0x1C | 32 | 31:30 SVCall
+SHPR3 ; +0x20 | 32 | !31:30 SysTick, !23:22 PendSV
+SHCSR ; +0x24 | 32 | 15 SVCALLPENDED
+```
+
+- **`ICSR` is write-1-to-act.** Writing `PENDSVSET` pends PendSV; writing
+  `PENDSVCLR` cancels a pending one; zeros do nothing. So the kernel writes the
+  bit alone with `=`, never `|=`.
+- **`SHPR2`/`SHPR3` hold one byte per system exception**, and this chip
+  implements only the top two bits of each (`__NVIC_PRIO_BITS` = 2 in
+  `stm32c031xx.h`): four levels, 0–3. CMSIS calls the pair `SHPR[0]` and
+  `SHPR[1]`; `NVIC_SetPriority()` picks the word and byte from the exception
+  number (`_SHP_IDX`, `_BIT_SHIFT`), so `NVIC_SetPriority(PendSV_IRQn, 3)`
+  writes SCB, not the NVIC.
+- **SysTick** (0xE000E010) is the kernel's third core block, used exactly as
+  lesson 06 set it up — `SysTick_Config()`, mapped on lesson 06's slide 1.
+
+---
+
+## Slide 4b: PendSV — an Exception You Pend Yourself
 
 A switch must never happen *inside* another interrupt handler: that handler's
 frame is on MSP, half-finished, and swapping the task beneath it would return

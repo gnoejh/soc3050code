@@ -14,7 +14,7 @@ what priority inheritance does about it.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture, a title and 20 slides |
+| `Slide.md` | the lecture - 25 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
 | `Lab.md` | the lab: seven parts, ~2 hours, **nothing handed in** |
 | `os.c`, `os.h` | **the subject of the lesson.** Tasks, the scheduler, SysTick, PendSV, sleep, mutex with optional priority inheritance, queue (with an ISR-safe put), stack high-water marks |
 | `Main.c` | `SCENARIO 1` or `2`, the per-task report, and a HardFault handler that prints the faulting `pc` and the `addr2line` command for it |

@@ -190,39 +190,62 @@
   <text x="280" y="204" text-anchor="middle" class="lbl">Your main program never knows it happened. That is the problem.</text>
 </svg></figure>
 <p>The processor pushes eight registers for you — which is exactly the set AAPCS<br>lets a function clobber, so <strong>an ISR can be an ordinary C function</strong>. No special<br>keyword, no <code>ISR()</code> macro. You simply define a function with the right name and<br>the linker puts it in the vector table.</p>
-<p>One of the eight, <code>xPSR</code>, is how the hardware knows what is running: entry<br>writes the exception number into its low bits, and the flags of the interrupted<br>code are saved with it.</p>
-<figure class="diagram"><svg width="798" viewBox="0 0 798 79" role="img" aria-label="xPSR, 32 bits">
-<text x="16" y="35" class="mono">xPSR</text>
-<text x="16" y="50" class="lbl">stacked on entry</text>
-<text x="143.4" y="20" text-anchor="start" class="mono lbl">31</text>
-<text x="781.4" y="20" text-anchor="end" class="mono lbl">0</text>
-<rect class="dash" x="302.4" y="28" width="360.0" height="26"/>
-<text x="482.4" y="41" text-anchor="middle" class="lbl">reserved</text>
-<rect class="dash" x="222.4" y="28" width="60.0" height="26"/>
-<text x="252.4" y="41" text-anchor="middle" class="lbl">reserved</text>
-<rect class="reg" x="142.4" y="28" width="20.0" height="26"/>
-<text x="152.4" y="41" text-anchor="middle" class="mono">N</text>
-<rect class="reg" x="162.4" y="28" width="20.0" height="26"/>
-<text x="172.4" y="20" text-anchor="middle" class="mono lbl">30</text>
-<text x="172.4" y="41" text-anchor="middle" class="mono">Z</text>
-<rect class="reg" x="182.4" y="28" width="20.0" height="26"/>
-<text x="192.4" y="20" text-anchor="middle" class="mono lbl">29</text>
-<text x="192.4" y="41" text-anchor="middle" class="mono">C</text>
-<rect class="reg" x="202.4" y="28" width="20.0" height="26"/>
-<text x="212.4" y="20" text-anchor="middle" class="mono lbl">28</text>
-<text x="212.4" y="41" text-anchor="middle" class="mono">V</text>
-<rect class="reg" x="282.4" y="28" width="20.0" height="26"/>
-<text x="292.4" y="20" text-anchor="middle" class="mono lbl">24</text>
-<text x="292.4" y="41" text-anchor="middle" class="mono">T</text>
-<rect class="hifill" x="662.4" y="28" width="120.0" height="26"/>
-<path class="reg" stroke-width="0.6" d="M762.4 28 V32 M762.4 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M742.4 28 V32 M742.4 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M722.4 28 V32 M722.4 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M702.4 28 V32 M702.4 50 V54"/>
-<path class="reg" stroke-width="0.6" d="M682.4 28 V32 M682.4 50 V54"/>
-<text x="663.4" y="20" text-anchor="start" class="mono lbl">5</text>
-<text x="722.4" y="41" text-anchor="middle" class="mono">exception no.</text>
+<p>Three <strong>special registers</strong> beside <code>R0</code>–<code>R15</code> decide how interrupts behave.<br>This deck uses two of them; here are all three on one page (bit layouts from<br><code>core_cm0plus.h</code>; lesson 00, slide 3b has the whole core):</p>
+<table><thead><tr><th>Register</th><th>Its job when an interrupt arrives</th><th>Slide</th></tr></thead><tbody><tr><td><strong><code>xPSR</code></strong></td><td>stacked with the eight; entry writes the exception number into its low bits</td><td>2</td></tr><tr><td><strong><code>PRIMASK</code></strong></td><td>bit 0 set = no configurable interrupt is taken at all</td><td>5</td></tr><tr><td><code>CONTROL</code></td><td>which stack Thread mode was on; a handler always uses <code>MSP</code></td><td>lesson 00, slide 8</td></tr></tbody></table>
+<figure class="diagram"><svg width="830" viewBox="0 0 830 291" role="img" aria-label="The special registers.  Shaded = what this deck uses; xPSR, 32 bits; PRIMASK, 32 bits; CONTROL, 32 bits">
+<text x="415" y="16" text-anchor="middle" class="lbl">The special registers.  Shaded = what this deck uses</text>
+<text x="16" y="59" class="mono">xPSR</text>
+<text x="16" y="74" class="lbl">stacked on entry</text>
+<text x="175.4" y="44" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="44" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="334.4" y="52" width="360.0" height="26"/>
+<text x="514.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="dash" x="254.4" y="52" width="60.0" height="26"/>
+<text x="284.4" y="65" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="174.4" y="52" width="20.0" height="26"/>
+<text x="184.4" y="65" text-anchor="middle" class="mono">N</text>
+<rect class="reg" x="194.4" y="52" width="20.0" height="26"/>
+<text x="204.4" y="44" text-anchor="middle" class="mono lbl">30</text>
+<text x="204.4" y="65" text-anchor="middle" class="mono">Z</text>
+<rect class="reg" x="214.4" y="52" width="20.0" height="26"/>
+<text x="224.4" y="44" text-anchor="middle" class="mono lbl">29</text>
+<text x="224.4" y="65" text-anchor="middle" class="mono">C</text>
+<rect class="reg" x="234.4" y="52" width="20.0" height="26"/>
+<text x="244.4" y="44" text-anchor="middle" class="mono lbl">28</text>
+<text x="244.4" y="65" text-anchor="middle" class="mono">V</text>
+<rect class="reg" x="314.4" y="52" width="20.0" height="26"/>
+<text x="324.4" y="44" text-anchor="middle" class="mono lbl">24</text>
+<text x="324.4" y="65" text-anchor="middle" class="mono">T</text>
+<rect class="hifill" x="694.4" y="52" width="120.0" height="26"/>
+<path class="reg" stroke-width="0.6" d="M794.4 52 V56 M794.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M774.4 52 V56 M774.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M754.4 52 V56 M754.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M734.4 52 V56 M734.4 74 V78"/>
+<path class="reg" stroke-width="0.6" d="M714.4 52 V56 M714.4 74 V78"/>
+<text x="695.4" y="44" text-anchor="start" class="mono lbl">5</text>
+<text x="754.4" y="65" text-anchor="middle" class="mono">exception no.</text>
+<text x="16" y="128" class="mono">PRIMASK</text>
+<text x="16" y="143" class="lbl">1 = interrupts masked</text>
+<text x="175.4" y="113" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="113" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="121" width="620.0" height="26"/>
+<text x="484.4" y="134" text-anchor="middle" class="lbl">reserved</text>
+<rect class="hifill" x="794.4" y="121" width="20.0" height="26"/>
+<text x="804.4" y="160" text-anchor="middle" class="mono halo">PM</text>
+<text x="16" y="214" class="mono">CONTROL</text>
+<text x="16" y="229" class="lbl">stack and privilege</text>
+<text x="175.4" y="199" text-anchor="start" class="mono lbl">31</text>
+<text x="813.4" y="199" text-anchor="end" class="mono lbl">0</text>
+<rect class="dash" x="174.4" y="207" width="600.0" height="26"/>
+<text x="474.4" y="220" text-anchor="middle" class="lbl">reserved</text>
+<rect class="reg" x="774.4" y="207" width="20.0" height="26"/>
+<text x="784.4" y="199" text-anchor="middle" class="mono lbl">1</text>
+<rect class="reg" x="794.4" y="207" width="20.0" height="26"/>
+<path class="dash" d="M804.4 233 L804.4 255"/>
+<text x="784.4" y="246" text-anchor="middle" class="mono halo lbl">SPSEL</text>
+<text x="804.4" y="262" text-anchor="middle" class="mono halo lbl">nPRIV</text>
 </svg></figure>
+<p><code>xPSR</code> is how the hardware knows what is running: entry writes the exception<br>number into its low bits, and the flags of the interrupted code are saved with<br>it.</p>
 <p>&gt; Spell the name wrong and you have written an unused function. It compiles, it<br>&gt; links, it runs, and the interrupt does nothing. No warning, anywhere.</p>
 </section>
 <section class="slide">

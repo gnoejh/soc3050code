@@ -599,6 +599,14 @@ peripheral registers has not been confirmed; Lab 05 Part 8 says so.
 ## Conventions
 
 - `_slides/` is generated. Re-run the renderer; never edit the HTML.
+- **Every register block gets its whole map on one page first** (2026-10-03,
+  the maintainer's rule). The first slide that introduces any register of a
+  peripheral or core block shows the block's complete register list, offsets
+  from the header, how the lesson uses each one and which slide explains it,
+  plus one `regs` drawing of every register the lesson touches. Slides that
+  explain registers one at a time come after it. Lesson 06's slides 1 and 5
+  are the model. A new map slide takes a letter suffix (5b, 20b) so that no
+  existing slide number, or any Lab reference to it, moves.
 - **A `---` line is what starts a slide.** A heading alone does not; two
   sections merge silently and the deck still renders, so check the slide count
   the renderer prints after editing. Lesson 01 shipped with slides 9 and 10
