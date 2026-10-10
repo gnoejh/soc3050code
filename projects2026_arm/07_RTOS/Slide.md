@@ -550,6 +550,116 @@ put from a UART interrupt. **Doing** the switch happens only in PendSV.
 
 ---
 
+## Slide 4c: Task Switching, Step by Step — the Flow
+
+One switch from task A to task B, from start to finish. Read it top to bottom:
+the outline of each box says **who** does that step: dashed for the hardware, solid for kernel code, filled for the switch itself.
+
+```svg
+<svg viewBox="0 0 620 770" role="img" aria-label="Flowchart of one task switch: SysTick interrupt, schedule decides, PendSV is pended, PendSV saves task A and loads task B, the exception return resumes task B">
+  <defs><marker id="f4c" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+
+  <!-- 1. task A -->
+  <rect class="box" x="150" y="20" width="320" height="44" rx="8"/>
+  <text x="310" y="40" text-anchor="middle" class="mono">1. Task A runs</text>
+  <text x="310" y="56" text-anchor="middle" class="lbl">Thread mode · stack = PSP (A's own stack)</text>
+  <path class="wire" d="M310 64 V84" marker-end="url(#f4c)"/>
+
+  <!-- 2. SysTick -->
+  <rect class="reg" style="stroke-dasharray:6 4" x="150" y="88" width="320" height="48" rx="5"/>
+  <text x="310" y="108" text-anchor="middle" class="mono">2. SysTick interrupt, every 1 ms</text>
+  <text x="310" y="126" text-anchor="middle" class="lbl">hardware saves 8 words of A on A's stack</text>
+  <path class="wire" d="M310 136 V156" marker-end="url(#f4c)"/>
+
+  <!-- 3. SysTick_Handler -->
+  <rect class="box" x="150" y="160" width="320" height="48" rx="5"/>
+  <text x="310" y="180" text-anchor="middle" class="mono">3. SysTick_Handler</text>
+  <text x="310" y="198" text-anchor="middle" class="lbl">ticks++ · wake sleepers · schedule() → pick()</text>
+  <path class="wire" d="M310 208 V228" marker-end="url(#f4c)"/>
+
+  <!-- 4. decision -->
+  <path class="box" d="M310 232 L425 272 L310 312 L195 272 Z"/>
+  <text x="310" y="268" text-anchor="middle" class="mono">4. next ≠ current?</text>
+  <text x="310" y="284" text-anchor="middle" class="lbl">a more urgent task READY?</text>
+  <path class="wire" d="M425 272 H565 V42 H474" marker-end="url(#f4c)"/>
+  <text x="472" y="264" class="lbl">No: return to A</text>
+  <path class="wire" d="M310 312 V336" marker-end="url(#f4c)"/>
+  <text x="318" y="328" class="lbl">Yes</text>
+
+  <!-- 5. pend PendSV -->
+  <rect class="box" x="150" y="340" width="320" height="48" rx="5"/>
+  <text x="310" y="360" text-anchor="middle" class="mono">5. SCB->ICSR = PENDSVSET</text>
+  <text x="310" y="378" text-anchor="middle" class="lbl">the DECISION is made; the switch is only requested</text>
+  <path class="wire" d="M310 388 V408" marker-end="url(#f4c)"/>
+
+  <!-- 6. tail-chain -->
+  <rect class="reg" style="stroke-dasharray:6 4" x="150" y="412" width="320" height="48" rx="5"/>
+  <text x="310" y="432" text-anchor="middle" class="mono">6. tail-chain into PendSV</text>
+  <text x="310" y="450" text-anchor="middle" class="lbl">hardware: priority 3, so only when no handler is busy</text>
+  <path class="wire" d="M310 460 V480" marker-end="url(#f4c)"/>
+
+  <!-- 7. save A -->
+  <rect class="hifill" x="150" y="484" width="320" height="48" rx="5"/>
+  <text x="310" y="504" text-anchor="middle" class="mono">7. PendSV_Handler: save A</text>
+  <text x="310" y="522" text-anchor="middle" class="lbl">push A's r4–r11 · A.tcb->sp = PSP − 32</text>
+  <path class="wire" d="M310 532 V552" marker-end="url(#f4c)"/>
+
+  <!-- 8. load B -->
+  <rect class="hifill" x="150" y="556" width="320" height="48" rx="5"/>
+  <text x="310" y="576" text-anchor="middle" class="mono">8. PendSV_Handler: load B</text>
+  <text x="310" y="594" text-anchor="middle" class="lbl">os_current = B · pop B's r4–r11 · PSP = B's frame</text>
+  <path class="wire" d="M310 604 V624" marker-end="url(#f4c)"/>
+
+  <!-- 9. exception return -->
+  <rect class="reg" style="stroke-dasharray:6 4" x="150" y="628" width="320" height="48" rx="5"/>
+  <text x="310" y="648" text-anchor="middle" class="mono">9. bx 0xFFFFFFFD</text>
+  <text x="310" y="666" text-anchor="middle" class="lbl">hardware restores B's 8 words — pc included</text>
+  <path class="wire" d="M310 676 V696" marker-end="url(#f4c)"/>
+
+  <!-- 10. task B -->
+  <rect class="box" x="150" y="700" width="320" height="44" rx="8"/>
+  <text x="310" y="720" text-anchor="middle" class="mono">10. Task B runs</text>
+  <text x="310" y="736" text-anchor="middle" class="lbl">from exactly where it was last stopped</text>
+
+  <!-- the mode bracket -->
+  <path class="dash" d="M135 88 V676"/>
+  <text x="125" y="380" text-anchor="end" class="lbl">Handler mode</text>
+  <text x="125" y="395" text-anchor="end" class="lbl">stack = MSP</text>
+  <text x="125" y="46" text-anchor="end" class="lbl">Thread mode</text>
+  <text x="125" y="726" text-anchor="end" class="lbl">Thread mode</text>
+
+  <!-- legend -->
+  <rect class="reg" style="stroke-dasharray:6 4" x="490" y="490" width="22" height="14" rx="2"/>
+  <text x="518" y="501" class="lbl">hardware</text>
+  <rect class="box" x="490" y="514" width="22" height="14" rx="2"/>
+  <text x="518" y="525" class="lbl">kernel code</text>
+  <rect class="hifill" x="490" y="538" width="22" height="14" rx="2"/>
+  <text x="518" y="549" class="lbl">the switch</text>
+</svg>
+```
+
+| Step | What happens | Who | Slide |
+|---|---|---|---|
+| 1→2. | A is interrupted; the hardware pushes **half** of A's context (r0–r3, r12, lr, pc, xPSR) onto A's own stack | hardware | lesson 03 |
+| 3→4. | the kernel **decides**: wakes sleepers, then `pick()` finds the most urgent `READY` task | `SysTick_Handler` | 9, 10 |
+| 5. | if that is not A, request the switch by pending PendSV — nothing is switched yet | `schedule()` | 4b |
+| 6. | PendSV waits until no other handler is running, then runs | hardware | 4b |
+| 7→8. | the **switch**: save the other half of A, load B's | `PendSV_Handler` | 5, 6, 7 |
+| 9→10. | the exception return pops B's half the hardware saved — and B's `pc`, so B resumes | hardware | 3b |
+
+**Three things to see in the picture:**
+
+- **Deciding and switching are different boxes.** 3–5. can happen anywhere;
+  7–8. happen only in PendSV.
+- **SysTick is only one way in.** `os_delay()`, a mutex unlock and a queue put
+  also call `schedule()`, and join the flow at 4. A task that sleeps does not
+  wait for the tick to be switched out.
+- **The hardware does half the work.** It saves and restores 8 of the 16
+  words; the kernel's 34 instructions do the rest.
+
+---
+
 ## Slide 5: The Switch, Drawn
 
 When PendSV starts, the hardware has already pushed half of task A's context
