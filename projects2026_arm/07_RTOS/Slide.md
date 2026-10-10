@@ -297,6 +297,12 @@ this lesson configures it.
 
 ## Slide 1: The Job That Never Yields
 
+> **Cooperative scheduler** → one **CPU hog** can stop the whole system.
+> (CPU hog 하나가 시스템 전체를 멈출 수 있음)
+>
+> **Preemptive scheduler** → the RTOS can forcibly stop (**preempt**) the CPU hog.
+> (RTOS가 CPU hog를 강제로 중단(preempt)할 수 있음)
+
 Put this in lesson 06's superloop:
 
 ```c
@@ -309,16 +315,25 @@ for (;;) {                               /* find primes, forever */
 ```
 
 It never returns to the loop, so nothing else ever runs again: the LED bar
-freezes, the buttons die, the report stops. The superloop only works while
-every job **agrees** to be short. That is cooperation, and one uncooperative
-job ends it.
+freezes, the buttons die, the report stops. A job like this, one that keeps the
+CPU and never gives it back, is a **CPU hog**.
+
+The superloop is a **cooperative scheduler**: each job runs until it *chooses*
+to return, so the system works only while every job **agrees** to be short.
+One uncooperative job ends it.
 
 What we want instead: the hog runs whenever nothing more urgent needs the CPU,
 and **is stopped** — mid-calculation, without its consent — the instant
 something more urgent does. Then carried on later from exactly where it was.
+That is a **preemptive scheduler**, and it is what an RTOS is.
 
-That is **preemptive multitasking**, and on a Cortex-M it takes one interrupt,
-one exception, and a second stack pointer.
+| Scheduler | Who decides when a job stops | One CPU hog |
+|---|---|---|
+| **Cooperative** (the superloop) | the job itself, by returning | **can freeze the whole system** |
+| **Preemptive** (an RTOS) | the kernel, on a timer interrupt | **is preempted**: the RTOS takes the CPU away by force |
+
+On a Cortex-M, preemption takes one interrupt, one exception, and a second
+stack pointer. The rest of this lesson builds it.
 
 ---
 
@@ -349,6 +364,13 @@ That struct is the **task control block**. Each task also gets its own
 stack — a plain array. The registers live *on* that stack while the task is
 switched out, so the TCB only needs to remember one number: where the stack
 pointer was.
+
+| Term | What it is | In this kernel |
+|---|---|---|
+| **Task** | a C function that runs as if it had the CPU to itself | `bar`, `button`, `hog`, `report`, `idle` |
+| **Context** | everything that function needs to carry on: registers + stack pointer | 16 words on the task's own stack |
+| **Context switch** | save one task's context, restore another's | `PendSV_Handler`, 34 instructions |
+| **Task control block (TCB)** | the kernel's record of one task | `os_task_t`; `sp` is its first field |
 
 ---
 
@@ -519,6 +541,13 @@ SHPR3 ; SCB, after os_start | 32 = 0xC0C00000 | !31:30 SysTick, !23:22 PendSV
 Deciding *who* runs next happens anywhere — the tick, a mutex unlock, a queue
 put from a UART interrupt. **Doing** the switch happens only in PendSV.
 
+| | **Deciding** — `schedule()` | **Switching** — `PendSV_Handler` |
+|---|---|---|
+| What it does | picks the next task, pends PendSV if it differs | saves the old context, restores the new one |
+| Where it runs | the tick, `os_delay`, mutex unlock, queue put — in tasks *and* in ISRs | in one place only |
+| When | the moment something changes | when no other handler is active: priority 3, the lowest |
+| Can it change its mind? | yes: if the current task should keep running it writes `PENDSVCLR` | no: once PendSV runs, the switch happens |
+
 ---
 
 ## Slide 5: The Switch, Drawn
@@ -676,9 +705,24 @@ static os_task_t *pick(void)
   priority take turns — one tick each.
 - **Idle**, priority 0, is always ready, so there is always an answer.
 
+The policies, by name — this kernel uses the second and the third together:
+
+| Policy | Who stops a running task | Used here |
+|---|---|---|
+| **Cooperative** | nobody: it runs until it returns or yields | lesson 06's superloop (slide 1) |
+| **Fixed-priority preemptive** | a *more urgent* task becoming `READY` | yes — the rule `pick()` applies |
+| **Round-robin time slicing** | the tick, among tasks of *equal* priority | yes — the search starts after the current task |
+| **Idle task** | — it runs only when nothing else can | `idle`, priority 0, always `READY` |
+
 **Priority numbers here run the other way from the NVIC.** In this kernel —
 as in FreeRTOS — a *higher* number is *more* urgent. In the NVIC, 0 is most
 urgent. Two numbering schemes on one chip: always say which one you mean.
+
+| | This kernel (and FreeRTOS) | The NVIC (hardware) |
+|---|---|---|
+| Most urgent | the **highest** number | **0** |
+| Range here | 0 (idle) … 3 (button) | 0 … 3 (`__NVIC_PRIO_BITS` = 2) |
+| Ranks | tasks | interrupts and exceptions |
 
 ---
 
@@ -701,6 +745,21 @@ waiting for it** — someone else runs.
 call: the task wakes on a fixed grid however long its own work took. The LED
 bar uses it, so its frames stay exactly 60 ms apart while the hog runs flat
 out underneath.
+
+Every task is always in one of three **states** (`os_state_t`). The one
+*running* is simply the `READY` task `pick()` chose — `os_current`:
+
+| State | Means | Gets there by | Leaves by |
+|---|---|---|---|
+| **`READY`** | could run now | created; woken | being picked, then running |
+| **`SLEEPING`** | waiting for a time | `os_delay`, `os_delay_until` | the tick reaching `wake` |
+| **`BLOCKED`** | waiting for a thing | a held mutex, an empty or full queue | the owner unlocks; an item arrives or leaves |
+
+| | **Busy-waiting** (lesson 05) | **Sleeping** (`os_delay`) |
+|---|---|---|
+| The task while it waits | spins, checking the clock | off the CPU, `SLEEPING` |
+| Who else runs meanwhile | nobody | every other `READY` task |
+| CPU it costs | 100% | none |
 
 The per-task `ticks` counter is **statistical profiling**: at each tick, charge
 one millisecond to whoever was running. Over a second, it is each task's CPU
@@ -761,6 +820,14 @@ Look at what it is made of: the kernel's own bookkeeping is protected by
 The mutex is a way to make a *long* critical section cheap for everyone who
 does not need it.
 
+| | **Masking interrupts** (`PRIMASK`) | **A mutex** |
+|---|---|---|
+| Who is held up | **everything**: every task and every interrupt | only tasks that want *this* resource |
+| How long it may last | a few instructions | as long as the work takes |
+| A waiter, meanwhile | — nothing else runs | `BLOCKED`, off the CPU |
+| Usable from an ISR | yes | **no**: an ISR cannot block |
+| Used here for | the kernel's own lists and counters | `shared`, which low and high take turns with (scenario 2) |
+
 ---
 
 ## Slide 13: Priority Inversion
@@ -794,6 +861,12 @@ High is blocked by low, which is legitimate — low holds what high needs. But
 then mid preempts **low**, and while mid runs, low cannot finish and release
 the mutex. **High is now waiting for mid**, a lower-priority task it has
 nothing to do with. The priorities have been turned upside down.
+
+| Term | Meaning | Here |
+|---|---|---|
+| **Blocking** | a task waits for a resource another task holds | high waits for low's mutex: expected, at most 30 ms |
+| **Priority inversion** | a task waits, in effect, for a task it outranks | high waits behind mid |
+| **Unbounded inversion** | that wait has no limit: it lasts as long as mid runs | up to 120 ms here; forever if mid never stops |
 
 This happened on Mars. In 1997 the Pathfinder lander's computer kept
 resetting, because a high-priority bus task was starved through exactly this
@@ -854,6 +927,17 @@ That is exactly lesson 08's design: the UART receive interrupt puts bytes in a
 queue, and a protocol task blocks on it — using no CPU at all until a byte
 arrives.
 
+| | **Mutex** | **Queue** |
+|---|---|---|
+| The data | stays where it is, *shared* | is *copied* to whoever needs it |
+| Who waits | anyone who wants it while it is held | a reader while empty, a writer while full |
+| From an ISR | never | `os_queue_put_from_isr()` only |
+
+| | **Task API** | **ISR API** |
+|---|---|---|
+| Full or empty | the caller blocks until it is not | returns at once: 0 means "full" |
+| Why | a task can be put to sleep | a handler has no task to put to sleep |
+
 ---
 
 ## Slide 16: Sizing a Stack — the High-Water Mark
@@ -901,6 +985,12 @@ linker had put `primes` — another task's variable — right there, at
 That is what a stack overflow usually looks like on a microcontroller: not a
 crash, but *somebody else's data quietly wrong*, far from the cause. The
 high-water mark caught it; without one you would be debugging the hog.
+
+| | **Stack overflow** — what people expect | What it usually is on an MCU |
+|---|---|---|
+| What you see | a crash, at the guilty task | **another task's data quietly wrong** |
+| Where the bug looks like it is | the overflowing task | the victim: here, the hog's prime counter |
+| What catches it | — | the high-water mark; on bigger cores, an MPU guard region |
 
 ---
 
