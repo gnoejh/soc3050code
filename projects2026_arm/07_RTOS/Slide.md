@@ -726,6 +726,71 @@ instruction written out. From this lesson's `Main.elf`:
 **34 instructions, 88 bytes** with its literal pool. That is the whole of
 multitasking.
 
+What those instructions do to the stack. Both tasks' stacks have the same
+shape, so one stack is drawn: the **left** side is the save of task A, the
+**right** side the restore of task B, numbered in the order the code runs.
+
+```svg
+<svg viewBox="0 0 690 300" role="img" aria-label="One task stack, sixteen words: PendSV saves r4 to r11 below the hardware frame for task A, and restores them for task B">
+  <defs><marker id="s6" markerWidth="8" markerHeight="8" refX="7" refY="3.4" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.5 0.8 L7 3.4 L0.5 6 z" fill="currentColor"/></marker></defs>
+  <text x="125" y="22" text-anchor="middle" class="hi">SAVE task A</text>
+  <text x="560" y="22" text-anchor="middle" class="hi">RESTORE task B</text>
+  <text x="320" y="44" text-anchor="middle" class="lbl">one task's stack · low addresses at the top</text>
+
+  <!-- the sixteen words -->
+  <rect class="hifill" x="250" y="56" width="140" height="34"/>
+  <text x="320" y="78" text-anchor="middle" class="mono">r4 r5 r6 r7</text>
+  <rect class="hifill" x="250" y="90" width="140" height="34"/>
+  <text x="320" y="112" text-anchor="middle" class="mono">r8 r9 r10 r11</text>
+  <rect class="box" x="250" y="124" width="140" height="34" style="stroke-dasharray:6 4"/>
+  <text x="320" y="146" text-anchor="middle" class="mono">r0 r1 r2 r3</text>
+  <rect class="box" x="250" y="158" width="140" height="34" style="stroke-dasharray:6 4"/>
+  <text x="320" y="180" text-anchor="middle" class="mono">r12 lr pc xPSR</text>
+  <rect class="dash" x="250" y="192" width="140" height="30"/>
+  <text x="320" y="212" text-anchor="middle" class="lbl">the task's own locals</text>
+  <text x="400" y="78" class="lbl">+0</text>
+  <text x="400" y="112" class="lbl">+16</text>
+  <text x="400" y="146" class="lbl">+32</text>
+  <text x="400" y="180" class="lbl">+48</text>
+
+  <!-- SAVE, left side -->
+  <path class="wire" d="M232 56 H248" marker-end="url(#s6)"/>
+  <text x="228" y="60" text-anchor="end" class="lbl">2. subs r0,#32 · str: tcb->sp</text>
+  <text x="240" y="82" text-anchor="end" class="lbl">3. stmia {r4–r7}</text>
+  <text x="240" y="112" text-anchor="end" class="lbl">4. mov r8–r11 → r4–r7, stmia</text>
+  <path class="wire" d="M232 124 H248" marker-end="url(#s6)"/>
+  <text x="228" y="128" text-anchor="end" class="lbl">1. PSP on entry</text>
+  <text x="240" y="170" text-anchor="end" class="lbl">pushed by the hardware</text>
+  <text x="240" y="184" text-anchor="end" class="lbl">before PendSV ran</text>
+
+  <!-- RESTORE, right side -->
+  <path class="wire" d="M450 56 H434" marker-end="url(#s6)"/>
+  <text x="454" y="60" class="lbl">5. r0 = B's tcb->sp</text>
+  <text x="440" y="82" class="lbl">8. subs r0,#32 · ldmia {r4–r7}</text>
+  <text x="440" y="112" class="lbl">6. adds r0,#16 · ldmia, mov → r8–r11</text>
+  <path class="wire" d="M450 124 H434" marker-end="url(#s6)"/>
+  <text x="454" y="128" class="lbl">7. msr PSP, r0  (r0 = +32)</text>
+  <text x="440" y="170" class="lbl">9. bx 0xFFFFFFFD: the hardware</text>
+  <text x="440" y="184" class="lbl">pops these, B's pc included</text>
+
+  <text x="320" y="252" text-anchor="middle" class="hi">A task switched out: tcb->sp points at its r4; its hardware frame starts 32 bytes on, at r0.</text>
+  <text x="320" y="274" text-anchor="middle" class="lbl">The kernel moves the top 8 words; the hardware moves the bottom 8.</text>
+</svg>
+```
+
+| Step | Instructions | The stack, afterwards |
+|---|---|---|
+| 1 | `mrs r0, PSP` | `r0` points at A's hardware frame, `r0`–`xPSR` |
+| 2 | `subs r0, #32` · `str r0, [r1]` | 8 words reserved above it; A's TCB remembers where |
+| 3 | `stmia r0!, {r4–r7}` | `r4`–`r7` saved at +0; `r0` moves to +16 |
+| 4 | `mov r4, r8` … · `stmia r0!, {r4–r7}` | `r8`–`r11` saved at +16 — A is fully saved |
+| 5 | `ldr r0, [r1]` | `r0` = B's saved stack pointer, at B's `r4` |
+| 6 | `adds r0, #16` · `ldmia` · `mov r8, r4` … | B's `r8`–`r11` restored first; `r0` ends at +32 |
+| 7 | `msr PSP, r0` | PSP points at B's hardware frame |
+| 8 | `subs r0, #32` · `ldmia r0!, {r4–r7}` | B's `r4`–`r7` restored last, so the copy in step 6 is not overwritten |
+| 9 | `bx r0` with `0xFFFFFFFD` | the hardware pops B's 8 words and jumps to B's `pc` |
+
 ---
 
 ## Slide 7: Why `r8`–`r11` Go the Long Way Round
