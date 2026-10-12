@@ -791,6 +791,28 @@ shape, so one stack is drawn: the **left** side is the save of task A, the
 | 8 | `subs r0, #32` · `ldmia r0!, {r4–r7}` | B's `r4`–`r7` restored last, so the copy in step 6 is not overwritten |
 | 9 | `bx r0` with `0xFFFFFFFD` | the hardware pops B's 8 words and jumps to B's `pc` |
 
+The same job on a desktop OS. The shape is the same — decide in one place,
+switch later in a deferred low-priority step, save half the registers on entry
+and the other half in the switch — but much more state moves:
+
+| | **This kernel (Cortex-M0+)** | **Windows (x86-64)** | **Linux (x86-64)** |
+|---|---|---|---|
+| Unit switched | task: a stack + a TCB | thread: `KTHREAD` + kernel stack | task: `task_struct` + kernel stack (threads and processes alike) |
+| What triggers it | SysTick, or a task blocking or yielding (`os_delay`, mutex, queue, `os_yield`) | clock interrupt ends the quantum; a wait; a higher-priority thread becomes ready | timer tick; a sleep or wait; a wakeup of a task that should preempt |
+| The deferred step | **PendSV** pended, runs at priority 3 when no handler is busy | **DISPATCH_LEVEL** software interrupt (IRQL 2) runs the dispatcher | `TIF_NEED_RESCHED` flag, acted on at the next return from interrupt or syscall |
+| Who picks next | `pick()` in `os.c`: highest priority ready, round-robin among equals | dispatcher: 32 priority levels (31 highest), with dynamic boosts | `__schedule()`: real-time classes (`SCHED_FIFO`/`RR`, 1–99) first, then the fair class (CFS, EEVDF since 6.6) |
+| Saved on entry | hardware: `r0`–`r3`, `r12`, `lr`, `pc`, `xPSR` (8 words) | trap frame: the volatile registers | `pt_regs`: every user register |
+| Saved by the switch | `r4`–`r11` (8 words), 34 instructions | `SwapContext`: nonvolatile integer regs + `xmm6`–`xmm15` | `__switch_to_asm`: `rbx`, `rbp`, `r12`–`r15`, then the stack pointer |
+| Where it is kept | the task's own stack; `tcb->sp` points at it | the thread's kernel stack; `KTHREAD.KernelStack` | the task's kernel stack; `task_struct.thread.sp` |
+| Floating point | none — the M0+ has no FPU | `XSAVE` area per thread | `XSAVE` area; restore deferred until the return to user mode |
+| Address space | one, shared — no MMU | `CR3` reloaded if the new thread is in another process | `CR3` reloaded unless the next task shares the `mm` |
+| Also flushed or swapped | nothing | TLB entries (unless PCID), kernel stack in the TSS, segment bases | same: TLB (unless PCID), `TSS.sp0`, FS/GS base |
+| Rough cost | tens of cycles | a few µs once cache and TLB misses are counted | a few µs, the same reasons |
+
+**What makes the RTOS switch cheap is what it leaves out:** no address space,
+no FPU state, no privilege change to undo. That is also why one bad pointer in
+any task can overwrite every other task.
+
 ---
 
 ## Slide 7: Why `r8`–`r11` Go the Long Way Round
