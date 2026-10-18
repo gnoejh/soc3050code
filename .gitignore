@@ -79,3 +79,9 @@ projects2026_arm/_slides/*.pdf
 !projects2026_arm/_spike/**/Main.bin
 !projects2026_arm/_spike/**/Main.hex
 !projects2026_arm/_spike/**/Main.map
+
+# exams
+exam.md
+exam.docx
+exam_*.docx
+~$*.docx
