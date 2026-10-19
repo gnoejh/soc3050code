@@ -263,16 +263,18 @@ serial monitor does not: its input box sends a whole line when you press
 Enter, and an arrow key only moves the cursor inside the box, so the board
 never sees it. Two routes that should work:
 
-- **The Wokwi VS Code extension's serial terminal**, which runs in a VS Code
-  terminal panel and should pass keys straight through.
+- **The Wokwi VS Code extension's serial terminal** (use this one). It runs in
+  VS Code's Terminal panel once you press Play on `diagram.json`, and it sends
+  each key as you press it. **Seen working on 2026-10-19:** the arrow keys
+  reached the board and were decoded.
 - **miniterm**, pyserial's terminal, over Part 3's live route:
   `python -m serial.tools.miniterm rfc2217://localhost:4000 115200`.
   On Windows it turns the arrow keys into the same sequences a Linux terminal
-  sends.
+  sends. This route has not been tried yet.
 
-> Neither route has been watched with this firmware yet. The decoder and the
-> line editor were tested on a PC, fed the bytes listed below. If your terminal
-> sends something different, (c) is where you will see it.
+> If your terminal sends a key differently from the table in (c), the board
+> spells out what it actually received, so (c) is where you will see the
+> difference.
 
 **(a) Who draws the letters?** Type `lex`, press Backspace, then finish with
 `d 3` and press Enter.

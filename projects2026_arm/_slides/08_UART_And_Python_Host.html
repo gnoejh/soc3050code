@@ -1155,7 +1155,7 @@ int _write(int fd, const char *buf, int len) { ...ring buffer... }</code></pre>
 <table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>escape sequence</strong></td><td>several bytes that mean one key; standardised as ECMA-48, the VT100&#x27;s descendants</td></tr><tr><td><strong>final byte</strong></td><td><code>0x40</code>–<code>0x7E</code>: ends a CSI sequence. It plays the part of the <code>*</code> in a frame</td></tr><tr><td><strong>lone Esc</strong></td><td>the same <code>0x1B</code> that starts every sequence. Only <strong>time</strong> tells them apart: 50 ms of silence</td></tr><tr><td><strong>echo</strong></td><td>the terminal does not draw what you type. The board sends each byte back, and <code>\b \b</code> for Backspace</td></tr></tbody></table>
 <p>Two rules come from sharing one line:</p>
 <ul><li><strong>A <code>$</code> line is never echoed.</strong> If <code>$RATE,100*..</code> came back, <code>host.py</code> would read it as a frame from the board.</li><li><strong>Telemetry waits while a line is half typed.</strong> Otherwise the board would send <code>sta$TEL,...</code>, which <code>host.py</code> skips because the line does not start with <code>$</code>.</li></ul>
-<p>The decoder was tested on a PC with the bytes in the table above. No terminal<br>has been watched sending them to the board yet (Lab Part 7).</p>
+<p><strong>Seen working in Wokwi on 2026-10-19:</strong> VS Code&#x27;s Wokwi serial terminal sends<br>each key as it is pressed, and the arrows were decoded on the board. The<br>browser&#x27;s input box cannot do this, because it sends whole lines (Lab Part 7).</p>
 </section>
 <section class="slide">
 <h2>Slide 10: The Frame — Borrowed From GPS</h2>

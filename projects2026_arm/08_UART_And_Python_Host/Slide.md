@@ -660,8 +660,9 @@ Two rules come from sharing one line:
   send `sta$TEL,...`, which `host.py` skips because the line does not start
   with `$`.
 
-The decoder was tested on a PC with the bytes in the table above. No terminal
-has been watched sending them to the board yet (Lab Part 7).
+**Seen working in Wokwi on 2026-10-19:** VS Code's Wokwi serial terminal sends
+each key as it is pressed, and the arrows were decoded on the board. The
+browser's input box cannot do this, because it sends whole lines (Lab Part 7).
 
 ---
 

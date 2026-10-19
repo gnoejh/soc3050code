@@ -22,6 +22,8 @@
  * Build:     build.bat
  * Simulate:  simulate.bat, paste diagram.json, upload Main.elf, then type
  *            "help" into the serial monitor's input box.
+ *            For the keys: in VS Code, press Play on diagram.json and type
+ *            into the Wokwi terminal - it sends each key as it is pressed.
  * Host:      python host.py --help
  */
 

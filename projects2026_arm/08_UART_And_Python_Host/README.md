@@ -82,7 +82,15 @@ The firmware now sends back each shell command as it is typed, so the same
 session today would show each command before its reply, and `host.py --file`
 would count more "other lines". The frames are unchanged.
 
-### Keys and echo (Lab Part 7): tested on a PC only
+### Keys and echo (Lab Part 7): working in Wokwi, tested on a PC
+
+**Seen working in Wokwi on 2026-10-19,** through the VS Code extension's serial
+terminal. That terminal sends each key as it is pressed, the arrow keys
+reached USART2 as escape sequences, and `keys.c` decoded them. The bytes it
+sends for F1, Home, Delete and Ctrl-Right have not been written down yet
+(Lab Part 7(c)).
+
+Before that, everything was tested on a PC:
 
 `keys.c` was compiled with the host gcc and fed 15 byte strings: the four
 arrows in both CSI and SS3 form, F1, Home, Delete, Ctrl-Right, Alt-x, a lone
@@ -94,13 +102,11 @@ with Backspace, arrows, an arrow pressed mid-line (its report, then the
 half-typed text printed again), `rat` + Esc + `led 2` with a 290 ms gap, a
 frame (no echo, correct ACK), and an empty Enter. All gave the expected output.
 
-**Not yet seen:** which bytes the Wokwi VS Code terminal and miniterm actually
-send. Nobody has watched either of them talk to this firmware.
+**Not yet seen:** miniterm over RFC2217 talking to this firmware.
 
-**Still to do:** watch it in Wokwi — whether its serial monitor passes typed
-and pasted input to USART2 as expected, and how fast a paste arrives (Lab
-Part 4); whether the VS Code terminal sends arrow keys raw (Lab Part 7); and
-exercise the RFC2217 live route.
+**Still to do:** how fast a paste arrives in Wokwi (Lab Part 4); the
+VS Code terminal's bytes for the unnamed keys (Lab Part 7(c)); and the RFC2217
+live route, for both `host.py` and miniterm.
 
 ## Registers and peripherals touched
 
