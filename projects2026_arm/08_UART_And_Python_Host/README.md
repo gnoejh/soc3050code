@@ -14,11 +14,12 @@ and sends those frames.
 
 | | |
 |---|---|
-| `Slide.md` | the lecture - 19 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
-| `Lab.md` | the lab: seven parts, ~2 hours, **nothing handed in** |
+| `Slide.md` | the lecture - 20 pages as rendered: the title, the two pin-map slides, then the numbered slides, each register block's one-page map before its details |
+| `Lab.md` | the lab: eight parts, ~2.5 hours, **nothing handed in** |
 | `uart.c`, `uart.h` | **the subject of the lesson.** ISR with ORE/RXNE/TXE, RX kernel queue, TX SPSC ring, strong `_write()` |
 | `proto.c`, `proto.h` | the frame format: XOR checksum and frame check. Pure C — no hardware |
-| `Main.c` | three tasks: protocol (shell + frames), telemetry, buttons; a mutex so whole lines never interleave |
+| `keys.c`, `keys.h` | terminal escape sequences back into keys (`ESC [ D` is Left), including the timed lone-Esc case. Pure C — no hardware |
+| `Main.c` | three tasks: protocol (shell + frames + keys, with echo and Backspace), telemetry, buttons; a mutex so whole lines never interleave |
 | `host.py` | the PC side. `--selftest`, `--frame`, `--file`, `--port`, `--send`, `--demo`, `--plot` |
 | `build.bat` | `LIBS=retarget os` |
 | `simulate.bat` | always rebuilds, then opens the Wokwi board and explains both Python routes |
@@ -37,7 +38,7 @@ and sends those frames.
 ## Build and run
 
 ```
-build.bat        # FLASH 10840 B / 32 KB, RAM 6504 B / 12 KB, zero warnings
+build.bat        # FLASH 11868 B / 32 KB, RAM 6520 B / 12 KB, zero warnings
 simulate.bat
 python host.py --selftest
 ```
@@ -76,9 +77,30 @@ to `host.py --file`.
 `$LED,171*57`. (Writing this README caught an error: the example frame had
 first been written as `*62`; the self-test said `57`, and it was right.)
 
+**The Renode runs above came before keys and echo were added (Lab Part 7).**
+The firmware now sends back each shell command as it is typed, so the same
+session today would show each command before its reply, and `host.py --file`
+would count more "other lines". The frames are unchanged.
+
+### Keys and echo (Lab Part 7): tested on a PC only
+
+`keys.c` was compiled with the host gcc and fed 15 byte strings: the four
+arrows in both CSI and SS3 form, F1, Home, Delete, Ctrl-Right, Alt-x, a lone
+Esc followed by silence, Esc followed quickly by `a`, an unfinished `ESC [`, and
+a `$` frame passing through untouched. All 15 decoded as expected.
+`task_proto()` was then compiled on the PC against a stub kernel and fed whole
+sessions. That covered the browser's line mode (`led 170\r\n`), a typo fixed
+with Backspace, arrows, an arrow pressed mid-line (its report, then the
+half-typed text printed again), `rat` + Esc + `led 2` with a 290 ms gap, a
+frame (no echo, correct ACK), and an empty Enter. All gave the expected output.
+
+**Not yet seen:** which bytes the Wokwi VS Code terminal and miniterm actually
+send. Nobody has watched either of them talk to this firmware.
+
 **Still to do:** watch it in Wokwi — whether its serial monitor passes typed
 and pasted input to USART2 as expected, and how fast a paste arrives (Lab
-Part 4); and exercise the RFC2217 live route.
+Part 4); whether the VS Code terminal sends arrow keys raw (Lab Part 7); and
+exercise the RFC2217 live route.
 
 ## Registers and peripherals touched
 

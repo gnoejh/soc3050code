@@ -1,6 +1,6 @@
 # Lab 08 — UART and a Python Host
 
-**SOC3050 ARM Edition · Nucleo-C031C6 · allow 2 hours**
+**SOC3050 ARM Edition · Nucleo-C031C6 · allow 2½ hours**
 
 **Reference**: [RM0490, STM32C0x1 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf) ·
 **Board**: [ST Nucleo-C031C6 on Wokwi](https://docs.wokwi.com/parts/board-st-nucleo-c031c6) ·
@@ -12,8 +12,9 @@
 
 **A guided walkthrough, not a test.** You will talk to the board by hand, then
 through `host.py`, check frames in both directions, and break the UART driver
-in the two ways that matter most. The last part is a protocol change made on
-both sides at once.
+in the two ways that matter most. Part 6 is a protocol change made on both
+sides at once. Part 7 decodes keys from a terminal: an arrow key arrives as
+three bytes, and the board has to put them back together.
 
 Answers marked **measured** come from running the firmware in Renode
 (lesson 07, slide 20) and feeding its output to `host.py`. Where Wokwi may
@@ -34,17 +35,18 @@ simulate.bat
 Zero warnings:
 
 ```
-           FLASH:       10840 B        32 KB     33.08%
-             RAM:        6504 B        12 KB     52.93%
+           FLASH:       11868 B        32 KB     36.22%
+             RAM:        6520 B        12 KB     53.06%
 ```
 
-FLASH has grown by about 3 KB since lesson 07. **Guess first:** what for?
+FLASH has grown by about 4 KB since lesson 07. **Guess first:** what for?
 
 > Mostly the C library. Comparing the two builds' `Main.map` files, this lesson
 > newly pulls in about 2 KB of it: the string-formatting side of `printf`
 > (`svfprintf`, 688 B, and `vsnprintf`), 32-bit signed division (`_divsi3`,
 > 468 B — the M0+ has no divide instruction), `strtol` with its character
-> tables (545 B) and `puts`. The rest is the shell's text and its parsing.
+> tables (545 B) and `puts`. The rest is the shell's text and its parsing,
+> and about 1 KB for Part 7's key decoder and line editor.
 > Every `%` and every `strtol` has a price on a 32 KB part, and the map file is
 > where it is written down.
 
@@ -67,6 +69,9 @@ stats
 > **Measured** replies: the help text; `bar = 0xAA` (and LEDs 1, 3, 5, 7 light
 > — 170 is `10101010`); `telemetry every 250 ms`; then the counters.
 > `rx overruns 0` — the interrupt keeps up with your typing with room to spare.
+> Each reply follows a copy of your command. That copy is sent by the board,
+> not drawn by the serial monitor (Part 7). The measured runs were made before
+> the board echoed, so they do not show it.
 
 Press button A a few times and watch the fifth field of `$TEL` count.
 
@@ -246,6 +251,105 @@ teach `host.py` to print it.
 > Now add the new field to `host.py`'s output. Then consider the reverse: an
 > *old board* and a *new* `host.py` that expects seven fields. What should the
 > new `host.py` do with a six-field frame?
+
+---
+
+## Part 7 — A key is a frame too (25 min)
+
+So far every byte you sent was a letter. Now press an **arrow key**.
+
+You need a terminal that sends each key **as you press it**. The browser's
+serial monitor does not: its input box sends a whole line when you press
+Enter, and an arrow key only moves the cursor inside the box, so the board
+never sees it. Two routes that should work:
+
+- **The Wokwi VS Code extension's serial terminal**, which runs in a VS Code
+  terminal panel and should pass keys straight through.
+- **miniterm**, pyserial's terminal, over Part 3's live route:
+  `python -m serial.tools.miniterm rfc2217://localhost:4000 115200`.
+  On Windows it turns the arrow keys into the same sequences a Linux terminal
+  sends.
+
+> Neither route has been watched with this firmware yet. The decoder and the
+> line editor were tested on a PC, fed the bytes listed below. If your terminal
+> sends something different, (c) is where you will see it.
+
+**(a) Who draws the letters?** Type `lex`, press Backspace, then finish with
+`d 3` and press Enter.
+
+> The `x` goes away and the bar shows `0x03`. Your terminal does **not** draw
+> what you type. The board sends every character back (`say("%c", c)` in
+> `task_proto()`), and for Backspace it sends `\b \b`: move back, write a
+> space over the letter, move back again. Comment out the echo, rebuild, and
+> you are typing blind. Put it back.
+>
+> Backspace is handled for two codes, `0x7F` and `0x08`, because terminals
+> disagree about which one the key sends.
+
+**(b) Arrows.** Press Left four times, then Right once. Then press Up and
+Down.
+
+> Each press prints its name (`Left   bar = 0x02`) and the lit LED moves along
+> the bar. Up halves the telemetry period and Down doubles it, staying within
+> 20–5000 ms. Every press was **three bytes**, `ESC [ D` for Left, and
+> `keys.c` put them back together. Press an arrow half-way through typing a
+> word: its report goes on a line of its own, then your half-typed word is
+> printed again so you can carry on.
+
+**(c) Keys with no name.** Press F1, Home, Delete and Ctrl-Right. The board
+spells out each sequence. Fill in the table:
+
+| Key | Sequence the board printed | Expected (xterm) |
+|---|---|---|
+| F1 | | `ESC O P` |
+| Home | | `ESC [ H` |
+| Delete | | `ESC [ 3 ~` |
+| Ctrl-Right | | `ESC [ 1 ; 5 C` |
+
+> The expected column is what xterm-style terminals send. VS Code's terminal
+> is one. A terminal that sends something else is not wrong; it follows a
+> different convention. Look at `ESC [ 1 ; 5 C`: Right is still `C`, with
+> extra bytes in front of it. How does `key_feed()` know the sequence has
+> ended after the `C` and not after the `1`? (Slide 9b.)
+
+**(d) The Esc key on its own.** Type `rat`, press Esc, and wait. **Guess
+first:** when does `Esc    line cancelled` appear?
+
+> **Not until you press another key.** Esc sends one byte, `0x1B`, and it is
+> the same byte that starts every arrow key. The decoder can only tell them
+> apart by the silence afterwards (`KEY_ESC_WAIT`, 50 ms). But
+> `uart_getc()` blocks until the *next* byte arrives, so the silence is only
+> measured once it is over. Fixing that would need a `uart_getc()` with a
+> timeout, and lesson 07's queue has no timed `get` yet. How would you add
+> one?
+
+**(e) Typing stops the telemetry.** Type half a word, say `sta`, and wait
+two seconds.
+
+> No `$TEL` frames arrive until you finish the line or press Esc. The echo has
+> left `sta` on the screen with no newline after it. A frame sent now would
+> come out as `sta$TEL,...`. `host.py` looks for lines that **start** with
+> `$`, so it would skip that frame. So `task_tel()` waits while `typing` is
+> set. It does not advance `seq` for a frame it skips, so `host.py` reports no
+> gap.
+>
+> For the same reason, a line that **starts** with `$` is never echoed. If the
+> board sent `host.py`'s `$RATE,100*..` back to it, `host.py` would take its
+> own command for a frame from the board.
+
+**(f) A timeout that is too short.** Set `KEY_ESC_WAIT` in `keys.h` to `0`,
+rebuild, and press Left many times. Reason about it before you try.
+
+> At 115200 baud the three bytes of an arrow key arrive about 87 µs apart. The
+> clock is `os_ticks()`, which counts whole milliseconds. Most of the time all
+> three bytes arrive within the same millisecond and Left still works. When a
+> tick falls between the `ESC` and the `[`, the decoder decides the ESC was
+> the Esc key. You should see an occasional `Esc    line cancelled` with `[D`
+> typed after it. This is a reasoned prediction and has not been measured.
+> It is the same class of bug as a frame cut in half: the decoder gave up on a
+> sequence before it had finished arriving.
+
+Put `KEY_ESC_WAIT` back to 50.
 
 ---
 

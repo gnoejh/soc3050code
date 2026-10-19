@@ -1141,6 +1141,23 @@ int _write(int fd, const char *buf, int len) { ...ring buffer... }</code></pre>
 <p>A line longer than 63 characters is thrown away whole, rather than acted on in<br>part.</p>
 </section>
 <section class="slide">
+<h2>Slide 9b: Keys — a Third Kind of Frame</h2>
+<p>On a raw terminal (the VS Code extension, miniterm) each key is sent when you<br>press it. A letter is one byte. <strong>An arrow key is three:</strong></p>
+<table><thead><tr><th>Key</th><th>Bytes</th><th>Board does</th></tr></thead><tbody><tr><td>Up / Down</td><td><code>ESC [ A</code> / <code>ESC [ B</code></td><td>halve / double the telemetry period</td></tr><tr><td>Right / Left</td><td><code>ESC [ C</code> / <code>ESC [ D</code></td><td>move the lit LED along the bar</td></tr><tr><td>Esc</td><td><code>ESC</code> alone</td><td>cancel the half-typed line</td></tr><tr><td>F1, Home, Delete, …</td><td><code>ESC O P</code>, <code>ESC [ H</code>, <code>ESC [ 3 ~</code></td><td>spell the bytes out</td></tr></tbody></table>
+<p><code>ESC</code> is <code>0x1B</code>. <code>keys.c</code> is a state machine with the same structure as a<br><code>$...*CS</code> frame: a start byte, a body, and a byte that ends it.</p>
+<pre><code>          not ESC
+ idle ───────────────────────────────────────────────►  KEY_CHAR: a letter
+   │ ESC
+   ▼
+ ESC seen ── &#x27;[&#x27; ──► CSI: 0x20-0x3F, wait ── 0x40-0x7E ──►  key done
+   │      └─ &#x27;O&#x27; ──► SS3: the next byte ───────────────────►  key done
+   └── 50 ms of silence ───────────────────────────────────►  KEY_ESC</code></pre>
+<table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>escape sequence</strong></td><td>several bytes that mean one key; standardised as ECMA-48, the VT100&#x27;s descendants</td></tr><tr><td><strong>final byte</strong></td><td><code>0x40</code>–<code>0x7E</code>: ends a CSI sequence. It plays the part of the <code>*</code> in a frame</td></tr><tr><td><strong>lone Esc</strong></td><td>the same <code>0x1B</code> that starts every sequence. Only <strong>time</strong> tells them apart: 50 ms of silence</td></tr><tr><td><strong>echo</strong></td><td>the terminal does not draw what you type. The board sends each byte back, and <code>\b \b</code> for Backspace</td></tr></tbody></table>
+<p>Two rules come from sharing one line:</p>
+<ul><li><strong>A <code>$</code> line is never echoed.</strong> If <code>$RATE,100*..</code> came back, <code>host.py</code> would read it as a frame from the board.</li><li><strong>Telemetry waits while a line is half typed.</strong> Otherwise the board would send <code>sta$TEL,...</code>, which <code>host.py</code> skips because the line does not start with <code>$</code>.</li></ul>
+<p>The decoder was tested on a PC with the bytes in the table above. No terminal<br>has been watched sending them to the board yet (Lab Part 7).</p>
+</section>
+<section class="slide">
 <h2>Slide 10: The Frame — Borrowed From GPS</h2>
 <pre><code>$LED,170*57
  \_____/ \/

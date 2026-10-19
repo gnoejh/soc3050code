@@ -12,6 +12,13 @@
  * third counts button presses.  Every frame carries an NMEA-style checksum
  * (proto.c), so host.py can tell a good line from a damaged one.
  *
+ * A person on a raw terminal (the VS Code extension, or miniterm) also gets
+ * keys: the arrows arrive as three-byte escape sequences that keys.c decodes.
+ * Left/Right move the lit LED along the bar, Up/Down change the telemetry
+ * rate, Esc cancels a half-typed line, and every other key is spelt out.
+ * Typed characters are echoed - but never a $ frame, because host.py would
+ * read its own command coming back as if the board had sent it.
+ *
  * Build:     build.bat
  * Simulate:  simulate.bat, paste diagram.json, upload Main.elf, then type
  *            "help" into the serial monitor's input box.
@@ -27,6 +34,7 @@
 #include "os.h"
 #include "uart.h"
 #include "proto.h"
+#include "keys.h"
 
 #define BAUD         115200u
 #define BTN_A_PIN    0u
@@ -42,6 +50,7 @@ static volatile uint8_t  tel_on  = 1;
 static volatile uint8_t  bar     = 0x01;
 static volatile uint32_t presses_a, presses_b;
 static volatile uint32_t frames_ok, frames_bad, lines_in;
+static volatile uint8_t  typing;             /* a person is part-way through a line */
 
 /* ---- one printer at a time ------------------------------------------------
  * Two tasks print.  printf() is not re-entrant in newlib-nano, and even if it
@@ -137,7 +146,8 @@ static void handle_shell(char *line)
 
     if (strcmp(line, "help") == 0) {
         say("commands: led <0-255>   rate <20-5000 ms>   quiet   stats   help\n"
-            "frames:   $LED,<n>*CS   $RATE,<ms>*CS   $PING*CS   $STAT*CS\n");
+            "frames:   $LED,<n>*CS   $RATE,<ms>*CS   $PING*CS   $STAT*CS\n"
+            "keys:     Left/Right move the bar   Up/Down rate   Esc cancels a line\n");
     } else if (strcmp(line, "led") == 0 && arg) {
         set_bar((uint8_t)strtol(arg, 0, 0));
         say("bar = 0x%02X\n", (unsigned)bar);
@@ -161,43 +171,124 @@ static void handle_shell(char *line)
     }
 }
 
-/* Priority 3.  Blocks inside uart_getc() - 0% CPU - until a byte arrives. */
+/* ============================================================================
+ *  Keys from a person:  Left  Right  Up  Down  Esc  and anything else, spelt
+ * ============================================================================ */
+static keydec_t keys;
+
+/* `typed` is the half-typed line, if any: the key's report goes on a line of
+ * its own, then the half-typed text is put back so the person can carry on. */
+static void handle_key(keycode_t k, const char *typed, uint32_t n)
+{
+    char spelt[4u * KEY_SEQ_MAX];
+    if (n > 0) { say("\n"); }
+    switch (k) {
+    case KEY_LEFT:                                   /* PB7 is at the left end */
+    case KEY_RIGHT: {
+        uint8_t b = bar ? bar : 0x01u;
+        set_bar(k == KEY_LEFT ? (uint8_t)((b << 1) | (b >> 7))
+                              : (uint8_t)((b >> 1) | (b << 7)));
+        say("%-6s bar = 0x%02X\n", key_name(k), (unsigned)bar);
+        break;
+    }
+    case KEY_UP:
+    case KEY_DOWN: {
+        int ok = set_rate(k == KEY_UP ? (long)(tel_ms / 2u) : (long)(tel_ms * 2u));
+        say(ok ? "%-6s telemetry every %lu ms\n" : "%-6s rate stays %lu ms (20..5000)\n",
+            key_name(k), (unsigned long)tel_ms);
+        break;
+    }
+    case KEY_ESC:
+        say("Esc    line cancelled\n");
+        return;                                      /* nothing to put back */
+    default:
+        key_spell(&keys, spelt, sizeof spelt);
+        say("key    %s  (no name for this one)\n", spelt);
+        break;
+    }
+    if (n > 0) { say("%.*s", (int)n, typed); }
+}
+
+/* Priority 3.  Blocks inside uart_getc() - 0% CPU - until a byte arrives.
+ *
+ * Each byte goes through the key decoder first.  Most come straight back as
+ * KEY_CHAR and are collected into a line; an escape sequence is swallowed
+ * until it is complete, then acted on as one key. */
 static void task_proto(void *arg)
 {
     (void)arg;
     char line[LINE_MAX];
     uint32_t n = 0;
     uint8_t  overflow = 0;
+    char     prev = 0;
     for (;;) {
         char c = (char)uart_getc();
-        if (c == '\r' || c == '\n') {
+        uint32_t now = os_ticks();
+
+        /* A lone Esc shows itself only by the silence after it, so it is
+         * noticed late - when the NEXT byte arrives, which is then handled
+         * as usual below. */
+        keycode_t late = key_timeout(&keys, now);
+        if (late != KEY_NONE) {
+            handle_key(late, line, typing ? n : 0);
+            if (late == KEY_ESC) { n = 0; overflow = 0; typing = 0; }
+        }
+
+        keycode_t k = key_feed(&keys, (uint8_t)c, now);
+        if (k == KEY_NONE) { continue; }             /* inside a sequence */
+        if (k != KEY_CHAR) {                         /* a whole key       */
+            handle_key(k, line, typing ? n : 0);
+            continue;
+        }
+
+        /* An ordinary byte.  A frame (first byte '$') is never echoed. */
+        uint8_t frame = (uint8_t)(n > 0 && line[0] == '$');
+        if (c == '\n' && prev == '\r') {
+            /* CR LF is one Enter, not two */
+        } else if (c == '\r' || c == '\n') {
+            if (!frame) { say("\n"); }
             if (n > 0 && !overflow) {
                 line[n] = '\0';
                 lines_in++;
-                if (line[0] == '$') { handle_frame(line); } else { handle_shell(line); }
+                if (frame) { handle_frame(line); } else { handle_shell(line); }
             } else if (overflow) {
                 say("line too long - ignored\n");
             }
             n = 0;
             overflow = 0;
+        } else if (c == 0x7F || c == '\b') {         /* Backspace: two codes in use */
+            if (n > 0 && !overflow) {
+                n--;
+                if (!frame) { say("\b \b"); }        /* back, blank it, back again */
+            }
+        } else if ((uint8_t)c < 0x20u || (uint8_t)c > 0x7Eu) {
+            /* other control bytes: not part of any command */
         } else if (n < LINE_MAX - 1u) {
             line[n++] = c;
+            if (line[0] != '$') { say("%c", c); }
         } else {
             overflow = 1;                        /* keep reading to the end of it */
         }
+        prev = c;
+        typing = (uint8_t)(n > 0 && line[0] != '$');
     }
 }
 
 /* Priority 2.  $TEL,<ms>,<seq>,<tri>,<A presses>,<B presses>*CS
  * `tri` is a 0..1000 triangle with a 4 s period - something to plot before
- * lesson 09 brings real sensors.  `seq` lets host.py spot a lost line. */
+ * lesson 09 brings real sensors.  `seq` lets host.py spot a lost line.
+ *
+ * It holds off while a person is half-way through typing a line: the echo has
+ * left their text on the screen with no newline, so a frame sent now would
+ * be glued onto it - "le$TEL,..." - and host.py would not recognise it.
+ * `seq` is not advanced for a skipped frame, so host.py sees no gap. */
 static void task_tel(void *arg)
 {
     (void)arg;
     uint32_t last = os_ticks(), seq = 0;
     for (;;) {
         os_delay_until(&last, tel_ms);
-        if (!tel_on) { continue; }
+        if (!tel_on || typing) { continue; }
         uint32_t t  = os_ticks();
         uint32_t ph = t % 4000u;
         uint32_t tri = ph < 2000u ? ph / 2u : (4000u - ph) / 2u;

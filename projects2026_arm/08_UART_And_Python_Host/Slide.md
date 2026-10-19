@@ -620,6 +620,51 @@ part.
 
 ---
 
+## Slide 9b: Keys — a Third Kind of Frame
+
+On a raw terminal (the VS Code extension, miniterm) each key is sent when you
+press it. A letter is one byte. **An arrow key is three:**
+
+| Key | Bytes | Board does |
+|---|---|---|
+| Up / Down | `ESC [ A` / `ESC [ B` | halve / double the telemetry period |
+| Right / Left | `ESC [ C` / `ESC [ D` | move the lit LED along the bar |
+| Esc | `ESC` alone | cancel the half-typed line |
+| F1, Home, Delete, … | `ESC O P`, `ESC [ H`, `ESC [ 3 ~` | spell the bytes out |
+
+`ESC` is `0x1B`. `keys.c` is a state machine with the same structure as a
+`$...*CS` frame: a start byte, a body, and a byte that ends it.
+
+```
+          not ESC
+ idle ───────────────────────────────────────────────►  KEY_CHAR: a letter
+   │ ESC
+   ▼
+ ESC seen ── '[' ──► CSI: 0x20-0x3F, wait ── 0x40-0x7E ──►  key done
+   │      └─ 'O' ──► SS3: the next byte ───────────────────►  key done
+   └── 50 ms of silence ───────────────────────────────────►  KEY_ESC
+```
+
+| Term | Meaning |
+|---|---|
+| **escape sequence** | several bytes that mean one key; standardised as ECMA-48, the VT100's descendants |
+| **final byte** | `0x40`–`0x7E`: ends a CSI sequence. It plays the part of the `*` in a frame |
+| **lone Esc** | the same `0x1B` that starts every sequence. Only **time** tells them apart: 50 ms of silence |
+| **echo** | the terminal does not draw what you type. The board sends each byte back, and `\b \b` for Backspace |
+
+Two rules come from sharing one line:
+
+- **A `$` line is never echoed.** If `$RATE,100*..` came back, `host.py` would
+  read it as a frame from the board.
+- **Telemetry waits while a line is half typed.** Otherwise the board would
+  send `sta$TEL,...`, which `host.py` skips because the line does not start
+  with `$`.
+
+The decoder was tested on a PC with the bytes in the table above. No terminal
+has been watched sending them to the board yet (Lab Part 7).
+
+---
+
 ## Slide 10: The Frame — Borrowed From GPS
 
 ```
